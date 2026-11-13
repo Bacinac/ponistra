@@ -1238,7 +1238,7 @@ const restarted = () => {
     self.Config.Image,
     'compose', '--project-name', project, '--project-directory', directory,
     ...files.flatMap((file) => ['--file', file]),
-    'up', '--detach', '--no-deps', '--force-recreate', service,
+    'up', '--detach', '--no-deps', '--no-build', '--force-recreate', service,
   );
   return { ok: true };
 };
