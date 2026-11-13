@@ -1058,6 +1058,15 @@ test('words sent to a working chat stay in the conversation until it reads them'
       commands: [
         {
           ...COMMAND,
+          id: 4,
+          kind: 'say',
+          session: 'lead',
+          text: 'prije stranice',
+          state: 'done',
+          created_at: '2026-11-11T13:00:00Z',
+        },
+        {
+          ...COMMAND,
           id: 3,
           kind: 'say',
           session: 'lead',
@@ -1084,6 +1093,7 @@ test('words sent to a working chat stay in the conversation until it reads them'
   within(unread).getByText('Slika: 1');
   expect(within(chat).getAllByText(/^nastavi: tablice/)).toHaveLength(1);
   expect(within(chat).queryByText(/Tablice/)).toBeNull();
+  expect(within(chat).queryByText(/prije stranice/)).toBeNull();
   expect(within(chat).getAllByText('Čeka da je agent pročita')).toHaveLength(1);
 });
 

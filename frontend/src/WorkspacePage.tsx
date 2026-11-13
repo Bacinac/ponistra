@@ -1545,13 +1545,19 @@ const SENDING: Kind[] = [
 /** The clocks of the backend and the workspace may differ by this much. */
 const SKEW = 60_000;
 
-/** Whether the chat has read what the owner said: the transcript shows the same words since. */
+/** Whether the chat has read what the owner said: the transcript shows the same words since, or
+    the words were sent before the part of it read here begins. */
 const readIn = (command: Command, said: Said[]) => {
-  const from = Date.parse(command.created_at) - SKEW;
+  const sent = Date.parse(command.created_at);
+  const first = said.find((each) => each.at !== null)?.at;
+  if (first && sent < Date.parse(first)) return true;
   const text = command.text?.trim();
   return said.some(
     (each) =>
-      each.role === 'user' && each.text === text && each.at !== null && Date.parse(each.at) >= from,
+      each.role === 'user' &&
+      each.text === text &&
+      each.at !== null &&
+      Date.parse(each.at) >= sent - SKEW,
   );
 };
 
