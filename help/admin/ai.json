@@ -1,0 +1,27 @@
+{
+  "order": 110,
+  "audience": "admin",
+  "covers": [
+    "route:/ai"
+  ],
+  "quiet": [
+    "ai.intro",
+    "ai.usage.note",
+    "ai.requests.note",
+    "speech.intro",
+    "ai.keyLost",
+    "ai.keyReplace"
+  ],
+  "describes": {
+    "frontend/src/ai.tsx#Usage": "f365f0a5a019",
+    "frontend/src/ai.tsx#KeyForm": "a70636336c66",
+    "frontend/src/ai.tsx#SpeechForm": "b852d7bc09b2",
+    "frontend/src/ai.tsx#Settings": "a9216cf0e4ef",
+    "frontend/src/ai.tsx#AiPage": "2a0fa69163e0",
+    "backend/apps/ai/views.py#setting": "114e1a150cda",
+    "backend/apps/ai/views.py#speech_setting": "baf6d2b171d2",
+    "backend/apps/ai/installation.py#change": "3f9c4b4df5af",
+    "frontend/src/ai.tsx#MonthlyForm": "54054509355b",
+    "backend/apps/ai/installation.py#allowed": "1ccfb23cdbfe"
+  }
+}

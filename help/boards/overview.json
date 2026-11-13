@@ -1,0 +1,19 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/boards"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/FolderPage.tsx#BoardsPage": "a489de921b84",
+    "frontend/src/FolderPage.tsx#boardSections": "4d24ddc561ff",
+    "frontend/src/board.tsx#BoardView": "6c2d038a93a5",
+    "frontend/src/board.tsx#boardPage": "63d4d16a54aa",
+    "backend/apps/documents/boards.py#is_board": "fb046137f5a6",
+    "backend/apps/documents/boards_place.py#page": "eb96ac98f2b0",
+    "backend/apps/documents/boards_place.py#filed": "e4a380ff3564",
+    "backend/apps/documents/board_data.py#read": "17041e5f14a3",
+    "backend/apps/documents/board_data.py#written": "fcdccd9c2ec6"
+  }
+}

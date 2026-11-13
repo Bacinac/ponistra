@@ -1,0 +1,23 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "calendar.inviteNote"
+  ],
+  "describes": {
+    "frontend/src/calendar.tsx#ResponseButtons": "1a2a216cccfa",
+    "frontend/src/calendar.tsx#callable": "70fbe126ea34",
+    "frontend/src/calendarData.ts#respond": "ee1de2125ad3",
+    "frontend/src/calendarData.ts#useFree": "885875488a9c",
+    "backend/apps/calendar/invitations.py#sender_of": "7357f2a4fe2c",
+    "backend/apps/calendar/invitations.py#changes": "55cc99e467f6",
+    "backend/apps/calendar/invitations.py#withdrawn": "1b75f2a70805",
+    "backend/apps/calendar/invitations.py#answered": "725dcbbd0659",
+    "backend/apps/calendar/invitations.py#_requested": "ef0b84808431",
+    "backend/apps/calendar/invitations.py#_replied": "6b6ab973c315",
+    "backend/apps/calendar/invitations.py#_cancelled": "923c3bea88ef",
+    "frontend/src/calendarData.ts#useOffers": "b1cc29a24420",
+    "backend/apps/calendar/availability.py#offers": "6fb64a5013c7"
+  }
+}

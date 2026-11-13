@@ -1,0 +1,20 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "app.description",
+    "app.noteShort",
+    "app.voiceShort",
+    "launch.elsewhere"
+  ],
+  "describes": {
+    "frontend/src/launch.tsx#Launches": "c906d96b8d3a",
+    "frontend/src/launch.tsx#LaunchesElsewhere": "59c33ba683e6",
+    "frontend/src/launch.tsx#ledTo": "af9a1d80d044",
+    "frontend/src/frame.tsx#useAppBadge": "bf6009492c30",
+    "frontend/src/frame.tsx#useWaiting": "edfc4f8357f3",
+    "frontend/src/title.ts#useTitle": "cdc79221ca05",
+    "frontend/vite.config.ts#rooted": "5bac27026036"
+  }
+}

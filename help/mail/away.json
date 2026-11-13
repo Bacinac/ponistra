@@ -1,0 +1,19 @@
+{
+  "order": 49,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/away"
+  ],
+  "quiet": [
+    "away.period",
+    "away.until"
+  ],
+  "describes": {
+    "frontend/src/away.tsx#AwayForm": "0650737f61f7",
+    "frontend/src/away.tsx#AwayNote": "06f4fdbeaad7",
+    "backend/apps/mail/absence.py": "66bbfc59a43d",
+    "backend/apps/mail/automatic.py": "79fe9549c171",
+    "backend/apps/mail/views.py#away": "f5a0144fcbed",
+    "backend/apps/mail/later.py#_answering": "ffa0587c0466"
+  }
+}

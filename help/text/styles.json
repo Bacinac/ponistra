@@ -1,0 +1,22 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "styles.sample",
+    "styles.sampleText",
+    "styles.nameNeeded",
+    "styles.fromNone",
+    "styles.fromHint",
+    "styles.newName",
+    "styles.list",
+    "styles.unnamed"
+  ],
+  "describes": {
+    "frontend/src/editor/StylesDialog.tsx#StylesDialog": "38244005caa6",
+    "frontend/src/editor/StylesDialog.tsx#StyleFields": "4272cf711d47",
+    "frontend/src/editor/StylesDialog.tsx#FromDocument": "06b74d918f3d",
+    "frontend/src/editor/StylesDialog.tsx#numberHeadings": "ebb291370fae",
+    "frontend/src/editor/styling.ts#KIND_LABELS": "f7abf4085f61"
+  }
+}

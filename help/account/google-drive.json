@@ -1,0 +1,27 @@
+{
+  "order": 90,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/google"
+  ],
+  "quiet": [
+    "drive.title",
+    "drive.files",
+    "drive.folders",
+    "drive.shared",
+    "drive.finishAction",
+    "drive.stopAction",
+    "settings.leaving"
+  ],
+  "describes": {
+    "frontend/src/drive.tsx#DriveSettings": "5c57f161d57c",
+    "frontend/src/drive.tsx#DriveActions": "a74710108cdd",
+    "backend/apps/drive/views.py#drives": "c9bc510544c7",
+    "backend/apps/drive/views.py#drive": "2a5deda65ad7",
+    "backend/apps/drive/views.py#finish": "f9d9f1ed73f5",
+    "backend/apps/drive/sync.py#Pass": "1ed9a333846a",
+    "backend/apps/drive/sync.py#passed": "4f0e0910a94e",
+    "backend/apps/drive/sync.py#_spaces": "210099424c6e",
+    "backend/apps/drive/google.py#Google": "7fac816fa437"
+  }
+}

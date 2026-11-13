@@ -1,0 +1,28 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [
+    "action:table.totals",
+    "action:table.total",
+    "action:table.calculate",
+    "action:table.clean",
+    "action:table.group",
+    "action:table.chart"
+  ],
+  "quiet": [
+    "calculate.note",
+    "calculate.pairNote",
+    "calculate.pick"
+  ],
+  "describes": {
+    "frontend/src/editor/CalculateDialog.tsx#CalculateDialog": "3e2fee9b074d",
+    "frontend/src/editor/actions.ts#numberColumn": "659d0b8c7f4a",
+    "frontend/src/editor/actions.ts#TOTAL_WAYS": "03b049340298",
+    "backend/apps/actions/tables.py#totals": "a8c1a230e4fa",
+    "backend/apps/actions/tables.py#total": "27f98f7fe30a",
+    "backend/apps/actions/tables.py#calculate": "e3b1e0e3785d",
+    "backend/apps/actions/tables.py#clean": "d76c04c98172",
+    "backend/apps/actions/tables.py#group": "df3b445319af",
+    "backend/apps/actions/tables.py#chart": "0d1e264101bc"
+  }
+}

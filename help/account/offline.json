@@ -1,0 +1,25 @@
+{
+  "order": 65,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/offline.tsx#walked": "c779f2e889b8",
+    "frontend/src/offline.tsx#keptRooms": "c0f223a6d7b7",
+    "frontend/src/offline.tsx#KeepItem": "c0989049e691",
+    "frontend/src/offline.tsx#useKeeper": "bc24a7f66f3a",
+    "frontend/src/devices.tsx#ThisDevice": "6d30bf50c027",
+    "frontend/src/kept.ts#keepable": "7c25827fc4eb",
+    "frontend/src/kept.ts#empty": "4b5fa2e62a34",
+    "frontend/src/api.ts#leftBy": "08560d09ecc7",
+    "frontend/src/room.ts#joinRoom": "1efa317aa372",
+    "frontend/src/live.ts#useReachable": "188088ce10ba",
+    "frontend/src/sw.js": "99dd4a5553bf",
+    "backend/apps/users/devices.py#mine": "981c6519329d",
+    "frontend/src/offline.tsx#keepMail": "c77e59a9297b",
+    "frontend/src/offline.tsx#sendQueued": "21ea76021ba7",
+    "frontend/src/mailLater.tsx#QueuedRow": "304c0a286de3",
+    "frontend/src/compose.tsx#ComposeForm": "c6f8cd235fc5",
+    "backend/apps/mail/views.py#_queued_before": "8b9617304672"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "order": 30,
+  "audience": "admin",
+  "covers": [],
+  "quiet": [
+    "company.note",
+    "company.deleteWarning",
+    "vault.company.note",
+    "vault.company.deleteWarning",
+    "confined.note"
+  ],
+  "describes": {
+    "frontend/src/users.tsx#CompanyDialog": "e9ffdad7352e",
+    "frontend/src/users.tsx#CompanySection": "374dc038d03a",
+    "frontend/src/users.tsx#FOLDERS": "21cee8a74901",
+    "frontend/src/users.tsx#VAULT": "2c70c3335017"
+  }
+}

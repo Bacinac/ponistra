@@ -1,0 +1,16 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [
+    "route:/shared"
+  ],
+  "quiet": [
+    "tree.sharedEmpty",
+    "tree.sharedByMeEmpty"
+  ],
+  "describes": {
+    "frontend/src/FolderPage.tsx#SharedPage": "bbd8873100ad",
+    "backend/apps/access/rights.py#shared_with": "b70de1cc4883",
+    "backend/apps/access/rights.py#shared_by": "929a820ec0c8"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "order": 35,
+  "audience": "everyone",
+  "covers": [
+    "tool:propose_memory",
+    "tool:memory_proposals",
+    "tool:advise_memory"
+  ],
+  "quiet": [
+    "memory.acceptAll",
+    "memory.rejectAll",
+    "memory.staleAfter"
+  ],
+  "describes": {
+    "frontend/src/memory.tsx#Memory": "35c3a3ccd66f",
+    "frontend/src/memory.tsx#useMemoryWaiting": "c8b9af981e44",
+    "frontend/src/memory.tsx#MemoryView": "92d4ef05b90e",
+    "backend/apps/memory/ledger.py#synced": "20ae605ef1ca",
+    "backend/apps/memory/ledger.py#decided": "09e11dc8b698",
+    "backend/apps/memory/ledger.py#reverted": "cf313da245f8",
+    "backend/apps/memory/ledger.py#proposed": "85706aea243e",
+    "backend/apps/memory/ledger.py#analyse": "6ee5f8b810c8",
+    "backend/apps/memory/ledger.py#tell_owner": "001fb3a0dd08",
+    "backend/apps/memory/night.py#passed": "8fada925848b",
+    "workspace/memory.mjs": "c1a73eac0856"
+  }
+}

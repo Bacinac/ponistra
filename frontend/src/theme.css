@@ -1,0 +1,162 @@
+:root {
+  --scheme: light dark;
+  color-scheme: var(--scheme);
+  --petrol: #197d83;
+  --petrol-deep: #173e46;
+  --sage: #7ca995;
+  --eucalyptus: #c1d8cb;
+  --paper: #f7faf6;
+
+  --surface: light-dark(var(--paper), #101e23);
+  --panel: light-dark(#edf3ee, #162a30);
+  --raised: light-dark(#ffffff, #1b3238);
+  --field: light-dark(#dde6e0, #0b171b);
+  --ink: light-dark(var(--petrol-deep), #e6f0e9);
+  --muted: light-dark(#4d645f, #b1c6bd);
+  --line: light-dark(#cfddd3, #334c50);
+  --control: light-dark(#657f76, #7c9d94);
+  --hover: light-dark(#e5eee7, #213c41);
+  --selected: light-dark(#d3e5da, #2d4e50);
+  --accent: light-dark(#176b72, #a6d2bf);
+  --accent-hover: light-dark(#12595f, #bedfce);
+  --on-accent: light-dark(var(--paper), #102b31);
+  --focus: light-dark(var(--petrol), #93c7b1);
+  --danger: light-dark(#a62f32, #ffa99f);
+  --on-danger: light-dark(#ffffff, #391a18);
+  /* What the model does for the user (the microphone, a sentence AI read), set apart from the
+     brand's petrol and sage. */
+  --ai: light-dark(#6a3fb5, #cdb9f6);
+  --ai-soft: light-dark(#ebe3f8, #33294f);
+  --mark: light-dark(#e2ebc9, #394b30);
+  /* A weekend, holiday or closed day in the calendar's grid. */
+  --day-off: light-dark(#ecf2ed, #081316);
+  --day-off-ink: light-dark(#9b4a50, #f2a7ae);
+  /* A code a phone's camera reads: dark on light in either scheme, as not every reader takes one
+     inverted. */
+  --scan: var(--paper);
+  --scan-ink: var(--petrol-deep);
+  --comment: light-dark(#f2e6c6, #463c27);
+  --comment-active: light-dark(#e6cf93, #6a5629);
+  --redact: #a62f32;
+  --link: var(--accent);
+  --inserted: light-dark(#3a6a1e, #a8dc9a);
+  --deleted: var(--danger);
+  --scrim: light-dark(rgb(10 32 38 / 35%), rgb(2 10 13 / 68%));
+  --shadow: light-dark(rgb(23 62 70 / 18%), rgb(0 0 0 / 40%));
+  --show: #000000;
+  --on-show: #e6f0e9;
+  --presence-colors: #176b72, #416e58, #845a35, #645487, #92535f, #5d6b35, #285e88;
+  --on-presence: var(--paper);
+  /* Syntax in a text file shown, each hue readable on the surface of its scheme. */
+  --code-keyword: light-dark(#176b72, #8fd3c8);
+  --code-string: light-dark(#3a6a1e, #a8dc9a);
+  --code-number: light-dark(#845a35, #e2b886);
+  --code-name: light-dark(#645487, #c3b4ec);
+  --code-meta: light-dark(#92535f, #f0a6b3);
+  /* The terminal's sixteen colours, ANSI's order (black, red, green, yellow, blue, magenta, cyan,
+     white, then each bright), every one readable on the raised surface of its scheme. */
+  --terminal-0: light-dark(#173e46, #2d4e50);
+  --terminal-1: light-dark(#a62f32, #ffa99f);
+  --terminal-2: light-dark(#3a6a1e, #a8dc9a);
+  --terminal-3: light-dark(#845a35, #e2b886);
+  --terminal-4: light-dark(#285e88, #8fbde6);
+  --terminal-5: light-dark(#645487, #c3b4ec);
+  --terminal-6: light-dark(#176b72, #8fd3c8);
+  --terminal-7: light-dark(#657f76, #e6f0e9);
+  --terminal-8: light-dark(#4d645f, #7c9d94);
+  --terminal-9: light-dark(#c2255c, #f783ac);
+  --terminal-10: light-dark(#2b8a3e, #69db7c);
+  --terminal-11: light-dark(#9a6c00, #fcc419);
+  --terminal-12: light-dark(#1971c2, #74c0fc);
+  --terminal-13: light-dark(#6741d9, #b197fc);
+  --terminal-14: light-dark(#0e7a83, #4fd1d9);
+  --terminal-15: light-dark(#3d5450, #ffffff);
+  /* Each mail account's mark in lists, in the order accounts take them. */
+  --account-1: light-dark(#0e7a83, #4fd1d9);
+  --account-2: light-dark(#2b8a3e, #69db7c);
+  --account-3: light-dark(#d9480f, #ff922b);
+  --account-4: light-dark(#6741d9, #b197fc);
+  --account-5: light-dark(#c2255c, #f783ac);
+  --account-6: light-dark(#9a6c00, #fcc419);
+  --account-7: light-dark(#1971c2, #74c0fc);
+}
+
+/* light-dark() follows the scheme in force where it is used, so a chosen theme sets that
+   scheme; parts that take the interface's scheme back from inside paper read --scheme. */
+:root[data-theme='light'] {
+  --scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --scheme: dark;
+}
+
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-surface: var(--surface);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-field: var(--field);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-control: var(--control);
+  --color-hover: var(--hover);
+  --color-selected: var(--selected);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-focus: var(--focus);
+  --color-danger: var(--danger);
+  --color-on-danger: var(--on-danger);
+  --color-ai: var(--ai);
+  --color-ai-soft: var(--ai-soft);
+  --color-mark: var(--mark);
+  --color-day-off: var(--day-off);
+  --color-day-off-ink: var(--day-off-ink);
+  --color-scan: var(--scan);
+  --color-scan-ink: var(--scan-ink);
+  --color-comment: var(--comment);
+  --color-comment-active: var(--comment-active);
+  --color-redact: var(--redact);
+  --color-link: var(--link);
+  --color-inserted: var(--inserted);
+  --color-deleted: var(--deleted);
+  --color-scrim: var(--scrim);
+  --color-account-1: var(--account-1);
+  --color-account-2: var(--account-2);
+  --color-account-3: var(--account-3);
+  --color-account-4: var(--account-4);
+  --color-account-5: var(--account-5);
+  --color-account-6: var(--account-6);
+  --color-account-7: var(--account-7);
+  --shadow-sm: 0 1px 2px var(--shadow);
+  --shadow-lg: 0 10px 24px -8px var(--shadow);
+  --shadow-xl: 0 20px 40px -12px var(--shadow);
+}
+
+@layer base {
+  :root {
+    background: var(--surface);
+    color: var(--ink);
+    accent-color: var(--accent);
+    caret-color: var(--accent);
+  }
+
+  ::selection {
+    background: var(--selected);
+    color: var(--ink);
+  }
+
+  :where(input, textarea)::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+}

@@ -1,0 +1,3 @@
+# holidays declares python-dateutil<3 only as a cap ahead of the release; its countries compute
+# the same days on 3.0 with dateutil's deprecations taken as errors.
+python-dateutil==3.0.0

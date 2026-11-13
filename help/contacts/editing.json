@@ -1,0 +1,18 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "contacts.directoryKept"
+  ],
+  "describes": {
+    "frontend/src/contacts.tsx#ContactDialog": "60ff74aa25be",
+    "frontend/src/contacts.tsx#PointsEditor": "f9ba7f940d3a",
+    "frontend/src/contacts.tsx#BirthdayField": "e10d7177968f",
+    "frontend/src/contacts.tsx#derivedName": "8f178cc43e3d",
+    "frontend/src/contacts.tsx#blankPoint": "3bc2fb1df148",
+    "backend/apps/contacts/views.py#contact": "ccb053dbf337",
+    "backend/apps/contacts/views.py#_card": "6962940fc3f3",
+    "backend/apps/contacts/views.py#_points": "306a11764f5e"
+  }
+}

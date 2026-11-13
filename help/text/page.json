@@ -1,0 +1,17 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "page.continues",
+    "page.dropsParts",
+    "page.forAll",
+    "page.noRoom"
+  ],
+  "describes": {
+    "frontend/src/editor/PageDialog.tsx#PageDialog": "2c9983f994a1",
+    "frontend/src/editor/pages.ts#PAPERS": "3349e868f0b8",
+    "frontend/src/editor/blocks.ts#insertBreak": "3582c5033af8",
+    "frontend/src/editor/Editor.tsx#partView": "ac11c28cb182"
+  }
+}

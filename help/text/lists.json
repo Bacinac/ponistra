@@ -1,0 +1,16 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "listFormat.symbolNeeded",
+    "listFormat.levels"
+  ],
+  "describes": {
+    "frontend/src/editor/ListFormatDialog.tsx": "33ec65c645f9",
+    "frontend/src/editor/commands.ts#forms": "f00ef83f9fb6",
+    "frontend/src/editor/commands.ts#restarting": "42dea039574c",
+    "frontend/src/editor/commands.ts#continuing": "229ae5037928",
+    "frontend/src/editor/lists.ts#listKeys": "1d349b437342"
+  }
+}

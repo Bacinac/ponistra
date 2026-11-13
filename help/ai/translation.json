@@ -1,0 +1,25 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/translation"
+  ],
+  "quiet": [
+    "translation.consent.body",
+    "translation.consent.note",
+    "ai.consent.body"
+  ],
+  "describes": {
+    "frontend/src/translation.tsx#ReadingLanguages": "518e27d2acdc",
+    "frontend/src/translation.tsx#TranslationConsentDialog": "d2402acabdaf",
+    "frontend/src/translation.tsx#useConsented": "9a8b484a85fb",
+    "frontend/src/translation.tsx#useForeign": "c7451b8485bc",
+    "frontend/src/translation.tsx#useMessageTranslation": "d26377bc9d1a",
+    "frontend/src/translation.tsx#useReplyTranslation": "d5c9efffa1c7",
+    "frontend/src/gather.tsx#TranslateDialog": "571b8231a7b9",
+    "backend/apps/mail/translating.py#translate": "2316d3327e8d",
+    "backend/apps/mail/translating.py#reply": "2188da809e7b",
+    "backend/apps/mail/translating.py#keep_written": "98e95ebaed54",
+    "backend/apps/mail/translating.py#kept": "a622f87f0f97"
+  }
+}

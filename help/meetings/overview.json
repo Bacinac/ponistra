@@ -1,0 +1,34 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/meet/:id"
+  ],
+  "quiet": [
+    "meeting.blocked",
+    "meeting.presentingHidden",
+    "meeting.refused",
+    "meeting.screenRefused",
+    "meeting.cameraIsOff",
+    "meeting.noCamera",
+    "meeting.failed",
+    "meeting.left",
+    "meeting.untitled"
+  ],
+  "describes": {
+    "frontend/src/MeetingPage.tsx#MeetingPage": "bf670432da85",
+    "frontend/src/MeetingPage.tsx#useMade": "37c8d421132c",
+    "frontend/src/MeetingPage.tsx#Joinable": "157edabf5a58",
+    "frontend/src/MeetingPage.tsx#Trouble": "8acb27f2f252",
+    "frontend/src/call.tsx#Before": "48a60a24c3aa",
+    "frontend/src/call.tsx#Outside": "7daebb1cf219",
+    "frontend/src/call.tsx#Inside": "48e39ae87168",
+    "frontend/src/call.tsx#Messages": "ee542b36f7f7",
+    "frontend/src/call.tsx#Tiles": "697c09957d42",
+    "frontend/src/call.tsx#named": "713c90f1cd04",
+    "frontend/src/call.tsx#Devices": "be6c162d35f8",
+    "frontend/src/meeting.tsx#MeetingLink": "5871a13882f8",
+    "backend/apps/meetings/models.py#Meeting": "139417fa1f72",
+    "backend/apps/meetings/views.py#join": "551a1dd0e681"
+  }
+}

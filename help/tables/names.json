@@ -1,0 +1,15 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "tableName.hint",
+    "tableName.invalid",
+    "tableName.needed",
+    "tableName.taken"
+  ],
+  "describes": {
+    "frontend/src/editor/TableNameDialog.tsx#TableNameDialog": "c9daa13178bb",
+    "backend/apps/content/sheets.py#name_problem": "9944ee9b52b1"
+  }
+}

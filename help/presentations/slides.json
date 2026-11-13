@@ -1,0 +1,17 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "slides.prompt.title",
+    "slides.prompt.subtitle",
+    "slides.prompt.body",
+    "slides.prompt.second"
+  ],
+  "describes": {
+    "frontend/src/editor/slides.ts": "006d3b536da9",
+    "frontend/src/editor/Deck.tsx": "12ec9e23a088",
+    "frontend/src/editor/commands.ts#layoutCommands": "bee446a39030",
+    "backend/apps/content/slides.py#slides_of": "624416283b57"
+  }
+}

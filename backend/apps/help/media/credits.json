@@ -1,0 +1,65 @@
+[
+  {
+    "file": "meeting-room.jpg",
+    "work": "Meeting room furniture and TV set, JD Shopping Mall, Dongguan",
+    "author": "NAS 238 WMMNO",
+    "licence": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:DG_%E6%9D%B1%E8%8E%9E_DongGuan_%E5%8D%97%E5%9F%8E%E5%8D%80_Nancheng_%E9%B4%BB%E7%A6%8F%E8%B7%AF_HongFu_Road_%E6%9D%B1%E8%8E%9E%E4%BA%AC%E6%9D%B1%E5%95%86%E5%A0%B4_JD_Shopping_Mall_Electronics_Showroom_December_2024_R12S_35_meeting_room_furniture_n_TV_set.jpg",
+    "change": "Cropped below the camera's date stamp and scaled to 1600 px"
+  },
+  {
+    "file": "round-table.jpg",
+    "work": "Round meeting room, Faculty of Social Sciences, Charles University",
+    "author": "Mojmir Churavy",
+    "licence": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Areal_FSV_UK_Kruhovy_Jednaci_Sal.jpg",
+    "change": "Scaled to 1600 px"
+  },
+  {
+    "file": "monstera.jpg",
+    "work": "Nature – Natura (15548641848)",
+    "author": "fotokoci",
+    "licence": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Nature_-_Natura_(15548641848).jpg",
+    "change": "Scaled to 1600 px"
+  },
+  {
+    "file": "pendant-lights.jpg",
+    "work": "Pendant lights in Tate Britain",
+    "author": "Andy Li",
+    "licence": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Pendant_lights_in_Tate_Britain_2026-03-24.jpg",
+    "change": "Scaled to 1600 px"
+  },
+  {
+    "file": "parquet.jpg",
+    "work": "Parquet floor wood texture",
+    "author": "Kurt Kaiser",
+    "licence": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Parquet_floor_wood_texture.jpg",
+    "change": "Scaled to 1600 px"
+  },
+  {
+    "file": "living-room.jpg",
+    "work": "Spacious living room interior design in Kolkata",
+    "author": "Estate Lookup Interiors",
+    "licence": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:Spacious_Living_Room_Interior_Design_in_Kolkata_by_Estate_Lookup_Interiors.png",
+    "change": "Scaled to 1600 px and saved as JPEG"
+  },
+  {
+    "file": "wood-samples.jpg",
+    "work": "16 wood samples",
+    "author": "Anonimski",
+    "licence": "CC0 1.0",
+    "source": "https://commons.wikimedia.org/wiki/File:16_wood_samples.jpg",
+    "change": "Scaled to 1600 px"
+  },
+  {
+    "file": null,
+    "work": "Contact pictures, charts and every person, company, document and message of the demo",
+    "author": "Made up and drawn by Ponistra's seed",
+    "licence": "CC0 1.0",
+    "source": "backend/apps/help/seeds"
+  }
+]

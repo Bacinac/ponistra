@@ -1,0 +1,15 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "cellFormat.hint"
+  ],
+  "describes": {
+    "frontend/src/editor/CellFormatDialog.tsx#CellFormatDialog": "c230c71a3be1",
+    "frontend/src/editor/formats.ts#PRESETS": "e8e47e5a1ac2",
+    "frontend/src/editor/formats.ts#presetCode": "03a4dbad7a7f",
+    "frontend/src/editor/formats.ts#CURRENCIES": "8f92dfafe276",
+    "frontend/src/editor/commands.ts#fills": "7a1a663698a1"
+  }
+}

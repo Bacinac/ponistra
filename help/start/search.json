@@ -1,0 +1,19 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "search.label"
+  ],
+  "describes": {
+    "frontend/src/search.tsx#SearchBox": "de24774c79d9",
+    "frontend/src/search.tsx#allotted": "93c84dbe1868",
+    "frontend/src/search.tsx#placeOf": "5983dc3a6694",
+    "frontend/src/search.tsx#useVaultHits": "1a75cfb12815",
+    "frontend/src/search.tsx#VaultLocked": "cbc8211138ff",
+    "frontend/src/search.tsx#wantsSearch": "a97e3b923ff7",
+    "frontend/src/places.tsx#usePlaces": "4d328385fb13",
+    "backend/apps/search/views.py#search": "a686be7874fb",
+    "backend/apps/search/views.py#_mail": "b02769eaf1b0"
+  }
+}

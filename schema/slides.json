@@ -1,0 +1,255 @@
+{
+  "$defs": {
+    "length": { "description": "In cm.", "type": "number", "minimum": -200, "maximum": 200 },
+    "extent": { "description": "In cm.", "type": "number", "minimum": 0, "maximum": 200 },
+    "color": { "type": "string", "pattern": "^#[0-9a-f]{6}$" },
+    "blob": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "points": { "type": "number", "minimum": 1, "maximum": 400 },
+    "kind": { "enum": ["title", "content", "two", "section", "titleOnly", "blank"] },
+    "text": {
+      "description": "How text shows in a box: font is the theme's headings or text font, or a font's name; size the first level's, levels each list level's.",
+      "type": "object",
+      "properties": {
+        "font": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "size": { "$ref": "#/$defs/points" },
+        "levels": { "type": "array", "items": { "$ref": "#/$defs/points" }, "maxItems": 9 },
+        "color": { "$ref": "#/$defs/color" },
+        "bold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "align": { "enum": ["left", "center", "right", "justify"] },
+        "anchor": { "enum": ["top", "middle", "bottom"] }
+      },
+      "additionalProperties": false
+    },
+    "box": {
+      "type": "object",
+      "properties": {
+        "x": { "$ref": "#/$defs/length" },
+        "y": { "$ref": "#/$defs/length" },
+        "w": { "$ref": "#/$defs/extent" },
+        "h": { "$ref": "#/$defs/extent" },
+        "text": { "$ref": "#/$defs/text" }
+      },
+      "required": ["x", "y", "w", "h"],
+      "additionalProperties": false
+    },
+    "line": {
+      "type": "object",
+      "properties": {
+        "color": { "$ref": "#/$defs/color" },
+        "width": { "description": "In points.", "type": "number", "minimum": 0, "maximum": 100 }
+      },
+      "required": ["color", "width"],
+      "additionalProperties": false
+    },
+    "shape": {
+      "description": "Drawn behind the slide's text: a rectangle, ellipse or line (from its box's top left to its bottom right, or bottom left where flipped), an image, a fixed text, the slide's number or the date.",
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["rect", "ellipse", "line", "image", "text", "number", "date"] },
+        "x": { "$ref": "#/$defs/length" },
+        "y": { "$ref": "#/$defs/length" },
+        "w": { "$ref": "#/$defs/extent" },
+        "h": { "$ref": "#/$defs/extent" },
+        "fill": { "$ref": "#/$defs/color" },
+        "line": { "$ref": "#/$defs/line" },
+        "flip": { "type": "boolean" },
+        "blob": { "$ref": "#/$defs/blob" },
+        "content": { "type": "string", "maxLength": 1000 },
+        "text": { "$ref": "#/$defs/text" }
+      },
+      "required": ["type", "x", "y", "w", "h"],
+      "additionalProperties": false
+    },
+    "background": {
+      "type": "object",
+      "properties": { "color": { "$ref": "#/$defs/color" }, "image": { "$ref": "#/$defs/blob" } },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" },
+        "name": { "type": "string", "maxLength": 200 },
+        "kind": { "$ref": "#/$defs/kind" },
+        "background": { "$ref": "#/$defs/background" },
+        "shapes": { "type": "array", "items": { "$ref": "#/$defs/shape" }, "maxItems": 200 },
+        "boxes": {
+          "type": "object",
+          "properties": {
+            "title": { "$ref": "#/$defs/box" },
+            "subtitle": { "$ref": "#/$defs/box" },
+            "body": { "$ref": "#/$defs/box" },
+            "second": { "$ref": "#/$defs/box" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["id", "kind", "shapes", "boxes"],
+      "additionalProperties": false
+    },
+    "size": {
+      "type": "object",
+      "properties": {
+        "width": { "type": "number", "minimum": 2.54, "maximum": 142.24 },
+        "height": { "type": "number", "minimum": 2.54, "maximum": 142.24 }
+      },
+      "required": ["width", "height"],
+      "additionalProperties": false
+    }
+  },
+  "sizes": {
+    "wide": { "width": 33.867, "height": 19.05 },
+    "standard": { "width": 25.4, "height": 19.05 }
+  },
+  "size": { "width": 33.867, "height": 19.05 },
+  "layouts": [
+    {
+      "id": "title",
+      "kind": "title",
+      "shapes": [],
+      "boxes": {
+        "title": {
+          "x": 4.233,
+          "y": 3.118,
+          "w": 25.4,
+          "h": 6.632,
+          "text": { "font": "headings", "size": 54, "color": "#262626", "align": "center", "anchor": "bottom" }
+        },
+        "subtitle": {
+          "x": 4.233,
+          "y": 10.006,
+          "w": 25.4,
+          "h": 4.599,
+          "text": { "font": "text", "size": 24, "color": "#595959", "align": "center", "anchor": "top" }
+        }
+      }
+    },
+    {
+      "id": "content",
+      "kind": "content",
+      "shapes": [
+        {
+          "type": "number",
+          "x": 23.918,
+          "y": 17.657,
+          "w": 7.62,
+          "h": 1.014,
+          "text": { "font": "text", "size": 12, "color": "#8c8c8c", "align": "right", "anchor": "middle" }
+        }
+      ],
+      "boxes": {
+        "title": {
+          "x": 2.328,
+          "y": 1.014,
+          "w": 29.21,
+          "h": 3.682,
+          "text": { "font": "headings", "size": 40, "color": "#262626", "align": "left", "anchor": "middle" }
+        },
+        "body": {
+          "x": 2.328,
+          "y": 5.071,
+          "w": 29.21,
+          "h": 12.087,
+          "text": { "font": "text", "size": 28, "levels": [28, 24, 20, 20, 20], "color": "#262626", "align": "left", "anchor": "top" }
+        }
+      }
+    },
+    {
+      "id": "two",
+      "kind": "two",
+      "shapes": [
+        {
+          "type": "number",
+          "x": 23.918,
+          "y": 17.657,
+          "w": 7.62,
+          "h": 1.014,
+          "text": { "font": "text", "size": 12, "color": "#8c8c8c", "align": "right", "anchor": "middle" }
+        }
+      ],
+      "boxes": {
+        "title": {
+          "x": 2.328,
+          "y": 1.014,
+          "w": 29.21,
+          "h": 3.682,
+          "text": { "font": "headings", "size": 40, "color": "#262626", "align": "left", "anchor": "middle" }
+        },
+        "body": {
+          "x": 2.328,
+          "y": 5.071,
+          "w": 14.393,
+          "h": 12.087,
+          "text": { "font": "text", "size": 24, "levels": [24, 20, 18, 18, 18], "color": "#262626", "align": "left", "anchor": "top" }
+        },
+        "second": {
+          "x": 17.145,
+          "y": 5.071,
+          "w": 14.393,
+          "h": 12.087,
+          "text": { "font": "text", "size": 24, "levels": [24, 20, 18, 18, 18], "color": "#262626", "align": "left", "anchor": "top" }
+        }
+      }
+    },
+    {
+      "id": "section",
+      "kind": "section",
+      "shapes": [],
+      "boxes": {
+        "title": {
+          "x": 2.311,
+          "y": 4.749,
+          "w": 29.21,
+          "h": 7.924,
+          "text": { "font": "headings", "size": 54, "color": "#262626", "align": "left", "anchor": "bottom" }
+        },
+        "body": {
+          "x": 2.311,
+          "y": 12.749,
+          "w": 29.21,
+          "h": 4.167,
+          "text": { "font": "text", "size": 24, "color": "#595959", "align": "left", "anchor": "top" }
+        }
+      }
+    },
+    {
+      "id": "titleOnly",
+      "kind": "titleOnly",
+      "shapes": [
+        {
+          "type": "number",
+          "x": 23.918,
+          "y": 17.657,
+          "w": 7.62,
+          "h": 1.014,
+          "text": { "font": "text", "size": 12, "color": "#8c8c8c", "align": "right", "anchor": "middle" }
+        }
+      ],
+      "boxes": {
+        "title": {
+          "x": 2.328,
+          "y": 1.014,
+          "w": 29.21,
+          "h": 3.682,
+          "text": { "font": "headings", "size": 40, "color": "#262626", "align": "left", "anchor": "middle" }
+        }
+      }
+    },
+    {
+      "id": "blank",
+      "kind": "blank",
+      "shapes": [],
+      "boxes": {
+        "body": {
+          "x": 2.328,
+          "y": 1.014,
+          "w": 29.21,
+          "h": 16.144,
+          "text": { "font": "text", "size": 28, "levels": [28, 24, 20, 20, 20], "color": "#262626", "align": "left", "anchor": "top" }
+        }
+      }
+    }
+  ]
+}

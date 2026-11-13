@@ -1,0 +1,18 @@
+{
+  "order": 42,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "outside.codeSent"
+  ],
+  "describes": {
+    "frontend/src/compose.tsx#ComposeForm": "c6f8cd235fc5",
+    "frontend/src/outside.tsx#OutsidePage": "31b68d550600",
+    "backend/apps/access/mailed.py#shared": "a6b531e4875f",
+    "backend/apps/access/mailed.py#given": "0fbc4d64d46b",
+    "backend/apps/access/outside.py#code": "b02c8fc27b6c",
+    "backend/apps/access/outside.py#_asked": "070e633c9e02",
+    "backend/apps/access/outside.py#_coded": "3c0cfce2542c",
+    "backend/apps/access/outside.py#_recipient": "2dfeeb18882b"
+  }
+}

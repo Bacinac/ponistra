@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="note"
+        android:shortcutLongLabel="@string/note_long"
+        android:shortcutShortLabel="@string/note">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="biz.boskovic.ponistra.MainActivity"
+            android:targetPackage="biz.boskovic.ponistra">
+            <extra
+                android:name="biz.boskovic.ponistra.PATH"
+                android:value="/notes?new" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="voice"
+        android:shortcutLongLabel="@string/voice_long"
+        android:shortcutShortLabel="@string/voice">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="biz.boskovic.ponistra.MainActivity"
+            android:targetPackage="biz.boskovic.ponistra">
+            <extra
+                android:name="biz.boskovic.ponistra.PATH"
+                android:value="/?voice" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="change"
+        android:shortcutLongLabel="@string/change_long"
+        android:shortcutShortLabel="@string/change">
+        <intent
+            android:action="biz.boskovic.ponistra.CHANGE"
+            android:targetClass="biz.boskovic.ponistra.MainActivity"
+            android:targetPackage="biz.boskovic.ponistra" />
+    </shortcut>
+</shortcuts>

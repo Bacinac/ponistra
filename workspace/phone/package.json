@@ -1,0 +1,17 @@
+{
+  "name": "ponistra-phone",
+  "displayName": "Ponistra's chat",
+  "publisher": "ponistra",
+  "version": "1.0.0",
+  "engines": { "vscode": "*" },
+  "main": "./extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "configuration": {
+      "properties": {
+        "ponistra.phone": { "type": "boolean", "default": false, "scope": "window" },
+        "ponistra.chat": { "type": "string", "default": "", "scope": "window" }
+      }
+    }
+  }
+}

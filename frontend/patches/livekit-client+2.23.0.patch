@@ -1,0 +1,27 @@
+diff --git a/node_modules/livekit-client/dist/livekit-client.esm.mjs b/node_modules/livekit-client/dist/livekit-client.esm.mjs
+index c7cfff9..01ab336 100644
+--- a/node_modules/livekit-client/dist/livekit-client.esm.mjs
++++ b/node_modules/livekit-client/dist/livekit-client.esm.mjs
+@@ -21252,7 +21252,11 @@ class PCTransport extends eventsExports.EventEmitter {
+             this.log.debug('requesting renegotiation');
+             return;
+           }
+-        } else if (!this._pc || this._pc.signalingState === 'closed') {
++        } else if (!this._pc) {
++          // close() has dropped the connection: an offer still queued behind it (a debounced
++          // negotiation, a renegotiation waiting for the lock) has nothing left to negotiate.
++          return;
++        } else if (this._pc.signalingState === 'closed') {
+           this.log.warn('could not createOffer with closed peer connection');
+           return;
+         }
+@@ -35003,6 +35007,9 @@ class Room extends eventsExports.EventEmitter {
+               (_c = (_b = _this2.connectFuture) === null || _b === void 0 ? void 0 : _b.reject) === null || _c === void 0 ? void 0 : _c.call(_b, ConnectionError.cancelled('Client initiated disconnect'));
+               _this2.connectFuture = undefined;
+             }
++            // The reconcile check would otherwise see the engine closing while the room still
++            // says Connected and warn of a mismatch; handleDisconnect clears it only afterwards.
++            _this2.clearConnectionReconcile();
+             // close engine (also closes client)
+             if (_this2.engine) {
+               // send leave

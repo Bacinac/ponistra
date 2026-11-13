@@ -1,0 +1,23 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "invite.how",
+    "ring.calls"
+  ],
+  "describes": {
+    "frontend/src/invite.tsx#useInvite": "897d6d46bff4",
+    "frontend/src/invite.tsx#AddPeople": "1016111994ff",
+    "frontend/src/invite.tsx#InviteDialog": "0da8ce0bd72d",
+    "frontend/src/invite.tsx#Rings": "46622909b06e",
+    "frontend/src/ringing.tsx#Ringing": "1e983ec357aa",
+    "frontend/src/ringing.tsx#useRingTone": "d94f5b3fbb7f",
+    "backend/apps/meetings/views.py#invite": "d8e69cb250b6",
+    "backend/apps/meetings/views.py#_let_in": "8bfb46aa8cc4",
+    "backend/apps/meetings/views.py#_rung": "79f7052960db",
+    "backend/apps/meetings/views.py#decline": "1e0116a65c61",
+    "backend/apps/meetings/rings.py#ring": "80a2bb1cd572",
+    "backend/apps/meetings/rings.py#RINGING": "68cf783896d8"
+  }
+}

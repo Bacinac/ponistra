@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+ROOT="$(git rev-parse --show-toplevel)"
+"$ROOT/scripts/gen-revision.sh" || true
+refs=$(cat)
+
+# The owner's clones also answer to a private pre-publication gate (real names,
+# plates, MACs, secrets) that no commit carries, found through the clone's own
+# config. A push to the owner's account without it is refused, not waved on.
+gate=$(git config --get publicgate.command || true)
+if [ -n "$gate" ]; then
+  printf '%s\n' "$refs" | "$gate" pre-push "$@" || exit
+else
+  case "$2" in
+  *[:/][Bb]acinac/*) echo "✗ $2 is the owner's and this clone has no publicgate.command — push blocked" >&2; exit 1 ;;
+  esac
+fi
+
+# Skip once with PONISTRA_SKIP_CHECK=1, or every hook with `git push --no-verify`.
+[ "${PONISTRA_SKIP_CHECK:-0}" = "1" ] && exit 0
+pushed=$(printf '%s\n' "$refs" | while read -r _ local remote _; do
+  case $remote:$local in
+  refs/heads/main:*[!0]*) echo "$local" ;;
+  esac
+done | tail -n 1)
+"$ROOT/scripts/check.sh" </dev/null || exit
+# The browser's tests the push reaches run after it, without holding it.
+[ -z "$pushed" ] || setsid "$ROOT/scripts/check-full.sh" --browser "$pushed" </dev/null >/dev/null 2>&1 &

@@ -1,0 +1,17 @@
+{
+  "order": 64,
+  "audience": "everyone",
+  "covers": [
+    "route:/v/:key"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/access.tsx#ShareOutside": "92e74edbe199",
+    "frontend/src/access.tsx#AccessPanel": "e2384e1e4bc8",
+    "frontend/src/outside.tsx#VisitPage": "95d35b8c3006",
+    "backend/apps/access/visitors.py#visitors": "158c57486f74",
+    "backend/apps/access/visitors.py#_shared": "c18c4c14c67f",
+    "backend/apps/access/visitors.py#visit": "4175e4022ffe",
+    "backend/apps/access/visitors.py#visitor_for": "1e51870be121"
+  }
+}

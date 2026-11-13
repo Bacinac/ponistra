@@ -1,0 +1,20 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "lobby.waits"
+  ],
+  "describes": {
+    "frontend/src/guest.tsx#GuestMeetingPage": "a4d7e11b657e",
+    "frontend/src/guest.tsx#GuestCall": "c3b9a04b276a",
+    "frontend/src/guest.tsx#useGuesting": "bbe007ab1d8c",
+    "frontend/src/guest.tsx#kept": "2d8dcc768b3d",
+    "frontend/src/guest.tsx#AtDoor": "a54e82aa0e67",
+    "backend/apps/meetings/views.py#door": "cffa8aafbbdb",
+    "backend/apps/meetings/views.py#guests": "c9edf31b3627",
+    "backend/apps/meetings/views.py#guest_join": "1f14cf205b8a",
+    "backend/apps/meetings/views.py#guest": "553e0ef3c380",
+    "backend/apps/meetings/lobby.py#answered": "5c2d7dfe54af"
+  }
+}

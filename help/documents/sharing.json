@@ -1,0 +1,17 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "confined.note",
+    "log.note",
+    "log.none"
+  ],
+  "describes": {
+    "frontend/src/access.tsx#AccessPanel": "e2384e1e4bc8",
+    "frontend/src/access.tsx#AddGrant": "e1e59de18560",
+    "frontend/src/access.tsx#LogDialog": "c0af9593d95c",
+    "frontend/src/access.tsx#Audience": "96464b2ca9be",
+    "frontend/src/access.tsx#ROLES": "81e50283d42a"
+  }
+}

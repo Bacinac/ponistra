@@ -1,0 +1,740 @@
+{
+  "$defs": {
+    "color": {
+      "description": "A palette's colour by its name, or an imported file's own as #rrggbb, whose dark shade the editor derives.",
+      "type": "string",
+      "pattern": "^(#[0-9a-f]{6}|[a-z]+)$"
+    },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" },
+    "level": { "enum": [1, 2, 3, 4] },
+    "align": { "enum": ["left", "center", "right", "justify"] },
+    "indent": {
+      "description": "In cm from the text's left edge; step is one indent step, as Word steps a paragraph in.",
+      "type": "number",
+      "minimum": 0,
+      "maximum": 10,
+      "step": 1.25
+    },
+    "list": { "enum": ["bullet", "number", "check"] },
+    "note": { "enum": ["foot", "end"] },
+    "tabKind": { "enum": ["left", "center", "right", "decimal"] },
+    "leader": { "enum": ["dot", "hyphen", "underscore"] },
+    "tabStop": {
+      "description": "A tab stop, at its distance in cm from the text's left edge, where Word measures it from the margin.",
+      "type": "object",
+      "properties": {
+        "at": { "type": "number", "minimum": 0, "maximum": 60 },
+        "kind": { "$ref": "#/$defs/tabKind" },
+        "leader": { "$ref": "#/$defs/leader" }
+      },
+      "required": ["at", "kind"],
+      "additionalProperties": false
+    },
+    "field": { "enum": ["page", "pages", "title", "date"] },
+    "chartKind": { "enum": ["column", "bar", "line", "area", "pie", "doughnut", "scatter"] },
+    "stacking": { "enum": ["column", "bar", "line", "area"] },
+    "point": {
+      "type": "object",
+      "properties": { "row": { "$ref": "#/$defs/id" }, "col": { "$ref": "#/$defs/id" } },
+      "required": ["row", "col"],
+      "additionalProperties": false
+    },
+    "tableName": {
+      "type": "string",
+      "maxLength": 31,
+      "pattern": "^[^\\u0000-\\u001f\\\\\\[\\]:*?/'](?:[^\\u0000-\\u001f\\\\\\[\\]:*?/]*[^\\u0000-\\u001f\\\\\\[\\]:*?/'])?$"
+    },
+    "chartTitle": { "type": "string", "maxLength": 200 },
+    "cellTo": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}:[A-Za-z0-9_-]{1,64}$" },
+    "line": {
+      "description": "A row or a column a formula refers to: by id, or @ for the one its own cell is in.",
+      "anyOf": [{ "$ref": "#/$defs/id" }, { "const": "@" }]
+    },
+    "end": {
+      "description": "An end of a formula's reference: its row, its column or both, each fixed where it is written with $.",
+      "type": "object",
+      "properties": {
+        "row": { "$ref": "#/$defs/line" },
+        "col": { "$ref": "#/$defs/line" },
+        "absRow": { "const": true },
+        "absCol": { "const": true }
+      },
+      "anyOf": [{ "required": ["row"] }, { "required": ["col"] }],
+      "additionalProperties": false
+    },
+    "reference": {
+      "description": "A formula's reference, to its own table or to the one named, from one end to the other.",
+      "type": "object",
+      "properties": {
+        "table": { "$ref": "#/$defs/id" },
+        "from": { "$ref": "#/$defs/end" },
+        "to": { "$ref": "#/$defs/end" }
+      },
+      "required": ["from"],
+      "additionalProperties": false
+    },
+    "formula": {
+      "description": "A formula in pieces: its text in the canonical form, each reference by the ids of its rows and columns.",
+      "type": "array",
+      "items": { "anyOf": [{ "type": "string", "minLength": 1 }, { "$ref": "#/$defs/reference" }] },
+      "minItems": 1
+    },
+    "definedName": {
+      "description": "A defined name of a document (D16): the name formulas use, unique in its scope ignoring case, the formula it stands for, and the table it is in force in alone where it is not in force in the whole document.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "pieces": { "$ref": "#/$defs/formula" },
+        "table": { "$ref": "#/$defs/id" }
+      },
+      "required": ["name", "pieces"],
+      "additionalProperties": false
+    },
+    "look": {
+      "description": "The look of a light cell, or of a row's or a column's, which a light cell in it without one of its own shows: the marks over all of its text, its paragraph's attributes and the cell's fill.",
+      "type": "object",
+      "properties": {
+        "marks": { "type": "object", "minProperties": 1 },
+        "attrs": { "type": "object", "minProperties": 1 },
+        "fill": { "$ref": "#/$defs/tint" },
+        "edges": { "$ref": "#/$defs/edges" }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "gridCell": {
+      "description": "A cell of a table's grid beside the text (D16): what was typed into it where it has no node, its formula in pieces by row and column id, its number format, the look of its text where it has no node, with nothing in it where the cell is plain in a row or a column that has one, and the slot it is merged down and right to.",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "formula": { "$ref": "#/$defs/formula" },
+        "format": { "type": "string", "minLength": 1 },
+        "look": { "anyOf": [{ "$ref": "#/$defs/look" }, { "const": {} }] },
+        "to": { "$ref": "#/$defs/cellTo" }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "author": {
+      "description": "The author's name as the change keeps it, as Word does.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "user": {
+      "description": "The author's account, where the author is one of ours.",
+      "type": ["integer", "null"]
+    },
+    "date": { "description": "When the change was made, in ISO 8601.", "type": ["string", "null"] },
+    "change": {
+      "description": "A proposed change: the proposal it is part of, its author and when it was made.",
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "author": { "$ref": "#/$defs/author" },
+        "user": { "$ref": "#/$defs/user" },
+        "date": { "$ref": "#/$defs/date" }
+      },
+      "required": ["id", "author"],
+      "additionalProperties": false
+    },
+    "marks": {
+      "description": "Marks by their names, each with its attributes.",
+      "type": "object",
+      "additionalProperties": { "type": "object" }
+    },
+    "stroke": {
+      "description": "A line's style: ECMA-376's (§17.18.2), which Excel's and PowerPoint's map onto, with Excel's hair and slantDashDot.",
+      "enum": [
+        "single",
+        "thick",
+        "double",
+        "dotted",
+        "dashed",
+        "dotDash",
+        "dotDotDash",
+        "triple",
+        "thinThickSmallGap",
+        "thickThinSmallGap",
+        "thinThickThinSmallGap",
+        "thinThickMediumGap",
+        "thickThinMediumGap",
+        "thinThickThinMediumGap",
+        "thinThickLargeGap",
+        "thickThinLargeGap",
+        "thinThickThinLargeGap",
+        "wave",
+        "doubleWave",
+        "dashSmallGap",
+        "dashDotStroked",
+        "threeDEmboss",
+        "threeDEngrave",
+        "outset",
+        "inset",
+        "hair",
+        "slantDashDot"
+      ]
+    },
+    "edge": {
+      "description": "A line on an edge, its width in points, in the text's colour where it names none; or none, which takes away a line beneath it.",
+      "anyOf": [
+        { "const": "none" },
+        {
+          "type": "object",
+          "properties": {
+            "line": { "$ref": "#/$defs/stroke" },
+            "width": { "type": "number", "exclusiveMinimum": 0, "maximum": 100 },
+            "color": { "$ref": "#/$defs/color" }
+          },
+          "required": ["line", "width"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "edges": {
+      "description": "A cell's own edges, over its table's design.",
+      "type": "object",
+      "properties": {
+        "top": { "$ref": "#/$defs/edge" },
+        "bottom": { "$ref": "#/$defs/edge" },
+        "left": { "$ref": "#/$defs/edge" },
+        "right": { "$ref": "#/$defs/edge" }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "regionEdges": {
+      "description": "The edges round a region of cells, and insideH and insideV between its cells.",
+      "type": "object",
+      "properties": {
+        "top": { "$ref": "#/$defs/edge" },
+        "bottom": { "$ref": "#/$defs/edge" },
+        "left": { "$ref": "#/$defs/edge" },
+        "right": { "$ref": "#/$defs/edge" },
+        "insideH": { "$ref": "#/$defs/edge" },
+        "insideV": { "$ref": "#/$defs/edge" }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "tint": {
+      "description": "A colour as $defs.color, or a file's own with its alpha (#rrggbbaa), laid over what is beneath it; none fills nothing, showing what is beneath.",
+      "type": "string",
+      "pattern": "^(#[0-9a-f]{6}([0-9a-f]{2})?|[a-z]+)$"
+    },
+    "valign": { "enum": ["top", "center", "bottom"] },
+    "part": {
+      "description": "A part of a table's design: its cells' fill, the marks over its text (false takes away one a part beneath set), its capitals, its paragraphs' and its cells' alignment, and its edges.",
+      "type": "object",
+      "properties": {
+        "fill": { "$ref": "#/$defs/tint" },
+        "marks": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "anyOf": [{ "type": "object" }, { "const": false }] }
+        },
+        "caps": { "enum": ["all", "small", "none"] },
+        "align": { "$ref": "#/$defs/align" },
+        "valign": { "$ref": "#/$defs/valign" },
+        "edges": { "$ref": "#/$defs/regionEdges" }
+      },
+      "minProperties": 1,
+      "additionalProperties": false
+    },
+    "bandSizes": {
+      "description": "The size of the first band and of the second; 0 where bands never show, as in Word's style that names no size.",
+      "type": "array",
+      "items": { "type": "integer", "minimum": 0, "maximum": 99 },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "design": {
+      "description": "A table's design (D30): its parts' looks, the switches that turn them on, its bands' sizes, Word's table lines under every part, PowerPoint's background and shadow, Word's spacing between cells and the shading between them, the style it came from, the program whose rules settle where parts meet (tables.json), and the cells it lies over where it is not the whole table.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "rules": { "enum": ["word", "excel", "powerpoint"] },
+        "parts": {
+          "type": "object",
+          "properties": {
+            "table": { "$ref": "#/$defs/part" },
+            "rowBand1": { "$ref": "#/$defs/part" },
+            "rowBand2": { "$ref": "#/$defs/part" },
+            "columnBand1": { "$ref": "#/$defs/part" },
+            "columnBand2": { "$ref": "#/$defs/part" },
+            "firstColumn": { "$ref": "#/$defs/part" },
+            "lastColumn": { "$ref": "#/$defs/part" },
+            "header": { "$ref": "#/$defs/part" },
+            "totals": { "$ref": "#/$defs/part" },
+            "topLeft": { "$ref": "#/$defs/part" },
+            "topRight": { "$ref": "#/$defs/part" },
+            "bottomLeft": { "$ref": "#/$defs/part" },
+            "bottomRight": { "$ref": "#/$defs/part" }
+          },
+          "minProperties": 1,
+          "additionalProperties": false
+        },
+        "on": {
+          "type": "object",
+          "properties": {
+            "header": { "type": "boolean" },
+            "totals": { "type": "boolean" },
+            "firstColumn": { "type": "boolean" },
+            "lastColumn": { "type": "boolean" },
+            "rowBands": { "type": "boolean" },
+            "columnBands": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "bands": {
+          "type": "object",
+          "properties": {
+            "rows": { "$ref": "#/$defs/bandSizes" },
+            "columns": { "$ref": "#/$defs/bandSizes" }
+          },
+          "minProperties": 1,
+          "additionalProperties": false
+        },
+        "lines": { "$ref": "#/$defs/regionEdges" },
+        "background": {
+          "anyOf": [
+            { "$ref": "#/$defs/tint" },
+            {
+              "type": "object",
+              "properties": {
+                "angle": { "type": "number", "minimum": 0, "maximum": 360 },
+                "stops": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "at": { "type": "number", "minimum": 0, "maximum": 100 },
+                      "color": { "$ref": "#/$defs/tint" }
+                    },
+                    "required": ["at", "color"],
+                    "additionalProperties": false
+                  },
+                  "minItems": 2
+                }
+              },
+              "required": ["angle", "stops"],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "shadow": {
+          "description": "In points, its angle in degrees clockwise from the right.",
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/tint" },
+            "blur": { "type": "number", "minimum": 0, "maximum": 100 },
+            "distance": { "type": "number", "minimum": 0, "maximum": 100 },
+            "angle": { "type": "number", "minimum": 0, "maximum": 360 }
+          },
+          "required": ["color", "blur", "distance", "angle"],
+          "additionalProperties": false
+        },
+        "spacing": { "description": "In points.", "type": "number", "exclusiveMinimum": 0, "maximum": 30 },
+        "area": {
+          "type": "object",
+          "properties": { "from": { "$ref": "#/$defs/cellTo" }, "to": { "$ref": "#/$defs/cellTo" } },
+          "required": ["from", "to"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["rules"],
+      "additionalProperties": false
+    }
+  },
+  "attrSets": {
+    "textblock": {
+      "id": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+      "align": { "default": null, "schema": { "$ref": "#/$defs/align" } },
+      "indent": { "default": null, "schema": { "$ref": "#/$defs/indent" } },
+      "firstLine": {
+        "default": null,
+        "schema": {
+          "description": "Where the first line starts from the others, in cm; negative where it hangs before them.",
+          "type": "number",
+          "minimum": -10,
+          "maximum": 10
+        }
+      },
+      "right": { "default": null, "schema": { "type": "number", "minimum": 0, "maximum": 10 } },
+      "tabs": { "default": null, "schema": { "type": "array", "items": { "$ref": "#/$defs/tabStop" } } },
+      "style": { "default": null, "schema": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,32}$" } },
+      "restart": {
+        "default": false,
+        "schema": {
+          "description": "The block's number, of its list or its style, starts again from 1.",
+          "type": "boolean"
+        }
+      },
+      "endMarks": {
+        "default": null,
+        "schema": {
+          "description": "The formatting kept at the paragraph's end, as Word keeps its paragraph mark's.",
+          "$ref": "#/$defs/marks"
+        }
+      },
+      "formatting": {
+        "default": null,
+        "schema": {
+          "description": "A proposed change of the block's type or attributes, with the type and the attributes it had before.",
+          "type": "object",
+          "properties": {
+            "id": { "$ref": "#/$defs/id" },
+            "author": { "$ref": "#/$defs/author" },
+            "user": { "$ref": "#/$defs/user" },
+            "date": { "$ref": "#/$defs/date" },
+            "before": {
+              "type": "object",
+              "properties": { "type": { "type": "string" }, "attrs": { "type": "object" } },
+              "required": ["type", "attrs"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["id", "author", "before"],
+          "additionalProperties": false
+        }
+      }
+    },
+    "proposed": {
+      "insertion": {
+        "default": null,
+        "schema": {
+          "description": "The node proposed as inserted; of a paragraph, its end, as Word marks its paragraph mark, so the paragraph's text joins the next paragraph's when the end goes.",
+          "$ref": "#/$defs/change"
+        }
+      },
+      "deletion": {
+        "default": null,
+        "schema": {
+          "description": "The node proposed as deleted; of a paragraph, its end.",
+          "$ref": "#/$defs/change"
+        }
+      }
+    },
+    "slide": {
+      "layout": {
+        "default": null,
+        "schema": {
+          "description": "The id of the template's layout the slide this block starts is laid out by; null chooses one by the slide's content.",
+          "$ref": "#/$defs/id"
+        }
+      },
+      "hidden": {
+        "default": false,
+        "schema": {
+          "description": "The slide this block starts is left out when presenting.",
+          "type": "boolean"
+        }
+      },
+      "background": {
+        "default": null,
+        "schema": {
+          "description": "The background of the slide this block starts, drawn over its layout's as a layout's is (schema/slides.json); null shows its layout's.",
+          "type": "object",
+          "properties": {
+            "color": { "type": "string", "pattern": "^#[0-9a-f]{6}$" },
+            "image": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          },
+          "minProperties": 1,
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "nodes": {
+    "doc": { "content": "block+" },
+    "paragraph": {
+      "group": "block cellblock",
+      "content": "inline*",
+      "attrSets": ["textblock", "proposed"],
+      "attrs": {
+        "list": { "default": null, "schema": { "$ref": "#/$defs/list" } },
+        "checked": { "default": false, "schema": { "type": "boolean" } },
+        "continued": {
+          "default": false,
+          "schema": {
+            "description": "The item counts on from its list's last item, across the blocks between them.",
+            "type": "boolean"
+          }
+        },
+        "format": {
+          "default": null,
+          "schema": {
+            "description": "The id of the document's list format the item shows its marker in.",
+            "$ref": "#/$defs/id"
+          }
+        },
+        "speaker": {
+          "default": false,
+          "schema": {
+            "description": "The paragraph is its slide's speaker notes, not on the slide, the page or in Word.",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "title": {
+      "group": "block cellblock",
+      "content": "inline*",
+      "defining": true,
+      "attrSets": ["textblock", "proposed", "slide"]
+    },
+    "subtitle": {
+      "group": "block cellblock",
+      "content": "inline*",
+      "defining": true,
+      "attrSets": ["textblock", "proposed"]
+    },
+    "heading": {
+      "group": "block cellblock",
+      "content": "inline*",
+      "defining": true,
+      "attrSets": ["textblock", "proposed", "slide"],
+      "attrs": { "level": { "default": 1, "schema": { "$ref": "#/$defs/level" } } }
+    },
+    "table": {
+      "group": "block",
+      "content": "cell*",
+      "atom": true,
+      "selectable": true,
+      "isolating": true,
+      "attrs": {
+        "id": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "sized": { "default": false, "schema": { "type": "boolean" } },
+        "designs": {
+          "default": null,
+          "schema": {
+            "description": "Its designs: one over the whole table, or one over each area of a sheet that Excel keeps as a table.",
+            "type": "array",
+            "items": { "$ref": "#/$defs/design" },
+            "minItems": 1
+          }
+        },
+        "proposedRows": {
+          "default": null,
+          "schema": {
+            "description": "Rows proposed as inserted or deleted, by their ids.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "insertion": { "$ref": "#/$defs/change" },
+                "deletion": { "$ref": "#/$defs/change" }
+              },
+              "minProperties": 1,
+              "additionalProperties": false
+            }
+          }
+        },
+        "grid": { "default": null, "schema": false },
+        "copied": { "default": null, "schema": false }
+      }
+    },
+    "cell": {
+      "content": "cellblock+",
+      "isolating": true,
+      "attrs": {
+        "row": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "col": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "fill": {
+          "default": null,
+          "schema": { "description": "The colour the cell is filled with over its table's design.", "$ref": "#/$defs/tint" }
+        },
+        "edges": { "default": null, "schema": { "$ref": "#/$defs/edges" } }
+      }
+    },
+    "image": {
+      "group": "block cellblock",
+      "atom": true,
+      "selectable": true,
+      "draggable": true,
+      "attrSets": ["proposed"],
+      "attrs": {
+        "id": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "blob": { "default": null, "schema": { "type": "string", "pattern": "^[0-9a-f]{64}$" } },
+        "alt": { "default": "", "schema": { "type": "string" } },
+        "width": { "default": null, "schema": { "type": "integer", "minimum": 5, "maximum": 100 } },
+        "align": { "default": null, "schema": { "enum": ["center", "right"] } }
+      }
+    },
+    "pdf": {
+      "group": "block",
+      "atom": true,
+      "selectable": true,
+      "draggable": true,
+      "attrSets": ["proposed"],
+      "attrs": {
+        "id": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "blob": { "default": null, "schema": { "type": "string", "pattern": "^[0-9a-f]{64}$" } },
+        "title": { "default": "", "schema": { "type": "string", "maxLength": 200 } },
+        "first": {
+          "default": null,
+          "schema": {
+            "description": "The first of the file's pages the block shows, counted from 1; null from the first.",
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "last": {
+          "default": null,
+          "schema": {
+            "description": "The last of the file's pages the block shows; null to the last.",
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "width": { "default": null, "schema": { "type": "integer", "minimum": 5, "maximum": 100 } },
+        "align": { "default": null, "schema": { "enum": ["center", "right"] } }
+      }
+    },
+    "contents": {
+      "group": "block cellblock",
+      "atom": true,
+      "selectable": true,
+      "draggable": true,
+      "attrSets": ["proposed"],
+      "attrs": {
+        "id": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "depth": { "default": 3, "schema": { "$ref": "#/$defs/level" } }
+      }
+    },
+    "chart": {
+      "group": "block",
+      "atom": true,
+      "selectable": true,
+      "draggable": true,
+      "attrSets": ["proposed"],
+      "attrs": {
+        "id": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "range": {
+          "default": null,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "table": { "$ref": "#/$defs/id" },
+              "from": { "$ref": "#/$defs/point" },
+              "to": { "$ref": "#/$defs/point" }
+            },
+            "required": ["table", "from"],
+            "additionalProperties": false
+          }
+        },
+        "kind": { "default": "column", "schema": { "$ref": "#/$defs/chartKind" } },
+        "stacked": { "default": false, "schema": { "type": "boolean" } },
+        "by": { "default": "cols", "schema": { "enum": ["rows", "cols"] } },
+        "names": { "default": null, "schema": { "type": "boolean" } },
+        "labels": { "default": null, "schema": { "type": "boolean" } },
+        "title": { "default": null, "schema": { "$ref": "#/$defs/chartTitle" } },
+        "legend": { "default": true, "schema": { "type": "boolean" } }
+      }
+    },
+    "horizontalRule": {
+      "group": "block",
+      "atom": true,
+      "selectable": true,
+      "attrSets": ["proposed"],
+      "attrs": { "id": { "default": null, "schema": { "$ref": "#/$defs/id" } } }
+    },
+    "pageBreak": {
+      "group": "block",
+      "atom": true,
+      "selectable": true,
+      "attrSets": ["proposed"],
+      "attrs": { "id": { "default": null, "schema": { "$ref": "#/$defs/id" } } }
+    },
+    "sectionBreak": {
+      "group": "block",
+      "atom": true,
+      "selectable": true,
+      "attrSets": ["proposed"],
+      "attrs": { "id": { "default": null, "schema": { "$ref": "#/$defs/id" } } }
+    },
+    "slideBreak": {
+      "group": "block",
+      "atom": true,
+      "selectable": true,
+      "attrSets": ["proposed", "slide"],
+      "attrs": { "id": { "default": null, "schema": { "$ref": "#/$defs/id" } } }
+    },
+    "columnBreak": {
+      "group": "block",
+      "atom": true,
+      "selectable": true,
+      "attrSets": ["proposed"],
+      "attrs": { "id": { "default": null, "schema": { "$ref": "#/$defs/id" } } }
+    },
+    "field": {
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "attrSets": ["proposed"],
+      "attrs": { "kind": { "default": "page", "schema": { "$ref": "#/$defs/field" } } }
+    },
+    "footnote": {
+      "group": "inline",
+      "inline": true,
+      "atom": true,
+      "content": "text*",
+      "attrSets": ["proposed"],
+      "attrs": {
+        "id": { "default": null, "schema": { "$ref": "#/$defs/id" } },
+        "kind": { "default": "foot", "schema": { "$ref": "#/$defs/note" } }
+      }
+    },
+    "text": { "group": "inline" }
+  },
+  "marks": {
+    "link": {
+      "inclusive": false,
+      "attrs": { "href": { "schema": { "type": "string", "minLength": 1 } } }
+    },
+    "strong": {},
+    "em": {},
+    "underline": {},
+    "strike": {},
+    "sub": { "excludes": "sub sup" },
+    "sup": { "excludes": "sub sup" },
+    "color": { "attrs": { "color": { "schema": { "$ref": "#/$defs/color" } } } },
+    "highlight": { "attrs": { "color": { "schema": { "$ref": "#/$defs/color" } } } },
+    "font": { "attrs": { "family": { "schema": { "type": "string", "minLength": 1 } } } },
+    "size": { "attrs": { "pt": { "schema": { "type": "number", "minimum": 1, "maximum": 400 } } } },
+    "kerning": { "attrs": { "on": { "schema": { "type": "boolean" } } } },
+    "insertion": {
+      "inclusive": false,
+      "attrs": {
+        "id": { "schema": { "$ref": "#/$defs/id" } },
+        "author": { "schema": { "$ref": "#/$defs/author" } },
+        "user": { "default": null, "schema": { "$ref": "#/$defs/user" } },
+        "date": { "default": null, "schema": { "$ref": "#/$defs/date" } }
+      }
+    },
+    "deletion": {
+      "inclusive": false,
+      "attrs": {
+        "id": { "schema": { "$ref": "#/$defs/id" } },
+        "author": { "schema": { "$ref": "#/$defs/author" } },
+        "user": { "default": null, "schema": { "$ref": "#/$defs/user" } },
+        "date": { "default": null, "schema": { "$ref": "#/$defs/date" } }
+      }
+    },
+    "formatting": {
+      "inclusive": false,
+      "attrs": {
+        "id": { "schema": { "$ref": "#/$defs/id" } },
+        "author": { "schema": { "$ref": "#/$defs/author" } },
+        "user": { "default": null, "schema": { "$ref": "#/$defs/user" } },
+        "date": { "default": null, "schema": { "$ref": "#/$defs/date" } },
+        "before": {
+          "schema": {
+            "description": "The text's formatting before the proposed change.",
+            "$ref": "#/$defs/marks"
+          }
+        }
+      }
+    }
+  }
+}

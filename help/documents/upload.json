@@ -1,0 +1,19 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "upload.unimported"
+  ],
+  "describes": {
+    "frontend/src/upload.tsx#placed": "c24239c815fb",
+    "frontend/src/upload.tsx#isHidden": "0fa571043d34",
+    "frontend/src/upload.tsx#useUpload": "8f1106cf2e3e",
+    "frontend/src/upload.tsx#UNIMPORTABLE": "a3bad05bfd87",
+    "frontend/src/importable.ts": "99b4e44c6642",
+    "frontend/src/drag.ts": "0186b4992f12",
+    "frontend/src/jobs.tsx#DOING": "c5cab5a71ef4",
+    "frontend/src/jobs.tsx#JobBar": "46a49f1d2a63",
+    "frontend/src/jobs.tsx#followed": "a61cfb48c2b5"
+  }
+}

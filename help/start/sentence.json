@@ -1,0 +1,17 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "search.consent.body",
+    "search.consent.note"
+  ],
+  "describes": {
+    "frontend/src/sentence.tsx#useTranslator": "62c3f34a9a16",
+    "frontend/src/sentence.tsx#isSentence": "aaebbd238d29",
+    "frontend/src/sentence.tsx#SearchConsentDialog": "1d0cb374386e",
+    "frontend/src/sentence.tsx#translatedQuery": "54f20e25ad79",
+    "backend/apps/search/views.py#translate": "7fda73024581",
+    "backend/apps/search/translation.py#INSTRUCTION": "916009474fb0"
+  }
+}

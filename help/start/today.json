@@ -1,0 +1,28 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [
+    "route:/"
+  ],
+  "quiet": [
+    "today.event.one",
+    "today.event.few",
+    "today.event.many",
+    "today.birthday.one",
+    "today.birthday.few",
+    "today.birthday.many",
+    "calendar.birthday",
+    "calendar.allDay"
+  ],
+  "describes": {
+    "frontend/src/TodayPage.tsx#TodayPage": "01ae8347e467",
+    "frontend/src/TodayPage.tsx#Schedule": "9328b7dd1ed6",
+    "frontend/src/TodayPage.tsx#Waiting": "c2b4926defae",
+    "frontend/src/TodayPage.tsx#Recent": "f664b7d78561",
+    "frontend/src/TodayPage.tsx#Favourites": "f48496931f2e",
+    "frontend/src/tasks.tsx#TasksTile": "df9b33c0fed9",
+    "frontend/src/calendar.tsx#MiniMonth": "68db9e5b769c",
+    "backend/apps/mail/views.py#waiting": "4221b1b31d0f",
+    "backend/apps/documents/views.py#recent": "7edfe202c697"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "order": 66,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "outside.sending"
+  ],
+  "describes": {
+    "frontend/src/outside.tsx#AskedFiles": "58ebd5810b3a",
+    "backend/apps/access/outside.py#links": "0f3600ce35af",
+    "backend/apps/access/outside.py#uploads": "fed330bfd63b",
+    "backend/apps/access/outside.py#files": "7ae05c36e648"
+  }
+}

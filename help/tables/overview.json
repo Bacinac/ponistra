@@ -1,0 +1,23 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "formula.commas",
+    "formula.semicolons",
+    "formula.outside",
+    "formula.table",
+    "nameBox.hint",
+    "nameBox.unknown",
+    "nameBox.outside"
+  ],
+  "describes": {
+    "frontend/src/editor/NameBox.tsx#NameBox": "6e2f26a7b020",
+    "frontend/src/editor/NameBox.tsx#goingTo": "5f15cd282ee9",
+    "frontend/src/editor/formulas.ts#syntaxOf": "3617d5353f80",
+    "frontend/src/editor/cellView.ts#CellView": "241b9a68d6e6",
+    "frontend/src/editor/tablesPlugin.ts#typed": "e1646af1d31c",
+    "frontend/src/editor/tablesPlugin.ts#onRange": "66433e91a781",
+    "frontend/src/editor/tables.ts#Layout": "518cf4fe0c3d"
+  }
+}

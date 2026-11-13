@@ -1,0 +1,392 @@
+#!/bin/sh
+# Ponistra's own command for one installation, kept in its directory beside compose.yaml and .env.
+#
+#   docker run --rm ghcr.io/bacinac/ponistra > ponistra && sh ponistra install
+#
+#   ponistra install                 a new installation in this empty directory
+#   ponistra update [<version>]      the given release, or the newest, from the registry
+#   ponistra update <file>           the release in a file from scripts/release.sh --file
+#   ponistra backup                  a snapshot now: the database, the files, .env and the code workspace
+#   ponistra backups                 the snapshots kept in volumes/backup
+#   ponistra restore [<snapshot>]    the installation as a snapshot left it, or at a moment of the last
+#                                    7 days (YYYY-MM-DD HH:MM); by default as far as the WAL reaches
+#   ponistra recover <kit>           a lost installation from its off-site copy, in this empty directory
+#   ponistra access <email>          a new password for a user who cannot sign in, printed once
+#   ponistra status                  each service and the version that answers
+#   ponistra workspace               the code workspace for one user, here or elsewhere, where there is none
+#
+# update takes a snapshot first and, if the new version does not start, puts the old one back
+# with the database as that snapshot left it. Each release restores its own snapshots.
+#
+# install asks for the domain, for where TLS ends and for the owner of the code workspace (D34);
+# PONISTRA_DOMAIN, PONISTRA_TLS (here, or front for a proxy or tunnel in front that ends it),
+# PONISTRA_WORKSPACE (an e-mail, or none), PONISTRA_WORKSPACE_URL (here, or the https:// address
+# of one the owner runs elsewhere) and PONISTRA_WORKSPACE_DOCKER (yes or no) in the environment
+# answer them ahead.
+set -eu
+
+RELEASE=@RELEASE@
+REGISTRY=ghcr.io/bacinac
+
+cd "$(dirname "$0")"
+
+fail() {
+	echo "ponistra: $*" >&2
+	exit 1
+}
+
+secret() {
+	od -An -tx1 -N"$1" /dev/urandom | tr -d ' \n'
+}
+
+# Sixteen characters read off a screen and typed in, so none that look alike: about 79 bits.
+setup_code() {
+	LC_ALL=C tr -dc ABCDEFGHJKMNPQRSTUVWXYZ23456789 </dev/urandom | head -c 16 | sed 's/..../&-/g; s/-$//'
+}
+
+released() {
+	docker image inspect "$REGISTRY/ponistra:$1" --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
+}
+
+# One file of a release, put in place whole.
+copy_out() {
+	box=$(docker create "$REGISTRY/ponistra:$1")
+	docker cp -q "$box:/release/$2" "$3.part"
+	docker rm -f "$box" >/dev/null
+	mv "$3.part" "$3"
+}
+
+# The release's compose files and ponistra command, in place of the installation's.
+unpack() {
+	copy_out "$1" compose.yaml compose.yaml
+	copy_out "$1" compose.docker.yaml compose.docker.yaml
+	copy_out "$1" ponistra ponistra
+}
+
+# The release image of a version, a tag or a file, pulled or loaded; prints its version.
+fetched() {
+	if [ -f "$1" ]; then
+		version=$(docker load -i "$1" | sed -n "s|^Loaded image: $REGISTRY/ponistra:||p")
+		[ -n "$version" ] || fail "$1 holds no release"
+	else
+		# latest moves with each release: the copy pulled once says nothing about the newest.
+		if [ "$1" = latest ] || ! docker image inspect "$REGISTRY/ponistra:$1" >/dev/null 2>&1; then
+			docker pull -q "$REGISTRY/ponistra:$1" >/dev/null
+		fi
+		version=$(released "$1")
+	fi
+	echo "$version"
+}
+
+setting() {
+	sed -n "s/^$1=//p" .env
+}
+
+settle() {
+	sed -i "s/^PONISTRA_VERSION=.*/PONISTRA_VERSION=$1/" .env
+}
+
+# Whether version $1 comes after version $2.
+later() {
+	awk -v a="$1" -v b="$2" 'BEGIN { split(a, x, "."); split(b, y, "."); for (i = 1; i <= 3; i++) if (x[i] != y[i]) exit !(x[i] > y[i]); exit 1 }'
+}
+
+# The backend's own commands, in a container of their own, so they run while the service is down.
+manage() {
+	docker compose run --rm -T --entrypoint python backend manage.py "$@"
+}
+
+answering() {
+	expected=$(setting PONISTRA_VERSION)
+	for _ in $(seq 60); do
+		docker compose exec -T backend python -c "import json, urllib.request; print(json.load(urllib.request.urlopen('http://127.0.0.1:8030/api/version'))['version'])" 2>/dev/null | grep -qx "$expected" && return 0
+		sleep 2
+	done
+	echo "ponistra: version $expected does not answer" >&2
+	return 1
+}
+
+started() {
+	docker compose up -d --wait --quiet-pull --remove-orphans && answering
+}
+
+ready() {
+	command -v docker >/dev/null || fail "Docker is not installed"
+	docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is not installed"
+}
+
+# The app's own user writes the volumes and reads .env, which every snapshot keeps.
+volumes() {
+	mkdir -p volumes/postgres
+	docker run --rm -v "$PWD:/i" "$REGISTRY/ponistra:$RELEASE" sh -c \
+		'install -d -o 1000 -g 1000 -m 700 /i/volumes/blobs /i/volumes/caddy /i/volumes/backup /i/volumes/workspace && install -d -o 1000 -g 999 -m 770 /i/volumes/wal && chown 1000:1000 /i/.env'
+}
+
+# The code workspace's settings that name this host: its home at the same path inside as here, and
+# the group that may use Docker's socket.
+placed() {
+	if [ -n "$(setting PONISTRA_WORKSPACE_HOME)" ]; then
+		sed -i "s|^PONISTRA_WORKSPACE_HOME=.*|PONISTRA_WORKSPACE_HOME=$PWD/volumes/workspace|" .env
+	fi
+	if [ -n "$(setting PONISTRA_DOCKER_GID)" ]; then
+		sed -i "s/^PONISTRA_DOCKER_GID=.*/PONISTRA_DOCKER_GID=$(stat -c %g /var/run/docker.sock)/" .env
+	fi
+}
+
+# The owner's code workspace (D34): VS Code in the browser for one user, and whether its agent may
+# run Docker on this host.
+workspace() {
+	if [ -z "${PONISTRA_WORKSPACE+set}" ]; then
+		printf 'E-mail of the one user who gets the code workspace, VS Code in the browser (empty: none): '
+		read -r PONISTRA_WORKSPACE
+	fi
+	[ -n "$PONISTRA_WORKSPACE" ] && [ "$PONISTRA_WORKSPACE" != none ] || return 0
+	if [ -z "${PONISTRA_WORKSPACE_URL:-}" ]; then
+		printf 'Runs here, or elsewhere behind a door of its own (its https:// address)? [here] '
+		read -r PONISTRA_WORKSPACE_URL
+	fi
+	case "${PONISTRA_WORKSPACE_URL:-here}" in
+		here) ;;
+		https://*)
+			if [ -z "${PONISTRA_WORKSPACE_TOKEN:-}" ]; then
+				printf 'The PONISTRA_WORKSPACE_TOKEN that workspace was started with: '
+				read -r PONISTRA_WORKSPACE_TOKEN
+			fi
+			[ -n "$PONISTRA_WORKSPACE_TOKEN" ] || fail "a workspace elsewhere is asked for its projects with its token"
+			cat >> .env <<-EOF
+				PONISTRA_WORKSPACE=$PONISTRA_WORKSPACE
+				PONISTRA_WORKSPACE_URL=$PONISTRA_WORKSPACE_URL
+				PONISTRA_WORKSPACE_TOKEN=$PONISTRA_WORKSPACE_TOKEN
+			EOF
+			return 0
+			;;
+		*) fail "the code workspace runs here or at an https:// address, not $PONISTRA_WORKSPACE_URL" ;;
+	esac
+	if [ -z "${PONISTRA_WORKSPACE_DOCKER:-}" ]; then
+		printf 'May its agent run Docker on this host? That is root on it. [no] '
+		read -r PONISTRA_WORKSPACE_DOCKER
+	fi
+	cat >> .env <<-EOF
+		COMPOSE_PROFILES=workspace
+		PONISTRA_WORKSPACE=$PONISTRA_WORKSPACE
+		PONISTRA_WORKSPACE_HOME=$PWD/volumes/workspace
+		PONISTRA_WORKSPACE_TOKEN=$(secret 32)
+	EOF
+	case "${PONISTRA_WORKSPACE_DOCKER:-no}" in
+		yes)
+			cat >> .env <<-EOF
+				COMPOSE_FILE=compose.yaml:compose.docker.yaml
+				PONISTRA_DOCKER_GID=$(stat -c %g /var/run/docker.sock)
+			EOF
+			;;
+		no) ;;
+		*) fail "Docker for the workspace's agent is yes or no, not $PONISTRA_WORKSPACE_DOCKER" ;;
+	esac
+}
+
+install() {
+	[ ! -e compose.yaml ] && [ ! -e .env ] || fail "this directory already holds an installation; ponistra update"
+	ready
+	docker image inspect "$REGISTRY/ponistra:$RELEASE" >/dev/null 2>&1 || docker pull -q "$REGISTRY/ponistra:$RELEASE" >/dev/null
+	if [ -z "${PONISTRA_DOMAIN:-}" ]; then
+		printf 'Domain Ponistra is opened on: '
+		read -r PONISTRA_DOMAIN
+	fi
+	[ -n "$PONISTRA_DOMAIN" ] || fail "an installation needs its domain"
+	if [ -z "${PONISTRA_TLS:-}" ]; then
+		printf 'Certificate fetched here on port 443 (here), or TLS ended by a proxy or tunnel in front (front)? [here] '
+		read -r PONISTRA_TLS
+	fi
+	case "${PONISTRA_TLS:-here}" in
+		here) site=$PONISTRA_DOMAIN ;;
+		front) site=:80 ;;
+		*) fail "TLS ends here or in front, not $PONISTRA_TLS" ;;
+	esac
+	code=$(setup_code)
+	umask 077
+	cat > .env <<-EOF
+		PONISTRA_VERSION=$RELEASE
+		PONISTRA_SITE=$site
+		PONISTRA_ALLOWED_HOSTS=$PONISTRA_DOMAIN
+		PONISTRA_PUBLIC_URL=https://$PONISTRA_DOMAIN
+		PONISTRA_SECRET_KEY=$(secret 32)
+		POSTGRES_PASSWORD=$(secret 32)
+		RESTIC_PASSWORD=$(secret 32)
+		PONISTRA_LIVEKIT_SECRET=$(secret 32)
+		PONISTRA_SETUP_CODE=$code
+	EOF
+	workspace
+	umask 022
+	unpack "$RELEASE"
+	volumes
+	started || fail "Ponistra $RELEASE did not start; docker compose logs backend"
+	echo "Ponistra $RELEASE is running: open https://$PONISTRA_DOMAIN/ and enter the code $code (kept in .env)"
+	echo "Snapshots stay on this disk until the off-site copy is set up on System health; keep the recovery kit it gives away from this server"
+	echo "Meetings from outside the local network need UDP 7882 and TCP 7881 forwarded to this host;"
+	echo "and networks that let out neither, a relay: PONISTRA_TURN=<a name pointing straight at this host> in .env,"
+	echo "TCP 443 and UDP 3478 forwarded here, then docker compose up -d; where Cloudflare keeps that name,"
+	echo "PONISTRA_CLOUDFLARE_TOKEN (Zone: Read, DNS: Edit) keeps it on a public address that changes"
+}
+
+update() {
+	old=$(setting PONISTRA_VERSION)
+	version=$(fetched "${1:-latest}")
+	[ "$version" != "$old" ] || { echo "Ponistra $version is already installed"; return 0; }
+	later "$version" "$old" || fail "$version is older than $old, and ponistra restore is what takes an installation back"
+	if [ "$version" != "$RELEASE" ]; then
+		# Each release updates to itself: only it knows what it needs that the one before did not.
+		copy_out "$version" ponistra ponistra.next
+		exec sh ponistra.next update "$version"
+	fi
+	trap 'rm -f ponistra.next compose.next.yaml' EXIT
+	if [ -z "$(setting PONISTRA_LIVEKIT_SECRET)" ]; then
+		printf 'PONISTRA_LIVEKIT_SECRET=%s\n' "$(secret 32)" >> .env
+		echo "Meetings from outside the local network need UDP 7882 and TCP 7881 forwarded to this host"
+	fi
+	if [ -n "$(setting PONISTRA_WORKSPACE_HOME)" ] && [ -z "$(setting PONISTRA_WORKSPACE_TOKEN)" ]; then
+		printf 'PONISTRA_WORKSPACE_TOKEN=%s\n' "$(secret 32)" >> .env
+	fi
+	copy_out "$version" compose.yaml compose.next.yaml
+	PONISTRA_VERSION=$version docker compose -f compose.next.yaml pull -q --policy missing
+	volumes
+	docker compose stop frontend
+	snapshot=$(docker compose exec -T backend python manage.py backup --tag "before-$version") || {
+		docker compose start frontend
+		fail "the snapshot before the update failed, so $old stays"
+	}
+	unpack "$version"
+	settle "$version"
+	if started; then
+		echo "Ponistra $version is running"
+		return 0
+	fi
+	docker compose logs --no-color backend > "update-$version.log" 2>&1
+	echo "ponistra: $version did not start; putting $old back as snapshot $snapshot left it" >&2
+	docker compose stop frontend backend
+	unpack "$old"
+	settle "$old"
+	sh ponistra restore "$snapshot" || fail "$old did not start again either; docker compose logs backend"
+	fail "the update to $version failed and $old is back; its log is in update-$version.log"
+}
+
+backup() {
+	snapshot=$(docker compose exec -T backend python manage.py backup)
+	echo "snapshot $snapshot"
+}
+
+backups() {
+	manage snapshots
+}
+
+restore() {
+	found=$(manage snapshots --which "${1:-latest}")
+	snapshot=${found%% *}
+	found=${found#* }
+	version=${found% *}
+	kind=${found#* }
+	case "${1:-latest}" in
+		*[!0-9a-f]*) named= ;;
+		*) named=$snapshot ;;
+	esac
+	if [ "$kind" = dump ] || { [ -n "$named" ] && [ "$version" != "$(setting PONISTRA_VERSION)" ]; }; then
+		[ "$version" != "$(setting PONISTRA_VERSION)" ] || fail "snapshot $snapshot holds a dump of the database, which $version restores no more"
+		fetched "$version" >/dev/null
+		unpack "$version"
+		settle "$version"
+		exec sh ponistra restore "$snapshot"
+	fi
+	docker compose stop frontend backend
+	rebuilt "${1:-latest}"
+	if [ "$ran" != "$(setting PONISTRA_VERSION)" ]; then
+		fetched "$ran" >/dev/null
+		unpack "$ran"
+		settle "$ran"
+	fi
+	started || fail "Ponistra $ran did not start after the restore; docker compose logs postgres backend"
+	in_postgres 'rm -rf "$PGDATA.before"'
+	echo "Ponistra $ran is running with the database of snapshot $snapshot as it was at ${1:-the newest moment the WAL reaches}"
+}
+
+# A shell in Postgres's image, as root, with its data and volumes/restoring.
+in_postgres() {
+	docker compose run --rm --no-deps -T -v "$PWD/volumes/restoring:/restoring" --entrypoint sh postgres -c "$1"
+}
+
+# The backend builds the database in volumes/restoring and names the version it ran with, and it
+# takes Postgres's place; the cluster it replaces stays beside it until the new one starts.
+rebuilt() {
+	docker run --rm -v "$PWD/volumes:/i" "$REGISTRY/ponistra:$RELEASE" sh -c \
+		'rm -rf /i/restoring && install -d -o 1000 -g 1000 -m 700 /i/restoring'
+	ran=$(docker compose run --rm -T -v "$PWD/volumes/restoring:/restoring" --entrypoint python backend \
+		manage.py restore "$1" --into /restoring) || {
+		started
+		fail "the restore failed, and the installation runs as it was"
+	}
+	docker compose stop postgres
+	in_postgres 'rm -rf "$PGDATA.before" && mv "$PGDATA" "$PGDATA.before" && mv /restoring/data "$PGDATA" && chown -R postgres:postgres "$PGDATA" && rm -rf /restoring/*'
+}
+
+# A command of the release's backend image, with the recovery kit in its environment and
+# volumes/backup as the repository.
+kitted() {
+	kit=$1 entry=$2
+	shift 2
+	docker run --rm -u 1000:1000 --env-file "$kit" -e RESTIC_REPOSITORY=/backup -v "$PWD/volumes/backup:/backup" \
+		--entrypoint "$entry" "$REGISTRY/ponistra-backend:$RELEASE" "$@"
+}
+
+recover() {
+	[ -f "$1" ] || fail "ponistra recover <kit>: the recovery kit System health gave with the off-site copy"
+	[ ! -e compose.yaml ] && [ ! -e .env ] || fail "this directory already holds an installation; ponistra restore"
+	grep -q '^PONISTRA_EMERGENCY_KEY=.' "$1" || fail "$1 is not a recovery kit"
+	ready
+	volumes
+	generation=$(kitted "$1" python -m apps.backups.bucket /backup) || fail "the off-site copy could not be fetched"
+	umask 077
+	if ! kitted "$1" restic --password-command "printenv PONISTRA_EMERGENCY_KEY" --no-lock --no-cache dump --host scriptor latest /installation/.env > .env.part; then
+		rm -f .env.part
+		fail "the kit's emergency key does not open the copy begun $generation"
+	fi
+	mv .env.part .env
+	umask 022
+	placed
+	version=$(setting PONISTRA_VERSION)
+	fetched "$version" >/dev/null
+	unpack "$version"
+	restore
+	echo "$(setting PONISTRA_ALLOWED_HOSTS) must now lead to this server"
+}
+
+access() {
+	[ -n "$1" ] || fail "ponistra access <email>: the address of the account"
+	manage access "$1"
+}
+
+add_workspace() {
+	[ -z "$(setting PONISTRA_WORKSPACE)" ] || fail "the code workspace is $(setting PONISTRA_WORKSPACE)'s already"
+	ready
+	umask 077
+	workspace
+	umask 022
+	[ -n "$(setting PONISTRA_WORKSPACE)" ] || return 0
+	started || fail "Ponistra did not start with the code workspace; docker compose logs workspace"
+	echo "The code workspace is on: $(setting PONISTRA_WORKSPACE) opens it as Code in Ponistra's rail"
+}
+
+status() {
+	docker compose ps --format 'table {{.Service}}\t{{.Status}}'
+	echo "installed $(setting PONISTRA_VERSION)"
+}
+
+case "${1:-}" in
+	install) install ;;
+	update) update "${2:-}" ;;
+	backup) backup ;;
+	backups) backups ;;
+	restore) restore "${2:-}" ;;
+	recover) recover "${2:-}" ;;
+	access) access "${2:-}" ;;
+	status) status ;;
+	workspace) add_workspace ;;
+	*) sed -n '2,/^[^#]/s/^# \{0,1\}//p' "$(basename "$0")"; exit 2 ;;
+esac

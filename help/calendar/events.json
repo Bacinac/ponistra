@@ -1,0 +1,25 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "calendar.reminder.0",
+    "calendar.reminder.5",
+    "calendar.reminder.10",
+    "calendar.reminder.15",
+    "calendar.reminder.30",
+    "calendar.reminder.60",
+    "calendar.reminder.120",
+    "calendar.reminder.1440"
+  ],
+  "describes": {
+    "frontend/src/calendar.tsx#EventDialog": "cbbaa13ea362",
+    "frontend/src/calendar.tsx#initialForm": "149e1f27e441",
+    "frontend/src/calendar.tsx#EventForm": "6670c36bcd22",
+    "frontend/src/meeting.tsx#ConferenceField": "f4f3bbf69721",
+    "frontend/src/meeting.tsx#JoinLink": "afc6b26093b1",
+    "frontend/src/meeting.tsx#CopyLink": "7aa39b519cbb",
+    "backend/apps/calendar/views.py#created_event": "53cc0d936100",
+    "backend/apps/calendar/views.py#_found": "52a5c4189686"
+  }
+}

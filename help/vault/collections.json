@@ -1,0 +1,27 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "vault.companyMembers",
+    "vault.confirmNote",
+    "vault.deleteCollectionWarning",
+    "vault.keyless",
+    "vault.newCollectionNote",
+    "vault.pendingNote"
+  ],
+  "describes": {
+    "frontend/src/vault/members.tsx#MembersPanel": "5c410d6a8e78",
+    "frontend/src/vault/members.tsx#LogDialog": "a666107e5e30",
+    "frontend/src/vault/page.tsx#Pending": "1bdfd40431b7",
+    "frontend/src/vault/page.tsx#CollectionLink": "4a88d4a6ce31",
+    "frontend/src/vault/page.tsx#VaultOpen": "85ae65cdfbec",
+    "frontend/src/access.tsx#AddGrant": "e1e59de18560",
+    "backend/apps/vault/views.py#members": "a1eb20f51add",
+    "backend/apps/vault/views.py#member": "6d6a78b9f91f",
+    "backend/apps/vault/views.py#keys": "6780f5d823ce",
+    "backend/apps/vault/views.py#logged": "1e8a0ad3a3fd",
+    "backend/apps/vault/views.py#log": "dc5fe39629c5",
+    "backend/apps/vault/views.py#owned": "7c86e3e51a03"
+  }
+}

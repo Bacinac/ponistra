@@ -1,0 +1,441 @@
+# One installation of PONISTRA: the released images at PONISTRA_VERSION, the settings in .env
+# and the data under ./volumes. On LXC 210 docker compose lays compose.override.yaml over it, the
+# images built from this tree; scripts/check.sh adds compose.check.yml.
+name: ponistra
+
+x-log: &log
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# LiveKit's signalling and API, as the frontend and the backend reach it on the host's network.
+x-livekit: &livekit host.docker.internal:7880
+# LiveKit's relay (TURN) inside the TLS that Caddy ends on 443.
+x-livekit-turn: &livekit_turn host.docker.internal:5349
+
+services:
+  frontend:
+    # Caddy serves the built app and hands /api to the backend. PONISTRA_SITE is a domain, for
+    # which it fetches and renews a certificate on port 443, or ":80" behind a proxy or
+    # tunnel that ends TLS itself. :5173 is the printer's way in, on the print network only.
+    # PONISTRA_TURN, meetings' relay, is a name of its own on 443 whose certificate Caddy keeps
+    # too; without one the relay's route answers a name nobody outside asks for.
+    image: ghcr.io/bacinac/ponistra-frontend:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_frontend
+    logging: *log
+    user: "${PONISTRA_APP_UID:-1000}:${PONISTRA_APP_GID:-1000}"
+    environment:
+      PONISTRA_SITE: ${PONISTRA_SITE:?set in .env}
+      PONISTRA_TURN: ${PONISTRA_TURN:-relay.localhost}
+      PONISTRA_LIVEKIT: *livekit
+      PONISTRA_LIVEKIT_TURN: *livekit_turn
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./volumes/caddy:/data
+    tmpfs:
+      - /config
+    read_only: true
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: 0
+    ports:
+      - "${PONISTRA_HTTP_PORT:-80}:80"
+      - "${PONISTRA_HTTPS_PORT:-443}:443"
+    networks: [default, print, workspace]
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/bacinac/ponistra-backend:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_backend
+    logging: *log
+    init: true
+    user: "${PONISTRA_APP_UID:-1000}:${PONISTRA_APP_GID:-1000}"
+    env_file: .env
+    environment:
+      PONISTRA_ENV: prod
+      PONISTRA_LIVEKIT: *livekit
+      RESTIC_REPOSITORY: /backup
+      RESTIC_CACHE_DIR: /tmp/restic
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - ./volumes/blobs:/data/blobs
+      - ./volumes/backup:/backup
+      - ./volumes/wal:/wal
+      - ./volumes/workspace:/data/workspace
+      - ./.env:/installation/.env:ro
+    networks: [default, convert, print, ocr, read, workspace, record]
+    # Past this a runaway ends the backend, which restarts, rather than the host and Postgres
+    # with it.
+    mem_limit: 3g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8030/api/ping', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    depends_on:
+      postgres:
+        condition: service_healthy
+      converter:
+        condition: service_healthy
+      ocr:
+        condition: service_healthy
+      reader:
+        condition: service_healthy
+      recorder:
+        condition: service_healthy
+    restart: unless-stopped
+
+  converter:
+    # LibreOffice reads the files it is given, which may be hostile, so it runs on a
+    # network that reaches only the backend, with nothing writable but its /tmp.
+    image: ghcr.io/bacinac/ponistra-converter:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_converter
+    logging: *log
+    init: true
+    networks: [convert]
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 2g
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8040/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  reader:
+    # The backend's own code reads the files someone else made (PDFium, Pillow, pikepdf, lxml
+    # over Office files), which may be hostile, here: without the installation's secrets, its
+    # database or its files, on a network that reaches only the backend, each reading in a
+    # process of its own under a ceiling of memory and processor time (apps/reader, D51).
+    image: ghcr.io/bacinac/ponistra-backend:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_reader
+    logging: *log
+    init: true
+    user: "${PONISTRA_APP_UID:-1000}:${PONISTRA_APP_GID:-1000}"
+    entrypoint: ["python", "-m", "apps.reader"]
+    environment:
+      PONISTRA_ENV: prod
+      PONISTRA_ROLE: reader
+    networks: [read]
+    read_only: true
+    # On disk, not in memory: a file sent to be read can be as large as BLOB_MAX_BYTES.
+    volumes:
+      - reading:/tmp
+    mem_limit: 3g
+    pids_limit: 64
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8070/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  ocr:
+    # Tesseract reads scanned pages, which may be hostile, so it runs on a network that
+    # reaches only the backend, with nothing writable but its /tmp.
+    image: ghcr.io/bacinac/ponistra-ocr:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_ocr
+    logging: *log
+    init: true
+    networks: [ocr]
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 4g
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "/opt/ocr/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8060/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  printer:
+    # Chromium prints a document's print page in the reader's own session, so it may load
+    # only that page: its network reaches the frontend and the backend asking, nothing else.
+    image: ghcr.io/bacinac/ponistra-printer:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_printer
+    logging: *log
+    init: true
+    networks: [print]
+    read_only: true
+    tmpfs:
+      - /tmp
+    shm_size: 512m
+    # Two prints and a count of a thousand-page document at once, measured.
+    mem_limit: 4g
+    pids_limit: 1024
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8050/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  livekit:
+    # Meetings' sound and video. On the host's own network LiveKit offers each browser the host's
+    # addresses on the local network and the public one STUN finds, and checks that the public
+    # one answers; from outside only the UDP and the TCP port reach it. Signalling comes through
+    # Caddy as /livekit. With PONISTRA_TURN its relay serves networks that reach neither: on UDP
+    # 3478, and as turns:<name>:443, the TLS that Caddy ends there.
+    image: livekit/livekit-server:v1.13.11@sha256:25cd902de7cacbd5f1f779f6a6ac1eae20ba8f56b0935934ce6b0ab80d1e3d20
+    container_name: ponistra_livekit
+    mem_limit: 1g
+    # LiveKit reads the public address only as it starts: once STUN names another, it stops and
+    # Docker starts it again on the new one.
+    entrypoint:
+      - sh
+      - -c
+      - |
+        address() {
+          printf '\000\001\000\000\041\022\244\102ponistra-ip!' |
+            timeout 3 nc -u -w 1 stun.l.google.com 19302 2>/dev/null | od -An -tu1 -v | awk '
+              { for (i = 1; i <= NF; i++) b[n++] = $$i }
+              END {
+                if (n < 20 || b[0] != 1 || b[1] != 1) exit 1
+                for (at = 20; at + 12 <= n; at += 4 + size + (4 - size % 4) % 4) {
+                  size = b[at + 2] * 256 + b[at + 3]
+                  if (b[at] == 0 && b[at + 1] == 32 && b[at + 5] == 1) {
+                    printf "%d.%d.%d.%d\n", xor(b[at + 8], 33), xor(b[at + 9], 18),
+                      xor(b[at + 10], 164), xor(b[at + 11], 66)
+                    exit
+                  }
+                }
+                exit 1
+              }'
+        }
+        started=$$(address)
+        /livekit-server & server=$$!
+        trap 'kill $$server; wait $$server; exit' TERM INT
+        while kill -0 $$server 2>/dev/null; do
+          sleep 60 & wait $$!
+          now=$$(address) || continue
+          [ -n "$$started" ] || started=$$now
+          if [ "$$now" != "$$started" ]; then
+            echo "livekit: the public address moved from $$started to $$now"
+            kill $$server
+            break
+          fi
+        done
+        wait $$server
+    logging: *log
+    user: "${PONISTRA_APP_UID:-1000}:${PONISTRA_APP_GID:-1000}"
+    network_mode: host
+    environment:
+      LIVEKIT_KEYS: "ponistra: ${PONISTRA_LIVEKIT_SECRET:?set in .env}"
+      LIVEKIT_CONFIG: |
+        port: 7880
+        rtc:
+          tcp_port: ${PONISTRA_LIVEKIT_TCP_PORT:-7881}
+          udp_port: ${PONISTRA_LIVEKIT_UDP_PORT:-7882}
+          use_external_ip: true
+        turn:
+          enabled: ${PONISTRA_TURN:+true}
+          domain: ${PONISTRA_TURN:-}
+          udp_port: 3478
+          tls_port: 5349
+          external_tls: true
+    read_only: true
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:7880/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  recorder:
+    # Records meetings (S2-5): joins a room as a hidden participant and writes each
+    # participant's sound and picture as they were sent, which the backend takes into the tree
+    # once the recording ends. It reaches LiveKit on the host, and only the backend reaches it.
+    image: ghcr.io/bacinac/ponistra-recorder:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_recorder
+    logging: *log
+    networks: [record]
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes:
+      - recordings:/recordings
+    read_only: true
+    mem_limit: 512m
+    pids_limit: 256
+    healthcheck:
+      test: ["CMD", "/recorder", "health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  workspace:
+    # The owner's code workspace (D34), on with COMPOSE_PROFILES=workspace and PONISTRA_WORKSPACE
+    # naming its owner: VS Code in the browser, reached only through the frontend, which asks the
+    # backend's door first; out to the internet for the agent, its extensions and git. Its home
+    # sits at the same path as on the host, so what the agent mounts into a container
+    # (compose.docker.yaml) is found there.
+    profiles: [workspace]
+    image: ghcr.io/bacinac/ponistra-workspace:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_workspace
+    logging: *log
+    init: true
+    hostname: ponistra
+    user: "${PONISTRA_APP_UID:-1000}:${PONISTRA_APP_GID:-1000}"
+    environment:
+      HOME: ${PONISTRA_WORKSPACE_HOME:-/home/owner}
+      PONISTRA_PUBLIC_URL: ${PONISTRA_PUBLIC_URL:?set in .env}
+      PONISTRA_WORKSPACE_TOKEN: ${PONISTRA_WORKSPACE_TOKEN:-}
+    working_dir: ${PONISTRA_WORKSPACE_HOME:-/home/owner}
+    volumes:
+      - ./volumes/workspace:${PONISTRA_WORKSPACE_HOME:-/home/owner}
+    networks: [workspace]
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 4g
+    pids_limit: 2048
+    healthcheck:
+      test: ["CMD", "/usr/lib/code-server/lib/node", "-e", "fetch('http://127.0.0.1:8080/healthz').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+    container_name: ponistra_postgres
+    logging: *log
+    mem_limit: 2g
+    environment:
+      POSTGRES_USER: ponistra
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_DB: ponistra
+    # Every WAL segment goes to volumes/wal once full, or after five minutes with anything written,
+    # and the backend takes it into the snapshots; new segments start zeroed rather than recycled,
+    # so one closed early compresses to almost nothing.
+    command:
+      - postgres
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=300
+      - -c
+      - wal_recycle=off
+      - -c
+      - archive_command=sh /etc/postgresql/archive %p %f
+    configs:
+      - source: hba
+        target: /etc/postgresql/pg_hba.conf
+      - source: archive
+        target: /etc/postgresql/archive
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql
+      - ./volumes/wal:/wal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ponistra"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+configs:
+  # The image's own rules, and the backend's base backups over the network as the one user.
+  hba:
+    content: |
+      local all all trust
+      host all all 127.0.0.1/32 trust
+      host all all ::1/128 trust
+      local replication all trust
+      host replication all 127.0.0.1/32 trust
+      host replication all ::1/128 trust
+      host all all all scram-sha-256
+      host replication ponistra all scram-sha-256
+  # A segment is written whole under its name, readable by the backend, and only once: Postgres
+  # recycles it as soon as this succeeds, so the file must be on disk first.
+  archive:
+    content: |
+      set -e
+      kept=/wal/$$2.gz
+      if [ -f "$$kept" ]; then
+        gzip -1nc "$$1" | cmp -s - "$$kept"
+        exit
+      fi
+      gzip -1nc "$$1" > "/wal/.$$2"
+      chmod 644 "/wal/.$$2"
+      sync "/wal/.$$2"
+      mv "/wal/.$$2" "$$kept"
+      sync /wal
+
+volumes:
+  reading:
+  recordings:
+
+networks:
+  convert:
+    internal: true
+  print:
+    internal: true
+  ocr:
+    internal: true
+  read:
+    internal: true
+  # Not internal: the recorder reaches LiveKit on the host's network.
+  record:
+  workspace:

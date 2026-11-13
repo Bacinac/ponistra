@@ -1,0 +1,167 @@
+# Development on LXC 210, laid over compose.yaml: the dev images built from this tree with the
+# tree mounted into them, Vite with HMR in the frontend's place, uvicorn --reload, and the ports
+# the dev host uses. scripts/release.sh builds the released images from the same definitions.
+services:
+  frontend:
+    build:
+      context: ./frontend
+      additional_contexts:
+        fonts: ./fonts
+        colors: ./colors
+        schema: ./schema
+        android: ./android/dist
+        shots: ./help-shots
+      target: dev
+    image: ponistra/frontend:dev
+    environment:
+      PONISTRA_PUBLIC_URL: ${PONISTRA_PUBLIC_URL:?set in .env}
+    user: !reset null
+    read_only: !reset false
+    sysctls: !reset {}
+    # Tests and measurements run here, the gate's too, beyond what an installation's caps allow.
+    mem_limit: !reset null
+    tmpfs: !reset []
+    volumes: !override
+      # The editor on the host reads the packages the container installs here (packages.sh).
+      - ./frontend/node_modules:/app/node_modules
+      - ./frontend/src:/app/src
+      - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./fonts:/fonts:ro
+      - ./colors:/colors:ro
+      # Read and written: vitest -u derives schema.d.json.ts from schema.json.
+      - ./schema:/schema
+      - ./android/dist:/android:ro
+      - ./help-shots:/shots:ro
+    ports: !override
+      - "5190:5173"
+
+  backend:
+    build:
+      context: ./backend
+      additional_contexts:
+        fonts: ./fonts
+        colors: ./colors
+        schema: ./schema
+        help: ./help
+        i18n: ./frontend/src/i18n
+        android: ./android/dist
+      target: dev
+    image: ponistra/backend:dev
+    mem_limit: !reset null
+    environment:
+      PONISTRA_ENV: dev
+      PONISTRA_MAIL_PLAIN_HOSTS: mox
+    networks: [mailtest]
+    depends_on:
+      mox:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+      - ./fonts:/fonts:ro
+      - ./colors:/colors:ro
+      - ./schema:/schema:ro
+      - ./help:/help:ro
+      - ./frontend/src/i18n:/i18n:ro
+    ports:
+      - "8030:8030"
+
+  relay:
+    # Meetings' relay on 443 (S2-2), where Vite serves the app in Caddy's place: the release's
+    # Caddy without the app, ending TLS to PONISTRA_TURN for LiveKit's TURN.
+    extends:
+      file: compose.yaml
+      service: frontend
+    build:
+      context: ./frontend
+      target: caddy
+    image: ponistra/caddy
+    container_name: ponistra_relay
+    networks: !override [default]
+    ports: !override
+      - "443:443"
+    depends_on: !reset []
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/livekit/"]
+
+  postgres:
+    mem_limit: !reset null
+
+  mox:
+    # The mail server the backend's tests sign in to and send through: mox's localserve
+    # accepts the one account it makes, mox@localhost, with the password moxmoxmox.
+    image: r.xmox.nl/mox:v0.0.17@sha256:8889e7b48fdd5b0b07b51dd11a6d06536334ec442652f2ffb1e1df3a9d45074e
+    container_name: ponistra_mox
+    entrypoint: ["/bin/mox", "localserve", "-dir", "/tmp/mox", "-ip", "0.0.0.0"]
+    networks: [mailtest]
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+
+  converter:
+    build:
+      context: ./converter
+      additional_contexts:
+        fonts: ./fonts
+    image: ponistra/converter
+
+  recorder:
+    build:
+      context: ./recorder
+    image: ponistra/recorder
+
+  reader:
+    image: ponistra/backend:dev
+    mem_limit: !reset null
+    entrypoint: ["watchfiles", "--filter", "python", "python -m apps.reader", "/app/apps", "/app/config"]
+    environment:
+      PONISTRA_ENV: dev
+    volumes:
+      - ./backend:/app:ro
+      - ./fonts:/fonts:ro
+      - ./colors:/colors:ro
+      - ./schema:/schema:ro
+
+  ocr:
+    build: ./ocr
+    image: ponistra/ocr
+
+  printer:
+    build: ./printer
+    image: ponistra/printer
+
+  workspace:
+    build:
+      context: ./workspace
+      additional_contexts:
+        theme: ./frontend/src
+        brand: ./frontend/src/assets/brand
+    image: ponistra/workspace:dev
+
+  e2e:
+    # The browser check in scripts/check.sh. Sharing the frontend's network puts Vite on
+    # localhost:5173, where its host check and the collab Origin check both pass.
+    profiles: [check]
+    build: ./e2e
+    image: ponistra/e2e
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    network_mode: service:frontend
+    shm_size: 1gb
+    volumes:
+      - ./e2e/tests:/e2e/tests:ro
+      - ./e2e/playwright.config.ts:/e2e/playwright.config.ts:ro
+      - ./e2e/shots:/e2e/shots:ro
+      - ./e2e/shots.config.ts:/e2e/shots.config.ts:ro
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+
+networks:
+  mailtest:
+    internal: true

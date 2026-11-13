@@ -1,0 +1,29 @@
+{
+  "order": 120,
+  "audience": "admin",
+  "covers": [
+    "route:/health"
+  ],
+  "quiet": [
+    "health.snapshots.note",
+    "health.snapshots.late",
+    "health.snapshots.error",
+    "health.disk.freeOf"
+  ],
+  "describes": {
+    "frontend/src/health.tsx#Report": "b996236084fd",
+    "frontend/src/health.tsx#HealthPage": "408808f1e03d",
+    "frontend/src/health.tsx#diskLabel": "181e5161a019",
+    "backend/apps/health/views.py#services": "79f7a1056541",
+    "backend/apps/health/views.py#snapshots": "8ae021137b34",
+    "backend/apps/health/views.py#disks": "5d014f8073e4",
+    "backend/apps/health/views.py#stored": "41dad8f3f584",
+    "backend/apps/health/views.py#queues": "49239c077b9b",
+    "backend/apps/backups/backups.py#due": "823931a87f51",
+    "backend/apps/backups/backups.py#late": "054f61644408",
+    "backend/apps/backups/backups.py#take": "43cac2bcaaf0",
+    "backend/apps/backups/backups.py#chosen": "3c78bfeed6cf",
+    "backend/apps/blobs/store.py#collect": "f6ab0b636572",
+    "frontend/src/problems.ts#problemText": "d7aac1ccc7f6"
+  }
+}

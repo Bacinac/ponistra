@@ -1,0 +1,15 @@
+{
+  "order": 85,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "notes.foot",
+    "notes.end"
+  ],
+  "describes": {
+    "frontend/src/editor/notes.ts#noteNumber": "27c45e30d632",
+    "frontend/src/editor/notes.ts#placed": "6463a3f46788",
+    "frontend/src/editor/notes.ts#insertNote": "dd4356885b82",
+    "frontend/src/editor/notes.ts#openSelected": "155d028ae1dd"
+  }
+}

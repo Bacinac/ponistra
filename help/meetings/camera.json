@@ -1,0 +1,18 @@
+{
+  "order": 15,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/camera.ts#Shaping": "dea6acc8ab46",
+    "frontend/src/camera.ts#Shaped": "2e8ffde0b9b0",
+    "frontend/src/camera.ts#soundOf": "5cc63948f5b2",
+    "frontend/src/camera.ts#resound": "806fe9f9d56a",
+    "frontend/src/callChoices.tsx#useLook": "7e73b04c999c",
+    "frontend/src/callChoices.tsx#LookItems": "256127ab7b69",
+    "frontend/src/callChoices.tsx#ShapingNotice": "6813ec50510e",
+    "frontend/src/callChoices.tsx#keptDevice": "71f93586a517",
+    "backend/apps/users/views.py#backdrop": "6d5c834f976b",
+    "backend/apps/users/views.py#_call": "ddd8647cb495"
+  }
+}

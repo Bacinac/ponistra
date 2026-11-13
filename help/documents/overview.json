@@ -1,0 +1,24 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/documents",
+    "route:/f/:folder"
+  ],
+  "quiet": [
+    "tree.location",
+    "kind.typed",
+    "frame.places"
+  ],
+  "describes": {
+    "frontend/src/FolderPage.tsx#Explorer": "43d0ac1d1031",
+    "frontend/src/FolderPage.tsx#Row": "4290f0e00311",
+    "frontend/src/FolderPage.tsx#OpenFolder": "9dc774dcbae9",
+    "frontend/src/frame.tsx#FolderTree": "529e1961eb25",
+    "frontend/src/tree.tsx#kindOf": "e4ac5ca1ade6",
+    "frontend/src/tree.tsx#kindLabel": "8278ade82700",
+    "frontend/src/access.tsx#Audience": "96464b2ca9be",
+    "frontend/src/explorer.ts#storedSort": "21d0e7e1abfb",
+    "backend/apps/documents/views.py#created": "2d9b26f4236c"
+  }
+}

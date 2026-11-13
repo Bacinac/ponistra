@@ -1,0 +1,21 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [
+    "action:text.summarise",
+    "action:text.rewrite",
+    "action:text.extract",
+    "action:document.translate",
+    "action:document.compare"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/versions.tsx#CompareDialog": "7f88a1f2e0ed",
+    "backend/apps/actions/language.py#summarise": "d218d27bc632",
+    "backend/apps/actions/language.py#extract": "aa2956223fa5",
+    "backend/apps/actions/language.py#compare": "ea920270224a",
+    "backend/apps/actions/language.py#rewrite": "1d6c70fc402e",
+    "backend/apps/actions/language.py#translate": "26dab72ccfcc",
+    "backend/apps/actions/registry.py#ACTIONS": "5a3e191c479c"
+  }
+}

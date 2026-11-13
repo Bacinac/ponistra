@@ -1,0 +1,21 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "image.percent",
+    "image.result",
+    "image.side.at",
+    "image.saveAs.note",
+    "image.saveAs.suffix",
+    "image.mark"
+  ],
+  "describes": {
+    "frontend/src/image/EditPanel.tsx#EditPanel": "1312cc770ced",
+    "frontend/src/image/EditPanel.tsx#useUndoKeys": "f74f8970289b",
+    "frontend/src/image/ImageView.tsx#ImageView": "245adc645672",
+    "frontend/src/image/edits.ts#EDITABLE": "6125b00acf07",
+    "frontend/src/FilePage.tsx#Kept": "94f064190243",
+    "backend/apps/documents/views.py#node_edited": "246cd328ff27"
+  }
+}

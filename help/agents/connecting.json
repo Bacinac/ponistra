@@ -1,0 +1,24 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/agents"
+  ],
+  "quiet": [
+    "agents.intro",
+    "agents.how",
+    "agents.consent.asks",
+    "agents.consent.read",
+    "agents.consent.write",
+    "agents.consent.never",
+    "agents.consent.revocable",
+    "agents.revokeWarning"
+  ],
+  "describes": {
+    "frontend/src/agents.tsx#Agents": "5d9b877d6b72",
+    "frontend/src/agents.tsx#ConsentPage": "a2a71c267766",
+    "backend/apps/agents/views.py#consent": "2cb09c2511f4",
+    "backend/apps/agents/views.py#clients": "a9daca8ef331",
+    "backend/apps/agents/views.py#client": "25e7fa3e25e9"
+  }
+}

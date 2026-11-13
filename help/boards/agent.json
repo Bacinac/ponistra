@@ -1,0 +1,15 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "board.agentFolderTitle",
+    "board.agentPrompt"
+  ],
+  "describes": {
+    "frontend/src/board.tsx#useBoardAgent": "b8301a9e0116",
+    "frontend/src/board.tsx#AgentFolderDialog": "c7441a663bec",
+    "backend/apps/documents/boards.py#agent_folder_of": "c61a0c393bc3",
+    "workspace/phone.js": "1f200ed2c2f1"
+  }
+}

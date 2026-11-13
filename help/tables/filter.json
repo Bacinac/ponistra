@@ -1,0 +1,17 @@
+{
+  "order": 35,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "filter.title",
+    "filter.more",
+    "filter.shown",
+    "filter.way"
+  ],
+  "describes": {
+    "backend/apps/content/filtering.py": "95f96ab101f4",
+    "backend/apps/collab/books.py#Book": "c374ca06726d",
+    "frontend/src/editor/FilterDialog.tsx#FilterDialog": "46e916701283",
+    "frontend/src/editor/tableView.ts#TableView": "704733895dca"
+  }
+}

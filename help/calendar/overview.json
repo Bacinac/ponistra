@@ -1,0 +1,23 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/calendar/:view?/:date?"
+  ],
+  "quiet": [
+    "calendar.nothingAhead"
+  ],
+  "describes": {
+    "frontend/src/calendar.tsx#CalendarPage": "b368938c0b45",
+    "frontend/src/calendar.tsx#Side": "49010c769b24",
+    "frontend/src/calendar.tsx#MiniMonth": "68db9e5b769c",
+    "frontend/src/calendar.tsx#Chip": "35e127c51fde",
+    "frontend/src/calendar.tsx#Extras": "6594136b14f5",
+    "frontend/src/calendar.tsx#Month": "3de65823e944",
+    "frontend/src/calendar.tsx#Week": "de8c30815c85",
+    "frontend/src/calendar.tsx#Agenda": "b18b5523f071",
+    "frontend/src/calendarData.ts#useHidden": "be0be39b3eb3",
+    "frontend/src/calendarData.ts#shownOf": "297eb6cba580",
+    "frontend/src/calendarData.ts#useShownResources": "6c891d813551"
+  }
+}

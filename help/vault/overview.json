@@ -1,0 +1,26 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/vault/:collection?/:item?"
+  ],
+  "quiet": [
+    "vault.codeNote",
+    "vault.password.shortest",
+    "vault.setupNote"
+  ],
+  "describes": {
+    "frontend/src/vault/page.tsx#VaultPage": "8ba97833cb93",
+    "frontend/src/vault/page.tsx#Setup": "796007ed4f66",
+    "frontend/src/vault/page.tsx#Locked": "07d4a1f17330",
+    "frontend/src/vault/unlock.tsx#UnlockForm": "310343f26d1d",
+    "frontend/src/vault/page.tsx#Side": "268719256969",
+    "frontend/src/vault/page.tsx#Items": "d6ff61eb7589",
+    "frontend/src/vault/parts.tsx#NewPassword": "2194e1adca57",
+    "frontend/src/vault/parts.tsx#CodeShown": "43b436f4eaef",
+    "frontend/src/vault/state.tsx#VaultProvider": "01eedc7cba98",
+    "frontend/src/vault/crypto.ts": "6a8febdfccc0",
+    "frontend/src/vault/settings.tsx#SettingsDialog": "03020f0b35ef",
+    "backend/apps/vault/views.py#vault": "8b44d809b80d"
+  }
+}

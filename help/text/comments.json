@@ -1,0 +1,19 @@
+{
+  "order": 90,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "comment.empty",
+    "comment.lost",
+    "comment.deleteWarning",
+    "comment.placeholder",
+    "comment.replyPlaceholder"
+  ],
+  "describes": {
+    "frontend/src/comments.tsx#CommentsPanel": "b9d619e6c003",
+    "frontend/src/comments.tsx#ThreadCard": "d6e7a24105e1",
+    "frontend/src/comments.tsx#Composer": "43fe02f18b1a",
+    "frontend/src/comments.tsx#useAbout": "e055d0651c28",
+    "frontend/src/editor/Editor.tsx#lineTask": "340c3889f9a4"
+  }
+}

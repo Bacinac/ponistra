@@ -1,0 +1,21 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "pages.sealed.password",
+    "pages.sealed.assembly",
+    "pages.leave.body",
+    "pages.noFiles",
+    "pages.short",
+    "pages.turned",
+    "pages.list",
+    "pages.unshown"
+  ],
+  "describes": {
+    "frontend/src/pdf/PagesView.tsx#PagesView": "76c71df4de09",
+    "frontend/src/pdf/PagesView.tsx#Thumb": "3d9f41e63351",
+    "frontend/src/pdf/pages.ts": "4b1f9060f3ce",
+    "backend/apps/imports/composed.py#compose": "a55d7c381b55"
+  }
+}

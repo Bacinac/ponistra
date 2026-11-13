@@ -1,0 +1,20 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "pdf.selection",
+    "pdf.mark",
+    "pdf.mark.highlight",
+    "pdf.mark.stroke",
+    "pdf.pen",
+    "pdf.pin.hint"
+  ],
+  "describes": {
+    "frontend/src/pdf/Notes.tsx#FileNotes": "68ba5afed063",
+    "frontend/src/pdf/Notes.tsx#PageNotes": "8ee27f861f2c",
+    "frontend/src/pdf/notes.ts": "0568035ada18",
+    "backend/apps/exports/annotated.py#written": "59fb5fe0596d",
+    "frontend/src/pen.tsx#WidthChoice": "2f792d84acb5"
+  }
+}

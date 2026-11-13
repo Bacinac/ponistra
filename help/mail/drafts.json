@@ -1,0 +1,15 @@
+{
+  "order": 90,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "mail.draftBy"
+  ],
+  "describes": {
+    "frontend/src/mail.tsx#WaitingDrafts": "f939c6c983d1",
+    "frontend/src/mail.tsx#DraftCard": "090ed54379e9",
+    "backend/apps/mail/views.py#drafts": "43b15ec6153e",
+    "backend/apps/mail/views.py#drafted": "74afc271c9eb",
+    "backend/apps/mail/views.py#draft": "d3aad5ed057d"
+  }
+}

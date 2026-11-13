@@ -1,0 +1,19 @@
+{
+  "order": 25,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "chat.files"
+  ],
+  "describes": {
+    "frontend/src/chatFiles.tsx#useAttachments": "683258115992",
+    "frontend/src/chatFiles.tsx#dropTarget": "3b039211dd65",
+    "frontend/src/chatFiles.tsx#AttachButton": "993801792125",
+    "frontend/src/chatFiles.tsx#Card": "5e5e52cb9fc5",
+    "frontend/src/chatFiles.tsx#FileView": "b9f47d505dfc",
+    "frontend/src/dialogs.tsx#FilePickDialog": "4afa432d5aac",
+    "backend/apps/chat/attaching.py": "f2885d088a52",
+    "backend/apps/chat/files.py": "c88e4a42f9b0",
+    "backend/apps/chat/views.py#attachment": "5f005c895c6f"
+  }
+}

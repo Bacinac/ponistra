@@ -1,0 +1,15 @@
+{
+  "order": 130,
+  "audience": "everyone",
+  "covers": [
+    "route:/print/:node",
+    "route:/print/:node/slides"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/PrintPage.tsx#usePrint": "5979dda43363",
+    "frontend/src/PrintPage.tsx#PrintPage": "14ce6c4bf0ff",
+    "frontend/src/PrintPage.tsx#SlidesPrintPage": "0165486351a2",
+    "frontend/src/editor/Printed.tsx": "c371ea7401ae"
+  }
+}

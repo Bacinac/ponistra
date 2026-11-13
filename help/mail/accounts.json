@@ -1,0 +1,34 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/mail-accounts"
+  ],
+  "quiet": [
+    "mail.appPasswordNote",
+    "mail.connectNote",
+    "mail.connectTitle",
+    "mail.oauthAccount.google",
+    "mail.oauthAccount.microsoft",
+    "mail.oauthSetup",
+    "mail.passwordKept",
+    "mail.removeWarning",
+    "mail.signInOnly",
+    "mail.signInOnlyMissing"
+  ],
+  "describes": {
+    "frontend/src/mailAccounts.tsx#AccountDialog": "1d6eebc919af",
+    "frontend/src/mailAccounts.tsx#Providers": "601e47eb7e91",
+    "frontend/src/mailAccounts.tsx#ServerFields": "722b248a0f11",
+    "frontend/src/mailAccounts.tsx#SignInAgain": "a13ec344e870",
+    "frontend/src/mailAccounts.tsx#OAuthAccountDialog": "39b46440b6e0",
+    "frontend/src/mail.tsx#MailAccounts": "5a581a2822fb",
+    "frontend/src/mailParts.tsx#RemoveButton": "36cbe5ca0884",
+    "backend/apps/mail/views.py#accounts": "1d7737e96e81",
+    "backend/apps/mail/views.py#account": "c8df0362302c",
+    "backend/apps/mail/views.py#servers": "958e97ce6954",
+    "backend/apps/mail/views.py#oauth": "f842485918b8",
+    "backend/apps/mail/sync.py#follow": "17fbf7daec37",
+    "backend/apps/mail/sending.py#delivered": "6883055f3d30"
+  }
+}

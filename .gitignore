@@ -1,0 +1,19 @@
+.env
+volumes/
+backend/revision.json
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+node_modules/
+frontend/dist/
+backend/apps/engine/tests/*-unsaved*.xlsx
+backend/apps/engine/tests/implied-*.tsv
+/etalons/
+/frontend/demo/recorded/
+core.[0-9]*
+
+# agent and editor tooling
+CLAUDE.md
+AGENTS.md
+.claude/

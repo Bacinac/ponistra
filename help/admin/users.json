@@ -1,0 +1,27 @@
+{
+  "order": 10,
+  "audience": "admin",
+  "covers": [
+    "route:/users"
+  ],
+  "quiet": [
+    "users.deactivateWarning",
+    "devices.theirNote",
+    "users.keepPassword",
+    "users.eraseWarning"
+  ],
+  "describes": {
+    "frontend/src/users.tsx#Directory": "2e0e1c86d9ac",
+    "frontend/src/users.tsx#AccountDialog": "2cee6e70713a",
+    "frontend/src/users.tsx#UsersPage": "49f7fd8dba86",
+    "frontend/src/devices.tsx#DevicesDialog": "b9f62d6c4f56",
+    "backend/apps/users/accounts.py#users": "d245125b021e",
+    "backend/apps/users/accounts.py#user": "30f38b6a9d37",
+    "backend/apps/users/accounts.py#handed_password": "00a346104c53",
+    "frontend/src/users.tsx#EraseDialog": "790d6e9f531a",
+    "backend/apps/users/erasure.py#erase": "c85041015655",
+    "backend/apps/users/erasure.py#handed": "ddb8d63f134a",
+    "backend/apps/users/personal.py#packed": "cee0353b48b5",
+    "backend/apps/users/personal.py#asked": "9caf0c526693"
+  }
+}

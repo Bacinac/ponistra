@@ -1,0 +1,20 @@
+{
+  "order": 113,
+  "audience": "admin",
+  "covers": [
+    "route:/retention"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/retention.tsx#Retention": "1c26afc48795",
+    "frontend/src/retention.tsx#RuleDialog": "1563dbb170a8",
+    "frontend/src/retention.tsx#HoldDialog": "b017a6454171",
+    "backend/apps/retention/views.py#rules": "46e50058717e",
+    "backend/apps/retention/views.py#holds": "eb711cff2380",
+    "backend/apps/retention/kept.py#Policy": "1f536974a520",
+    "backend/apps/retention/kept.py#kept_nodes": "226390589ab7",
+    "backend/apps/retention/kept.py#chat_reason": "0a18309dd233",
+    "backend/apps/retention/kept.py#refuse_erasure": "d0a602daff10",
+    "backend/apps/retention/sweep.py#swept": "288c9953d112"
+  }
+}

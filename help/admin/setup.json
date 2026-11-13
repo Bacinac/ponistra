@@ -1,0 +1,13 @@
+{
+  "order": 5,
+  "audience": "admin",
+  "covers": [],
+  "quiet": [
+    "setup.intro"
+  ],
+  "describes": {
+    "frontend/src/auth.tsx#SetupForm": "901e74d9a1cf",
+    "backend/apps/users/accounts.py#setup": "9dc422ed0de2",
+    "backend/apps/users/accounts.py#spelled": "fa3208a81090"
+  }
+}

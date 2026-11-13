@@ -1,0 +1,17 @@
+{
+  "order": 75,
+  "audience": "everyone",
+  "covers": [
+    "label:action.mailTriage"
+  ],
+  "quiet": [
+    "mail.triageConsent"
+  ],
+  "describes": {
+    "backend/apps/mail/acting.py#triage": "39eeea045f49",
+    "backend/apps/mail/acting.py#proposed": "b10c340268b6",
+    "backend/apps/mail/acting.py#triaged_into": "938b6f6e6255",
+    "backend/apps/mail/views.py#message_action": "526685ca1fb7",
+    "frontend/src/mailTriage.tsx#TriageDialog": "13da9f797f05"
+  }
+}

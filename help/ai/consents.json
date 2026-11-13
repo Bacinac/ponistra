@@ -1,0 +1,14 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/ai"
+  ],
+  "quiet": [
+    "consents.mail.automatic"
+  ],
+  "describes": {
+    "frontend/src/consents.tsx#Consents": "f8c8c69643f6",
+    "frontend/src/translation.tsx#TranslationConsent": "f0c83a93617e"
+  }
+}

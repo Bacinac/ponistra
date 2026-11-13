@@ -1,0 +1,26 @@
+{
+  "order": 55,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "mail.mailboxRemoveWarning"
+  ],
+  "describes": {
+    "backend/apps/mail/sharing.py": "51d0ed56c5c1",
+    "backend/apps/mail/views.py#mailboxes": "5b9b22426b19",
+    "backend/apps/mail/views.py#mailbox": "1df2eaa9e9b1",
+    "backend/apps/mail/views.py#mailbox_grants": "51dd1a684063",
+    "backend/apps/mail/opened.py#noted": "ae7f798c5ee1",
+    "frontend/src/mailShared.tsx#Mailboxes": "b2913e4c0088",
+    "frontend/src/mailShared.tsx#MailboxLinks": "bc7d8aadbb75",
+    "frontend/src/mailShared.tsx#BoxLinks": "11c9ce7d89bb",
+    "backend/apps/users/erasure.py#erase": "c85041015655",
+    "backend/apps/calendar/caldav.py#reach": "37bca118859e",
+    "backend/apps/calendar/caldav.py#named": "591e6b957400",
+    "backend/apps/calendar/phone.py#phone_calendars": "20b025ff0244",
+    "backend/apps/calendar/phone.py#phone_event": "5409cb123884",
+    "backend/apps/contacts/carddav.py#_books": "56c38da7779a",
+    "backend/apps/contacts/views.py#phone_book": "4a962aad53a1",
+    "backend/apps/contacts/views.py#phone_contact": "0bd5db2fe6bc"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "/usr/lib/code-server/lib/node /etc/ponistra/heard.mjs" }] }
+    ],
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "/usr/lib/code-server/lib/node /etc/ponistra/heard.mjs" }] }
+    ]
+  }
+}

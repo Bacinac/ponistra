@@ -1,0 +1,23 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/mail",
+    "route:/mail/:folder"
+  ],
+  "quiet": [
+    "mail.accounts",
+    "mail.date",
+    "mail.noRecipients",
+    "mail.unseen"
+  ],
+  "describes": {
+    "frontend/src/mail.tsx#MailPage": "a9b2f8237095",
+    "frontend/src/mail.tsx#AccountsPanel": "ceef289e6e15",
+    "frontend/src/mail.tsx#SortMenu": "7ad651c653c6",
+    "frontend/src/mail.tsx#Waiting": "0467ffbc9607",
+    "backend/apps/mail/views.py#messages": "e55d3de6220a",
+    "backend/apps/mail/taking.py#_once": "e727d466d7a9",
+    "frontend/src/mail.tsx#Messages": "46f5762a446b"
+  }
+}

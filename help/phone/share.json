@@ -1,0 +1,12 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [
+    "route:/share"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/sharing.tsx#SharingPage": "e939557cb2a4",
+    "frontend/src/sharing.tsx#pageOf": "3fcd43515490"
+  }
+}

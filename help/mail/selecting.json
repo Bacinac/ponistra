@@ -1,0 +1,20 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [
+    "action:mail.seen",
+    "action:mail.unseen",
+    "action:mail.flagged",
+    "action:mail.unflagged",
+    "action:mail.move",
+    "action:mail.delete"
+  ],
+  "quiet": [
+    "mail.deleteChosenWarning"
+  ],
+  "describes": {
+    "frontend/src/mail.tsx#Messages": "46f5762a446b",
+    "backend/apps/mail/views.py#chosen": "a5f04cc5dfa6",
+    "backend/apps/mail/views.py#flagged_chosen": "0954cec22e00"
+  }
+}

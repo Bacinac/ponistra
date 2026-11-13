@@ -1,0 +1,22 @@
+{
+  "window.autoDetectColorScheme": true,
+  "workbench.preferredLightColorTheme": "Ponistra Light",
+  "workbench.preferredDarkColorTheme": "Ponistra Dark",
+  "workbench.colorTheme": "Ponistra Light",
+  "workbench.startupEditor": "none",
+  "workbench.tips.enabled": false,
+  "workbench.welcomePage.walkthroughs.openOnInstall": false,
+  "extensions.ignoreRecommendations": true,
+  "security.workspace.trust.enabled": false,
+  "telemetry.telemetryLevel": "off",
+  "chat.disableAIFeatures": true,
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "files.exclude": {
+    ".*": true,
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  }
+}

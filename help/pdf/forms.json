@@ -1,0 +1,23 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "form.action",
+    "form.and",
+    "form.atLeast",
+    "form.atMost",
+    "form.between",
+    "form.date",
+    "form.date.as",
+    "form.failed",
+    "form.format",
+    "form.signature",
+    "form.xfa"
+  ],
+  "describes": {
+    "frontend/src/pdf/form.ts#FormFill": "32a86958b7c6",
+    "frontend/src/pdf/form.ts#scriptMessage": "5174f26a33fe",
+    "backend/apps/exports/annotated.py#written": "59fb5fe0596d"
+  }
+}

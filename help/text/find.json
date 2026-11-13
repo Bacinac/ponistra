@@ -1,0 +1,16 @@
+{
+  "order": 98,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "commandGroup.find",
+    "find.label",
+    "find.close"
+  ],
+  "describes": {
+    "frontend/src/editor/FindBar.tsx": "2f6ab9811762",
+    "frontend/src/editor/finding.ts": "50a768939325",
+    "backend/apps/content/finding.py": "e11cce6a2afb",
+    "backend/apps/content/operations.py#Editing": "a64aa518c3af"
+  }
+}

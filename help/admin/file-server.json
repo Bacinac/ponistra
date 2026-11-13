@@ -1,0 +1,26 @@
+{
+  "order": 40,
+  "audience": "admin",
+  "covers": [],
+  "quiet": [
+    "fileServer.mode.copyNote",
+    "fileServer.mode.inboxNote",
+    "fileServer.moveWarning",
+    "fileServer.disconnectCopy",
+    "fileServer.disconnectInbox",
+    "fileServer.addressExample",
+    "fileServer.more"
+  ],
+  "describes": {
+    "frontend/src/fileServer.tsx#fileServerActions": "6b02969c42e8",
+    "frontend/src/fileServer.tsx#FileServerLine": "e10d8041c2f4",
+    "frontend/src/fileServer.tsx#SignInDialog": "bd9c66caa30a",
+    "frontend/src/fileServer.tsx#InventoryDialog": "10ae96c33640",
+    "frontend/src/fileServer.tsx#FileServerDialog": "41858bf5cc24",
+    "backend/apps/shares/views.py#share": "2d64a7a3c85d",
+    "backend/apps/shares/views.py#move": "0815b4d160f6",
+    "backend/apps/shares/sync.py#passed": "a8644eb7b14c",
+    "backend/apps/shares/sync.py#followed": "1b6c6899a083",
+    "backend/apps/shares/sync.py#room_for": "65e6e3de9b3c"
+  }
+}

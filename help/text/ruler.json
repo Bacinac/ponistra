@@ -1,0 +1,19 @@
+{
+  "order": 55,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "tabStops.none",
+    "tabStops.within",
+    "ruler.horizontal",
+    "ruler.vertical"
+  ],
+  "describes": {
+    "frontend/src/editor/Rulers.tsx#HorizontalRuler": "803a89fbd20d",
+    "frontend/src/editor/Rulers.tsx#VerticalRuler": "913892c6f8a8",
+    "frontend/src/editor/Rulers.tsx#Ruler": "5cb688d5112f",
+    "frontend/src/editor/TabStopsDialog.tsx": "0c2d0848605b",
+    "frontend/src/editor/commands.ts#ALIGN_KEYS": "3e38505ae21e",
+    "frontend/src/editor/blocks.ts#indent": "50365135a982"
+  }
+}

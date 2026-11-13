@@ -1,0 +1,440 @@
+{
+  "parts": [
+    "table",
+    "rowBand1",
+    "rowBand2",
+    "columnBand1",
+    "columnBand2",
+    "firstColumn",
+    "lastColumn",
+    "header",
+    "totals",
+    "topLeft",
+    "topRight",
+    "bottomLeft",
+    "bottomRight"
+  ],
+  "corners": {
+    "topLeft": ["header", "firstColumn"],
+    "topRight": ["header", "lastColumn"],
+    "bottomLeft": ["totals", "firstColumn"],
+    "bottomRight": ["totals", "lastColumn"]
+  },
+  "rules": {
+    "word": {
+      "order": [
+        "table",
+        "rowBand1",
+        "rowBand2",
+        "columnBand1",
+        "columnBand2",
+        "lastColumn",
+        "firstColumn",
+        "header",
+        "totals",
+        "topLeft",
+        "topRight",
+        "bottomLeft",
+        "bottomRight"
+      ],
+      "claimWhereDefined": ["header", "totals", "firstColumn", "lastColumn"],
+      "lastYields": true,
+      "regions": "nominal",
+      "insideVWithRows": 2,
+      "rowBands": {
+        "after": "header",
+        "skip": ["header", "totals"]
+      },
+      "columnBands": {
+        "after": "firstColumn",
+        "skip": ["firstColumn", "lastColumn"]
+      },
+      "shared": "weight",
+      "own": "cell",
+      "darkness": [
+        [1, 2, 1],
+        [0, 2, 1],
+        [0, 1, 0]
+      ],
+      "classes": {
+        "dotted": 0,
+        "dashed": 1
+      },
+      "codes": {
+        "single": 1,
+        "thick": 2,
+        "double": 3,
+        "hair": 5,
+        "dotted": 6,
+        "dashed": 7,
+        "dotDash": 8,
+        "dotDotDash": 9,
+        "triple": 10,
+        "thinThickSmallGap": 11,
+        "thickThinSmallGap": 12,
+        "thinThickThinSmallGap": 13,
+        "thinThickMediumGap": 14,
+        "thickThinMediumGap": 15,
+        "thinThickThinMediumGap": 16,
+        "thinThickLargeGap": 17,
+        "thickThinLargeGap": 18,
+        "thinThickThinLargeGap": 19,
+        "wave": 20,
+        "doubleWave": 21,
+        "dashSmallGap": 22,
+        "dashDotStroked": 23,
+        "slantDashDot": 23,
+        "threeDEmboss": 24,
+        "threeDEngrave": 25,
+        "outset": 26,
+        "inset": 27
+      }
+    },
+    "excel": {
+      "order": [
+        "table",
+        "columnBand1",
+        "columnBand2",
+        "rowBand1",
+        "rowBand2",
+        "lastColumn",
+        "firstColumn",
+        "header",
+        "totals",
+        "topLeft",
+        "topRight",
+        "bottomLeft",
+        "bottomRight"
+      ],
+      "claimWhereDefined": [],
+      "lastYields": false,
+      "regions": "contiguous",
+      "insideVWithRows": 0,
+      "rowBands": {
+        "after": "header",
+        "skip": ["header", "totals"]
+      },
+      "columnBands": {
+        "after": null,
+        "skip": ["header", "totals"]
+      },
+      "shared": "rank",
+      "own": "cell",
+      "darkness": [
+        [2, 5, 1],
+        [0, 0, -1],
+        [0, 1, 0]
+      ],
+      "kinds": [
+        {
+          "name": "hair",
+          "line": "hair",
+          "width": 0.75
+        },
+        {
+          "name": "dashDotDot",
+          "line": "dotDotDash",
+          "width": 0.75
+        },
+        {
+          "name": "dashDot",
+          "line": "dotDash",
+          "width": 0.75
+        },
+        {
+          "name": "dotted",
+          "line": "dotted",
+          "width": 0.75
+        },
+        {
+          "name": "dashed",
+          "line": "dashed",
+          "width": 0.75
+        },
+        {
+          "name": "thin",
+          "line": "single",
+          "width": 0.75
+        },
+        {
+          "name": "mediumDashDotDot",
+          "line": "dotDotDash",
+          "width": 1.5
+        },
+        {
+          "name": "slantDashDot",
+          "line": "slantDashDot",
+          "width": 1.5
+        },
+        {
+          "name": "mediumDashDot",
+          "line": "dotDash",
+          "width": 1.5
+        },
+        {
+          "name": "mediumDashed",
+          "line": "dashed",
+          "width": 1.5
+        },
+        {
+          "name": "medium",
+          "line": "single",
+          "width": 1.5
+        },
+        {
+          "name": "thick",
+          "line": "single",
+          "width": 2.25
+        },
+        {
+          "name": "double",
+          "line": "double",
+          "width": 2.25
+        }
+      ]
+    },
+    "powerpoint": {
+      "order": [
+        "table",
+        "rowBand1",
+        "rowBand2",
+        "columnBand1",
+        "columnBand2",
+        "lastColumn",
+        "firstColumn",
+        "totals",
+        "bottomRight",
+        "bottomLeft",
+        "header",
+        "topRight",
+        "topLeft"
+      ],
+      "claimWhereDefined": [],
+      "lastYields": false,
+      "regions": "contiguous",
+      "insideVWithRows": 0,
+      "rowBands": {
+        "after": "header",
+        "skip": ["header", "totals"]
+      },
+      "columnBands": {
+        "after": "firstColumn",
+        "skip": ["firstColumn", "lastColumn"]
+      },
+      "shared": "later",
+      "own": "upperLeft"
+    }
+  },
+  "designs": {
+    "grid": {
+      "rules": "word",
+      "lines": {
+        "top": {
+          "line": "single",
+          "width": 0.5
+        },
+        "bottom": {
+          "line": "single",
+          "width": 0.5
+        },
+        "left": {
+          "line": "single",
+          "width": 0.5
+        },
+        "right": {
+          "line": "single",
+          "width": 0.5
+        },
+        "insideH": {
+          "line": "single",
+          "width": 0.5
+        },
+        "insideV": {
+          "line": "single",
+          "width": 0.5
+        }
+      },
+      "parts": {
+        "header": {
+          "marks": {
+            "strong": {}
+          }
+        },
+        "totals": {
+          "marks": {
+            "strong": {}
+          },
+          "edges": {
+            "top": {
+              "line": "double",
+              "width": 1.5
+            }
+          }
+        },
+        "firstColumn": {
+          "marks": {
+            "strong": {}
+          }
+        }
+      }
+    },
+    "lines": {
+      "rules": "word",
+      "lines": {
+        "top": {
+          "line": "single",
+          "width": 1
+        },
+        "bottom": {
+          "line": "single",
+          "width": 1
+        },
+        "insideH": {
+          "line": "single",
+          "width": 0.5,
+          "color": "gray"
+        }
+      },
+      "parts": {
+        "header": {
+          "marks": {
+            "strong": {}
+          },
+          "edges": {
+            "bottom": {
+              "line": "single",
+              "width": 1
+            }
+          }
+        },
+        "totals": {
+          "marks": {
+            "strong": {}
+          },
+          "edges": {
+            "top": {
+              "line": "double",
+              "width": 1.5
+            }
+          }
+        },
+        "firstColumn": {
+          "marks": {
+            "strong": {}
+          }
+        }
+      }
+    },
+    "bands": {
+      "rules": "word",
+      "lines": {
+        "top": {
+          "line": "single",
+          "width": 1
+        },
+        "bottom": {
+          "line": "single",
+          "width": 1
+        }
+      },
+      "parts": {
+        "header": {
+          "marks": {
+            "strong": {}
+          },
+          "edges": {
+            "bottom": {
+              "line": "single",
+              "width": 1
+            }
+          }
+        },
+        "rowBand1": {
+          "fill": "gray"
+        },
+        "totals": {
+          "marks": {
+            "strong": {}
+          },
+          "edges": {
+            "top": {
+              "line": "double",
+              "width": 1.5
+            }
+          }
+        },
+        "firstColumn": {
+          "marks": {
+            "strong": {}
+          }
+        }
+      }
+    },
+    "header": {
+      "rules": "word",
+      "lines": {
+        "top": {
+          "line": "single",
+          "width": 0.5,
+          "color": "gray"
+        },
+        "bottom": {
+          "line": "single",
+          "width": 0.5,
+          "color": "gray"
+        },
+        "left": {
+          "line": "single",
+          "width": 0.5,
+          "color": "gray"
+        },
+        "right": {
+          "line": "single",
+          "width": 0.5,
+          "color": "gray"
+        },
+        "insideH": {
+          "line": "single",
+          "width": 0.5,
+          "color": "gray"
+        },
+        "insideV": {
+          "line": "single",
+          "width": 0.5,
+          "color": "gray"
+        }
+      },
+      "parts": {
+        "header": {
+          "fill": "#1f5f6b",
+          "marks": {
+            "strong": {},
+            "color": {
+              "color": "#ffffff"
+            }
+          }
+        },
+        "rowBand1": {
+          "fill": "blue"
+        },
+        "totals": {
+          "marks": {
+            "strong": {}
+          },
+          "edges": {
+            "top": {
+              "line": "single",
+              "width": 1.5,
+              "color": "teal"
+            }
+          }
+        },
+        "firstColumn": {
+          "marks": {
+            "strong": {}
+          }
+        }
+      }
+    }
+  }
+}

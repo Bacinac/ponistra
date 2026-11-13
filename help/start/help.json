@@ -1,0 +1,15 @@
+{
+  "order": 80,
+  "audience": "everyone",
+  "covers": [
+    "route:/help/:section?/:article?"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/help.tsx#HelpPage": "645a34c2dab4",
+    "frontend/src/help.tsx#Overview": "bb9fd8a3f64d",
+    "frontend/src/helpKey.ts#useHelpKey": "5b48db4298c7",
+    "frontend/src/helpKey.ts#helpFrom": "ba183051e90e",
+    "backend/apps/help/library.py#found": "d69ba9e3f9c1"
+  }
+}

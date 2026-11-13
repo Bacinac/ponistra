@@ -1,0 +1,15 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "contents.empty",
+    "contents.label"
+  ],
+  "describes": {
+    "frontend/src/editor/slash.tsx#slashMenu": "a088be571d1b",
+    "frontend/src/editor/slash.tsx#SlashMenu": "3d40f76de4b8",
+    "frontend/src/editor/Toolbar.tsx#SizePicker": "8f537593d288",
+    "frontend/src/editor/contents.ts#headingsOf": "b35d87128360"
+  }
+}

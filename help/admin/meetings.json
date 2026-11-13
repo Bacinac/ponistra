@@ -1,0 +1,21 @@
+{
+  "order": 85,
+  "audience": "admin",
+  "covers": [
+    "route:/meetings"
+  ],
+  "quiet": [
+    "relay.title",
+    "relay.cloudflare",
+    "relay.replace",
+    "relay.lost"
+  ],
+  "describes": {
+    "frontend/src/relay.tsx#RelayForm": "f000e0e46f00",
+    "frontend/src/relay.tsx#RelayPage": "7f07374ec926",
+    "backend/apps/meetings/views.py#relay_setting": "30654040706b",
+    "backend/apps/meetings/relay.py#change": "cdd80a2be14d",
+    "backend/apps/meetings/relay.py#servers": "12b41e40742c",
+    "backend/apps/meetings/relay.py#_mint": "ee6a3c20c359"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/editor/commands.ts#addLine": "fb446b3660fe",
+    "frontend/src/editor/commands.ts#removeLines": "5d9859663efd",
+    "frontend/src/editor/commands.ts#COMMANDS": "575780cbfd2a",
+    "frontend/src/editor/commands.ts#PLACED_GROUPS": "ca0ef3b12bb1"
+  }
+}

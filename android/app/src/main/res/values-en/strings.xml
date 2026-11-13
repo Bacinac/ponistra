@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="address_title">Ponistra address</string>
+    <string name="address_note">Enter the address where your organisation uses Ponistra, such as ponistra.example.com.</string>
+    <string name="open">Open</string>
+    <string name="address_invalid">Enter an address, such as ponistra.example.com.</string>
+    <string name="address_not_ponistra">There is no Ponistra at that address.</string>
+    <string name="unreachable">The address cannot be reached: %1$s</string>
+    <string name="change">Other address</string>
+    <string name="change_long">Change the Ponistra address</string>
+    <string name="note">Note</string>
+    <string name="note_long">New note</string>
+    <string name="voice">Voice</string>
+    <string name="voice_long">Say a command or a note</string>
+    <string name="connecting">Connecting the phone…</string>
+    <string name="connect_invalid">The connection link is not valid. Open it again from Ponistra.</string>
+    <string name="connect_failed">The phone is not connected: %1$s</string>
+    <string name="connect_lapsed">The connection code has expired or has been used already. Connect the phone again from Ponistra.</string>
+    <string name="connected">The phone is connected as %1$s.</string>
+    <string name="close">Close</string>
+    <string name="updates_channel">Updates</string>
+    <string name="update_ready">A new version of Ponistra waits for your confirmation.</string>
+    <string name="update_failed">The update failed: %1$s</string>
+    <string name="contacts_channel">Contacts</string>
+    <string name="contacts_refused_title">Contacts are not syncing</string>
+    <string name="contacts_refused_text">Ponistra cannot reach the phone\'s contacts. Tap to allow access to contacts.</string>
+    <string name="calendar_channel">Calendar</string>
+    <string name="calendar_refused_title">Calendar is not syncing</string>
+    <string name="calendar_refused_text">Ponistra cannot reach the phone\'s calendar. Tap to allow access to the calendar.</string>
+</resources>

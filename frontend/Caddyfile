@@ -1,0 +1,118 @@
+{
+	admin off
+	persist_config off
+	# Without a relay its name is one under Caddy's own authority, which would otherwise ask for
+	# a trust store the container does not have.
+	skip_install_trust
+	# Certificates come through 443 alone: the relay's name is forwarded nothing else, and the
+	# app's always reaches 443.
+	cert_issuer acme {
+		disable_http_challenge
+	}
+	servers {
+		# A proxy or tunnel on the installation's own network is believed about the scheme and
+		# the reader's address; anyone else is the reader, whatever their headers say.
+		trusted_proxies static private_ranges
+		client_ip_headers CF-Connecting-IP X-Forwarded-For
+		listener_wrappers {
+			layer4 {
+				# Meetings' relay shares 443 with the app (S2-2): TLS to its name ends here and
+				# LiveKit's TURN takes what is inside. The challenge that fetches the name's
+				# certificate stays with the HTTP server, which answers it.
+				@relay {
+					tls sni {$PONISTRA_TURN}
+					not tls alpn acme-tls/1
+				}
+				route @relay {
+					tls
+					proxy tcp/{$PONISTRA_LIVEKIT_TURN}
+				}
+			}
+			tls
+		}
+	}
+}
+
+(app) {
+	encode zstd gzip
+	# The backend's and the workspace's own answers keep what they set; a browser takes HSTS only
+	# over TLS, so a plain HTTP installation is told nothing it would keep.
+	header {
+		?Strict-Transport-Security "max-age=31536000"
+		?X-Content-Type-Options nosniff
+		?X-Frame-Options SAMEORIGIN
+		?Referrer-Policy same-origin
+	}
+	handle /api/* {
+		request_body {
+			max_size 100MB
+		}
+		reverse_proxy backend:8030 {
+			header_up X-Forwarded-For {client_ip}
+			header_up -CF-Connecting-IP
+		}
+	}
+	@dav path /dav /dav/* /.well-known/carddav /.well-known/caldav /.well-known/oauth-*
+	handle @dav {
+		request_body {
+			max_size 20MB
+		}
+		reverse_proxy backend:8030 {
+			header_up X-Forwarded-For {client_ip}
+			header_up -CF-Connecting-IP
+		}
+	}
+	# The phone app's shelf: a file that is missing is missing, not the app's page, and the tunnel
+	# keeps an .apk by its extension unless told otherwise.
+	@shelf path /android/* /.well-known/assetlinks.json
+	handle @shelf {
+		root * /srv
+		header Cache-Control no-cache
+		header /android/ponistra.apk Content-Type application/vnd.android.package-archive
+		file_server
+	}
+	handle_path /livekit/* {
+		reverse_proxy {$PONISTRA_LIVEKIT}
+	}
+	# The owner's code workspace (D34): the backend's door is asked before every request and
+	# WebSocket, and a reader it turns away goes back to the app.
+	redir /code /code/
+	handle_path /code/* {
+		forward_auth backend:8030 {
+			uri /api/workspace/door
+			@refused status 4xx
+			handle_response @refused {
+				redir * /
+			}
+		}
+		handle /ponistra/* {
+			reverse_proxy workspace:8081
+		}
+		handle {
+			reverse_proxy workspace:8080
+		}
+	}
+	handle {
+		root * /srv
+		# The app runs only its own scripts. Styles stay inline for React's style attributes and
+		# a message's own CSS, shown in a frame of srcdoc, which takes this policy with it;
+		# images from elsewhere reach that frame only through the backend. WebAssembly is the
+		# vault's Argon2 and PDF.js's decoders.
+		header Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self' blob:; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+		header *.webmanifest Content-Type application/manifest+json
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+{$PONISTRA_SITE} {
+	import app
+}
+
+{$PONISTRA_TURN} {
+	respond 404
+}
+
+:5173 {
+	import app
+}

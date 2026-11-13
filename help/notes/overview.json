@@ -1,0 +1,17 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/notes"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/notes.tsx#useNewNote": "96722e88aa06",
+    "frontend/src/notes.tsx#useNoteShortcut": "8d8ccc0b592f",
+    "frontend/src/notes.tsx#NoteCard": "cd80d3bd03db",
+    "frontend/src/notes.tsx#NotesPage": "33beda48b996",
+    "backend/apps/documents/notes.py#notes": "8aa605a020a1",
+    "backend/apps/documents/notes.py#excerpts": "3f3c1b62a65b",
+    "backend/apps/documents/naming.py#follow": "182c3710baed"
+  }
+}

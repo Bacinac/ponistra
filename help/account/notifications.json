@@ -1,0 +1,22 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/notifications"
+  ],
+  "quiet": [
+    "notifications.installHint",
+    "notifications.installNote",
+    "notifications.ios",
+    "notifications.note",
+    "notifications.settingNote"
+  ],
+  "describes": {
+    "frontend/src/notifications.tsx#Notifications": "bf627df5ade0",
+    "frontend/src/notifications.tsx#InstallationSetting": "a62f19acf090",
+    "frontend/src/sw.js": "99dd4a5553bf",
+    "backend/apps/push/notices.py#tell": "fdb19e56011d",
+    "backend/apps/push/notices.py#change": "e6ba4fd7f4d1",
+    "backend/apps/push/notices.py#worded": "bf6682cbb07a"
+  }
+}

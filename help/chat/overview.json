@@ -1,0 +1,26 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/chat/:conversation?"
+  ],
+  "quiet": [
+    "chat.none",
+    "chat.leaveSure",
+    "chat.onlineCount"
+  ],
+  "describes": {
+    "frontend/src/ChatPage.tsx#ChatPage": "515f8c9065b8",
+    "frontend/src/chat.tsx#PeopleDialog": "edc9e5eddd78",
+    "frontend/src/chat.tsx#NewConversation": "5b44e4ea4d65",
+    "frontend/src/chat.tsx#ConversationPage": "0b9f9c9a6125",
+    "frontend/src/chat.tsx#Conversations": "b167b0e87cfd",
+    "frontend/src/chat.tsx#lastConversation": "ba807c4cc89a",
+    "backend/apps/chat/conversations.py#started": "2fb6ae05d319",
+    "backend/apps/chat/conversations.py#added": "a574637c0f43",
+    "backend/apps/chat/conversations.py#left": "12e412e7c111",
+    "backend/apps/chat/conversations.py#summaries": "354466d95112",
+    "backend/apps/chat/views.py#members": "23470aee70e5",
+    "backend/apps/meetings/views.py#meetings": "cbda130723f8"
+  }
+}

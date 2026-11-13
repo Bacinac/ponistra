@@ -1,0 +1,29 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/d/:node",
+    "route:/d/:node/:tab"
+  ],
+  "quiet": [
+    "editor.toolbar",
+    "editor.placeholder",
+    "note.placeholder",
+    "tree.loading",
+    "table.loading",
+    "image.waiting",
+    "pdf.waiting",
+    "pdf.unshown",
+    "slash.none"
+  ],
+  "describes": {
+    "frontend/src/DocumentPage.tsx#OpenDocument": "5d89ac6f2556",
+    "frontend/src/editor/Editor.tsx#LiveEditor": "cd2f48897575",
+    "frontend/src/editor/Editor.tsx#EditorMenu": "058536564d67",
+    "frontend/src/editor/Toolbar.tsx#Toolbar": "94894b127087",
+    "frontend/src/editor/slash.tsx#slashMenu": "a088be571d1b",
+    "frontend/src/editor/presence.ts#presence": "fd1d30109b98",
+    "frontend/src/views.ts#viewFor": "26c6d54b0b06",
+    "frontend/src/choices.tsx#ZoomChoices": "f0eea43c9000"
+  }
+}

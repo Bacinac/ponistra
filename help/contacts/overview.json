@@ -1,0 +1,32 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/contacts/:contact?"
+  ],
+  "quiet": [
+    "contacts.empty",
+    "contacts.deleteWarning",
+    "contacts.deleteChosen",
+    "contacts.kind.email",
+    "contacts.kind.phone",
+    "contacts.kind.address",
+    "contacts.kind.url",
+    "contacts.source.activesync",
+    "contacts.source.directory",
+    "contacts.source.google",
+    "contacts.source.microsoft"
+  ],
+  "describes": {
+    "frontend/src/contacts.tsx#ContactsPage": "518e273ad499",
+    "frontend/src/contacts.tsx#Detail": "7afc7e8b06b5",
+    "frontend/src/contacts.tsx#PointShown": "0b71c96ab26d",
+    "backend/apps/contacts/views.py#contacts": "58170ccead16",
+    "backend/apps/contacts/views.py#delete": "5f79b20326d0",
+    "backend/apps/contacts/views.py#star": "372e8943cfdc",
+    "backend/apps/contacts/views.py#photo": "3f6ab6dbf09e",
+    "backend/apps/contacts/search.py#matching": "a671aa347138",
+    "backend/apps/contacts/taking.py#_found": "42e04b6c27e4",
+    "backend/apps/contacts/taking.py#taken": "23a751b9a05f"
+  }
+}

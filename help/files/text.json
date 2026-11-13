@@ -1,0 +1,13 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "text.truncated",
+    "text.currentMatch",
+    "text.onLine"
+  ],
+  "describes": {
+    "frontend/src/TextView.tsx": "f79930759240"
+  }
+}

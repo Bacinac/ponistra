@@ -1,0 +1,22 @@
+{
+  "order": 90,
+  "audience": "admin",
+  "covers": [
+    "route:/providers"
+  ],
+  "quiet": [
+    "providers.intro",
+    "providers.google.note",
+    "providers.microsoft.note",
+    "providers.endsSoon",
+    "providers.removeWarning",
+    "providers.secretLost",
+    "providers.secretReplace"
+  ],
+  "describes": {
+    "frontend/src/providers.tsx#ClientForm": "8ee77438366c",
+    "frontend/src/providers.tsx#endsSoon": "83de0f47565a",
+    "frontend/src/providers.tsx#ProvidersPage": "ea14e512e865",
+    "backend/apps/mail/views.py#client": "a5c1d2125262"
+  }
+}

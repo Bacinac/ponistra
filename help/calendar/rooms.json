@@ -1,0 +1,13 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/calendarData.ts#useResources": "b7ffb6a49dea",
+    "frontend/src/calendarData.ts#heldBy": "01ba3ddb7d0c",
+    "backend/apps/calendar/availability.py#booked": "d402e9765277",
+    "backend/apps/calendar/availability.py#taken": "b8c1bd537b5a",
+    "backend/apps/calendar/availability.py#resources": "3fc01cc89ac3"
+  }
+}

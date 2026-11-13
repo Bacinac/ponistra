@@ -1,0 +1,18 @@
+{
+  "order": 62,
+  "audience": "everyone",
+  "covers": [
+    "route:/o/:token"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/outside.tsx#OutsidePage": "31b68d550600",
+    "frontend/src/access.tsx#Outside": "705a23b7ee8e",
+    "backend/apps/access/outside.py#links": "0f3600ce35af",
+    "backend/apps/access/outside.py#ended": "fae6a5a3884b",
+    "backend/apps/access/outside.py#enter": "9c588c00ab77",
+    "backend/apps/access/outside.py#_opener": "e0e67ab9ad5e",
+    "backend/apps/access/outside.py#_outward": "94a360ec590b",
+    "backend/apps/access/rights.py#reaching": "9cf10a741258"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "mail.directoryUnanswered",
+    "mail.discardWarning",
+    "mail.forwarded",
+    "mail.unnamed",
+    "mail.wrote"
+  ],
+  "describes": {
+    "frontend/src/compose.tsx#ComposeForm": "c6f8cd235fc5",
+    "frontend/src/compose.tsx#Answer": "ef2d90ee4e37",
+    "frontend/src/compose.tsx#Resume": "b943bc45d1e8",
+    "frontend/src/recipients.tsx#Recipients": "d0740930ef41",
+    "frontend/src/MailEditor.tsx#MailEditor": "3c87c009d47a",
+    "frontend/src/mail.tsx#UnsentList": "1c1254cf0565",
+    "backend/apps/mail/views.py#sent": "0d743a42c0f8",
+    "backend/apps/mail/views.py#sender": "261b9f0f64cf",
+    "backend/apps/mail/views.py#people": "5efed8b4d1eb"
+  }
+}

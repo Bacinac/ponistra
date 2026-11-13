@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- frontend/src/theme.css: paper, surface and accent, light and dark. -->
+    <color name="paper">#F7FAF6</color>
+    <color name="surface">#F7FAF6</color>
+    <color name="surface_dark">#101E23</color>
+    <color name="accent">#176B72</color>
+    <color name="accent_dark">#A6D2BF</color>
+</resources>

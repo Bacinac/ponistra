@@ -1,0 +1,18 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "speech.consent.body",
+    "speech.record.heading",
+    "speech.noPerson"
+  ],
+  "describes": {
+    "frontend/src/voice.tsx#VoiceButton": "847c4f09d1c8",
+    "frontend/src/voice.tsx#VoiceDialog": "f816c49630e0",
+    "frontend/src/voice.tsx#ConsentDialog": "e4cb7f56596c",
+    "frontend/src/voice.tsx#commandsFor": "18b24ffd1e33",
+    "backend/apps/ai/spoken.py#understand": "54298b7ee62b",
+    "backend/apps/ai/spoken.py#INSTRUCTION": "4b5e907fb7ab"
+  }
+}

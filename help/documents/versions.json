@@ -1,0 +1,24 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [
+    "route:/d/:node/versions/:version/:tab?"
+  ],
+  "quiet": [
+    "version.empty",
+    "version.restoreWarning",
+    "version.restoredFrom",
+    "version.number"
+  ],
+  "describes": {
+    "frontend/src/versions.tsx#VersionsPanel": "3c776844ec8d",
+    "frontend/src/versions.tsx#VersionPage": "6447d7c49932",
+    "frontend/src/versions.tsx#OpenVersion": "51fa9ad40b41",
+    "frontend/src/versions.tsx#RestoreDialog": "2883dc752250",
+    "frontend/src/versions.tsx#CompareDialog": "7f88a1f2e0ed",
+    "frontend/src/versions.tsx#useVersionText": "deb4e96150e1",
+    "backend/apps/versions/history.py#thin": "a13593520636",
+    "backend/apps/versions/history.py#restore": "955563081b98",
+    "backend/apps/versions/history.py#due": "9cbfc0909be0"
+  }
+}

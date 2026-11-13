@@ -1,0 +1,16 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "vault.exportWarning",
+    "vault.importNote"
+  ],
+  "describes": {
+    "frontend/src/vault/page.tsx#ImportDialog": "fbb514d9766c",
+    "frontend/src/vault/page.tsx#ExportDialog": "85a58bf07aba",
+    "frontend/src/vault/transfer.ts#imported": "b85448c32c74",
+    "frontend/src/vault/transfer.ts#exported": "024376458d58",
+    "backend/apps/vault/views.py#exported": "71aa83985dfb"
+  }
+}

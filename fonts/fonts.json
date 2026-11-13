@@ -1,0 +1,21 @@
+{
+  "families": [
+    { "name": "Inter", "generic": "sans-serif", "licence": "OFL-1.1" },
+    { "name": "Source Serif 4", "generic": "serif", "licence": "OFL-1.1" },
+    { "name": "IBM Plex Sans", "generic": "sans-serif", "licence": "OFL-1.1" },
+    { "name": "IBM Plex Serif", "generic": "serif", "licence": "OFL-1.1" },
+    { "name": "IBM Plex Mono", "generic": "monospace", "licence": "OFL-1.1" },
+    { "name": "Noto Sans", "generic": "sans-serif", "licence": "OFL-1.1" },
+    { "name": "Noto Serif", "generic": "serif", "licence": "OFL-1.1" },
+    { "name": "Intos", "generic": "sans-serif", "licence": "OFL-1.1", "replaces": ["Aptos"] },
+    { "name": "Intos Display", "generic": "sans-serif", "licence": "OFL-1.1", "replaces": ["Aptos Display"] },
+    { "name": "Intos Narrow", "generic": "sans-serif", "licence": "OFL-1.1", "replaces": ["Aptos Narrow"] },
+    { "name": "Intos Serif", "generic": "serif", "licence": "OFL-1.1", "resembles": ["Aptos Serif"] },
+    { "name": "Carlito", "generic": "sans-serif", "licence": "OFL-1.1", "replaces": ["Calibri"], "resembles": ["Calibri Light"] },
+    { "name": "Caladea", "generic": "serif", "licence": "OFL-1.1", "resembles": ["Cambria"] },
+    { "name": "Liberation Sans", "generic": "sans-serif", "licence": "OFL-1.1", "replaces": ["Arial", "Helvetica"], "resembles": ["Microsoft Sans Serif", "Trebuchet MS", "Tahoma", "Segoe UI Symbol"] },
+    { "name": "Liberation Serif", "generic": "serif", "licence": "OFL-1.1", "replaces": ["Times New Roman", "Times"] },
+    { "name": "Liberation Mono", "generic": "monospace", "licence": "OFL-1.1", "replaces": ["Courier New", "Courier"] },
+    { "name": "Gelasio", "generic": "serif", "licence": "OFL-1.1", "resembles": ["Georgia"] }
+  ]
+}

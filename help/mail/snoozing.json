@@ -1,0 +1,16 @@
+{
+  "order": 47,
+  "audience": "everyone",
+  "covers": [
+    "action:mail.snooze",
+    "action:mail.unsnooze"
+  ],
+  "quiet": [
+    "mail.snoozedUntil"
+  ],
+  "describes": {
+    "backend/apps/mail/snoozing.py": "1bf7c9056735",
+    "backend/apps/mail/views.py#_acted_on": "d67d16d66e76",
+    "frontend/src/mail.tsx#Reader": "998648ccb7fe"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "order": 80,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "image.local",
+    "imageAlt.hint",
+    "image.unsupported",
+    "pdf.pageCount",
+    "pages.noImages"
+  ],
+  "describes": {
+    "frontend/src/editor/ImageDialog.tsx": "835f2578cc62",
+    "frontend/src/editor/ImageEditDialog.tsx": "066926afb2a8",
+    "frontend/src/editor/PdfDialog.tsx": "16b29a81ef24",
+    "frontend/src/editor/images.ts#imagePasting": "0e100d436e57",
+    "frontend/src/editor/images.ts#resizeHandle": "ddd267ecdabb",
+    "frontend/src/editor/LinkDialog.tsx#AltDialog": "1fa2d70a1a9a"
+  }
+}

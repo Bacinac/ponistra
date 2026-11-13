@@ -1,0 +1,21 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "ai.consent.body",
+    "ai.consent.note"
+  ],
+  "describes": {
+    "frontend/src/editor/actions.ts#actionCommands": "4c5867d3975c",
+    "frontend/src/editor/actions.ts#runAction": "14199d359659",
+    "frontend/src/editor/RunBar.tsx#RunBar": "37f541fec116",
+    "frontend/src/editor/ConsentDialog.tsx#ConsentDialog": "e0b12adff39e",
+    "frontend/src/editor/Editor.tsx#EditorMenu": "058536564d67",
+    "backend/apps/actions/views.py#tab_runs": "a862d91fe589",
+    "backend/apps/actions/views.py#stop": "45e31d7387ea",
+    "backend/apps/actions/views.py#undo": "b4290c06e30f",
+    "backend/apps/actions/runs.py#undo": "d337274f910b",
+    "backend/apps/actions/runs.py#stop": "60cfdb17507f"
+  }
+}

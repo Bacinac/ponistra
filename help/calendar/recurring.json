@@ -1,0 +1,37 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "calendar.repeat.monthly",
+    "calendar.repeat.nth.MO",
+    "calendar.repeat.nth.TU",
+    "calendar.repeat.nth.WE",
+    "calendar.repeat.nth.TH",
+    "calendar.repeat.nth.FR",
+    "calendar.repeat.nth.SA",
+    "calendar.repeat.nth.SU",
+    "calendar.repeat.last.MO",
+    "calendar.repeat.last.TU",
+    "calendar.repeat.last.WE",
+    "calendar.repeat.last.TH",
+    "calendar.repeat.last.FR",
+    "calendar.repeat.last.SA",
+    "calendar.repeat.last.SU",
+    "calendar.ordinal.1",
+    "calendar.ordinal.2",
+    "calendar.ordinal.3",
+    "calendar.ordinal.4"
+  ],
+  "describes": {
+    "frontend/src/recurrence.ts#placeOf": "b88c40fcb554",
+    "frontend/src/recurrence.ts#fitted": "ede5914c794a",
+    "frontend/src/recurrence.ts#ruleFor": "5fcaa909aa54",
+    "frontend/src/recurrence.ts#repeatOf": "0eb616ed38a6",
+    "frontend/src/recurrence.ts#ruleOf": "4e4ace9868ed",
+    "frontend/src/calendar.tsx#ScopeDialog": "d8e80e3475eb",
+    "backend/apps/calendar/recurrence.py#_placed": "aa692952e211",
+    "backend/apps/calendar/views.py#_split": "4f177b4ebc80",
+    "backend/apps/calendar/views.py#_changed": "1908cf8cbd2f"
+  }
+}

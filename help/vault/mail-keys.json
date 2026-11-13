@@ -1,0 +1,15 @@
+{
+  "order": 25,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/vault/mailKey.tsx#MailKeyFields": "71fda6902376",
+    "frontend/src/vault/mailKey.tsx#MailKeyShown": "549f595a6adc",
+    "frontend/src/vault/itemDialog.tsx#ItemDialog": "1eaba00f1ed6",
+    "frontend/src/mailKeys.ts#keyFrom": "507a06a7f234",
+    "frontend/src/mailKeys.ts#madeKey": "8f3f2264aa26",
+    "frontend/src/mailKeys.ts#published": "9da24caee3ee",
+    "frontend/src/mailSmime.ts#fromPkcs12": "95975156608d"
+  }
+}

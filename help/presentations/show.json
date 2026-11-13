@@ -1,0 +1,19 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [
+    "route:/present/:node"
+  ],
+  "quiet": [
+    "show.ended",
+    "show.waiting",
+    "show.blocked",
+    "show.title"
+  ],
+  "describes": {
+    "frontend/src/editor/Show.tsx": "cf17afa4690d",
+    "frontend/src/editor/show.ts": "68bb0f0ffb3e",
+    "frontend/src/editor/Presenter.tsx": "445efeb32eb0",
+    "frontend/src/PresentPage.tsx#PresentPage": "0b0f03871cd9"
+  }
+}

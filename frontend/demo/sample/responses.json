@@ -1,0 +1,42 @@
+{
+  "GET /api/auth/session": {
+    "status": 200,
+    "body": {
+      "user": {
+        "id": 1,
+        "email": "sarah.miller@example.com",
+        "name": "Sarah Miller",
+        "is_admin": true,
+        "visitor": false,
+        "workspace": null,
+        "language": "en",
+        "theme": "",
+        "projects_theme": "",
+        "meetings_theme": "",
+        "sign_in": "",
+        "call": {},
+        "backdrop": null
+      },
+      "passkey_due": false,
+      "setup": false,
+      "site": "https://demo-ponistra.boskovic.biz",
+      "providers": []
+    }
+  },
+  "GET /api/tasks": {
+    "status": 200,
+    "body": {
+      "tasks": [
+        {
+          "id": 1,
+          "text": "Send the quarterly report to the board",
+          "due": "2026-11-14",
+          "done": false,
+          "done_at": null,
+          "source": null,
+          "changed_at": "2026-11-12T08:00:00Z"
+        }
+      ]
+    }
+  }
+}

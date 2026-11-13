@@ -1,0 +1,16 @@
+{
+  "order": 57,
+  "audience": "everyone",
+  "covers": [
+    "label:job.mailMove"
+  ],
+  "quiet": [
+    "mail.moveMailDone"
+  ],
+  "describes": {
+    "backend/apps/mail/moving.py": "7fbf527a82e5",
+    "backend/apps/mail/jobs.py": "ea54930b6928",
+    "frontend/src/mailMove.tsx#MoveMailDialog": "63d5f5e69a04",
+    "frontend/src/mailMove.tsx#movesInto": "9707c0f4db3e"
+  }
+}

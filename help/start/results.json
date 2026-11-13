@@ -1,0 +1,29 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [
+    "route:/search"
+  ],
+  "quiet": [
+    "search.value.document",
+    "search.value.file",
+    "search.value.link",
+    "search.value.folder",
+    "search.value.mail",
+    "search.value.event",
+    "search.value.task",
+    "search.value.person",
+    "search.value.vault"
+  ],
+  "describes": {
+    "frontend/src/SearchPage.tsx#SearchPage": "fdace39a68bc",
+    "frontend/src/SearchPage.tsx#AddFilter": "d71acddc2ffe",
+    "frontend/src/search.tsx#FilterChips": "a258be1cb5a6",
+    "frontend/src/search.tsx#FilterErrors": "afa923a6e4cd",
+    "frontend/src/search.tsx#filterText": "7ad3fc024cc1",
+    "backend/apps/search/query.py#asked": "e0ab056c60f1",
+    "backend/apps/search/query.py#period": "377e773d9517",
+    "backend/apps/search/query.py#Asked": "262dd01c46ca",
+    "backend/apps/search/views.py#_documents": "2be43f5e348b"
+  }
+}

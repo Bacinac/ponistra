@@ -1,0 +1,27 @@
+{
+  "order": 100,
+  "audience": "admin",
+  "covers": [
+    "route:/applications"
+  ],
+  "quiet": [
+    "identity.deleteWarning",
+    "identity.renewWarning",
+    "identity.shownOnce",
+    "identity.signingIn",
+    "identity.copy"
+  ],
+  "describes": {
+    "frontend/src/identity.tsx#AuthorizePage": "2365531b1f3f",
+    "frontend/src/identity.tsx#Secret": "d274485cce9e",
+    "frontend/src/identity.tsx#ApplicationDialog": "493b8e14c4c6",
+    "frontend/src/identity.tsx#Applications": "af2717a82864",
+    "frontend/src/identity.tsx#ApplicationsPage": "4d8e7a3ed387",
+    "backend/apps/identity/views.py#allowed": "ed028bd959ef",
+    "backend/apps/identity/views.py#claims_of": "cf9a8f1ff58f",
+    "backend/apps/identity/views.py#authorize": "367e18027511",
+    "backend/apps/identity/views.py#applications": "bd0b08596056",
+    "backend/apps/identity/views.py#application": "70ed606e6be9",
+    "backend/apps/identity/views.py#secret": "2cd46247b01f"
+  }
+}

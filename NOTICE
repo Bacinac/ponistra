@@ -1,0 +1,23 @@
+PONISTRA
+Copyright (c) 2026 Ivo Bošković
+
+Licensed under the PolyForm Noncommercial License 1.0.0 (LICENSE.md): free for
+personal and non-commercial use. Commercial use requires a separate license;
+write to ivo.boskovic.zg@gmail.com. External contributions (pull requests) are
+not accepted.
+
+Third-party material in this repository keeps its own licence:
+- fonts/: each family with its SIL Open Font License 1.1 (OFL.txt) beside it.
+- frontend/patches/: changes to y-prosemirror (MIT) and livekit-client
+  (Apache-2.0), under the licences of the code they change.
+- backend/apps/imports/redaction/standard.json: the 14 standard fonts' widths,
+  heights, encodings and names from pdf.js (Apache-2.0, Mozilla Foundation),
+  its licence in LICENSE-pdfjs.txt beside it.
+- backend/apps/imports/presetTableStyles.xml: Excel's built-in table styles of
+  ECMA-376 as Apache POI ships them (Apache-2.0, Apache Software Foundation),
+  its licence in LICENSE-poi.txt beside it.
+Dependencies installed at build time keep their own licences and notices. The
+code workspace's image (workspace/, D34) carries code-server's and VS Code's as
+their release ships them, codicons (CC-BY-4.0, Microsoft) and Git's logo
+(CC-BY-3.0, Jason Long) among them, and Debian's copyright files for git and the
+base system, whose source Debian's archive keeps.

@@ -1,0 +1,13 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "join.of"
+  ],
+  "describes": {
+    "frontend/src/pdf/Join.tsx#JoinDialog": "f005d6920d86",
+    "frontend/src/FolderPage.tsx#joinable": "258ac6805b45",
+    "backend/apps/imports/composed.py#compose": "a55d7c381b55"
+  }
+}

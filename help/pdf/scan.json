@@ -1,0 +1,24 @@
+{
+  "order": 80,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "scan.heading",
+    "scan.title",
+    "scan.pages",
+    "scan.page",
+    "scan.preparing",
+    "scan.corner.topLeft",
+    "scan.corner.topRight",
+    "scan.corner.bottomRight",
+    "scan.corner.bottomLeft"
+  ],
+  "describes": {
+    "frontend/src/scan.tsx#ScanDialog": "177cf86aa4ad",
+    "frontend/src/scan.tsx#Outline": "87b34e546468",
+    "backend/apps/imports/scanned.py#corners": "35a0a8798e0a",
+    "backend/apps/imports/scanned.py#made": "1a8320d258e2",
+    "backend/apps/imports/scanned.py#scanned": "926e309a2519",
+    "backend/apps/imports/jobs.py#_scanned_pages": "d6bdb465c92d"
+  }
+}

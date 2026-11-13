@@ -1,0 +1,20 @@
+{
+  "order": 100,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "mail.sealed.opening"
+  ],
+  "describes": {
+    "frontend/src/mailSealed.tsx#SealedBody": "a9beac9b7f9d",
+    "frontend/src/mailSealed.tsx#withUnsealed": "eef14f6d6154",
+    "frontend/src/mailSeal.tsx#sealedFor": "360311b7661d",
+    "frontend/src/mailSeal.tsx#useSealing": "867a260c79d4",
+    "frontend/src/mailKeyList.tsx#MailKeysSection": "ba80c127d76a",
+    "backend/apps/mail/secured.py#sealed": "b80857a889ad",
+    "backend/apps/mail/secured.py#unsealed": "b7474b1ec2d1",
+    "backend/apps/mail/secured.py#keys": "73d6f2ecf59b",
+    "backend/apps/mail/sealing.py#layer": "e35a5ca0a2c4",
+    "backend/apps/mail/sealing.py#seal_into": "edea85f81764"
+  }
+}

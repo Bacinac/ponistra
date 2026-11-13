@@ -1,0 +1,16 @@
+{
+  "order": 80,
+  "audience": "everyone",
+  "covers": [
+    "route:/trash"
+  ],
+  "quiet": [
+    "trash.purgeWarning",
+    "trash.purgeChosen"
+  ],
+  "describes": {
+    "frontend/src/TrashPage.tsx#TrashPage": "637f406426d3",
+    "backend/apps/documents/views.py#trash": "1aba1d76777f",
+    "backend/apps/documents/views.py#trash_list": "188ac34b4a31"
+  }
+}

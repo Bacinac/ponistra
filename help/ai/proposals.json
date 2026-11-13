@@ -1,0 +1,17 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [
+    "action:proposal.accept",
+    "action:proposal.reject",
+    "action:document.accept",
+    "action:document.reject"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/editor/Proposals.tsx#ProposalPopover": "7e6ea5208c9e",
+    "backend/apps/actions/review.py#accept": "5e1fc7f05518",
+    "backend/apps/actions/review.py#reject": "fee998398280",
+    "backend/apps/actions/runs.py#author_of": "6a83c482a98c"
+  }
+}

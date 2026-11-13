@@ -1,0 +1,25 @@
+{
+  "order": 80,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "vault.codeAbout",
+    "vault.enrolling",
+    "vault.handed",
+    "vault.passkeysNote",
+    "vault.restartWarning",
+    "vault.unrecoverable"
+  ],
+  "describes": {
+    "frontend/src/vault/settings.tsx#SettingsDialog": "03020f0b35ef",
+    "frontend/src/vault/page.tsx#Locked": "07d4a1f17330",
+    "frontend/src/vault/unlock.tsx#UnlockForm": "310343f26d1d",
+    "frontend/src/vault/page.tsx#VaultOpen": "85ae65cdfbec",
+    "frontend/src/vault/state.tsx#withCode": "c9beadf527f1",
+    "frontend/src/vault/state.tsx#addPasskey": "3f4933e79042",
+    "frontend/src/vault/state.tsx#renewCode": "525ea95ce414",
+    "frontend/src/vault/state.tsx#enrolled": "28657c2a59ae",
+    "backend/apps/vault/views.py#vault": "8b44d809b80d",
+    "backend/apps/vault/views.py#unlocks": "a3ae6bacd541"
+  }
+}

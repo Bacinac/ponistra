@@ -1,0 +1,14 @@
+{
+  "order": 50,
+  "audience": "admin",
+  "covers": [],
+  "quiet": [
+    "policy.note"
+  ],
+  "describes": {
+    "frontend/src/users.tsx#PolicySection": "f0baed43f9cc",
+    "frontend/src/users.tsx#OutsidePolicySection": "e6de9f7d2388",
+    "backend/apps/users/accounts.py#sign_in_policy": "666dd8b4d624",
+    "backend/apps/users/models.py#Policy": "3382a2e43e7d"
+  }
+}

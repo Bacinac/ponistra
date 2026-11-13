@@ -1,0 +1,14 @@
+{
+  "order": 90,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/preview.tsx#PreviewPanel": "3aa531aa045f",
+    "frontend/src/preview.tsx#Glance": "d3a63c232588",
+    "frontend/src/preview.tsx#Shown": "a1589d16407f",
+    "frontend/src/preview.tsx#Picture": "55b9396d2a7a",
+    "frontend/src/preview.tsx#DocumentBeginning": "9f65bd0b7a1f",
+    "frontend/src/explorer.ts#storedPreview": "3d30b205e04b"
+  }
+}

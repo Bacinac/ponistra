@@ -1,0 +1,24 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "reactions.group.activities",
+    "reactions.group.animals-nature",
+    "reactions.group.flags",
+    "reactions.group.food-drink",
+    "reactions.group.objects",
+    "reactions.group.travel-places",
+    "reactions.said"
+  ],
+  "describes": {
+    "frontend/src/reactions.tsx#ReactionItems": "259be6674fde",
+    "frontend/src/reactions.tsx#EmojiDialog": "bcaf89bcb9eb",
+    "frontend/src/reactions.tsx#Reactions": "2aae7c0bcd0c",
+    "frontend/src/reactions.tsx#QUICK": "462caa93519d",
+    "frontend/src/emojiPicker.tsx#EmojiGrid": "191d6b0708ad",
+    "frontend/src/emojiPicker.tsx#skinsOf": "8bbd68f82e09",
+    "backend/apps/chat/conversations.py#reacted": "5e41df58b520",
+    "backend/apps/chat/views.py#reaction": "b25f3c1a7bf6"
+  }
+}

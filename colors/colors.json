@@ -1,0 +1,126 @@
+{
+  "text": {
+    "gray": {
+      "light": "#6b6b70",
+      "dark": "#a1a1a7"
+    },
+    "red": {
+      "light": "#c4321c",
+      "dark": "#ff7b6b"
+    },
+    "orange": {
+      "light": "#c2570c",
+      "dark": "#ffa257"
+    },
+    "yellow": {
+      "light": "#a16207",
+      "dark": "#f5c84c"
+    },
+    "green": {
+      "light": "#15803d",
+      "dark": "#5fd38a"
+    },
+    "teal": {
+      "light": "#197d83",
+      "dark": "#5ccfd3"
+    },
+    "blue": {
+      "light": "#1d4ed8",
+      "dark": "#7aa7ff"
+    },
+    "purple": {
+      "light": "#7e22ce",
+      "dark": "#c792ff"
+    }
+  },
+  "highlight": {
+    "yellow": {
+      "light": "#fde68a",
+      "dark": "#5c4a0a"
+    },
+    "green": {
+      "light": "#bbf7d0",
+      "dark": "#1d4a2c"
+    },
+    "blue": {
+      "light": "#bfdbfe",
+      "dark": "#1e3a66"
+    },
+    "pink": {
+      "light": "#fbcfe8",
+      "dark": "#5c1f45"
+    },
+    "orange": {
+      "light": "#fed7aa",
+      "dark": "#5c3210"
+    },
+    "gray": {
+      "light": "#e4e4e7",
+      "dark": "#3a3a40"
+    }
+  },
+  "chart": [
+    {
+      "light": "#00939a",
+      "dark": "#109ea5"
+    },
+    {
+      "light": "#eb6834",
+      "dark": "#d95926"
+    },
+    {
+      "light": "#6250d6",
+      "dark": "#9085e9"
+    },
+    {
+      "light": "#eda100",
+      "dark": "#c98500"
+    },
+    {
+      "light": "#e87ba4",
+      "dark": "#d55181"
+    },
+    {
+      "light": "#008300",
+      "dark": "#008300"
+    },
+    {
+      "light": "#2a78d6",
+      "dark": "#3987e5"
+    },
+    {
+      "light": "#e34948",
+      "dark": "#e66767"
+    }
+  ],
+  "calendar": [
+    {
+      "light": "#0e7a83",
+      "dark": "#4fd1d9"
+    },
+    {
+      "light": "#2b8a3e",
+      "dark": "#69db7c"
+    },
+    {
+      "light": "#d9480f",
+      "dark": "#ff922b"
+    },
+    {
+      "light": "#6741d9",
+      "dark": "#b197fc"
+    },
+    {
+      "light": "#c2255c",
+      "dark": "#f783ac"
+    },
+    {
+      "light": "#9a6c00",
+      "dark": "#fcc419"
+    },
+    {
+      "light": "#1971c2",
+      "dark": "#74c0fc"
+    }
+  ]
+}

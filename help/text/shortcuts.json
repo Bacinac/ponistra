@@ -1,0 +1,26 @@
+{
+  "order": 110,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "commandGroup.numberForm",
+    "commandGroup.bulletForm",
+    "commandGroup.numbering",
+    "commandGroup.paragraph",
+    "commandGroup.writing",
+    "commandGroup.rewrite",
+    "commandGroup.translate",
+    "commandGroup.total",
+    "commandGroup.cellFormat",
+    "commandGroup.fill",
+    "commandGroup.tableDesign",
+    "commandGroup.tablePart",
+    "commandGroup.slide",
+    "commandGroup.document"
+  ],
+  "describes": {
+    "frontend/src/editor/Shortcuts.tsx": "b44701e06421",
+    "frontend/src/editor/commands.ts#GROUPS": "930cb1641817",
+    "frontend/src/keys.ts#shortcutLabel": "fcd6abe4008d"
+  }
+}

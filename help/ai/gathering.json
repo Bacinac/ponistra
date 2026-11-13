@@ -1,0 +1,21 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [
+    "action:nodes.extract"
+  ],
+  "quiet": [
+    "gather.columnsInvalid",
+    "gather.columnsNote",
+    "gather.note",
+    "ai.consent.body"
+  ],
+  "describes": {
+    "frontend/src/gather.tsx#GatherDialog": "edefdd4113b6",
+    "frontend/src/gather.tsx#useFollowedRun": "cb080eb28971",
+    "backend/apps/actions/views.py#node_runs": "3dafcdee6ad1",
+    "backend/apps/actions/gathering.py#extract": "2c7d276422a2",
+    "backend/apps/actions/gathering.py#table": "1a6bdf05588a",
+    "backend/apps/actions/runs.py#undo": "d337274f910b"
+  }
+}

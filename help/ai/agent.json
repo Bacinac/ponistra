@@ -1,0 +1,21 @@
+{
+  "order": 25,
+  "audience": "everyone",
+  "covers": [
+    "action:text.ask",
+    "action:table.analyse"
+  ],
+  "quiet": [
+    "agent.request"
+  ],
+  "describes": {
+    "frontend/src/editor/AgentPanel.tsx#AgentPanel": "0e270c48ba9a",
+    "frontend/src/editor/actions.ts#ACTION_LOOKS": "6bee3d15d17d",
+    "backend/apps/actions/agent.py#ask": "ece954861b18",
+    "backend/apps/actions/agent.py#turns_of": "16466254511c",
+    "backend/apps/actions/agent.py#analyse": "1eb4f8462998",
+    "backend/apps/actions/agent.py#_named": "5788af52621e",
+    "backend/apps/actions/profiles.py#profile_of": "fba5e88815e5",
+    "backend/apps/actions/views.py#tab_runs": "a862d91fe589"
+  }
+}

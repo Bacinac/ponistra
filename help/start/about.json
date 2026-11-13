@@ -1,0 +1,24 @@
+{
+  "order": 90,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "about.summary",
+    "about.documents",
+    "about.together",
+    "about.mail",
+    "about.calendar",
+    "about.meetings",
+    "about.vault",
+    "about.notes",
+    "about.phone",
+    "about.search",
+    "about.agents",
+    "about.licence"
+  ],
+  "describes": {
+    "frontend/src/about.tsx#AboutDialog": "ebcefcd773a4",
+    "frontend/src/about.tsx#Signature": "5efd0d16b20f",
+    "frontend/src/about.tsx#useRevision": "22608f7dbf5a"
+  }
+}

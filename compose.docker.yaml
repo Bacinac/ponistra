@@ -1,0 +1,8 @@
+# The agent in the owner's code workspace runs Docker on the host (D34), which is root on it: laid
+# over compose.yaml by COMPOSE_FILE in .env, where the owner chose it at install.
+services:
+  workspace:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add:
+      - ${PONISTRA_DOCKER_GID:?set in .env}

@@ -1,0 +1,14 @@
+{
+  "order": 75,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "link.invalid"
+  ],
+  "describes": {
+    "frontend/src/editor/LinkDialog.tsx#LinkDialog": "5d2400f515a5",
+    "frontend/src/editor/LinkDialog.tsx#LinkPopover": "7f6cb438bcd7",
+    "frontend/src/editor/Editor.tsx#useFollow": "191308b5c0f9",
+    "frontend/src/editor/commands.ts#blockLink": "2f2f5065d1d8"
+  }
+}

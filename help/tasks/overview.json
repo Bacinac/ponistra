@@ -1,0 +1,22 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/tasks"
+  ],
+  "quiet": [
+    "tasks.note",
+    "tasks.from.message"
+  ],
+  "describes": {
+    "frontend/src/tasks.tsx#TaskDialog": "87bfe1b04ed8",
+    "frontend/src/tasks.tsx#Row": "ca6c56a8d14d",
+    "frontend/src/tasks.tsx#groupOf": "a211154a6d4e",
+    "frontend/src/tasks.tsx#List": "afc2dd2ff614",
+    "frontend/src/tasks.tsx#TasksPage": "51fbb6fc09ca",
+    "frontend/src/tasks.tsx#taskShown": "61768e489f06",
+    "backend/apps/tasks/views.py#filled": "238867ad31ea",
+    "backend/apps/tasks/views.py#listed": "b9f05d125bab",
+    "backend/apps/tasks/models.py#Task": "0f5377320b6d"
+  }
+}

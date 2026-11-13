@@ -1,0 +1,21 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "vault.totpLeft",
+    "vault.totpNote"
+  ],
+  "describes": {
+    "frontend/src/vault/itemDialog.tsx#ItemDialog": "1eaba00f1ed6",
+    "frontend/src/vault/itemDialog.tsx#Generator": "147d3c686f3c",
+    "frontend/src/vault/detail.tsx#Detail": "2384b11c3fb0",
+    "frontend/src/vault/detail.tsx#OneTime": "1110468c3839",
+    "frontend/src/vault/detail.tsx#useSeen": "6ff19a8eaa6a",
+    "frontend/src/vault/detail.tsx#Attachments": "04073ad17ce6",
+    "frontend/src/vault/secret.ts#changed": "8f2b96a6204f",
+    "frontend/src/vault/secret.ts#generated": "afaba349be6e",
+    "frontend/src/vault/parts.tsx#copied": "a4cfb18a53aa",
+    "frontend/src/vault/totp.ts#parseTotp": "6c87664b38a6"
+  }
+}

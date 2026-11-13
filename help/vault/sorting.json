@@ -1,0 +1,16 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "vault.sortBody",
+    "vault.sortKept",
+    "vault.sortMerge",
+    "vault.sortReview"
+  ],
+  "describes": {
+    "frontend/src/vault/page.tsx#SortDialog": "0148a6423492",
+    "backend/apps/vault/sorting.py#propose": "4691ce2b06f4",
+    "backend/apps/vault/sorting.py#_proposal": "6f7d105b4adc"
+  }
+}

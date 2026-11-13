@@ -1,0 +1,16 @@
+{
+  "order": 80,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "mail.of",
+    "mail.openedEnabled",
+    "mail.openedNote"
+  ],
+  "describes": {
+    "frontend/src/mail.tsx#OpenedMark": "1325eacfbf74",
+    "frontend/src/mail.tsx#OpenedBy": "75110766dc50",
+    "backend/apps/mail/opened.py#change": "8591f1c52327",
+    "backend/apps/mail/opened.py#noted": "ae7f798c5ee1"
+  }
+}

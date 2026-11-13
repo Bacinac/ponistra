@@ -1,0 +1,18 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/devices"
+  ],
+  "quiet": [
+    "devices.note"
+  ],
+  "describes": {
+    "frontend/src/devices.tsx#Devices": "99d98592a82c",
+    "frontend/src/devices.tsx#deviceName": "fba0d9112d52",
+    "backend/apps/users/devices.py#mine": "981c6519329d",
+    "backend/apps/users/devices.py#mine_one": "c938171c5556",
+    "backend/apps/users/sessions.py#listed": "2c6c23f67d3a",
+    "backend/apps/users/sessions.py#ended": "d5e90d0d6d05"
+  }
+}

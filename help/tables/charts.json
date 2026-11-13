@@ -1,0 +1,19 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "chart.hint",
+    "chart.badRange",
+    "chart.noTables",
+    "chart.missing",
+    "chart.failed",
+    "chart.empty",
+    "chart.kind"
+  ],
+  "describes": {
+    "frontend/src/editor/ChartDialog.tsx#ChartDialog": "b9f5568bb6f7",
+    "frontend/src/editor/ChartDialog.tsx#opening": "673cab1b9f3f",
+    "frontend/src/editor/charts.ts": "8b5176679000"
+  }
+}

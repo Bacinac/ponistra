@@ -1,0 +1,41 @@
+{
+  "order": 15,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "channel.joined",
+    "channel.none",
+    "channel.leaveSure",
+    "channel.removeSure",
+    "channel.members",
+    "channel.everyoneLabel",
+    "channel.mention",
+    "thread.thread",
+    "thread.replies",
+    "thread.count",
+    "thread.takeBackSure"
+  ],
+  "describes": {
+    "frontend/src/chat.tsx#Channels": "145f3499a947",
+    "frontend/src/chat.tsx#ChannelDialog": "2c601071c54c",
+    "frontend/src/chat.tsx#ChannelList": "c0664d401f3b",
+    "frontend/src/chat.tsx#Thread": "fae5fd8325e5",
+    "frontend/src/chat.tsx#Said": "a17ba5d92369",
+    "frontend/src/chat.tsx#typedMention": "39a360ba739e",
+    "backend/apps/chat/conversations.py#founded": "09e0b001b5ff",
+    "backend/apps/chat/conversations.py#channels": "3dd0a486cd32",
+    "backend/apps/chat/conversations.py#concerned": "918368c97365",
+    "backend/apps/chat/conversations.py#removed": "3895e391136c",
+    "backend/apps/chat/conversations.py#replied": "d799c7776b1d",
+    "backend/apps/chat/conversations.py#thread_read": "55759917f40b",
+    "backend/apps/chat/conversations.py#threads_of": "c8bd23603f49",
+    "backend/apps/chat/conversations.py#_named": "08423f148a5e",
+    "backend/apps/chat/conversations.py#_heard": "9b2a996755b4",
+    "backend/apps/chat/conversations.py#_meant": "0ee2a3019b0e",
+    "backend/apps/chat/views.py#channels": "ddfa0c892441",
+    "backend/apps/chat/views.py#join": "fcff17de0ea8",
+    "backend/apps/chat/views.py#mentionable": "13feec6c610d",
+    "backend/apps/chat/views.py#replies": "116a14a09bb1",
+    "backend/apps/chat/views.py#thread_read": "c5c8cbf0daf4"
+  }
+}

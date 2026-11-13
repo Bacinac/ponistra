@@ -1,0 +1,174 @@
+# The gate's own stack (scripts/check.sh), laid over the tree's compose files: the dev images
+# over a database and blobs that live only as long as the run, on networks and names of its
+# own, published nowhere, so neither the installation in use nor its data decides a check. The
+# browser's tests and the printer load the app as a release builds and serves it (site). The
+# run's folder (PONISTRA_RUN) carries the tests chosen and, in a full run (PONISTRA_MAP), the files
+# each test ran (scripts/select.py).
+services:
+  backend:
+    container_name: !reset null
+    ports: !reset []
+    restart: "no"
+    volumes: !override
+      - ./backend:/app
+      - ./fonts:/fonts:ro
+      - ./colors:/colors:ro
+      - ./schema:/schema:ro
+      - ./help:/help:ro
+      - ./frontend/src/i18n:/i18n:ro
+      - ./.env:/installation/.env:ro
+      - ${PONISTRA_RUN:?scripts/check.sh sets the run's folder}:/map
+      - wal:/wal
+    tmpfs:
+      - /data/blobs
+      - /backup
+    environment:
+      PONISTRA_PUBLIC_URL: http://localhost:5173
+      PONISTRA_LIVEKIT: livekit:7880
+      PONISTRA_TURN: ""
+      PONISTRA_CLOUDFLARE_TOKEN: ""
+      PONISTRA_WORKSPACE: ""
+      PONISTRA_MAP: ${PONISTRA_MAP:-}
+    healthcheck:
+      interval: 2s
+      # A fresh database takes every migration before the backend answers, which on a loaded
+      # host outlasts 20 s; it is healthy at its first answer all the same.
+      start_period: 180s
+  converter:
+    container_name: !reset null
+    restart: "no"
+    healthcheck:
+      interval: 2s
+  mox:
+    container_name: !reset null
+    restart: "no"
+  ocr:
+    container_name: !reset null
+    restart: "no"
+    healthcheck:
+      interval: 2s
+  reader:
+    container_name: !reset null
+    restart: "no"
+    healthcheck:
+      interval: 2s
+  printer:
+    container_name: !reset null
+    restart: "no"
+    depends_on:
+      site:
+        condition: service_healthy
+    healthcheck:
+      interval: 2s
+  frontend:
+    # Only prettier, tsc and vitest run here; nothing loads the app from it.
+    container_name: !reset null
+    ports: !reset []
+    restart: "no"
+    init: true
+    command: ["sh", "-c", "sh packages.sh && touch /tmp/installed && exec sleep 2147483647"]
+    networks: !override [default]
+    depends_on:
+      # check.sh --shots starts the backend and this alone.
+      site:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "test", "-e", "/tmp/installed"]
+      interval: 2s
+      # The packages are installed again when the lock or a patch changed (packages.sh).
+      start_period: 300s
+  site:
+    # The release's own build and Caddyfile, built afresh by each run (BuildKit keeps what did not
+    # change), on localhost:5173 for the browser (e2e shares its network) and as frontend:5173 for
+    # the printer, as in an installation.
+    build:
+      context: ./frontend
+      additional_contexts:
+        fonts: ./fonts
+        colors: ./colors
+        schema: ./schema
+        # What android/build.sh would have shelved, the same in every tree (phone.spec.ts).
+        android: ./e2e/shelf
+        shots: ./help-shots
+      target: prod
+    pull_policy: build
+    user: "${PONISTRA_APP_UID:-1000}:${PONISTRA_APP_GID:-1000}"
+    environment:
+      PONISTRA_SITE: ":80"
+      PONISTRA_TURN: relay.localhost
+      PONISTRA_LIVEKIT: livekit:7880
+      PONISTRA_LIVEKIT_TURN: livekit:5349
+    volumes:
+      - maps:/maps
+    tmpfs:
+      - /config:mode=1777
+      - /data:mode=1777
+    read_only: true
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: 0
+    networks:
+      default:
+      print:
+        aliases: [frontend]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173/"]
+      interval: 2s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    depends_on:
+      - backend
+    restart: "no"
+  recorder:
+    # Beside the check's LiveKit, on its network, its recordings only as long as the run.
+    container_name: !reset null
+    restart: "no"
+    networks: [default, record]
+    volumes: !override []
+    tmpfs:
+      - /recordings:mode=1777
+    healthcheck:
+      interval: 2s
+  livekit:
+    # On the check's own network, beside the installation's on the host: it offers the browser
+    # its address there.
+    container_name: !reset null
+    network_mode: !reset null
+    networks: [default]
+    restart: "no"
+    environment:
+      LIVEKIT_CONFIG: |
+        port: 7880
+        rtc:
+          tcp_port: 7881
+          udp_port: 7882
+    healthcheck:
+      interval: 2s
+  postgres:
+    container_name: !reset null
+    restart: "no"
+    volumes: !override
+      - wal:/wal
+    tmpfs:
+      - /var/lib/postgresql
+    healthcheck:
+      interval: 1s
+  e2e:
+    network_mode: service:site
+    volumes:
+      - ${PONISTRA_RUN:?scripts/check.sh sets the run's folder}:/map
+      # The build's source maps, by which a full run names the functions a test ran (fixtures.ts).
+      - maps:/maps:ro
+    environment:
+      PONISTRA_MAP: ${PONISTRA_MAP:-}
+
+volumes:
+  # The site image's /maps, copied in as the run's stack starts and removed with it.
+  maps:
+  # Postgres archives into it and the backend reads it, in memory like the database.
+  wal:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: uid=1000,gid=999,mode=0770

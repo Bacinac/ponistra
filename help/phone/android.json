@@ -1,0 +1,22 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "phoneApp.androidOnly",
+    "phoneApp.noCode",
+    "phoneApp.note",
+    "phoneApp.scan",
+    "phoneApp.steps"
+  ],
+  "describes": {
+    "frontend/src/phoneApp.tsx#Steps": "fd5566e17cd5",
+    "frontend/src/phoneApp.tsx#ConnectPage": "4c39eb3bd2ed",
+    "frontend/src/phoneApp.tsx#Qr": "b1e2af870683",
+    "frontend/src/phoneApp.tsx#connectPage": "38cce198253c",
+    "frontend/src/appPasswords.tsx#PairingDialog": "d54824b622f4",
+    "frontend/src/appPasswords.tsx#AppPasswords": "eb8d6b00bce8",
+    "backend/apps/users/app_passwords.py#pairing": "6f214821dd02",
+    "backend/apps/users/app_passwords.py#claim": "605dcb42f14f"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "pdf.redact.hint",
+    "pdf.redact.save.note",
+    "pdf.redact.sealed.modify",
+    "pdf.redact.sealed.password",
+    "pdf.redact.signed",
+    "pdf.redact.suffix",
+    "pdf.mark.redaction",
+    "pdf.redact.tool"
+  ],
+  "describes": {
+    "frontend/src/pdf/Notes.tsx#FileNotes": "68ba5afed063",
+    "frontend/src/pdf/PdfView.tsx#PdfView": "ed6e9bfa0f04",
+    "backend/apps/imports/redacted.py#redact": "108955b48aa6"
+  }
+}

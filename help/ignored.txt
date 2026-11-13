@@ -1,0 +1,5 @@
+route:[*]
+route:/print/*          # never opened by hand: the printer's page
+label:help.*            # the help's own frame
+label:error.*           # an error message says what happened; one that needs more goes under the Limits of its function
+label:demo.*            # only the public demo build's strip (frontend/demo/); never in an installation

@@ -1,0 +1,12 @@
+{
+  "order": 100,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "clipboard.denied"
+  ],
+  "describes": {
+    "frontend/src/editor/clipboard.ts": "8b091d8ecb46",
+    "frontend/src/editor/Editor.tsx#Problem": "e831c623bab7"
+  }
+}

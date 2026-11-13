@@ -1,0 +1,12 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/board.tsx#BoardVersionsPanel": "41d705a1e017",
+    "backend/apps/documents/boards.py#rewritten": "5473618195ba",
+    "backend/apps/documents/boards.py#restored": "be624ff9b47e",
+    "backend/apps/documents/boards.py#version_of": "1d2db0253e2c"
+  }
+}

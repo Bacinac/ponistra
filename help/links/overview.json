@@ -1,0 +1,19 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/links"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/links.tsx#LinksPage": "f3754fd68c0e",
+    "frontend/src/links.tsx#GroupHeading": "e2d643792b67",
+    "frontend/src/links.tsx#Tile": "b0e7e7e55ec7",
+    "frontend/src/dialogs.tsx#LinkDialog": "e9b866bb18c7",
+    "backend/apps/documents/links.py#address_of": "404acfa3d078",
+    "backend/apps/documents/links.py#read": "8af4adcdd3cb",
+    "backend/apps/documents/links.py#icon_source": "cb002aa75049",
+    "backend/apps/documents/links.py#given_icon": "43a812c03fae",
+    "backend/apps/imports/bookmarks.py#planned": "bdc7f95933b0"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "order": 75,
+  "audience": "everyone",
+  "covers": [
+    "route:/company"
+  ],
+  "quiet": [
+    "tree.companyEmpty"
+  ],
+  "describes": {
+    "frontend/src/FolderPage.tsx#CompanyPage": "3c39089e03a9",
+    "backend/apps/access/rights.py#company": "06ffd60af76f",
+    "backend/apps/documents/views.py#laid_out": "a70679470147"
+  }
+}

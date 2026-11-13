@@ -1,0 +1,21 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "chat.takeBackSure",
+    "chat.readBy"
+  ],
+  "describes": {
+    "frontend/src/chat.tsx#Conversation": "e3502dcf6965",
+    "frontend/src/chat.tsx#Messages": "189ad576acc3",
+    "frontend/src/chat.tsx#Composer": "b32435e61f15",
+    "frontend/src/chat.tsx#useMessages": "cc1687eb9a29",
+    "frontend/src/chat.tsx#useRead": "edad1ac93516",
+    "backend/apps/chat/conversations.py#announced": "791baa918605",
+    "backend/apps/chat/conversations.py#written": "4db3dd574ad6",
+    "backend/apps/chat/conversations.py#edited": "5d4dbf737645",
+    "backend/apps/chat/conversations.py#taken_back": "13ee12a14b9a",
+    "backend/apps/chat/conversations.py#read": "4c83669634d6"
+  }
+}

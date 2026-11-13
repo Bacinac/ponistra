@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="hr">
+    <string name="app_name" translatable="false">Ponistra</string>
+    <string name="address_title">Adresa Ponistre</string>
+    <string name="address_note">Upišite adresu na kojoj vaša organizacija koristi Ponistru, primjerice ponistra.tvrtka.hr.</string>
+    <string name="open">Otvori</string>
+    <string name="address_invalid">Upišite adresu, primjerice ponistra.tvrtka.hr.</string>
+    <string name="address_not_ponistra">Na toj adresi nije Ponistra.</string>
+    <string name="unreachable">Adresa se ne može dohvatiti: %1$s</string>
+    <string name="change">Druga adresa</string>
+    <string name="change_long">Promijeni adresu Ponistre</string>
+    <string name="note">Bilješka</string>
+    <string name="note_long">Nova bilješka</string>
+    <string name="voice">Govor</string>
+    <string name="voice_long">Izgovorite naredbu ili bilješku</string>
+    <string name="connecting">Povezujem telefon…</string>
+    <string name="connect_invalid">Poveznica za povezivanje nije ispravna. Otvorite je ponovno iz Ponistre.</string>
+    <string name="connect_failed">Telefon nije povezan: %1$s</string>
+    <string name="connect_lapsed">Kod za povezivanje je istekao ili je već upotrijebljen. Povežite telefon ponovno iz Ponistre.</string>
+    <string name="connected">Telefon je povezan kao %1$s.</string>
+    <string name="close">Zatvori</string>
+    <string name="updates_channel">Nadogradnje</string>
+    <string name="update_ready">Nova verzija Ponistre čeka potvrdu.</string>
+    <string name="update_failed">Nadogradnja nije uspjela: %1$s</string>
+    <string name="contacts_channel">Kontakti</string>
+    <string name="contacts_refused_title">Kontakti se ne sinkroniziraju</string>
+    <string name="contacts_refused_text">Ponistra nema pristup kontaktima na telefonu. Dodirnite i dopustite pristup kontaktima.</string>
+    <string name="calendar_channel">Kalendar</string>
+    <string name="calendar_refused_title">Kalendar se ne sinkronizira</string>
+    <string name="calendar_refused_text">Ponistra nema pristup kalendaru na telefonu. Dodirnite i dopustite pristup kalendaru.</string>
+</resources>

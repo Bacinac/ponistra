@@ -1,0 +1,22 @@
+{
+  "order": 80,
+  "audience": "admin",
+  "covers": [
+    "route:/workdays"
+  ],
+  "quiet": [
+    "workdays.note",
+    "workdays.closuresNote",
+    "workdays.importNote",
+    "workdays.deleteWarning"
+  ],
+  "describes": {
+    "frontend/src/workdays.tsx#Country": "4202c60e9244",
+    "frontend/src/workdays.tsx#Closures": "cc5cd151482a",
+    "frontend/src/workdays.tsx#ClosureDialog": "fa9615ad0af4",
+    "frontend/src/workdays.tsx#ImportDialog": "0015fdabd438",
+    "frontend/src/workdays.tsx#WorkdaysPage": "b77d64f148d6",
+    "frontend/src/workdays.tsx#Hours": "003487d3abe2",
+    "backend/apps/calendar/workdays.py#hours": "1a9eafc47490"
+  }
+}

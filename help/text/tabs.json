@@ -1,0 +1,17 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "tab.deleteWarning",
+    "tab.list"
+  ],
+  "describes": {
+    "frontend/src/tabs.tsx#TabList": "ffce59920431",
+    "frontend/src/tabs.tsx#Headings": "814a5d00a929",
+    "frontend/src/tabs.tsx#tabMoves": "5ff8de8e200f",
+    "frontend/src/tabs.tsx#tabLabel": "875e302a7f33",
+    "frontend/src/DocumentPage.tsx#DocumentEditor": "d863570d08c3",
+    "frontend/src/DocumentPage.tsx#MOVES": "9aca76d5aaf5"
+  }
+}

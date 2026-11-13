@@ -1,0 +1,20 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "contacts.colleagueNote",
+    "contacts.directoryNote"
+  ],
+  "describes": {
+    "frontend/src/contacts.tsx#ColleaguesDialog": "383bf9f148e0",
+    "backend/apps/contacts/views.py#colleagues": "d5a4688851cf",
+    "backend/apps/contacts/views.py#_directories": "3ecf9194e50b",
+    "backend/apps/contacts/directory.py#met": "46e0d1dfd379",
+    "backend/apps/contacts/directory.py#refreshed": "52945597d2e3",
+    "backend/apps/contacts/directory.py#searched": "300857b32b67",
+    "backend/apps/contacts/directory.py#due": "880ee23c024f",
+    "backend/apps/contacts/taking.py#colleague": "2a54d289a70a",
+    "backend/apps/contacts/taking.py#revise": "e4c6b5a36a4b"
+  }
+}

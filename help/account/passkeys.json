@@ -1,0 +1,20 @@
+{
+  "order": 40,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/passkeys"
+  ],
+  "quiet": [
+    "passkeys.due",
+    "passkeys.note",
+    "passkeys.deleteWarning"
+  ],
+  "describes": {
+    "frontend/src/passkeys.tsx#Passkeys": "400751111f06",
+    "frontend/src/passkeys.tsx#makePasskey": "03489ef32741",
+    "frontend/src/passkeys.tsx#passkeyMessage": "83a9f8ed6f25",
+    "frontend/src/auth.tsx#PasskeyDue": "e0c5aa9b601d",
+    "backend/apps/users/passkeys.py#passkeys": "41c58065dc39",
+    "backend/apps/users/passkeys.py#passkey": "e8e0627c51c0"
+  }
+}

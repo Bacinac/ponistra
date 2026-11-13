@@ -1,0 +1,27 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "calendar.color.0",
+    "calendar.color.1",
+    "calendar.color.2",
+    "calendar.color.3",
+    "calendar.color.4",
+    "calendar.color.5",
+    "calendar.color.6",
+    "calendar.deleteCalendarNote",
+    "calendar.unfollowNote",
+    "calendar.organisationCalendar"
+  ],
+  "describes": {
+    "frontend/src/calendar.tsx#CalendarDialog": "305016e0bf8b",
+    "frontend/src/calendar.tsx#Side": "49010c769b24",
+    "backend/apps/calendar/views.py#calendars": "e0127d43548f",
+    "backend/apps/calendar/views.py#calendar": "1281adedaac4",
+    "backend/apps/calendar/views.py#feed": "5d9d9f5ea94d",
+    "backend/apps/calendar/views.py#dropped": "6037f9caf846",
+    "backend/apps/calendar/taking.py#own": "6b586542230c",
+    "backend/apps/calendar/models.py#Calendar": "f45e104ad604"
+  }
+}

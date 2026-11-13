@@ -1,0 +1,1708 @@
+@import 'tailwindcss';
+@import './theme.css';
+
+:root {
+  --column: 44rem;
+}
+
+.ponistra-document .ProseMirror {
+  outline: none;
+}
+
+/* The bar a selection brings arrives a moment later, so the second click of a double click on a
+   row it would cover still reaches the row. */
+.ponistra-arriving {
+  animation: ponistra-arrive 120ms ease-out 450ms backwards;
+}
+
+@keyframes ponistra-arrive {
+  from {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+.ponistra-document .ProseMirror[contenteditable='true'] {
+  min-height: 60dvh;
+  cursor: text;
+}
+
+.ponistra-document .ProseMirror[contenteditable='true'] > .ponistra-empty::before {
+  content: var(--placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.ponistra-document mark {
+  color: inherit;
+}
+
+/* Proposals (A3): inserted text underlined, deleted struck through, changed formatting dotted;
+   a paragraph's end proposed shows as its mark, a block proposed as an outline. */
+.ponistra-document ins[data-proposal] {
+  color: var(--inserted);
+  text-decoration: underline;
+}
+
+.ponistra-document del[data-proposal] {
+  color: var(--deleted);
+  text-decoration: line-through;
+}
+
+.ponistra-document [data-formatting] {
+  text-decoration: underline dotted var(--inserted);
+}
+
+.ponistra-document .ponistra-end {
+  color: var(--inserted);
+  user-select: none;
+}
+
+.ponistra-document .ponistra-end::after {
+  content: '¶' / '';
+}
+
+.ponistra-document .ponistra-end[data-proposed~='deletion'] {
+  color: var(--deleted);
+  text-decoration: line-through;
+}
+
+.ponistra-document :not(.ponistra-end)[data-proposed~='insertion'] {
+  outline: 2px solid var(--inserted);
+  outline-offset: 2px;
+}
+
+.ponistra-document :not(.ponistra-end)[data-proposed~='deletion'] {
+  outline: 2px dashed var(--deleted);
+  outline-offset: 2px;
+  opacity: 0.6;
+}
+
+.ponistra-document [data-restyled] {
+  box-shadow: -6px 0 0 -4px var(--inserted);
+}
+
+.ponistra-document .ProseMirror-selectednode {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* A table wider than the text spreads over the pane, centred, and a sized one narrower than the
+   text keeps its own width at the text's start; every table keeps room on its left for its row
+   headings, so that showing them moves nothing. In a section set in from the first, the text is
+   its own section's. */
+.ponistra-document .ponistra-table {
+  --heading-side: 2.5rem;
+  --heading-top: 1.25rem;
+  --column: calc(100% - var(--inset-left, 0px) - var(--inset-right, 0px));
+  --wide: min(max(var(--column), var(--least, 0px)), 100cqi - var(--heading-side));
+  position: relative;
+  width: var(--wide);
+  margin-block: 0.5rem;
+  margin-inline-start: calc(
+    var(--inset-left, 0px) +
+      max(
+        min((var(--column) - var(--wide)) / 2, 0px),
+        var(--heading-side) - (100cqi - 100%) / 2 - var(--inset-left, 0px)
+      )
+  );
+}
+
+.ponistra-document .ponistra-table[data-sized] {
+  --wide: min(var(--least), 100cqi - var(--heading-side));
+}
+
+.ponistra-document .ponistra-probe,
+.ponistra-document .ponistra-measure {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.ponistra-document .ponistra-measure {
+  width: max-content;
+}
+
+.ponistra-document .ponistra-table.ponistra-writing {
+  outline: none;
+}
+
+.ponistra-document .ponistra-table-name {
+  text-align: start;
+  font-weight: 600;
+}
+
+.ponistra-document .ponistra-table-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-block: 0.25rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.ponistra-document .ponistra-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: var(--selected);
+  color: var(--accent);
+}
+
+.ponistra-document .ponistra-filter-chip > button {
+  padding-inline: 0.5rem;
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+.ponistra-document .ponistra-filter-chip > button:first-child {
+  max-width: 20rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ponistra-document .ponistra-filter-chip > button:hover {
+  background: var(--hover);
+}
+
+/* The grid holds the headings' room above and before its rows, which the canvas draws them in. */
+.ponistra-document .ponistra-sheet {
+  position: relative;
+  margin-inline-start: calc(-1 * var(--heading-side));
+}
+
+.ponistra-document .ponistra-table[data-wide] > .ponistra-sheet {
+  overflow-x: auto;
+}
+
+.ponistra-document .ponistra-grid {
+  position: relative;
+  min-width: calc(var(--least, 0px) + var(--heading-side));
+}
+
+.ponistra-document .ponistra-canvas {
+  position: absolute;
+}
+
+.ponistra-document .ponistra-shadow {
+  position: absolute;
+  pointer-events: none;
+}
+
+.ponistra-document .ponistra-cells,
+.ponistra-document .ponistra-mirror,
+.ponistra-document .ponistra-mirror > [role='row'] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The canvas draws what the mirror's cells say; they are there to be read and pointed at. */
+.ponistra-document
+  .ponistra-mirror
+  :is([role='gridcell'], [role='columnheader'], [role='rowheader']) {
+  position: absolute;
+  overflow: hidden;
+  color: transparent;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.ponistra-document .ponistra-mirror :is([role='columnheader'], [role='rowheader']) {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ponistra-document .ponistra-mirror[data-headings] :is([role='columnheader'], [role='rowheader']) {
+  pointer-events: auto;
+}
+
+/* The frozen rows stay over the rows that run on past beneath them. */
+.ponistra-document .ponistra-mirror [data-frozen],
+.ponistra-document .ponistra-cell-box[data-frozen] {
+  z-index: 1;
+}
+
+.ponistra-document .ponistra-grid > .ponistra-page-gap {
+  position: absolute;
+  inset-inline: 0;
+  pointer-events: none;
+}
+
+.ponistra-document .ponistra-page-gap > .ponistra-cell-box {
+  pointer-events: none;
+}
+
+.ponistra-document .ponistra-cell-box {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 0.25rem 1ch;
+  overflow-wrap: anywhere;
+  pointer-events: auto;
+}
+
+.ponistra-document .ponistra-cell-box:focus-within {
+  z-index: 1;
+  background: var(--fill, var(--raised));
+  outline: 2px solid var(--focus);
+  outline-offset: -1px;
+}
+
+.ponistra-document .ponistra-heading {
+  padding-inline-end: 0.375rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: var(--heading-top);
+  font-variant-numeric: tabular-nums;
+}
+
+.ponistra-document .ProseMirror.ponistra-cell[contenteditable] {
+  min-height: 0;
+}
+
+[data-styling] .ponistra-cell {
+  white-space: break-spaces;
+  font-variant-ligatures: none;
+}
+
+[data-styling] :is(.ponistra-cell, .ponistra-cell-value) > :last-child {
+  margin-bottom: 0;
+}
+
+[data-styling] .ponistra-cell-value {
+  min-height: 1lh;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+[data-styling] .ponistra-cell-value[data-kind='number'] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-styling] .ponistra-cell[data-kind='number'] > :not([style*='text-align']) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+[data-styling] .ponistra-cell-value:is([data-kind='bool'], [data-kind='error']) {
+  text-align: center;
+}
+
+[data-styling] .ponistra-cell-value[data-kind='error'] {
+  color: var(--danger);
+}
+
+/* A table on paper, printed or in a header or a footer. */
+[data-styling] table.ponistra-rows {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+[data-styling] table.ponistra-rows td {
+  padding: 0.25rem 1ch;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+/* Word lays the shading of a table whose cells stand apart only between them. */
+[data-styling] table.ponistra-rows[data-apart] td {
+  background-color: var(--raised);
+}
+
+.ponistra-document .ponistra-paged-rows {
+  position: relative;
+}
+
+.ponistra-document .ponistra-paged-rows > * {
+  position: absolute;
+  inset-inline: 0;
+}
+
+.ponistra-document .ponistra-formula {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  outline: none;
+}
+
+.ponistra-document .ponistra-formula[aria-invalid='true'] {
+  text-decoration: underline wavy var(--danger);
+}
+
+.ponistra-document .ponistra-formula-problem {
+  color: var(--danger);
+  font-size: 0.875em;
+}
+
+.ponistra-document .ponistra-ranging,
+.ponistra-document .ponistra-filling,
+.ponistra-document .ponistra-resizing,
+.ponistra-document .ponistra-resizing-rows {
+  user-select: none;
+}
+
+.ponistra-document .ponistra-filling,
+.ponistra-document .ponistra-fill-handle {
+  cursor: crosshair;
+}
+
+.ponistra-document .ponistra-fill-handle {
+  position: absolute;
+  z-index: 2;
+  width: 0.5rem;
+  height: 0.5rem;
+  translate: -50% -50%;
+  box-sizing: border-box;
+  border: 1px solid var(--raised);
+  background: var(--focus);
+}
+
+.ponistra-document .ponistra-fill-frame {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 1px dashed var(--focus);
+  pointer-events: none;
+}
+
+.ponistra-document .ponistra-resizing {
+  cursor: col-resize;
+}
+
+.ponistra-document .ponistra-resizing-rows {
+  cursor: row-resize;
+}
+
+/* A style's number leads its block's text; it is shown, never written into the text. */
+[data-styling] .ProseMirror > [data-number]::before {
+  content: attr(data-number);
+  margin-inline-end: 0.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A tab is as wide as its stop makes it, the character itself taking no room. */
+.ponistra-tab {
+  tab-size: 0;
+  background-repeat: repeat-x;
+}
+
+.ponistra-tab[data-leader='dot'] {
+  background-image: radial-gradient(circle, currentColor 0.05em, transparent 0.07em);
+  background-position: left 0 bottom 0.15em;
+  background-size: 0.33em 0.2em;
+}
+
+.ponistra-tab[data-leader='hyphen'] {
+  background-image: linear-gradient(to right, currentColor 60%, transparent 60%);
+  background-position: left 0 bottom 0.45em;
+  background-size: 0.5em 1px;
+}
+
+.ponistra-tab[data-leader='underscore'] {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-position: left 0 bottom 0.2em;
+  background-size: 100% 1px;
+}
+
+/* An item's marker hangs in the space its paragraph keeps free on the left; a longer one, as
+   "Članak 1.", moves the first line on as Word's tab after the number does. */
+.ponistra-document p[data-list] {
+  position: relative;
+  padding-left: 1.75em;
+}
+
+.ponistra-document p[data-list]::before {
+  display: inline-block;
+  box-sizing: border-box;
+  min-width: 1.75em;
+  margin-inline-start: -1.75em;
+  padding-inline-end: 0.4em;
+  content: attr(data-marker);
+  font-variant-numeric: tabular-nums;
+}
+
+.ponistra-document p[data-list='check']::before {
+  position: absolute;
+  left: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  top: calc((1lh - 1em) / 2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 1em;
+  height: 1em;
+  border: 1.5px solid var(--muted);
+  border-radius: 0.2em;
+  content: '';
+}
+
+.ponistra-document .ProseMirror[contenteditable='true'] p[data-list='check']::before {
+  cursor: pointer;
+}
+
+.ponistra-document p[data-list='check'][data-checked='true'] {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.ponistra-document p[data-list='check'][data-checked='true']::before {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  content: '✓';
+}
+
+.ponistra-document a[href] {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.ponistra-document .ProseMirror[contenteditable='false'] a[href] {
+  cursor: pointer;
+}
+
+.ponistra-document .ponistra-contents {
+  margin-block: 0.5rem;
+}
+
+.ponistra-document .ponistra-contents ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ponistra-document .ponistra-contents li {
+  padding-inline-start: calc(var(--depth) * 1.25em);
+}
+
+.ponistra-document .ponistra-contents a[href] {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ponistra-document .ponistra-contents a[href]:hover {
+  text-decoration: underline;
+}
+
+.ponistra-document .ponistra-contents-number {
+  margin-inline-end: 0.5em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ponistra-document .ponistra-contents-empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.ponistra-document figure[data-image] {
+  margin-inline: 0;
+  margin-block: 0.5rem;
+}
+
+.ponistra-document figure[data-align='center'] {
+  text-align: center;
+}
+
+.ponistra-document figure[data-align='right'] {
+  text-align: right;
+}
+
+.ponistra-document figure[data-image] img {
+  max-width: 100%;
+  height: auto;
+  vertical-align: top;
+}
+
+.ponistra-document .ponistra-frame {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+.ponistra-document .ponistra-frame img {
+  width: 100%;
+}
+
+.ponistra-document figure.ProseMirror-selectednode {
+  outline: none;
+}
+
+.ponistra-document figure.ProseMirror-selectednode .ponistra-frame {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ponistra-document .ponistra-resize {
+  display: none;
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--surface);
+  border-radius: 3px;
+  background: var(--accent);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.ponistra-document figure[data-align='right'] .ponistra-resize {
+  right: auto;
+  left: -6px;
+  cursor: nesw-resize;
+}
+
+.ponistra-document .ProseMirror[contenteditable='true'] .ProseMirror-selectednode .ponistra-resize {
+  display: block;
+}
+
+.ponistra-document figure.ponistra-chart {
+  margin-inline: 0;
+  margin-block: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.ponistra-document figure.ponistra-chart.ProseMirror-selectednode {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.ponistra-document .ponistra-chart-plot {
+  width: 100%;
+}
+
+.ponistra-document .ponistra-chart-note {
+  margin: 0;
+  padding: 2rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.25rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.ponistra-document figure[data-pdf] {
+  margin-inline: 0;
+  margin-block: 0.5rem;
+}
+
+.ponistra-document .ponistra-pdf-page {
+  position: relative;
+  background: var(--raised);
+  box-shadow: 0 0 0 1px var(--line);
+}
+
+.ponistra-document .ponistra-pdf-page + .ponistra-pdf-page {
+  margin-top: 0.5rem;
+}
+
+.ponistra-document .ponistra-pdf-page canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ponistra-document .ponistra-pdf-page a {
+  position: absolute;
+  inset: 0;
+}
+
+.ponistra-document [data-unshown]::before {
+  display: block;
+  padding: 2rem;
+  color: var(--danger);
+  content: attr(data-unshown);
+  text-align: center;
+}
+
+.ponistra-document figure[data-waiting]::before {
+  display: block;
+  padding: 2rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.25rem;
+  color: var(--muted);
+  content: attr(data-waiting);
+  text-align: center;
+}
+
+.ponistra-document .ponistra-found {
+  animation: ponistra-found 3s ease-out;
+}
+
+.ponistra-document .ponistra-hit {
+  background-color: var(--mark);
+}
+
+.ponistra-document .ponistra-hit-current {
+  outline: 2px solid var(--focus);
+}
+
+.ponistra-document sup.ponistra-note {
+  color: var(--link);
+  cursor: pointer;
+}
+
+.ponistra-document sup.ponistra-note::after {
+  content: attr(data-marker);
+}
+
+.ponistra-document sup.ponistra-note.ProseMirror-selectednode {
+  border-radius: 0.2em;
+  outline: none;
+  background: var(--selected);
+}
+
+.ponistra-document .ponistra-comment {
+  background: var(--comment);
+  cursor: pointer;
+}
+
+.ponistra-document .ponistra-comment-active {
+  background: var(--comment-active);
+}
+
+.ponistra-document .ponistra-notes {
+  margin-top: 2rem;
+  font-size: 0.875em;
+}
+
+.ponistra-document .ponistra-notes + .ponistra-notes {
+  margin-top: 1rem;
+}
+
+.ponistra-document .ponistra-notes::before {
+  display: block;
+  width: 33%;
+  margin-bottom: 0.5rem;
+  border-top: 1px solid var(--line);
+  content: '';
+}
+
+.ponistra-document .ponistra-notes li {
+  display: flex;
+  gap: 0.5em;
+  align-items: baseline;
+}
+
+.ponistra-document .ponistra-note-number {
+  min-width: 1.5em;
+  color: var(--link);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  cursor: pointer;
+}
+
+.ponistra-document .ponistra-notes .ProseMirror {
+  flex: 1;
+  min-width: 0;
+}
+
+.ponistra-document .ponistra-notes .ProseMirror[contenteditable='true'] {
+  min-height: 0;
+}
+
+.ponistra-document .ponistra-notes .ProseMirror[contenteditable='true'].ponistra-empty::before {
+  float: left;
+  height: 0;
+  color: var(--muted);
+  content: var(--note-placeholder);
+  pointer-events: none;
+}
+
+@keyframes ponistra-found {
+  from {
+    background-color: var(--mark);
+    box-shadow: 0 0 0 0.25rem var(--mark);
+  }
+}
+
+.ProseMirror-yjs-cursor {
+  position: relative;
+  margin: 0 -1px;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  word-break: normal;
+}
+
+/* A caret is two pixels wide: the pointer gets a few more to find it. */
+.ProseMirror-yjs-cursor::before {
+  position: absolute;
+  inset: 0 -3px;
+  content: '';
+}
+
+.ProseMirror-yjs-cursor > div {
+  position: absolute;
+  top: -1.1em;
+  left: -1px;
+  padding: 0.1em 0.3em;
+  border-radius: 3px 3px 3px 0;
+  color: var(--on-presence);
+  font-size: 0.75rem;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.ProseMirror-yjs-cursor.ponistra-named > div,
+.ProseMirror-yjs-cursor:hover > div {
+  opacity: 1;
+}
+
+.ponistra-document .ProseMirror-gapcursor::after {
+  border-color: var(--focus);
+}
+
+.ponistra-document hr {
+  height: 1rem;
+  margin-block: 0.25rem;
+  border: 0;
+  background: linear-gradient(var(--ink), var(--ink)) center / 100% 1px no-repeat;
+}
+
+.ponistra-document
+  :is([data-page-break], [data-section-break], [data-slide-break], [data-column-break]) {
+  display: flex;
+  justify-content: center;
+  margin-block: 0.5rem;
+  background: repeating-linear-gradient(to right, var(--control) 0 4px, transparent 4px 8px)
+    center / 100% 1px no-repeat;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.ponistra-document
+  :is([data-page-break], [data-section-break], [data-slide-break], [data-column-break])::before {
+  padding-inline: 0.5rem;
+  background: var(--surface);
+  content: var(--page-break);
+}
+
+.ponistra-document [data-section-break]::before {
+  content: var(--section-break);
+}
+
+.ponistra-document [data-slide-break]::before {
+  content: var(--slide-break);
+}
+
+.ponistra-document [data-column-break]::before {
+  content: var(--column-break);
+}
+
+.ponistra-document p[data-speaker] {
+  margin-block: 0;
+  padding: 0.125rem 0.75rem;
+  background: var(--panel);
+}
+
+.ponistra-speaker-label {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem 0.125rem;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+.ponistra-document p[data-speaker]:not(:has(+ p[data-speaker])) {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.ponistra-pages
+  :is(p[data-speaker], [data-slide-break], [data-column-break], .ponistra-speaker-label) {
+  display: none;
+}
+
+.ponistra-slides .ProseMirror {
+  position: relative;
+}
+
+.ponistra-document .ProseMirror[contenteditable='true']:is(.ponistra-slides *) {
+  min-height: 0;
+}
+
+.ponistra-slides .ProseMirror > .ponistra-placed {
+  position: absolute;
+  box-sizing: border-box;
+  text-align: var(--slide-align, left);
+}
+
+/* A slide's spacing is its template's, in em, so shrinking the text to fit shrinks it too. */
+.ponistra-slides
+  .ProseMirror
+  > .ponistra-placed:not([data-role='notes'], [data-role='before'], [data-role='break']) {
+  margin-block: 0.35em 0;
+  line-height: 1.15;
+}
+
+.ponistra-slides .ProseMirror > .ponistra-placed[data-slide-hidden] {
+  opacity: 0.45;
+}
+
+.ponistra-slides :is(.ponistra-speaker-label, .ponistra-notes) {
+  display: none;
+}
+
+.ponistra-document.ponistra-slides .ProseMirror > p[data-speaker] {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+/* The break stands in the strip above its slide, which lies on the field, not on the slide. */
+.ponistra-slides .ProseMirror > [data-slide-break] {
+  margin: 0;
+  background: none;
+  color-scheme: var(--scheme);
+}
+
+.ponistra-slides .ProseMirror > :is([data-slide-break], [data-column-break])::before {
+  border-radius: 9999px;
+  background: var(--panel);
+  font-size: 0.75rem;
+}
+
+.ponistra-slides .ProseMirror > .ponistra-placed[data-column-break] {
+  height: 0;
+  margin: 0;
+  overflow: visible;
+  background: none;
+}
+
+.ponistra-slides .ProseMirror > [data-column-break]::before {
+  translate: 0 -100%;
+  height: fit-content;
+}
+
+.ponistra-slide-head {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: 28px;
+  color-scheme: var(--scheme);
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.ponistra-slide {
+  position: absolute;
+  left: 0;
+  overflow: hidden;
+  background: var(--raised) center / cover no-repeat;
+  box-shadow:
+    0 1px 3px var(--shadow),
+    0 6px 16px -6px var(--shadow);
+}
+
+.ponistra-slide[data-hidden] {
+  opacity: 0.55;
+}
+
+.ponistra-slide-shape {
+  position: absolute;
+  box-sizing: border-box;
+}
+
+.ponistra-slide :is(.ponistra-slide-text, .ponistra-slide-prompt) {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 0.127cm 0.254cm;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.ponistra-slide-prompt {
+  outline: 1px dashed var(--control);
+  outline-offset: -1px;
+  opacity: 0.55;
+}
+
+.ponistra-slide-over {
+  position: absolute;
+  outline: 2px solid var(--danger);
+  outline-offset: -2px;
+}
+
+.ponistra-slide-notes {
+  position: absolute;
+  left: 0;
+  box-sizing: border-box;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+/* A show covers the page, and the dialogs and menus above it, while it runs. */
+.ponistra-show {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: var(--show);
+  color: var(--on-show);
+  outline: none;
+}
+
+.ponistra-show:not([data-stirred]) {
+  cursor: none;
+}
+
+.ponistra-show-ended {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 1rem;
+  color: var(--on-show);
+  text-align: center;
+}
+
+.ponistra-show-bar {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  background: var(--raised);
+  color: var(--ink);
+  box-shadow: 0 6px 16px -6px var(--shadow);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ponistra-show-bar:is([data-stirred], :focus-within) {
+  opacity: 1;
+}
+
+.ponistra-show-bar button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.375rem;
+}
+
+.ponistra-show-bar button:hover {
+  background: var(--hover);
+}
+
+.ponistra-show-bar span {
+  max-width: 24rem;
+  padding-inline: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.ponistra-presenting {
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: var(--show);
+  color: var(--on-show);
+}
+
+.ponistra-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.ponistra-stage-slide {
+  position: absolute;
+  overflow: hidden;
+}
+
+.ponistra-stage .ponistra-slide {
+  box-shadow: none;
+}
+
+.ponistra-stage
+  :is(.ponistra-slide[data-hidden], .ProseMirror > .ponistra-placed[data-slide-hidden]) {
+  opacity: 1;
+}
+
+.ponistra-stage .ponistra-slide-over {
+  display: none;
+}
+
+.ponistra-speaking {
+  font-size: 1.25rem;
+  line-height: 1.5;
+}
+
+.ponistra-speaking > p {
+  margin: 0 0 0.75em;
+}
+
+.ponistra-field {
+  margin: 0 -1rem -1.5rem;
+  padding: 0.75rem 1.5rem 1.5rem;
+  background: var(--field);
+}
+
+/* A PDF file's pages, which pdf.js draws; its own stylesheet loads after this one, so each rule
+   here is the more specific. The text layer lies transparent over the drawn page, so what marks
+   it lets the page show through. */
+.ponistra-pdf {
+  --focus-outline-color: var(--focus);
+  /* pdf.js scrolls a page's top edge to the pane's own, so the pane keeps a strip above it. */
+  border-top: 0.75rem solid transparent;
+  background: var(--field);
+}
+
+.ponistra-pdf .pdfViewer {
+  padding: 0 1rem 1rem;
+}
+
+/* pdf.js sizes its boxes by their content, as browsers do unless told otherwise. */
+.ponistra-pdf .pdfViewer *,
+.ponistra-pdf .pdfViewer ::before,
+.ponistra-pdf .pdfViewer ::after {
+  box-sizing: content-box;
+}
+
+.ponistra-pdf .pdfViewer.removePageBorders .page {
+  margin: 0 auto 1rem;
+  color-scheme: light;
+  box-shadow:
+    0 1px 3px var(--shadow),
+    0 6px 16px -6px var(--shadow);
+}
+
+/* Above pdf.js's text and annotation layers, letting the pointer through to them; it multiplies
+   with the page below as ink on paper does. */
+.ponistra-pdf .pdfViewer .ponistra-notes {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.ponistra-pdf .pdfViewer .textLayer ::selection {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+@media not (forced-colors: active) {
+  .ponistra-pdf .pdfViewer .textLayer .highlight {
+    --highlight-bg-color: color-mix(in srgb, var(--accent) 22%, transparent);
+    --highlight-selected-bg-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+
+  .ponistra-pdf .pdfViewer .annotationLayer .linkAnnotation:not(.hasBorder) > a:hover,
+  .ponistra-pdf .pdfViewer .annotationLayer .linkAnnotation.hasBorder:hover {
+    opacity: 1;
+    background-color: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+
+  .ponistra-pdf .pdfViewer .annotationLayer {
+    --annotation-unfocused-field-background: linear-gradient(
+      color-mix(in srgb, var(--focus) 12%, transparent),
+      color-mix(in srgb, var(--focus) 12%, transparent)
+    );
+    --annotation-unfocused-field-filter: none;
+    --input-focus-border-color: var(--focus);
+    --input-hover-border-color: var(--control);
+  }
+
+  .ponistra-pdf
+    .pdfViewer
+    .annotationLayer
+    :is(
+      .textWidgetAnnotation :is(input, textarea),
+      .choiceWidgetAnnotation select,
+      .buttonWidgetAnnotation:is(.checkBox, .radioButton) input
+    ):required {
+    outline-color: var(--danger);
+  }
+
+  .ponistra-pdf
+    .pdfViewer
+    .annotationLayer
+    :is(
+      .textWidgetAnnotation :is(input, textarea),
+      .choiceWidgetAnnotation select,
+      .buttonWidgetAnnotation:is(.checkBox, .radioButton) input
+    )[disabled]:hover {
+    border-color: var(--input-disabled-border-color);
+  }
+
+  /* pdf.js tints a box's own drawing with an SVG filter, which takes no theme colour; the tint
+     goes beneath it instead. */
+  .ponistra-pdf
+    .pdfViewer
+    .annotationLayer
+    .buttonWidgetAnnotation:is(.checkBox, .radioButton)
+    [data-canvas-name] {
+    background-image: var(--annotation-unfocused-field-background);
+  }
+
+  .ponistra-pdf
+    .pdfViewer
+    .annotationLayer
+    .buttonWidgetAnnotation:is(.checkBox, .radioButton):is(:focus-within, :has(input[disabled]))
+    [data-canvas-name] {
+    background-image: none;
+  }
+
+  .ponistra-pdf .pdfViewer .annotationLayer .ponistra-blocked {
+    outline: 1.5px dashed var(--control);
+    outline-offset: -1.5px;
+    background-color: color-mix(in srgb, var(--control) 8%, transparent);
+  }
+}
+
+.ponistra-pdf .pdfViewer .annotationLayer .ponistra-blocked,
+.ponistra-pdf .pdfViewer .annotationLayer .ponistra-blocked * {
+  cursor: not-allowed;
+}
+
+.ponistra-stack {
+  position: relative;
+  margin-inline: auto;
+}
+
+.ponistra-vertical {
+  position: absolute;
+  right: calc(100% + 0.25rem);
+}
+
+.ponistra-mark {
+  position: absolute;
+  touch-action: none;
+  outline: none;
+}
+
+.ponistra-mark-edge,
+.ponistra-mark-stop {
+  --ruler-mark: transparent;
+}
+
+.ponistra-mark-edge.ponistra-mark-x {
+  top: 0;
+  bottom: 0;
+  width: 0.5rem;
+  margin-left: -0.25rem;
+}
+
+.ponistra-mark-edge.ponistra-mark-y,
+.ponistra-mark-stop {
+  left: 0;
+  right: 0;
+  height: 0.5rem;
+  margin-top: -0.25rem;
+}
+
+.ponistra-mark-edge::after,
+.ponistra-mark-stop::after {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  background: var(--ruler-mark);
+  content: '';
+}
+
+.ponistra-mark-edge.ponistra-mark-x::after {
+  width: 2px;
+}
+
+.ponistra-mark-edge.ponistra-mark-y::after,
+.ponistra-mark-stop::after {
+  height: 2px;
+}
+
+.ponistra-mark-stop {
+  --ruler-mark: var(--control);
+}
+
+.ponistra-mark:not([aria-disabled]):hover,
+.ponistra-mark-edge:not([aria-disabled]):hover {
+  --ruler-mark: var(--control);
+}
+
+.ponistra-mark:focus-visible {
+  --ruler-mark: var(--focus);
+}
+
+.ponistra-mark-first,
+.ponistra-mark-hanging,
+.ponistra-mark-left,
+.ponistra-mark-right {
+  --ruler-mark: var(--control);
+  width: 0.625rem;
+  margin-left: -0.3125rem;
+  background: var(--ruler-mark);
+}
+
+.ponistra-mark-first {
+  top: 0;
+  height: 0.4375rem;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.ponistra-mark-hanging,
+.ponistra-mark-right {
+  top: 0.6875rem;
+  height: 0.3125rem;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+.ponistra-mark-left {
+  top: 1rem;
+  height: 0.25rem;
+}
+
+.ponistra-stop {
+  --ruler-mark: var(--ink);
+  --stroke: linear-gradient(var(--ruler-mark), var(--ruler-mark));
+  width: 0.5rem;
+  height: 0.5rem;
+  background:
+    var(--stroke) left / 2px 100% no-repeat,
+    var(--stroke) bottom / 100% 2px no-repeat;
+}
+
+.ponistra-stop-right {
+  background-position: right, bottom;
+}
+
+.ponistra-stop-center,
+.ponistra-stop-decimal {
+  width: 0.625rem;
+  background-position: center, bottom;
+}
+
+.ponistra-stop-decimal {
+  background:
+    var(--stroke) center / 2px 100% no-repeat,
+    var(--stroke) bottom / 100% 2px no-repeat,
+    var(--stroke) 85% 35% / 2px 2px no-repeat;
+}
+
+.ponistra-mark-tab {
+  top: 0.75rem;
+  margin-left: -1px;
+}
+
+.ponistra-mark-tab.ponistra-stop-right {
+  margin-left: calc(1px - 0.5rem);
+}
+
+.ponistra-mark-tab.ponistra-stop-center,
+.ponistra-mark-tab.ponistra-stop-decimal {
+  margin-left: -0.3125rem;
+}
+
+.ponistra-mark-off {
+  opacity: 0.35;
+}
+
+.ponistra-tab-kind {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 0.25rem);
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  background: var(--line);
+  color: var(--ink);
+}
+
+.ponistra-tab-kind:hover {
+  background: var(--hover);
+}
+
+.ponistra-tab-kind:focus-visible {
+  outline: 2px solid var(--focus);
+}
+
+.ponistra-mark:not([aria-disabled]) {
+  cursor: ew-resize;
+}
+
+.ponistra-mark-y:not([aria-disabled]) {
+  cursor: ns-resize;
+}
+
+.ponistra-ruler-guide {
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.ponistra-ruler-guide-x {
+  bottom: 0;
+  border-left: 1px dashed var(--accent);
+}
+
+.ponistra-ruler-guide-y {
+  right: 0;
+  border-top: 1px dashed var(--accent);
+}
+
+.ponistra-ruler-value {
+  position: absolute;
+  z-index: 30;
+  padding: 0 0.375rem;
+  border-radius: 0.25rem;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ponistra-mark-x ~ .ponistra-ruler-value {
+  translate: -50% 0;
+}
+
+.ponistra-mark-y ~ .ponistra-ruler-value {
+  translate: 0 -50%;
+}
+
+/* Pages are paper in either theme: the tokens inside resolve as the light scheme does, and the
+   colours inherited as computed from the root are taken again. */
+.ponistra-sheets {
+  position: relative;
+  container-type: inline-size;
+  transform-origin: 0 0;
+  color-scheme: light;
+  color: var(--ink);
+  caret-color: var(--accent);
+  accent-color: var(--accent);
+}
+
+.ponistra-papers {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ponistra-paper {
+  position: absolute;
+  left: 0;
+  background: var(--raised);
+  box-shadow:
+    0 1px 3px var(--shadow),
+    0 6px 16px -6px var(--shadow);
+}
+
+.ponistra-part {
+  position: absolute;
+  display: flow-root;
+}
+
+/* An empty paragraph keeps its line, as it does while written. */
+.ponistra-part > :empty::before {
+  content: '\200b';
+}
+
+.ponistra-footer {
+  translate: 0 -100%;
+}
+
+.ponistra-pages {
+  position: relative;
+}
+
+.ponistra-pages :is([data-page-break], [data-section-break])::before {
+  background: var(--raised);
+}
+
+/* A section whose text stands in otherwise than the first's sets its blocks in by as much; a text
+   block's own indents are added to it where it is decorated. */
+.ponistra-pages .ProseMirror > [data-inset]:not(.ponistra-table) {
+  margin-left: var(--inset-left);
+  margin-right: var(--inset-right);
+}
+
+.ponistra-document .ProseMirror[contenteditable='true']:is(.ponistra-pages *) {
+  min-height: 0;
+}
+
+.ponistra-pages span.ponistra-page-gap {
+  display: inline-block;
+  width: 100%;
+  vertical-align: top;
+}
+
+/* Footnotes stand at the foot of their pages, where the editor sets each item. */
+.ponistra-document.ponistra-pages .ponistra-notes[data-notes='foot'] {
+  position: absolute;
+  top: 0;
+  right: var(--page-right);
+  left: var(--page-left);
+  margin: 0;
+}
+
+.ponistra-document.ponistra-pages .ponistra-notes[data-notes='foot']::before {
+  display: none;
+}
+
+.ponistra-document.ponistra-pages .ponistra-notes[data-notes='foot'] li {
+  position: absolute;
+  right: 0;
+  left: 0;
+}
+
+.ponistra-document.ponistra-pages .ponistra-notes[data-notes='foot'] li:not([data-placed]) {
+  visibility: hidden;
+}
+
+.ponistra-document.ponistra-pages .ponistra-notes[data-notes='end'] {
+  margin-top: 2rem;
+}
+
+.ponistra-document.ponistra-pages .ponistra-notes[data-notes='foot'] li[data-first]::after {
+  position: absolute;
+  top: -0.5rem;
+  left: 0;
+  width: 33%;
+  border-top: 1px solid var(--line);
+  content: '';
+}
+
+.ponistra-measured {
+  position: absolute;
+  visibility: hidden;
+}
+
+.ponistra-measured [data-part] {
+  display: flow-root;
+}
+
+.ponistra-part-open {
+  outline: 1px dashed var(--accent);
+  outline-offset: 0.25rem;
+}
+
+.ponistra-part-open .ProseMirror {
+  outline: none;
+  cursor: text;
+}
+
+.ponistra-part-label {
+  position: absolute;
+  left: -0.25rem;
+  padding: 0 0.375rem;
+  border-radius: 0.25rem;
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 600 0.75rem / 1.25rem var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.ponistra-header > .ponistra-part-label {
+  top: calc(100% + 0.5rem);
+}
+
+.ponistra-footer > .ponistra-part-label {
+  bottom: calc(100% + 0.5rem);
+}
+
+.ponistra-sheets:has(> .ponistra-part-open) > .ponistra-document {
+  opacity: 0.5;
+}
+
+/* The print page lays each tab's pages edge to edge, each the paper's own height, so the browser's
+   pages fall where the tab's do; a tab on other paper prints on its named page. */
+:root:has(.ponistra-print) {
+  color-scheme: light;
+  background: var(--raised);
+  print-color-adjust: exact;
+}
+
+/* The frame a print is prepared in lies over the page unseen; out of view, a browser may stop
+   laying it out. */
+.ponistra-printing {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ponistra-printed {
+  overflow: clip;
+}
+
+.ponistra-printed ~ .ponistra-printed {
+  break-before: page;
+}
+
+.ponistra-printed .ponistra-paper,
+.ponistra-printed .ponistra-pdf-page {
+  box-shadow: none;
+}
+
+.ponistra-printed :is([data-page-break], [data-section-break]) {
+  visibility: hidden;
+}
+
+.ponistra-printed:not([data-last]) .ponistra-notes[data-notes='end'] {
+  display: none;
+}
+
+/* As the message is sent (apps/mail/sending.py): a paragraph is a line, in the face Outlook would
+   otherwise replace with Times New Roman. */
+.mail-text {
+  font-family: Arial, 'Liberation Sans', sans-serif;
+  font-size: 11pt;
+  line-height: 1.15;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.mail-text p {
+  margin: 0;
+}
+
+.mail-text hr {
+  margin-block: 0.5em;
+}
+
+.mail-text ul {
+  list-style: disc;
+  padding-left: 1.5em;
+}
+
+.mail-text ol {
+  list-style: decimal;
+  padding-left: 1.5em;
+}
+
+.mail-text a {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.mail-text img {
+  display: inline;
+  max-width: 100%;
+}
+
+.mail-text .ProseMirror-selectednode {
+  outline: 2px solid var(--focus);
+}
+
+.ponistra-help-summary {
+  max-width: var(--column);
+  margin-bottom: 1rem;
+  color: var(--muted);
+}
+
+.ponistra-help {
+  max-width: var(--column);
+  line-height: 1.6;
+}
+
+.ponistra-help .ponistra-help-articles {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ponistra-help-articles p {
+  color: var(--muted);
+}
+
+.ponistra-help > * + * {
+  margin-top: 0.75rem;
+}
+
+.ponistra-help h2 {
+  margin-top: 1.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.ponistra-help h3 {
+  margin-top: 1.25rem;
+  font-weight: 600;
+}
+
+.ponistra-help ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+
+.ponistra-help ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+
+.ponistra-help li + li {
+  margin-top: 0.25rem;
+}
+
+.ponistra-help strong {
+  font-weight: 600;
+}
+
+.ponistra-help a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+.ponistra-help kbd,
+.ponistra-help code {
+  padding: 0 0.3rem;
+  border: 1px solid var(--color-line);
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.ponistra-help img {
+  max-width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+}
+
+.ponistra-help table {
+  border-collapse: collapse;
+}
+
+.ponistra-help th,
+.ponistra-help td {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-line);
+  text-align: left;
+}

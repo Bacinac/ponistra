@@ -1,0 +1,16 @@
+{
+  "order": 96,
+  "audience": "everyone",
+  "covers": [
+    "action:file.compare"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/editor/CompareFileDialog.tsx#CompareFileDialog": "e43400f5c190",
+    "frontend/src/editor/CompareFileDialog.tsx#keptBeside": "2910f58545e2",
+    "backend/apps/versions/compared.py#operations": "8505d44641ef",
+    "backend/apps/versions/compared.py#node_of": "c08d8bdad66d",
+    "backend/apps/versions/compared.py#plan": "0ac90fee7e48",
+    "backend/apps/versions/compared.py#_other": "c6d9cb9b782f"
+  }
+}

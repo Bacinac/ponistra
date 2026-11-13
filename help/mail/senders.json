@@ -1,0 +1,21 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/senders",
+    "action:mail.block",
+    "action:mail.always"
+  ],
+  "quiet": [],
+  "describes": {
+    "frontend/src/mail.tsx#RuleDialog": "6c02500ef9d8",
+    "frontend/src/mail.tsx#MailSettings": "9c6229ed30c5",
+    "backend/apps/mail/sorting.py#arriving": "6d475a52927d",
+    "backend/apps/mail/sorting.py#_deciding": "6f89df7fd2b4",
+    "backend/apps/mail/views.py#rule": "e6f77eee31d0",
+    "backend/apps/mail/views.py#undecided": "403bd3ff9da3",
+    "backend/apps/mail/acting.py#block": "f76a311be897",
+    "backend/apps/mail/acting.py#always": "3dbf1ccd3597",
+    "backend/apps/mail/acting.py#_ruled": "c43641e14c9d"
+  }
+}

@@ -1,0 +1,17 @@
+# scripts/demo.sh over compose.check.yml: the recording is of one version of the code, so the
+# backend and the reader do not reload while other work edits the tree.
+services:
+  backend:
+    command:
+      - uvicorn
+      - config.asgi:application
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8030"
+      - --lifespan
+      - "on"
+      - --timeout-graceful-shutdown
+      - "15"
+  reader:
+    entrypoint: ["python", "-m", "apps.reader"]

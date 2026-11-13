@@ -1,0 +1,36 @@
+{
+  "order": 130,
+  "audience": "admin",
+  "covers": [],
+  "quiet": [
+    "health.offsite.note",
+    "health.offsite.none",
+    "health.offsite.how",
+    "health.offsite.howDays",
+    "health.offsite.unprotectedNote",
+    "health.offsite.error",
+    "health.offsite.checkError",
+    "health.offsite.trialError",
+    "health.offsite.trialFrom",
+    "health.offsite.trialNodes",
+    "health.offsite.trialFiles",
+    "health.offsite.trialWhole",
+    "health.offsite.secretReplace",
+    "health.kit.note",
+    "health.kit.keep",
+    "health.kit.renewWarning"
+  ],
+  "describes": {
+    "frontend/src/health.tsx#OffsiteSection": "4e6cbf008136",
+    "frontend/src/health.tsx#OffsiteForm": "d665f6c03f56",
+    "frontend/src/health.tsx#KitDialog": "9e44a0dab89f",
+    "frontend/src/health.tsx#kitText": "8e7fb6f60339",
+    "backend/apps/backups/offsite.py#checked": "e5d58b5444e4",
+    "backend/apps/backups/offsite.py#change": "2a8e0639b539",
+    "backend/apps/backups/offsite.py#emergency": "b4b3fefeadc9",
+    "backend/apps/backups/offsite.py#verify": "78d554467ce4",
+    "backend/apps/backups/offsite.py#attempt": "f4c3254f5300",
+    "backend/apps/backups/offsite.py#examined": "aa52a3b836e7",
+    "backend/apps/backups/offsite.py#follow": "33bf8f761cc6"
+  }
+}

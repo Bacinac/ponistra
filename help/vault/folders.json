@@ -1,0 +1,18 @@
+{
+  "order": 30,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "vault.deleteFolderWarning",
+    "vault.moveNote"
+  ],
+  "describes": {
+    "frontend/src/vault/page.tsx#VaultOpen": "85ae65cdfbec",
+    "frontend/src/vault/page.tsx#Items": "d6ff61eb7589",
+    "frontend/src/vault/page.tsx#MoveDialog": "0e1354eff0eb",
+    "frontend/src/choice.tsx#useChoice": "5c665da8064b",
+    "backend/apps/vault/views.py#item": "e67532a8f106",
+    "backend/apps/vault/views.py#folders": "04e778219edb",
+    "backend/apps/vault/views.py#folder": "a17950d7087a"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/sign-in"
+  ],
+  "quiet": [
+    "auth.signInAt"
+  ],
+  "describes": {
+    "frontend/src/auth.tsx#LoginForm": "942082ecfe2f",
+    "frontend/src/auth.tsx#SignInChoice": "3a2c4f52b5bf",
+    "frontend/src/auth.tsx#useLogout": "33f00ffd20d0",
+    "backend/apps/users/views.py#login": "62058829cd1e",
+    "backend/apps/users/views.py#preferences": "f528964d4c8e",
+    "backend/apps/users/accounts.py#without_passkeys": "2e5193d0b336",
+    "backend/apps/users/confirmation.py#signed_in": "2aa6f57a9059",
+    "backend/apps/users/sessions.py#SessionStore": "5d3eb3dc7105",
+    "frontend/src/auth.tsx#refusalText": "e67c8be8880c",
+    "backend/apps/identity/signin.py#start": "188fdf759c87",
+    "backend/apps/identity/signin.py#_attempt": "50408a5bc3e7"
+  }
+}

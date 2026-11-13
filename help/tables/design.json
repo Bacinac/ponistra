@@ -1,0 +1,12 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/editor/design.ts#SWITCHES": "ec003b5daa8f",
+    "frontend/src/editor/design.ts#CATALOGUE": "c5b0ddbc1c26",
+    "frontend/src/editor/design.ts#NEW": "15210dbb4dd1",
+    "schema/tables.json": "ab745042cc73"
+  }
+}

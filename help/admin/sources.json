@@ -1,0 +1,28 @@
+{
+  "order": 55,
+  "audience": "admin",
+  "covers": [],
+  "quiet": [
+    "sources.none",
+    "sources.tokenOnce",
+    "sources.renewWarning",
+    "sources.deleteWarning"
+  ],
+  "describes": {
+    "frontend/src/identityProviders.tsx#ProvidersSection": "309c8e298432",
+    "frontend/src/identityProviders.tsx#ProviderDialog": "0cc312fb0d65",
+    "frontend/src/identityProviders.tsx#FIELDS": "4773db364122",
+    "backend/apps/identity/providers.py#_settings": "eb919bc1ca4a",
+    "backend/apps/identity/providers.py#_filled": "e11fa7953123",
+    "backend/apps/identity/people.py#_linked": "ddeb5de57e79",
+    "backend/apps/identity/people.py#kept": "bfdf1a09c7e4",
+    "backend/apps/identity/people.py#group": "0ff080f5dca6",
+    "backend/apps/identity/people.py#left": "e42f70a7100d",
+    "backend/apps/identity/people.py#gone": "379470b14cc0",
+    "backend/apps/identity/directory.py#synced": "4a1a2343d6e6",
+    "backend/apps/identity/directories.py#due": "644c2170a1b5",
+    "backend/apps/identity/backends.py#Directory": "05229e00f949",
+    "backend/apps/identity/signin.py#_finished": "e3652c9763c3",
+    "backend/apps/identity/saml.py#person": "4fbe9db0f04a"
+  }
+}

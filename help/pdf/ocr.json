@@ -1,0 +1,15 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "ocr.refused.encrypted",
+    "ocr.refused.signed"
+  ],
+  "describes": {
+    "frontend/src/FilePage.tsx#Reading": "3ba7b386d61b",
+    "backend/apps/search/ocr.py#readable": "5989e002f940",
+    "backend/apps/search/extraction.py#extract_next": "093b5cb20d78",
+    "ocr/read.py": "f5b40ac08189"
+  }
+}

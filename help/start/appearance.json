@@ -1,0 +1,17 @@
+{
+  "order": 70,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/preferences.tsx#Kept": "c0a6be3258ba",
+    "frontend/src/preferences.tsx#Preferences": "c3b1d51cb222",
+    "frontend/src/theme.ts#chooseTheme": "db0ed7cc0c27",
+    "frontend/src/theme.ts#isDark": "c8a740ea587b",
+    "frontend/src/frame.tsx#UserMenu": "b7c038de6afc",
+    "frontend/src/places.tsx#usePlaces": "4d328385fb13",
+    "frontend/src/theme.ts#useThemeOf": "f4365249a463",
+    "frontend/src/theme.ts#choosePageTheme": "25bea7d70675",
+    "frontend/src/frame.tsx#PageThemeMenu": "ccb9bee90101"
+  }
+}

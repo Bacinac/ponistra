@@ -1,0 +1,16 @@
+{
+  "order": 120,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/DocumentPage.tsx#DocumentPage": "42f91ebf76cb",
+    "frontend/src/saveAs.ts#useSaveAs": "446ee4bf96cf",
+    "backend/apps/exports/jobs.py#_done": "69b563c10237",
+    "backend/apps/exports/docx.py#word_file": "5badf491f2cc",
+    "backend/apps/exports/xlsx.py#workbook": "8a05305f28ac",
+    "backend/apps/exports/pptx.py#presentation": "32744d5ccfe0",
+    "backend/apps/exports/ponx.py#packed": "4dd062a3890c",
+    "backend/apps/exports/macros.py#with_macros": "b045e7478422"
+  }
+}

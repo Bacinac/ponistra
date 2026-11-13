@@ -1,0 +1,13 @@
+{
+  "order": 60,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "mail.signatureHint"
+  ],
+  "describes": {
+    "frontend/src/mailAccounts.tsx#SignatureDialog": "d5a30e61f2f0",
+    "backend/apps/mail/views.py#signature": "9a4badef0464",
+    "backend/apps/mail/views.py#shared_signature": "57b0b780b924"
+  }
+}

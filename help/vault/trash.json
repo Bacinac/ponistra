@@ -1,0 +1,17 @@
+{
+  "order": 50,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "vault.purgeChosen",
+    "vault.purgeWarning"
+  ],
+  "describes": {
+    "frontend/src/vault/page.tsx#Trash": "856c628972a0",
+    "frontend/src/vault/page.tsx#PurgeDialog": "4314664bafc0",
+    "backend/apps/vault/views.py#item": "e67532a8f106",
+    "backend/apps/vault/views.py#trash": "3a903b4820f9",
+    "backend/apps/vault/views.py#restore": "49dccebf0dba",
+    "backend/apps/vault/views.py#purge": "a18703f55e3d"
+  }
+}

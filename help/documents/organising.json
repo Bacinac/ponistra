@@ -1,0 +1,20 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "copy.of",
+    "explorer.select",
+    "explorer.selectMenu",
+    "tree.actions"
+  ],
+  "describes": {
+    "frontend/src/FolderPage.tsx#Explorer": "43d0ac1d1031",
+    "frontend/src/dialogs.tsx#MoveDialog": "0b2f0b70d787",
+    "frontend/src/dialogs.tsx#CopyDialog": "d185b4dc6396",
+    "frontend/src/frame.tsx#FolderTree": "529e1961eb25",
+    "frontend/src/choice.tsx": "4c36a2c48ed0",
+    "backend/apps/imports/jobs.py#_copy_done": "3e7011a3b736",
+    "backend/apps/documents/views.py#trash": "1aba1d76777f"
+  }
+}

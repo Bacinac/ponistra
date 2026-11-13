@@ -1,0 +1,9 @@
+build/
+.gradle/
+.kotlin/
+dist/*
+!dist/.gitkeep
+keystore/
+local.properties
+# Copied from frontend/src/assets/brand by build.sh, the brand's one source.
+app/src/main/res/drawable-nodpi/brand_*.png
