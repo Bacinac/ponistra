@@ -1,0 +1,22 @@
+{
+  "order": 25,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/hours"
+  ],
+  "quiet": [
+    "workspace.sheets.removeText"
+  ],
+  "describes": {
+    "frontend/src/workspaceHours.tsx#TimeSettings": "a8fc7625b206",
+    "frontend/src/workspaceHours.tsx#SheetForm": "ec94ea34ecce",
+    "frontend/src/workspaceHours.tsx#SheetCard": "575242962d2f",
+    "frontend/src/workspaceHours.tsx#Compared": "757eff0c0aa6",
+    "frontend/src/workspaceHours.tsx#Removal": "00909f8a3e77",
+    "backend/apps/workspace/sheets.py#write": "c43404c50ab9",
+    "backend/apps/workspace/sheets.py#due": "8b9555f06d44",
+    "backend/apps/workspace/sheets.py#compared": "7ed04cb6a9b5",
+    "backend/apps/workspace/sheets.py#writing": "ab391585d8fc",
+    "workspace/worked.mjs#removed": "739eb325d5aa"
+  }
+}

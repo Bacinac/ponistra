@@ -41,7 +41,7 @@
     "frontend/src/WorkspacePage.tsx#Measures": "eb181c2c1a73",
     "frontend/src/WorkspacePage.tsx#RestartButton": "34a05cac92de",
     "backend/apps/workspace/views.py#_plans": "c153401f6120",
-    "workspace/projects.mjs": "da60f411a2ac",
+    "workspace/projects.mjs": "624327026b98",
     "workspace/webview.mjs": "ab2c5a614673",
     "frontend/src/WorkspacePage.tsx#RoundCard": "8c9d2bd2af96",
     "frontend/src/WorkspacePage.tsx#Pult": "d1abfc072ede",
@@ -65,10 +65,10 @@
     "frontend/src/workspace.ts#setAside": "611f05a7a06a",
     "frontend/src/meetingWindow.ts#openBeside": "fad04c7ff080",
     "frontend/src/workspace.ts#useGoToProjects": "4cadf465f207",
-    "frontend/src/workspaceHours.tsx#Hours": "44455ab05bb0",
+    "frontend/src/workspaceHours.tsx#Hours": "dbce4d8875b7",
     "backend/apps/workspace/worked.py": "b9b3fa404bd5",
-    "backend/apps/workspace/views.py#worked": "30bcb12b369c",
+    "backend/apps/workspace/views.py#worked": "3585f0592c17",
     "backend/apps/workspace/views.py#hours": "af06d97e26f6",
-    "workspace/worked.mjs": "bb6bef2ddc3f"
+    "workspace/worked.mjs": "aae59e23626e"
   }
 }

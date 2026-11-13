@@ -117,7 +117,7 @@ export function usePlaces(): Palette {
           ]
         : [];
       const settings = [
-        ...ACCOUNT.flatMap(({ entries }) =>
+        ...ACCOUNT.filter(({ owner: only }) => !only || owner).flatMap(({ entries }) =>
           entries.map((entry) => ({ entry, heading: t('settings.title') })),
         ),
         ...(admin

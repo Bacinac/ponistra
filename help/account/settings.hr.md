@@ -18,6 +18,8 @@ Postavke s ovih stranica vrijede za vaš račun na svakom uređaju, osim onih ko
 
 Administrator u istom stupcu vidi i skupinu {t:settings.installation}, sa stranicama koje vrijede za cijelu instalaciju: {t:users.title}, {t:resources.title}, {t:workdays.title}, {t:relay.title}, {t:providers.title}, {t:identity.title}, {t:ai.title}, {t:retention.title}, {t:journal.title} i {t:health.title}. Ostali korisnici tu skupinu ne vide.
 
+Vlasnik radnog prostora za kod vidi i skupinu {t:settings.workspace}, sa stranicom {t:workspace.view.hours} ([Upis vremena rada](help:agents/hours)).
+
 Adresa stranice koja ne postoji otvara prvu stranicu postavki.
 
 ## Ograničenja

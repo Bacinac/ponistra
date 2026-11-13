@@ -12,8 +12,12 @@
 //                                          the map names (`{"project": "<Clockify project id>"}`),
 //                                          with the key `CLOCKIFY_API_KEY` from the env file
 // Either is added to what PONISTRA holds, never counted twice, and moves no mark of a transcript.
+//
+// An archived chat's transcript, with the folder of what it keeps beside it, is removed as many days
+// after archiving as PONISTRA says (VT3), never while it runs or belongs to a round still open, and
+// only once PONISTRA holds the time worked read from it to its last line.
 
-import { closeSync, openSync, readdirSync, readFileSync, readSync, statSync } from 'node:fs';
+import { closeSync, openSync, readdirSync, readFileSync, readSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -25,6 +29,10 @@ const CHUNK = 16 * 1024 * 1024;
 const SENT = 50;
 const TRANSCRIPT = /^([0-9a-f-]{36})\.jsonl$/;
 const STAMP = Buffer.from('"timestamp"');
+const DAY = 24 * 60 * 60 * 1000;
+const STARTING = 60 * 60 * 1000;
+// How many passes go by between asking PONISTRA again what it holds and what it removes.
+const ASKED_EVERY = 10;
 const CLOCKIFY = 'https://api.clockify.me/api/v1';
 const ENTRIES = 1000;
 
@@ -155,15 +163,56 @@ export const measure = async (kept, marks = null) => {
   if (batch.length) await send();
 };
 
-export const followWork = () => {
+// The archived chats' transcripts PONISTRA holds read to their last line, removed once `after` days
+// have gone by since each was archived; none while `after` is null or a chat is `held`. A chat the
+// list of the archived no longer names, or never named, counts as archived when its transcript
+// last changed, and not before STARTING has gone by, as one not yet running may be starting.
+export const removed = (kept, marks, after, archived, held, now = Date.now()) => {
+  if (!Number.isInteger(after) || after < 0) return [];
+  const since = new Map(archived.map(({ id, at }) => [id, at]));
+  const gone = [];
+  for (const space of readdirSync(kept, { withFileTypes: true })) {
+    if (!space.isDirectory()) continue;
+    for (const name of readdirSync(join(kept, space.name))) {
+      const id = name.match(TRANSCRIPT)?.[1];
+      if (!id || held.has(id)) continue;
+      const file = join(kept, space.name, name);
+      let stat;
+      try {
+        stat = statSync(file);
+      } catch {
+        continue;
+      }
+      const at = since.get(id) ?? stat.mtimeMs;
+      const wait = since.has(id) ? after * DAY : Math.max(after * DAY, STARTING);
+      if (now - Math.max(at, stat.mtimeMs) < wait || marks.get(`${space.name}/${id}`) !== stat.size) continue;
+      rmSync(file, { force: true });
+      rmSync(join(kept, space.name, id), { recursive: true, force: true });
+      gone.push(`${space.name}/${id}`);
+    }
+  }
+  return gone;
+};
+
+// `chats` says which chats are archived ({id, at}) and which are held: running or in a round still open.
+export const followWork = (chats) => {
   let marks = null;
   let measuring = false;
+  let passes = 0;
   const pass = async () => {
     if (measuring) return;
     measuring = true;
     try {
-      marks ??= new Map(Object.entries((await told('GET')).read));
+      const asking = passes % ASKED_EVERY === 0;
+      passes += 1;
+      const held = asking ? await told('GET') : null;
+      marks ??= new Map(Object.entries(held.read));
       await measure(KEPT, marks);
+      if (held) {
+        const { archived, held: running } = chats();
+        const gone = removed(KEPT, new Map(Object.entries(held.read)), held.removal, archived, running);
+        if (gone.length) console.log(`removed the transcripts of ${gone.length} archived chats: ${gone.join(', ')}`);
+      }
     } catch (error) {
       console.error('the time worked was not measured', error);
     } finally {

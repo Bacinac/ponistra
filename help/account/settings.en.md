@@ -18,6 +18,8 @@ The settings on these pages apply to your account on every device, except those 
 
 An administrator also sees the group {t:settings.installation} in the same column, with pages that apply to the whole installation: {t:users.title}, {t:resources.title}, {t:workdays.title}, {t:relay.title}, {t:providers.title}, {t:identity.title}, {t:ai.title}, {t:retention.title}, {t:journal.title} and {t:health.title}. Other users do not see that group.
 
+The owner of the code workspace also sees the group {t:settings.workspace}, with the page {t:workspace.view.hours} ([Writing the time worked](help:agents/hours)).
+
 The address of a page that does not exist opens the first page of the settings.
 
 ## Limits

@@ -4,6 +4,7 @@ names and encrypted with RESTIC_PASSWORD. Between two snapshots, every TAKEN, th
 archived into SPOOL and the files go into a snapshot of their own, so the installation can be
 restored to any moment of the last WINDOW (S8)."""
 
+import gzip
 import json
 import os
 import re
@@ -347,6 +348,28 @@ def fetched(sources: list[Path]) -> str:
     )
 
 
+def _lsn(text: str) -> int:
+    high, low = text.split("/")
+    return int(high, 16) << 32 | int(low, 16)
+
+
+def followed(data: Path, sources: list[Path]) -> str:
+    """The timeline a recovery follows: the newest in the archive that left the snapshot's own
+    after the snapshot began, else the snapshot's own. A history that forks before the snapshot
+    is a branch the snapshot's cluster never took, and Postgres refuses to recover along it."""
+    label = (data / "backup_label").read_text()
+    start = _lsn(re.search(r"^START WAL LOCATION: (\S+)", label, re.MULTILINE).group(1))
+    own = re.search(r"^START TIMELINE: (\d+)", label, re.MULTILINE).group(1)
+    children = {
+        int(path.name[:8], 16)
+        for source in sources
+        for path in source.glob("*.history.gz")
+        for line in gzip.decompress(path.read_bytes()).decode().splitlines()
+        if (parts := line.split()) and parts[0] == own and _lsn(parts[1]) >= start
+    }
+    return str(max(children)) if children else "current"
+
+
 def replayed(data: Path, sources: list[Path], target: tuple[str, str] | None) -> dict:
     """Starts Postgres of its own on the restored data, replays the WAL to the target and promotes
     it, reads what a restore checks and stops it, the data left as a cluster Postgres opens."""
@@ -357,6 +380,7 @@ def replayed(data: Path, sources: list[Path], target: tuple[str, str] | None) ->
         *("-c", "listen_addresses=", "-c", f"unix_socket_directories={socket}"),
         *("-c", "archive_mode=off", "-c", f"restore_command={fetched(sources)}"),
         *("-c", "recovery_target_action=promote"),
+        *("-c", f"recovery_target_timeline={followed(data, sources)}"),
         *(("-c", "=".join(target)) if target else ()),
     ]
     log_path = socket / "recovery.log"
@@ -445,13 +469,12 @@ def restore(which: str, into: Path) -> str:
         restic("restore", f"{recovered.snapshot['id']}:{workspace}", f"--target={workspace}")
     if missing := {sha256 for sha256 in recovered.named if not store.revive(sha256)}:
         raise Failed(f"{len(missing)} of the files the restored database names are in no snapshot")
-    # Promoted with archiving off, Postgres left its new timeline's history unarchived, and the
-    # next restore must not choose that timeline again.
+    # Promoted with archiving off, Postgres marked its new timeline's history for no archiver. It
+    # is archived once the cluster runs in Postgres's place: archived before, a restore that never
+    # took over would leave a branch the next one could not follow.
+    status = into / "data" / "pg_wal" / "archive_status"
     for history in (into / "data" / "pg_wal").glob("*.history"):
-        if not (SPOOL / f"{history.name}.gz").exists():
-            with (SPOOL / f".{history.name}").open("wb") as kept:
-                subprocess.run(["gzip", "-1nc", str(history)], stdout=kept, check=True)
-            (SPOOL / f".{history.name}").rename(SPOOL / f"{history.name}.gz")
+        (status / f"{history.name}.ready").touch()
     shutil.rmtree(into / "wal")
     return recovered.version
 

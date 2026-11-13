@@ -46,6 +46,7 @@ from apps.search.ocr import recognise  # noqa: E402
 from apps.shares.sync import shares  # noqa: E402
 from apps.versions.history import keep  # noqa: E402
 from apps.workspace import terminal  # noqa: E402
+from apps.workspace.sheets import writing as timesheets  # noqa: E402
 
 mcp_application = agents.application()
 
@@ -123,6 +124,7 @@ async def lifespan(receive, send) -> None:
         background.start_soon(directories)
         background.start_soon(sweeping)
         background.start_soon(memory)
+        background.start_soon(timesheets)
         await send({"type": "lifespan.startup.complete"})
         await receive()
         background.cancel_scope.cancel()

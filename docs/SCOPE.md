@@ -3693,8 +3693,8 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
   - *D26-1, the app, connecting and updating*: built 2026-10-28. `android/`
     (Kotlin, minSdk 28) is built and signed by `android/build.sh` in a
     container of its own, with a keystore that never leaves 210; its version
-    counts the commits touching the app or the brand, whose icons it takes
-    from the brand folder. The release builds it and puts it in the
+    counts the commits touching the app, whose launcher icons are vectors
+    `scripts/brand.mjs` writes into it (2026-11-13). The release builds it and puts it in the
     frontend's image, which serves `/android/ponistra.apk` and
     `/android/ponistra.json` beside it; the app reads that when it opens,
     after each sync and twice a day, and installs an update it has checked

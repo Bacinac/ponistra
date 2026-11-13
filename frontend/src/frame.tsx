@@ -48,7 +48,7 @@ import { helpFrom, useHelpKey } from './helpKey';
 import { ApiError, patchJson } from './api';
 import { dayOf, linkOf, nextOf, untilText, useNow, useWindow } from './calendarData';
 import { useLogout, useSession, useVisitor } from './auth';
-import { Brand, BrandIcon } from './Brand';
+import { Brand, BrandIcon, MARK_AXIS } from './Brand';
 import { endDrag, refuseStrayFiles, startDrag, useDropTarget } from './drag';
 import { LANGUAGE_NAMES, LANGUAGES, useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
@@ -802,9 +802,7 @@ function Rail({ className }: { className: string }) {
         title={t('rail.today')}
         className="relative mb-3 hidden h-12 shrink-0 items-center justify-center self-stretch md:flex"
       >
-        {/* The logo's mark is centred at 19.8 % of its width (x 390 of its 70–1686 view box), so
-            it stands on the rail's axis. */}
-        <span className="absolute left-1/2 w-max -translate-x-[19.8%]">
+        <span className="absolute left-1/2 w-max" style={{ translate: `-${MARK_AXIS}` }}>
           <Brand compact />
         </span>
       </NavLink>

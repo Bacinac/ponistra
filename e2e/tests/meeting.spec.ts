@@ -416,6 +416,11 @@ const RED = Buffer.from(
 const VISION_NOTES =
   / (warning|error): (W\d{4} [\d:.]+ +\d+ \S+\] |INFO: Created TensorFlow Lite )|GL Driver Message \(OpenGL, Performance/;
 
+// Before the problems are checked, and when a test failed too, so that its failure is its own.
+test.afterEach(({ problems }) => {
+  problems.splice(0, problems.length, ...problems.filter((each) => !VISION_NOTES.test(each)));
+});
+
 async function chosen(meeting: Page, sub: string, item: string) {
   await meeting.getByRole('button', { name: 'Uređaji' }).click();
   await meeting.getByRole('menuitem', { name: sub }).press('Enter');
@@ -464,7 +469,8 @@ test('the camera’s background, framing and light and the sound’s processing 
   await expect(meeting.getByRole('alert')).toHaveCount(0);
 
   await meeting.getByRole('button', { name: 'Pridruži se' }).click();
-  await expect(tiles(meeting)).toHaveCount(1);
+  // Every processing on at once keeps the page's thread busy without a graphics card.
+  await expect(tiles(meeting)).toHaveCount(1, { timeout: 30_000 });
   const there = await device(browser, baseURL!, problems, sessions().colleague);
   await there.goto(new URL(meeting.url()).pathname);
   await there.getByRole('button', { name: 'Pridruži se' }).click();
@@ -527,5 +533,4 @@ test('the camera’s background, framing and light and the sound’s processing 
   await removed;
   await expect.poll(async () => lightWall(await meanColour(own))).toBe(false);
   await app.context().close();
-  problems.splice(0, problems.length, ...problems.filter((each) => !VISION_NOTES.test(each)));
 });

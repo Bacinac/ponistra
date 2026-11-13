@@ -117,7 +117,8 @@ def test_the_workspace_says_what_it_found_and_hears_how_far_it_read(client, sett
     response = client.post(worked, sent, JSON, HTTP_AUTHORIZATION="Bearer token")
     assert response.status_code == 204
     assert client.get(worked, HTTP_AUTHORIZATION="Bearer token").json() == {
-        "read": {f"{HERE}/{CHAT}": 4096}
+        "read": {f"{HERE}/{CHAT}": 4096},
+        "removal": None,
     }
     assert Stretch.objects.get(transcript__namespace=HERE).ended == at("2026-11-12T08:30:00.250")
 

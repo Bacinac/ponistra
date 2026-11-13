@@ -62,16 +62,9 @@ if ! $DEBUG; then
   [[ -f keystore/keystore.properties ]] || { echo "no keystore — run ./build.sh --init-keystore first"; exit 1; }
 fi
 
-# The launcher icon comes from the brand's one source, never a copy kept here.
-BRAND=../frontend/src/assets/brand
-mkdir -p app/src/main/res/drawable-nodpi
-cp "$BRAND/icon-maskable-512.png" app/src/main/res/drawable-nodpi/brand_tile.png
-cp "$BRAND/icon-512.png" app/src/main/res/drawable-nodpi/brand_mark.png
-cp "$BRAND/badge-96.png" app/src/main/res/drawable-nodpi/brand_badge.png
-
-# The app's version is the position in history of the last commit that changed it or its icon, so
-# an app nobody touched keeps its version and a phone is not offered the same app again.
-SOURCES=(. "$BRAND")
+# The app's version is the position in history of the last commit that changed it, so an app
+# nobody touched keeps its version and a phone is not offered the same app again.
+SOURCES=(.)
 COUNT=$(git rev-list --count "$(git log -1 --format=%H -- "${SOURCES[@]}")")
 BASE=$(tr -d ' \t\r\n' < ../VERSION)
 [[ "$BASE" =~ ^([0-9]+)\.([0-9]+)$ ]] || { echo "VERSION must be MAJOR.MINOR, got '$BASE'" >&2; exit 1; }

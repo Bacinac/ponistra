@@ -195,7 +195,7 @@ test('menus, dialogs and editor keep the active theme', async ({ page }) => {
   }
 });
 
-test('browser icons are transparent and fill their available width', async ({ page }) => {
+test('browser icons are transparent and fill their square', async ({ page }) => {
   await page.goto('/');
   const icons = await page.evaluate(async () => {
     const inspect = async (blob: Blob, size: number) => {
@@ -212,17 +212,18 @@ test('browser icons are transparent and fill their available width', async ({ pa
       const corners = [0, size - 1, size * (size - 1), size * size - 1].map(
         (index) => pixels[index * 4 + 3],
       );
-      let left = size;
-      let right = -1;
+      let [left, top, right, bottom] = [size, size, -1, -1];
       for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
           if (pixels[(y * size + x) * 4 + 3] > 32) {
             left = Math.min(left, x);
             right = Math.max(right, x);
+            top = Math.min(top, y);
+            bottom = Math.max(bottom, y);
           }
         }
       }
-      return { size, corners, coverage: (right - left + 1) / size };
+      return { size, corners, coverage: Math.max(right - left + 1, bottom - top + 1) / size };
     };
     const svg = document.querySelector<HTMLLinkElement>('link[rel="icon"][type="image/svg+xml"]')!;
     const results = [await inspect(await (await fetch(svg.href)).blob(), 32)];

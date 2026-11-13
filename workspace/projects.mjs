@@ -1401,7 +1401,11 @@ const followGates = () => {
 followGates();
 setInterval(followGates, 60 * 1000).unref();
 followMemory();
-followWork();
+followWork(() => {
+  const open = roundFiles().filter(({ round }) => !round.closed);
+  const inRounds = open.flatMap(({ round }) => [round.coordinator, ...round.chats.map((chat) => chat?.sessionId)]);
+  return { archived: archivedList(), held: new Set([...running().keys(), ...inRounds.filter(Boolean)]) };
+});
 void tell();
 
 const CHAT = /^\/ponistra\/chats\/([0-9a-f-]{36})$/;

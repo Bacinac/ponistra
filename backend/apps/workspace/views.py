@@ -26,11 +26,13 @@ from apps.blobs import store
 from apps.blobs.models import Blob, Upload
 from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database
+from apps.core.sealed import seal
 from apps.users.sessions import CONFIRMED as CONFIRMED_AT
 from apps.users.sessions import fresh
 
+from . import sheets
 from . import worked as measured
-from .models import Aside, Command
+from .models import Aside, Command, Removal, Sheet
 
 logger = logging.getLogger(__name__)
 
@@ -476,12 +478,16 @@ def _measured(given) -> tuple[str, str, str, int | None, list[tuple[datetime, da
 
 @csrf_exempt
 def worked(request):
-    """The workspace asking how far it read each transcript, or saying what stretches of work it
-    found in some since (VT1), with the token it is asked with."""
+    """The workspace asking how far it read each transcript and how many days after archiving it
+    removes a chat's transcript (VT3), or saying what stretches of work it found in some since
+    (VT1), with the token it is asked with."""
     if not _from_workspace(request):
         return JsonResponse({"error": "refused"}, status=403)
     if request.method == "GET":
-        return JsonResponse({"read": measured.marks()})
+        removal = Removal.objects.filter(pk=1).first()
+        return JsonResponse(
+            {"read": measured.marks(), "removal": removal.after if removal else None}
+        )
     if request.method != "POST":
         return JsonResponse({"error": "method_not_allowed"}, status=405)
     try:
@@ -520,3 +526,178 @@ def door(request):
     ):
         return HttpResponse(status=204)
     return HttpResponse(status=403)
+
+
+SHEET_KINDS = {kind.value for kind in Sheet.Kind}
+SHEET_KEY = 200
+SHEET_PROJECTS = 200
+
+
+def _owner(request) -> None:
+    if not owns(request.user):
+        raise Refused(403, "not_the_owner")
+
+
+def _sheet_shown(sheet: Sheet) -> dict:
+    return {
+        "kind": sheet.kind,
+        "address": sheet.address,
+        "person": sheet.person,
+        "offered": sheet.offered,
+        "projects": sheet.projects,
+        "excluded": sheet.excluded,
+        "label": sheet.label,
+        "since": sheet.since.isoformat(),
+        "nightly": sheet.nightly,
+        "error": sheet.error or None,
+        "written_at": sheet.written_at.isoformat() if sheet.written_at else None,
+        "due": len(sheets.due(sheet)[1]),
+    }
+
+
+@api("GET", "PATCH")
+def sheets_of(request):
+    """What the time worked is written to and when archived chats' transcripts are removed."""
+    _owner(request)
+    removal = Removal.objects.filter(pk=1).first()
+    if request.method == "PATCH":
+        after = body(request).get("after")
+        if after is not None and (
+            not isinstance(after, int) or isinstance(after, bool) or not 0 <= after <= 365
+        ):
+            raise Refused(400, "invalid_removal")
+        removal, _ = Removal.objects.update_or_create(pk=1, defaults={"after": after})
+    projects = sorted({project for project, _ in measured.blocks().items()}, key=BY_NAME.getSortKey)
+    return JsonResponse(
+        {
+            "projects": projects,
+            "removal": removal.after if removal else None,
+            "sheets": {sheet.kind: _sheet_shown(sheet) for sheet in Sheet.objects.all()},
+        }
+    )
+
+
+def _sheet_text(given: dict, name: str, longest: int, required: bool = True) -> str:
+    value = given.get(name, "")
+    if (
+        not isinstance(value, str)
+        or len(value.strip()) > longest
+        or (required and not value.strip())
+    ):
+        raise Refused(400, f"invalid_sheet_{name}")
+    return value.strip()
+
+
+def _sheet_changed(sheet: Sheet, given: dict) -> str | None:
+    key = given.get("key")
+    if key is not None:
+        key = _sheet_text(given, "key", SHEET_KEY)
+    elif not sheet.pk:
+        raise Refused(400, "invalid_sheet_key")
+    if sheet.kind == Sheet.Kind.TASKSTREAMER:
+        sheet.address = _sheet_text(given, "address", 200)
+        if not re.fullmatch(r"https?://[^\s/]+(/[^\s]*)?", sheet.address):
+            raise Refused(400, "invalid_sheet_address")
+        sheet.person = _sheet_text(given, "person", 254)
+        if "@" not in sheet.person:
+            raise Refused(400, "invalid_sheet_person")
+    sheet.label = _sheet_text(given, "label", 100)
+    since = given.get("since")
+    try:
+        sheet.since = datetime.strptime(since, "%Y-%m-%d").date()
+    except TypeError, ValueError:
+        raise Refused(400, "invalid_sheet_since") from None
+    nightly = given.get("nightly")
+    if not isinstance(nightly, bool):
+        raise Refused(400, "invalid_sheet_nightly")
+    sheet.nightly = nightly
+    excluded = given.get("excluded", [])
+    if (
+        not isinstance(excluded, list)
+        or len(excluded) > SHEET_PROJECTS
+        or not all(isinstance(each, str) and len(each) <= 255 for each in excluded)
+    ):
+        raise Refused(400, "invalid_sheet_projects")
+    sheet.excluded = sorted(set(excluded))
+    projects = given.get("projects", {})
+    if (
+        not isinstance(projects, dict)
+        or len(projects) > SHEET_PROJECTS
+        or not all(
+            isinstance(ours, str)
+            and len(ours) <= 255
+            and isinstance(theirs, str)
+            and 0 < len(theirs.strip()) <= 255
+            for ours, theirs in projects.items()
+        )
+    ):
+        raise Refused(400, "invalid_sheet_projects")
+    sheet.projects = {
+        ours: theirs.strip() for ours, theirs in projects.items() if ours not in sheet.excluded
+    }
+    return key
+
+
+@api("PUT", "DELETE", "POST")
+def sheet_kept(request, kind):
+    """One sheet: kept as given, removed, or written now."""
+    _owner(request)
+    if kind not in SHEET_KINDS:
+        raise Refused(404, "no_sheet")
+    found = Sheet.objects.filter(kind=kind).first()
+    if request.method == "DELETE":
+        if found:
+            found.delete()
+        return HttpResponse(status=204)
+    if request.method == "POST":
+        if not found:
+            raise Refused(404, "no_sheet")
+        return JsonResponse(sheets.write(found))
+    given = body(request)
+    changed = found or Sheet(kind=kind)
+    key = _sheet_changed(changed, given)
+    changed.error = ""
+    try:
+        if kind == Sheet.Kind.CLOCKIFY and (key is not None or given.get("refresh")):
+            sheets.found(changed, key)
+        elif key is not None:
+            sheets.taskstreamer(
+                changed,
+                "GET",
+                params={
+                    "user": changed.person,
+                    "from": changed.since.isoformat(),
+                    "to": changed.since.isoformat(),
+                },
+                key=key,
+            )
+    except sheets.Unwritten as unwritten:
+        # A TaskStreamer that does not yet take time sheets is kept, the sheet showing why it waits.
+        if unwritten.code != "sheet_missing" or kind != Sheet.Kind.TASKSTREAMER:
+            status = 400 if unwritten.code == "sheet_refused" else 502
+            raise Refused(status, unwritten.code) from None
+        changed.error = unwritten.code
+    if kind == Sheet.Kind.CLOCKIFY:
+        offered = {each["id"] for each in changed.offered}
+        if any(theirs not in offered for theirs in changed.projects.values()):
+            raise Refused(400, "invalid_sheet_projects")
+    if key is not None:
+        changed.key = seal(sheets.SEALED, key)
+    changed.save()
+    return JsonResponse(_sheet_shown(changed))
+
+
+@api("GET")
+def sheet_compared(request, kind):
+    """A month as measured beside what the sheet holds."""
+    _owner(request)
+    found = Sheet.objects.filter(kind=kind).first() if kind in SHEET_KINDS else None
+    if not found:
+        raise Refused(404, "no_sheet")
+    month = request.GET.get("month") or timezone.localdate().strftime("%Y-%m")
+    if not MONTH.fullmatch(month):
+        raise Refused(400, "invalid_month")
+    try:
+        return JsonResponse(sheets.compared(found, month))
+    except sheets.Unwritten as unwritten:
+        raise Refused(502, unwritten.code) from None

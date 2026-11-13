@@ -9,7 +9,7 @@
     "frontend/src/theme.ts#chooseTheme": "db0ed7cc0c27",
     "frontend/src/theme.ts#isDark": "c8a740ea587b",
     "frontend/src/frame.tsx#UserMenu": "b7c038de6afc",
-    "frontend/src/places.tsx#usePlaces": "4d328385fb13",
+    "frontend/src/places.tsx#usePlaces": "daf7a8627f57",
     "frontend/src/theme.ts#useThemeOf": "f4365249a463",
     "frontend/src/theme.ts#choosePageTheme": "25bea7d70675",
     "frontend/src/frame.tsx#PageThemeMenu": "ccb9bee90101"

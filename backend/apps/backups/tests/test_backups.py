@@ -1,3 +1,4 @@
+import gzip
 import io
 import json
 import os
@@ -135,13 +136,26 @@ def test_a_restore_to_a_moment_replays_the_wal_and_brings_back_the_files_collect
     assert backups.restore(moment.isoformat(), into) == "0.1.99"
     assert emails == [["ana@example.com", "bruno@example.com"]]
     assert store.path_of(blob.sha256).read_bytes() == b"bytes written after the snapshot"
-    assert list(repository.glob("*.history.gz"))
+    assert not list(repository.glob("*.history.gz"))
+    status = into / "data" / "pg_wal" / "archive_status"
+    assert [ready.name for ready in status.glob("*.history.ready")]
 
 
 def test_the_latest_restore_replays_all_the_wal_there_is(into, emails, archived):
     backups.backup()
     User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-71")
     archived()
+    backups.restore("latest", into)
+    assert emails == [["ana@example.com"]]
+
+
+def test_a_branch_that_left_before_the_snapshot_is_not_followed(into, emails, archived, repository):
+    backups.backup()
+    User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-71")
+    archived()
+    (repository / "00000002.history.gz").write_bytes(
+        gzip.compress(b"1\t0/10\tno recovery target specified\n")
+    )
     backups.restore("latest", into)
     assert emails == [["ana@example.com"]]
 

@@ -17,6 +17,7 @@ import {
   MonitorSmartphone,
   ScrollText,
   Sparkles,
+  Timer,
   Users,
   Video,
   X,
@@ -46,6 +47,7 @@ const Notifications = lazily(() => import('./notifications'), 'Notifications');
 const Passkeys = lazily(() => import('./passkeys'), 'Passkeys');
 const PasswordForm = lazily(() => import('./auth'), 'PasswordForm');
 const SignInChoice = lazily(() => import('./auth'), 'SignInChoice');
+const TimeSettings = lazily(() => import('./workspaceHours'), 'TimeSettings');
 const ReadingLanguages = lazily(() => import('./translation'), 'ReadingLanguages');
 
 interface Entry {
@@ -54,7 +56,11 @@ interface Entry {
   title: MessageKey;
 }
 
-export const ACCOUNT: { heading: MessageKey; entries: (Entry & { body: ComponentType })[] }[] = [
+export const ACCOUNT: {
+  heading: MessageKey;
+  owner?: boolean;
+  entries: (Entry & { body: ComponentType })[];
+}[] = [
   {
     heading: 'settings.signIn',
     entries: [
@@ -109,6 +115,13 @@ export const ACCOUNT: { heading: MessageKey; entries: (Entry & { body: Component
       },
     ],
   },
+  {
+    heading: 'settings.workspace',
+    owner: true,
+    entries: [
+      { to: '/settings/hours', icon: Timer, title: 'workspace.view.hours', body: TimeSettings },
+    ],
+  },
 ];
 
 const PAGES = ACCOUNT.flatMap(({ entries }) => entries);
@@ -143,12 +156,15 @@ function Group({ heading, entries }: { heading: string; entries: Entry[] }) {
 
 function Side() {
   const { t } = useI18n();
-  const admin = useSession().data?.user?.is_admin;
+  const session = useSession().data;
+  const admin = session?.user?.is_admin;
   return (
     <nav aria-label={t('settings.title')} className="flex flex-col gap-4">
-      {ACCOUNT.map(({ heading, entries }) => (
-        <Group key={heading} heading={t(heading)} entries={entries} />
-      ))}
+      {ACCOUNT.filter(({ owner }) => !owner || session?.user?.workspace).map(
+        ({ heading, entries }) => (
+          <Group key={heading} heading={t(heading)} entries={entries} />
+        ),
+      )}
       {admin && <Group heading={t('settings.installation')} entries={INSTALLATION} />}
     </nav>
   );

@@ -12,7 +12,7 @@
     "frontend/src/search.tsx#useVaultHits": "1a75cfb12815",
     "frontend/src/search.tsx#VaultLocked": "cbc8211138ff",
     "frontend/src/search.tsx#wantsSearch": "a97e3b923ff7",
-    "frontend/src/places.tsx#usePlaces": "4d328385fb13",
+    "frontend/src/places.tsx#usePlaces": "daf7a8627f57",
     "backend/apps/search/views.py#search": "a686be7874fb",
     "backend/apps/search/views.py#_mail": "b02769eaf1b0"
   }

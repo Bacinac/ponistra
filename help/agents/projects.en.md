@@ -99,6 +99,7 @@ When the shell ends (the `exit` command), below the terminal it says: {t:workspa
 1. On the {t:rail.projects} page press {t:workspace.view.hours}, far right in the row with {t:workspace.view.chat} (on a phone with {t:workspace.view.overview}).
 2. The latest month shows the time by project, {t:workspace.hours.total} and {t:workspace.hours.wall}, and below, under {t:workspace.hours.days}, the same by day, each project in a column of its own.
 3. For another month pick it in the {t:workspace.hours.month} field.
+4. Writing to Clockify or TaskStreamer and removing transcripts are set up in [Writing the time worked](help:agents/hours).
 
 ## How it works
 
@@ -190,6 +191,7 @@ A chat without a title, such as one with no answer yet, is not on the list. The 
 
 ## Related
 
+- [Writing the time worked](help:agents/hours)
 - [Agent's memory](help:agents/memory)
 - [Connecting an outside agent](help:agents/connecting)
 - [Spoken commands](help:start/voice)
