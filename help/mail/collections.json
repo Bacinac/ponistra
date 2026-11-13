@@ -24,7 +24,7 @@
     "backend/apps/collecting/taking.py#placed": "9aba03f03e53",
     "backend/apps/collecting/recognising.py#read": "7daf56e3c8a0",
     "backend/apps/collecting/delivering.py#due": "1ddb752392ec",
-    "backend/apps/collecting/delivering.py#delivered": "72bde1911ed7",
+    "backend/apps/collecting/delivering.py#delivered": "fb1ca650f82d",
     "backend/apps/collecting/acting.py#gather": "4796500be132",
     "backend/apps/collecting/months.py#month_for": "1beb5290fd78"
   }

@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 import pytest
+from asgiref.sync import sync_to_async
 from django.utils import timezone
 from openpyxl import load_workbook
 
@@ -247,7 +248,15 @@ def delivered_at(moment):
     return Month.objects.get(pk=month.pk)
 
 
-def test_on_its_day_the_month_goes_as_a_draft_with_its_files_and_table(browser, account, inbox):
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_on_its_day_the_month_goes_as_a_draft_with_its_files_and_table(
+    live, browser, account, inbox
+):
+    await sync_to_async(_month_on_its_day)(browser, account, inbox)
+
+
+def _month_on_its_day(browser, account, inbox):
     made(browser)
     collection = Collection.objects.get()
     Collection.objects.update(created_at=at(2026, 10, 1))
@@ -292,10 +301,27 @@ def test_on_its_day_the_month_goes_as_a_draft_with_its_files_and_table(browser, 
     )
     assert rows[-1][:4] == ("Ukupno", None, 25.25, "USD")
     assert delivering.due(at(2026, 11, 12)) is None
+    delivering.delivered(month)
+    again = Month.objects.get(pk=month.pk)
+    assert again.table_id == month.table_id
+    rows_again = list(
+        load_workbook(
+            io.BytesIO(store.path_of(again.unsent.written["files"][-1]["sha256"]).read_bytes())
+        ).active.values
+    )
+    assert rows_again == rows
     assert collection.pk == month.collection_id
 
 
-def test_a_month_that_sends_itself_leaves_through_the_mail_loop(browser, account, inbox):
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_a_month_that_sends_itself_leaves_through_the_mail_loop(
+    live, browser, account, inbox
+):
+    await sync_to_async(_month_sending_itself)(browser, account, inbox)
+
+
+def _month_sending_itself(browser, account, inbox):
     made(browser, sends="send")
     Collection.objects.update(created_at=at(2026, 10, 1))
     mail(account, inbox, "Invoice", "b@anthropic.com", at(2026, 10, 3), ("i.pdf", PDF, ""))
@@ -304,7 +330,15 @@ def test_a_month_that_sends_itself_leaves_through_the_mail_loop(browser, account
     assert month.unsent.send_at is not None and not month.unsent.sending
 
 
-def test_a_month_past_before_the_collection_goes_only_when_asked(browser, account, inbox):
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_a_month_past_before_the_collection_goes_only_when_asked(
+    live, browser, account, inbox
+):
+    await sync_to_async(_month_past_asked)(browser, account, inbox)
+
+
+def _month_past_asked(browser, account, inbox):
     made(browser)
     mail(account, inbox, "Invoice", "b@anthropic.com", at(2026, 9, 3), ("i.pdf", PDF, ""))
     drained()

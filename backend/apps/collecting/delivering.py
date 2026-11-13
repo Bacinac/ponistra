@@ -2,25 +2,24 @@
 a document in the month's folder and carried as a workbook beside the month's files, in a
 message the owner finds among those they began, or that leaves by itself."""
 
-import io
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from html import escape
 from logging import getLogger
 
 from django.conf import settings
-from django.db import transaction
+from django.db import connection, transaction
 from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
-from openpyxl import Workbook
-from openpyxl.styles import Font
+from pycrdt import XmlElement
 
 from apps.blobs import store
+from apps.content import blocks, operations
 from apps.core.api import Refused
 from apps.core.asyncdb import notify
 from apps.documents.models import Node
-from apps.documents.views import BY_TITLE
-from apps.imports.placed import placed
+from apps.documents.views import BY_TITLE, created
+from apps.exports import xlsx
 from apps.mail import sending
 from apps.mail import views as mail
 from apps.mail.models import Account, Unsent
@@ -32,7 +31,9 @@ log = getLogger(__name__)
 
 # How long a month whose day came waits for the messages still being read.
 LATE = timedelta(hours=6)
-XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+EPOCH = date(1899, 12, 30)
+LOCK = 0x5C21B10E
+WIDTHS = (28, 12, 14, 9, 40, 50)
 WORDS = {
     "hr": {
         "columns": ("Dobavljač", "Datum", "Iznos", "Valuta", "Datoteke", "Predmet"),
@@ -114,40 +115,70 @@ def _file_names(item: Item, titles: dict[str, str]) -> str:
     return ", ".join(titles[each] for each in item.files if each in titles)
 
 
-def workbook(items: list[Item], titles: dict[str, str], words: dict, title: str) -> bytes:
-    """The month's table as a workbook: a row for each bill, then a total in each currency."""
-    book = Workbook()
-    sheet = book.active
-    sheet.title = title[:31]
-    sheet.append(words["columns"])
-    for cell in sheet[1]:
-        cell.font = Font(bold=True)
+def _text(value: str, strong: bool = False) -> dict | None:
+    if not value:
+        return None
+    text = {"type": "text", "text": value}
+    if strong:
+        text["marks"] = [{"type": "strong"}]
+    return {"blocks": [{"type": "paragraph", "content": [text]}]}
+
+
+def _serial(value: date | None, words: dict) -> dict | None:
+    if value is None:
+        return None
+    return {"value": (value - EPOCH).days, "format": words["date"]}
+
+
+def _amount(value: Decimal | None, words: dict) -> dict | None:
+    if value is None:
+        return None
+    return {"value": float(value), "format": words["amount"]}
+
+
+def tabled(items: list[Item], titles: dict[str, str], words: dict) -> dict:
+    """The month's table: a row for each bill, then a total in each currency. Text goes in as
+    text, never as typed, so a subject that reads as a number or a formula stays what it is."""
+    rows = [[_text(column, strong=True) for column in words["columns"]]]
     for item in items:
-        sheet.append(
+        rows.append(
             [
-                item.supplier,
-                item.date,
-                item.amount,
-                item.currency,
-                _file_names(item, titles),
-                item.subject,
+                _text(item.supplier),
+                _serial(item.date, words),
+                _amount(item.amount, words),
+                _text(item.currency),
+                _text(_file_names(item, titles)),
+                _text(item.subject),
             ]
         )
-        sheet.cell(sheet.max_row, 2).number_format = words["date"]
-        sheet.cell(sheet.max_row, 3).number_format = words["amount"]
     totals = _totals(items)
     if totals:
-        sheet.append([])
+        rows.append([None] * len(WIDTHS))
     for currency, total in sorted(totals.items()):
-        sheet.append([words["total"], None, total, currency])
-        sheet.cell(sheet.max_row, 1).font = Font(bold=True)
-        sheet.cell(sheet.max_row, 3).number_format = words["amount"]
-        sheet.cell(sheet.max_row, 3).font = Font(bold=True)
-    for column, width in zip("ABCDEF", (28, 12, 14, 9, 40, 50), strict=True):
-        sheet.column_dimensions[column].width = width
-    out = io.BytesIO()
-    book.save(out)
-    return out.getvalue()
+        rows.append(
+            [_text(words["total"], strong=True), None, _amount(total, words), _text(currency)]
+            + [None] * (len(WIDTHS) - 4)
+        )
+    return {"op": "table", "at": {"start": "body"}, "widths": list(WIDTHS), "rows": rows}
+
+
+def _written_table(month: Month, folder: Node, title: str, operation: dict) -> Node:
+    """The month's table document, written anew in the one made before, which keeps its place,
+    links and versions."""
+    old = month.table if month.table is not None and month.table.is_live() else None
+    node = old or created(folder, Node.Kind.DOCUMENT, title[:200], None, month.collection.owner)
+
+    def written(doc, sheets) -> list[dict]:
+        before = [
+            element.attributes.get("id")
+            for element in blocks.body_of(doc).children
+            if isinstance(element, XmlElement)
+        ]
+        taken = [{"op": "delete", "from": before[0], "to": before[-1]}] if before else []
+        return [operation, *taken]
+
+    operations.perform(node.tabs.get(), written, f"collecting:{month.pk}")
+    return node
 
 
 def letter(collection: Collection, items: list[Item], titles: dict, account: Account) -> str:
@@ -221,10 +252,9 @@ def delivered(month: Month) -> None:
     words = words_of(owner)
     title = f"{collection.name} {month.month:%Y-%m}"
     titles = {str(node.pk): _file_name(node) for node in files}
-    data = workbook(items, titles, words, f"{month.month:%Y-%m}")
-    blob = store.put(io.BytesIO(data))
-    old = month.table if month.table is not None and month.table.is_live() else None
-    table, _ = placed(blob, folder, title[:200], "xlsx", owner, old)
+    sheet = _written_table(month, folder, title, tabled(items, titles, words))
+    with xlsx.workbook(sheet) as book:
+        blob = store.put(book)
     attached = [
         {"sha256": node.blob_id, "name": _file_name(node)[:255], "size": node.blob.size}
         for node in files
@@ -240,7 +270,7 @@ def delivered(month: Month) -> None:
     try:
         account, written = mail._written(owner, given)
     except Refused as refused:
-        Month.objects.filter(pk=month.pk).update(failed=refused.error, asked_at=None, table=table)
+        Month.objects.filter(pk=month.pk).update(failed=refused.error, asked_at=None, table=sheet)
         months.touched(collection.pk)
         return
     leaves = collection.sends == Collection.Sends.SEND
@@ -250,7 +280,7 @@ def delivered(month: Month) -> None:
         )
         mail._held(unsent)
         Month.objects.filter(pk=month.pk).update(
-            delivered_at=now, asked_at=None, unsent=unsent, table=table, failed=""
+            delivered_at=now, asked_at=None, unsent=unsent, table=sheet, failed=""
         )
         months.touched(collection.pk)
         if leaves:
@@ -258,22 +288,28 @@ def delivered(month: Month) -> None:
 
 
 def deliver_next() -> bool:
-    """Sends the next month whose time came; False when none has."""
+    """Sends the next month whose time came; False when none has. The month is held by a lock of
+    the session rather than of a transaction: writing its table opens the document's own."""
     found = due()
     if found is None:
         return False
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_try_advisory_lock(%s, %s)", [LOCK, found.pk])
+        if not cursor.fetchone()[0]:
+            return False
     try:
-        with transaction.atomic():
-            month = (
-                Month.objects.select_for_update(skip_locked=True, of=("self",))
-                .filter(pk=found.pk, delivered_at=None, failed="")
-                .select_related("collection", "collection__owner", "folder", "table")
-                .first()
-            )
-            if month is not None:
-                delivered(month)
+        month = (
+            Month.objects.filter(pk=found.pk, delivered_at=None, failed="")
+            .select_related("collection", "collection__owner", "folder", "table")
+            .first()
+        )
+        if month is not None:
+            delivered(month)
     except Exception:
         log.exception("collection %s month %s failed", found.collection_id, found.month)
         Month.objects.filter(pk=found.pk).update(failed="unexpected", asked_at=None)
         months.touched(found.collection_id)
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_advisory_unlock(%s, %s)", [LOCK, found.pk])
     return True
