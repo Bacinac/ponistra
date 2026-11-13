@@ -112,6 +112,7 @@ export const hr = {
   'workspace.stop': 'Zaustavi',
   'workspace.noChat': 'Nijedan chat nije odabran.',
   'workspace.tools': 'Alati: {count}',
+  'workspace.earlier': 'Ranije',
   'workspace.harness.task': 'Pozadinski zadatak: {text}',
   'workspace.harness.peer': 'Poruka od sesije {text}',
   'workspace.harness.compacted': 'Razgovor je sažet',

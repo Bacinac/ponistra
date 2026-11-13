@@ -203,6 +203,18 @@ def test_the_owner_reads_a_chat_through_the_workspace(owner, workspace):
     assert owner.get("/api/workspace/chats/projects").status_code == 400
 
 
+def test_the_owner_reads_a_chat_on_from_a_place_in_its_transcript(owner, workspace):
+    workspace.answer = (200, {"id": SESSION, "said": [], "earlier": None})
+    owner.get(f"/api/workspace/chats/{SESSION}?before=700")
+    owner.get(f"/api/workspace/chats/{SESSION}?from=700")
+    assert [dict(each.url.params) for each in workspace.asked] == [
+        {"before": "700"},
+        {"from": "700"},
+    ]
+    assert owner.get(f"/api/workspace/chats/{SESSION}?before=-1").status_code == 400
+    assert len(workspace.asked) == 2
+
+
 @pytest.mark.parametrize(
     ("given", "sent"),
     [

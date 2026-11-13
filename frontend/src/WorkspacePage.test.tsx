@@ -910,6 +910,44 @@ test('a code block and a whole answer are copied from the conversation', async (
   expect(await navigator.clipboard.readText()).toBe(`Zalijepi:\n\n\`\`\`sh\n${command}\n\`\`\``);
 });
 
+test("a chat's earlier turns are read on from where its page begins, its latest question pinned atop", async () => {
+  const read: string[] = [];
+  served({
+    'GET /api/workspace/chats/:session': (request, { session }) => {
+      const asked = new URL(request.url).search;
+      read.push(asked);
+      const said =
+        asked === '?before=700'
+          ? [
+              { role: 'user', text: 'prvo pitanje', at: AT },
+              { role: 'assistant', text: 'Prvi odgovor.', at: AT },
+            ]
+          : session === 'lead'
+            ? SAID
+            : [];
+      return {
+        id: session,
+        title: null,
+        state: 'idle',
+        waitingFor: null,
+        said,
+        earlier: asked === '?before=700' ? null : 700,
+      };
+    },
+  });
+  const { user } = open('/workspace', OWNER);
+  const chat = await screen.findByRole('region', { name: 'Razgovor' });
+  const latest = await within(chat).findByText('nastavi: tablice');
+  expect(latest.closest('li')?.className).toContain('sticky');
+  await user.click(within(chat).getByRole('button', { name: 'Ranije' }));
+  const first = await within(chat).findByText('prvo pitanje');
+  expect(first.closest('li')?.className).not.toContain('sticky');
+  within(chat).getByText('Prvi odgovor.');
+  within(chat).getByText('Krug je otvoren.');
+  await waitFor(() => expect(read).toContain('?from=700'));
+  expect(within(chat).queryByRole('button', { name: 'Ranije' })).toBeNull();
+});
+
 test('the latest coordinator is read here, a message going to its panel by Enter', async () => {
   const touch = globalThis.matchMedia;
   onTestFinished(() => void (globalThis.matchMedia = touch));

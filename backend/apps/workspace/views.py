@@ -42,6 +42,7 @@ AREA = "workspace"
 PASSED = {404, 409}
 ROUND = re.compile(r"[A-Za-z0-9._-]{1,100}")
 SESSION = re.compile(r"[0-9a-f-]{36}")
+PLACE = re.compile(r"\d{1,15}")
 # Claude Code's short name of a model, which the workspace checks against those it offers.
 MODEL = re.compile(r"[a-z0-9.-]{1,40}")
 HASH = re.compile(r"[0-9a-f]{64}")
@@ -224,12 +225,21 @@ async def projects(request):
 @api("GET")
 async def chat(request, session):
     """What was said in a chat of the workspace, its owner's and the agent's words and the tools
-    it used, latest last."""
+    it used, latest last: its last turns, the page ending `before` a place in its transcript, or
+    all `from` one."""
     if not owns(request.user):
         return JsonResponse({"error": "not_the_owner"}, status=403)
     if not SESSION.fullmatch(session):
         raise Refused(400, "invalid_session")
-    return JsonResponse(await _asked("GET", f"chats/{session}"))
+    place = {}
+    for name in ("before", "from"):
+        value = request.GET.get(name)
+        if value is None:
+            continue
+        if not PLACE.fullmatch(value):
+            raise Refused(400, f"invalid_{name}")
+        place[name] = value
+    return JsonResponse(await _asked("GET", f"chats/{session}", params=place or None))
 
 
 def shown(command: Command) -> dict:

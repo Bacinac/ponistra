@@ -30,6 +30,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -242,6 +243,16 @@ interface Transcript {
   state: State;
   waitingFor: string | null;
   said: Said[];
+  /** Where in the chat's transcript this page begins, null at its start. */
+  earlier: number | null;
+}
+
+/** The pages of a chat read before its latest one, and where its latest one begins. */
+interface Older {
+  id: string;
+  said: Said[];
+  earlier: number | null;
+  boundary: number;
 }
 
 /** A chat of the workspace as the page knows it, wherever it is listed. */
@@ -1484,7 +1495,7 @@ const MARKDOWN: Components = {
   hr: () => <hr className="my-2 border-line" />,
 };
 
-function Bubble({ said }: { said: Said }) {
+function Bubble({ said, pinned = false }: { said: Said; pinned?: boolean }) {
   const { t, formatNumber } = useI18n();
   if (said.role === 'harness')
     return (
@@ -1494,7 +1505,9 @@ function Bubble({ said }: { said: Said }) {
     );
   if (said.role === 'user')
     return (
-      <li className="max-w-[85%] self-end rounded-lg bg-accent px-3 py-2 text-sm break-words whitespace-pre-wrap text-on-accent">
+      <li
+        className={`max-w-[85%] self-end rounded-lg bg-accent px-3 py-2 text-sm break-words whitespace-pre-wrap text-on-accent ${pinned ? 'sticky top-0 z-10 max-h-[30%] overflow-y-auto shadow-md' : ''}`}
+      >
         {said.images ? (
           <span className="flex items-center gap-1 text-xs opacity-80">
             <ImagePlus size={12} aria-hidden />
@@ -1546,19 +1559,57 @@ function Conversation({
   const pictures = usePictures();
   const sent = useCommand();
   const id = chat?.id;
+  const [loaded, setLoaded] = useState<Older | null>(null);
+  const older = loaded?.id === id ? loaded : null;
   const transcript = useQuery({
-    queryKey: ['workspace', 'chats', id],
-    queryFn: () => getJson<Transcript>(`/api/workspace/chats/${id}`),
+    queryKey: ['workspace', 'chats', id, older?.boundary ?? null],
+    queryFn: () =>
+      getJson<Transcript>(`/api/workspace/chats/${id}${older ? `?from=${older.boundary}` : ''}`),
     enabled: Boolean(id),
     retry: false,
     refetchInterval: chat?.state === 'working' ? WATCHED : false,
+    placeholderData: (previous, query) => (query?.queryKey[2] === id ? previous : undefined),
+  });
+  const reading = useMutation({
+    mutationFn: (before: number) =>
+      getJson<Transcript>(`/api/workspace/chats/${id}?before=${before}`),
   });
   const list = useRef<HTMLOListElement>(null);
-  const said = transcript.data?.said;
+  const atBottom = useRef(true);
+  const heightBefore = useRef<number | null>(null);
+  const said = useMemo(
+    () => [...(older?.said ?? []), ...(transcript.data?.said ?? [])],
+    [older, transcript.data],
+  );
+  const earlier = older ? older.earlier : (transcript.data?.earlier ?? null);
   useEffect(() => {
+    atBottom.current = true;
+  }, [id]);
+  useLayoutEffect(() => {
     const shown = list.current;
-    if (shown) shown.scrollTop = shown.scrollHeight;
+    if (!shown) return;
+    if (heightBefore.current !== null) {
+      shown.scrollTop += shown.scrollHeight - heightBefore.current;
+      heightBefore.current = null;
+    } else if (atBottom.current) shown.scrollTop = shown.scrollHeight;
   }, [said]);
+  const readEarlier = () => {
+    const boundary = older?.boundary ?? transcript.data?.earlier;
+    if (earlier === null || boundary == null || !id) return;
+    reading.mutate(earlier, {
+      onSuccess: (page) => {
+        heightBefore.current = list.current?.scrollHeight ?? null;
+        setLoaded({
+          id,
+          said: [...page.said, ...(older?.said ?? [])],
+          earlier: page.earlier,
+          boundary,
+        });
+      },
+    });
+  };
+  const shownSaid = grouped(said);
+  const pinned = shownSaid.findLastIndex((shown) => !shown.tools && shown.said.role === 'user');
   if (!chat) return <p className="text-sm text-muted">{t('workspace.noChat')}</p>;
   const say = (words: string, images: string[] = []) => {
     const saying = words.trim();
@@ -1593,12 +1644,29 @@ function Conversation({
       {transcript.isError && (
         <p className="text-sm text-danger">{errorMessage(transcript.error, t)}</p>
       )}
+      {reading.isError && <p className="text-sm text-danger">{errorMessage(reading.error, t)}</p>}
       <ol
         ref={list}
         aria-label={chat.title}
+        onScroll={(event) => {
+          const shown = event.currentTarget;
+          atBottom.current = shown.scrollTop + shown.clientHeight >= shown.scrollHeight - 8;
+        }}
         className="flex max-h-[60dvh] min-h-0 flex-1 flex-col gap-2 overflow-y-auto md:max-h-none"
       >
-        {grouped(said ?? []).map((shown, index) =>
+        {earlier !== null && (
+          <li className="self-center">
+            <button
+              type="button"
+              className={small}
+              disabled={reading.isPending}
+              onClick={readEarlier}
+            >
+              {t('workspace.earlier')}
+            </button>
+          </li>
+        )}
+        {shownSaid.map((shown, index) =>
           shown.tools ? (
             <li key={index} className="self-start text-xs text-muted">
               <details>
@@ -1615,7 +1683,7 @@ function Conversation({
               </details>
             </li>
           ) : (
-            <Bubble key={index} said={shown.said} />
+            <Bubble key={index} said={shown.said} pinned={index === pinned} />
           ),
         )}
         {pending.map((command) => (

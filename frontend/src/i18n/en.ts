@@ -114,6 +114,7 @@ export const en: Record<MessageKey, string> = {
   'workspace.stop': 'Stop',
   'workspace.noChat': 'No chat is selected.',
   'workspace.tools': 'Tools: {count}',
+  'workspace.earlier': 'Earlier',
   'workspace.harness.task': 'Background task: {text}',
   'workspace.harness.peer': 'Message from session {text}',
   'workspace.harness.compacted': 'The conversation was compacted',

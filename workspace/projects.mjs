@@ -105,7 +105,10 @@ const COMMAND = /^(\d{1,18})\.json$/;
 // A command for a chat that works in the editor all this long fails.
 const UNTAKEN = 60 * 60 * 1000;
 const KEPT_SETTLED = 24 * 60 * 60 * 1000;
-const SAID = 100;
+// How far back one page of a conversation reads to reach its owner's words, a chat's tools'
+// output running to megabytes between them.
+const PAGE_TURNS = 2;
+const PAGE_READ = 16 * 1024 * 1024;
 // Four images of 5 MB each, as base64, besides the words.
 const COMMAND_BODY = 28 * 1024 * 1024;
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
@@ -1117,7 +1120,7 @@ const ordered = async (given) => {
 };
 
 // What was said in a chat, wherever its transcript is kept.
-const chatAt = (id) => {
+const chatAt = (id, place = {}) => {
   const live = running().get(id);
   const kept = join(AGENT, 'projects');
   const transcript = live
@@ -1126,14 +1129,54 @@ const chatAt = (id) => {
         .map((folder) => join(kept, folder, `${id}.jsonl`))
         .find((file) => existsSync(file));
   if (!transcript || !existsSync(transcript)) throw new Refusal(404, 'no_chat');
-  const lines = tailOf(transcript, statSync(transcript).size);
+  const size = statSync(transcript).size;
+  const page = pageOf(transcript, size, place);
   return {
     id,
-    title: titleOf(lines),
+    title: titleOf(tailOf(transcript, size)),
     state: live?.state ?? 'closed',
     waitingFor: live?.waitingFor ?? null,
-    said: saidIn(lines).slice(-SAID),
+    ...page,
   };
+};
+
+// One page of what was said: from `from` to the end, or else back from `before` (the end by
+// default) until the owner's words of PAGE_TURNS turns are in it. `earlier` is where the page
+// begins, the `before` of the page ahead of it, null at the transcript's start.
+const pageOf = (transcript, size, { before, from }) => {
+  if (from !== undefined) {
+    const start = Math.min(from, size);
+    return { said: saidIn(linesOf(transcript, start, size - start)), earlier: start || null };
+  }
+  const end = Math.min(before ?? size, size);
+  let span = TAIL;
+  for (;;) {
+    const start = Math.max(0, end - span);
+    const buffer = Buffer.alloc(end - start);
+    const handle = openSync(transcript, 'r');
+    try {
+      readSync(handle, buffer, 0, buffer.length, start);
+    } finally {
+      closeSync(handle);
+    }
+    const cut = start ? buffer.indexOf(10) + 1 : 0;
+    const whole = start && !cut ? end : start + cut;
+    const said = saidIn(buffer.subarray(whole - start).toString('utf8').split('\n'));
+    const turns = said.filter((each) => each.role === 'user').length;
+    if (!start || turns >= PAGE_TURNS || span >= PAGE_READ) return { said, earlier: whole || null };
+    span *= 2;
+  }
+};
+
+const placeOf = (address) => {
+  const place = {};
+  for (const name of ['before', 'from']) {
+    const value = address.searchParams.get(name);
+    if (value === null) continue;
+    if (!/^\d{1,15}$/.test(value)) throw new Refusal(400, `invalid_${name}`);
+    place[name] = Number(value);
+  }
+  return place;
 };
 
 // A restart ends every chat of the workspace, so it waits while one works or waits on its owner,
@@ -1363,7 +1406,7 @@ createServer(async (request, response) => {
     }
     if (chat) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
-      return answer(200, chatAt(chat[1]));
+      return answer(200, chatAt(chat[1], placeOf(address)));
     }
     if (MEMORY.test(path)) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
