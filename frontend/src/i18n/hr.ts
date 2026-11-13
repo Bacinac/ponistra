@@ -103,6 +103,7 @@ export const hr = {
   'workspace.addImage': 'Dodaj sliku',
   'workspace.removeImage': 'Ukloni sliku',
   'workspace.images': 'Slike uz poruku',
+  'workspace.unread': 'Čeka da je agent pročita',
   'workspace.imagesSent': 'Slika: {count}',
   'workspace.yes': 'Da',
   'workspace.no': 'Ne',

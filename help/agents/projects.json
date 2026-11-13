@@ -43,7 +43,7 @@
     "workspace/webview.mjs": "ab2c5a614673",
     "frontend/src/WorkspacePage.tsx#RoundCard": "ec9086764a89",
     "frontend/src/WorkspacePage.tsx#Pult": "7fe95d39a3b7",
-    "frontend/src/WorkspacePage.tsx#Conversation": "84f015c3b99a",
+    "frontend/src/WorkspacePage.tsx#Conversation": "cbf9393cbf77",
     "frontend/src/WorkspacePage.tsx#ChatRow": "8977f976a555",
     "backend/apps/workspace/views.py#commands": "45984d389d95",
     "backend/apps/workspace/views.py#chat": "76a0b9ba514f",

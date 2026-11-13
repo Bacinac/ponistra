@@ -105,6 +105,7 @@ export const en: Record<MessageKey, string> = {
   'workspace.addImage': 'Add image',
   'workspace.removeImage': 'Remove image',
   'workspace.images': 'Images with the message',
+  'workspace.unread': 'Waiting for the agent to read it',
   'workspace.imagesSent': 'Images: {count}',
   'workspace.yes': 'Yes',
   'workspace.no': 'No',

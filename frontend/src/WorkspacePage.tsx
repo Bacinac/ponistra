@@ -1506,7 +1506,7 @@ function Bubble({ said, pinned = false }: { said: Said; pinned?: boolean }) {
   if (said.role === 'user')
     return (
       <li
-        className={`max-w-[85%] self-end rounded-lg bg-accent px-3 py-2 text-sm break-words whitespace-pre-wrap text-on-accent ${pinned ? 'sticky top-0 z-10 max-h-[30%] overflow-y-auto shadow-md' : ''}`}
+        className={`max-w-[85%] self-end rounded-lg bg-accent px-3 py-2 text-sm break-words whitespace-pre-wrap text-on-accent ${pinned ? 'sticky top-0 z-10 max-h-[30%] shrink-0 overflow-y-auto shadow-md' : ''}`}
       >
         {said.images ? (
           <span className="flex items-center gap-1 text-xs opacity-80">
@@ -1541,6 +1541,19 @@ const SENDING: Kind[] = [
   'archive',
   'stop',
 ];
+
+/** The clocks of the backend and the workspace may differ by this much. */
+const SKEW = 60_000;
+
+/** Whether the chat has read what the owner said: the transcript shows the same words since. */
+const readIn = (command: Command, said: Said[]) => {
+  const from = Date.parse(command.created_at) - SKEW;
+  const text = command.text?.trim();
+  return said.some(
+    (each) =>
+      each.role === 'user' && each.text === text && each.at !== null && Date.parse(each.at) >= from,
+  );
+};
 
 /** One chat as the owner reads it here, with a field whose words its panel sends (D52). */
 function Conversation({
@@ -1627,7 +1640,9 @@ function Conversation({
   const pending = commands
     .filter(
       (command) =>
-        command.session === chat.id && SENDING.includes(command.kind) && command.state !== 'done',
+        command.session === chat.id &&
+        SENDING.includes(command.kind) &&
+        (command.state !== 'done' || (command.kind === 'say' && !readIn(command, said))),
     )
     .reverse();
   return (
@@ -1686,26 +1701,48 @@ function Conversation({
             <Bubble key={index} said={shown.said} pinned={index === pinned} />
           ),
         )}
-        {pending.map((command) => (
-          <li key={command.id} className="self-end text-xs text-muted">
-            {command.kind === 'answer'
-              ? t(command.text === 'yes' ? 'workspace.yes' : 'workspace.no')
-              : command.kind === 'close' || command.kind === 'archive' || command.kind === 'stop'
-                ? t(`workspace.${command.kind}`)
-                : command.kind === 'open'
-                  ? t('workspace.openChat')
-                  : command.kind === 'rename'
-                    ? `${t('tree.rename')}: ${command.text}`
-                    : command.kind === 'model'
-                      ? `${t('workspace.model')}: ${models.find((model) => model.value === command.text)?.name ?? command.text}`
-                      : command.text}{' '}
-            <span className={PROGRESS[command.state].look}>
-              {command.state === 'failed' && command.error
-                ? codeText(command.error, t)
-                : t(PROGRESS[command.state].label)}
-            </span>
-          </li>
-        ))}
+        {pending.map((command) =>
+          command.kind === 'say' ? (
+            <li
+              key={command.id}
+              className="max-w-[85%] self-end rounded-lg border border-dashed border-accent px-3 py-2 text-sm break-words whitespace-pre-wrap"
+            >
+              {command.images > 0 && (
+                <span className="flex items-center gap-1 text-xs text-muted">
+                  <ImagePlus size={12} aria-hidden />
+                  {t('workspace.imagesSent').replace('{count}', formatNumber(command.images))}
+                </span>
+              )}
+              {command.text}
+              <span className={`mt-1 block text-xs ${PROGRESS[command.state].look}`}>
+                {command.state === 'failed' && command.error
+                  ? codeText(command.error, t)
+                  : t(
+                      command.state === 'done' ? 'workspace.unread' : PROGRESS[command.state].label,
+                    )}
+              </span>
+            </li>
+          ) : (
+            <li key={command.id} className="self-end text-xs text-muted">
+              {command.kind === 'answer'
+                ? t(command.text === 'yes' ? 'workspace.yes' : 'workspace.no')
+                : command.kind === 'close' || command.kind === 'archive' || command.kind === 'stop'
+                  ? t(`workspace.${command.kind}`)
+                  : command.kind === 'open'
+                    ? t('workspace.openChat')
+                    : command.kind === 'rename'
+                      ? `${t('tree.rename')}: ${command.text}`
+                      : command.kind === 'model'
+                        ? `${t('workspace.model')}: ${models.find((model) => model.value === command.text)?.name ?? command.text}`
+                        : command.text}{' '}
+              <span className={PROGRESS[command.state].look}>
+                {command.state === 'failed' && command.error
+                  ? codeText(command.error, t)
+                  : t(PROGRESS[command.state].label)}
+              </span>
+            </li>
+          ),
+        )}
       </ol>
       {chat.state === 'waiting' && (
         <div className="flex flex-wrap items-center gap-2 rounded border border-line p-2">

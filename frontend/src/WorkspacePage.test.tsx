@@ -1052,6 +1052,41 @@ test('what was asked of a chat stands at its foot until it is carried out', asyn
   within(within(chat).getByText(/^objedini sam od sebe/)).getByText('Preuzeto');
 });
 
+test('words sent to a working chat stay in the conversation until it reads them', async () => {
+  served({
+    'GET /api/workspace/commands': () => ({
+      commands: [
+        {
+          ...COMMAND,
+          id: 3,
+          kind: 'say',
+          session: 'lead',
+          text: 'pogledaj i ovo',
+          images: 1,
+          state: 'done',
+        },
+        {
+          ...COMMAND,
+          id: 2,
+          kind: 'say',
+          session: 'lead',
+          text: 'nastavi: tablice',
+          state: 'done',
+        },
+        { ...COMMAND, id: 1, kind: 'rename', session: 'lead', text: 'Tablice', state: 'done' },
+      ],
+    }),
+  });
+  open('/workspace', OWNER);
+  const chat = await screen.findByRole('region', { name: 'Razgovor' });
+  const unread = (await within(chat).findByText(/^pogledaj i ovo/)).closest('li')!;
+  within(unread).getByText('Čeka da je agent pročita');
+  within(unread).getByText('Slika: 1');
+  expect(within(chat).getAllByText(/^nastavi: tablice/)).toHaveLength(1);
+  expect(within(chat).queryByText(/Tablice/)).toBeNull();
+  expect(within(chat).getAllByText('Čeka da je agent pročita')).toHaveLength(1);
+});
+
 test('an archive that fails says why under its chat', async () => {
   const asked: Asked[] = [];
   served({
