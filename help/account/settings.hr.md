@@ -7,7 +7,7 @@ Postavke skupljaju na jednom mjestu sve što vrijedi za vaš račun: prijavu, ur
 1. Pritisnite svoje inicijale u gornjem desnom kutu, {t:frame.account}, i odaberite {t:settings.title}. Isto otvara upis riječi {t:settings.title} u kutiju za pretragu.
 2. U lijevom stupcu odaberite stranicu. Pod {t:settings.signIn} su {t:signIn.choice}, {t:password.title}, {t:passkeys.title} i {t:appPasswords.title}.
 3. Pod {t:settings.devices} su {t:devices.mine} i {t:notifications.title}.
-4. Pod {t:settings.mail} su {t:mail.accounts}, {t:mail.senders} i [{t:away.title}](help:mail/away).
+4. Pod {t:settings.mail} su {t:mail.accounts}, {t:mail.senders}, [{t:away.title}](help:mail/away) i [{t:collections.title}](help:mail/collections).
 5. Pod {t:settings.leaving} je [{t:drive.title}](help:account/google-drive).
 6. Pod {t:settings.ai} su {t:agents.title}, {t:consents.title} i {t:translation.title}.
 7. Na mobitelu popis stranica je zasebna stranica. Otvorena stranica vraća se na popis pomoću {t:frame.close}.

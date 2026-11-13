@@ -13,7 +13,7 @@
     "mail.to"
   ],
   "describes": {
-    "frontend/src/mail.tsx#Reader": "998648ccb7fe",
+    "frontend/src/mail.tsx#Reader": "4ff0f1ed3f9c",
     "frontend/src/mail.tsx#Attachments": "df45153cae26",
     "frontend/src/mail.tsx#InvitationCard": "ca6b876e219f",
     "frontend/src/mailBody.tsx#HtmlBody": "b340f39a1ff6",

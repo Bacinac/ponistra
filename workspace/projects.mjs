@@ -69,6 +69,7 @@ import {
 import { hostOf } from './host.mjs';
 import { followMemory, MEMORY, memoryAnswered } from './memory.mjs';
 import { TERMINAL, upgraded } from './terminal.mjs';
+import { followWork } from './worked.mjs';
 
 const ROOT = process.env.PONISTRA_ROOT;
 const TOKEN = process.env.PONISTRA_WORKSPACE_TOKEN;
@@ -78,13 +79,12 @@ const SESSIONS = join(AGENT, 'sessions');
 const ROUNDS = join(AGENT, 'ponistra-rounds');
 const COMMANDS = join(AGENT, 'ponistra-commands');
 const HEARD = join(AGENT, 'ponistra-heard');
-// The chats the owner archived, {id, label, at}, which leave the page once their tabs are closed;
-// a window that loads closes the tabs it brings back with their labels.
+// The chats archived, {id, label, at}: those the owner archived and every chat that stopped; a
+// window that loads closes the tabs it brings back with their labels.
 const ARCHIVED = join(AGENT, 'ponistra-archived.json');
 const KEPT_ARCHIVED = 1000;
-// Longer than the window's grace for tabs it brings back (phone/extension.js, REVIVING), so a chat
-// revived with them and closed again stays archived.
-const REOPENED = 2 * 60 * 1000;
+// A chat not running whose transcript changed this recently may be one just starting.
+const SETTLED = 2 * 60 * 1000;
 const CHATS = 5;
 const TITLE = 100;
 const TRIED = 20;
@@ -426,14 +426,19 @@ const running = () => {
 
 const archivedList = () => readJson(ARCHIVED) ?? [];
 
-// A chat archived and since started again, and left open, is no longer archived; till then it stays
-// off the page though it runs, as a window that loads revives the tabs of chats archived since.
-const archived = (live) => {
+// An archived chat comes back only once its owner writes to it again: a window that loads starts
+// the chats of the tabs it brings back, which run without a word from anyone.
+const spokenSince = (transcript, at) =>
+  saidIn(tailOf(transcript, statSync(transcript).size)).some(
+    (each) => each.role === 'user' && Date.parse(each.at) > at,
+  );
+
+const archivedIn = (path, live) => {
   const kept = archivedList();
-  const since = Date.now() - REOPENED;
   const now = kept.filter(({ id, at }) => {
-    const started = live.get(id)?.startedAt;
-    return !(started > at && started < since);
+    if (!live.has(id)) return true;
+    const transcript = transcriptOf(path, id);
+    return !(existsSync(transcript) && statSync(transcript).mtimeMs > at && spokenSince(transcript, at));
   });
   if (now.length !== kept.length) writeJson(ARCHIVED, now);
   return new Set(now.map(({ id }) => id));
@@ -487,18 +492,29 @@ const chatOf = (path, id, live, trees, led) => {
   };
 };
 
-// The latest chats, each with the rest of its round's group, so that a coordinator is shown with
-// its chats.
+// The latest chats that run, each with the rest of its round's group, so that a coordinator is shown
+// with its chats. A chat that stopped is archived, so that a window bringing back its tab does not
+// bring it back to the page.
 const chatsOf = (path, live, trees, held) => {
   const kept = keptIn(path);
   if (!existsSync(kept)) return [];
-  const gone = archived(live);
+  const gone = archivedIn(path, live);
   const led = coordinators();
-  const shown = (id) => !held.has(id) && !gone.has(id);
-  const ids = readdirSync(kept)
+  const settled = Date.now() - SETTLED;
+  const found = readdirSync(kept)
     .filter((name) => TRANSCRIPT.test(name))
     .map((name) => ({ id: name.slice(0, -'.jsonl'.length), at: statSync(join(kept, name)).mtimeMs }))
-    .sort((one, other) => other.at - one.at)
+    .sort((one, other) => other.at - one.at);
+  const stopped = found
+    .slice(0, TRIED)
+    .filter(({ id, at }) => at < settled && !live.has(id) && !held.has(id) && !gone.has(id));
+  if (stopped.length) {
+    archive(stopped.map(({ id }) => ({ id, label: labelOf(transcriptOf(path, id)) })));
+    for (const { id } of stopped) gone.add(id);
+  }
+  const shown = (id) => live.has(id) && !held.has(id) && !gone.has(id);
+  const ids = found
+    .filter(({ id }) => shown(id))
     .slice(0, TRIED)
     .map(({ id }) => id);
   const chats = new Map();
@@ -1385,6 +1401,7 @@ const followGates = () => {
 followGates();
 setInterval(followGates, 60 * 1000).unref();
 followMemory();
+followWork();
 void tell();
 
 const CHAT = /^\/ponistra\/chats\/([0-9a-f-]{36})$/;

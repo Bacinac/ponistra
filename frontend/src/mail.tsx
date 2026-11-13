@@ -32,6 +32,7 @@ import {
   FolderInput,
   FolderTree,
   FolderSymlink,
+  Receipt,
   ImageOff,
   Images,
   Forward,
@@ -94,6 +95,7 @@ import { useAi } from './editor/runs';
 import { useReachable } from './live';
 import { keptPart } from './kept';
 import { type Destination, TRIAGED, TriageDialog, useMessageAction } from './mailTriage';
+import { GatherDialog } from './collections';
 import { WhenDialog } from './when';
 import { between, formatSize } from './explorer';
 import { Cancel, Close, ConfirmDialog, Labelled, Modal, NameDialog } from './dialogs';
@@ -1608,6 +1610,8 @@ function Reader({
   const [confirming, setConfirming] = useState(false);
   const [tasking, setTasking] = useState(false);
   const [ruling, setRuling] = useState<'block' | 'folder' | null>(null);
+  const [gathering, setGathering] = useState(false);
+  const own = useBox() === null;
   const [into, setInto] = useState<string | null>(null);
   const chosen = useChosen();
   const reachable = useReachable();
@@ -1785,6 +1789,13 @@ function Reader({
             if (!UNRULED.includes(folder.role) && to !== folder.id) left();
           }}
           onClose={() => setRuling(null)}
+        />
+      )}
+      {gathering && (
+        <GatherDialog
+          messages={[shown.id]}
+          onDone={() => setGathering(false)}
+          onClose={() => setGathering(false)}
         />
       )}
       <header className="flex flex-col gap-2">
@@ -1989,6 +2000,13 @@ function Reader({
                     icon={FolderSymlink}
                     label={t('mail.always')}
                     onSelect={() => setRuling('folder')}
+                  />
+                )}
+                {own && (
+                  <MenuItem
+                    icon={Receipt}
+                    label={t('collections.add')}
+                    onSelect={() => setGathering(true)}
                   />
                 )}
                 {translation.offered && (

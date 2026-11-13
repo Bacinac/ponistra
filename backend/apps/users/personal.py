@@ -78,6 +78,7 @@ PARTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("mail.Grant", "user"): (),
     ("mail.Grant", "created_by"): (),
     ("mail.Opening", "user"): (),
+    ("collecting.Collection", "owner"): (),
     ("agents.Authorization", "user"): ("code",),
     ("agents.Grant", "user"): (),
     ("contacts.Contact", "owner"): (),

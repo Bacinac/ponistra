@@ -48,7 +48,7 @@ def arriving(owner_id: int, address: str, folder: Folder) -> Folder:
     return rule.folder if rule else folder
 
 
-def _from(sender: str) -> Q:
+def sent_by(sender: str) -> Q:
     """The messages from the sender a rule names."""
     if "@" in sender:
         return Q(sender__address__iexact=sender)
@@ -66,11 +66,11 @@ def applied(rule: Rule) -> int:
         Message.objects.filter(owner_id=rule.owner_id)
         .exclude(folder__role__in=KEPT)
         .exclude(folder=rule.folder)
-        .filter(_from(rule.sender))
+        .filter(sent_by(rule.sender))
     )
     for narrow in Rule.objects.filter(owner_id=rule.owner_id).values_list("sender", flat=True):
         if _under(narrow, rule.sender):
-            found = found.exclude(_from(narrow))
+            found = found.exclude(sent_by(narrow))
     return found.update(folder=rule.folder)
 
 

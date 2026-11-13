@@ -12,7 +12,7 @@
     "backend/apps/mail/awaiting.py": "09c665382b50",
     "backend/apps/mail/automatic.py": "79fe9549c171",
     "backend/apps/mail/views.py#_acted_on": "d67d16d66e76",
-    "frontend/src/mail.tsx#Reader": "998648ccb7fe",
+    "frontend/src/mail.tsx#Reader": "4ff0f1ed3f9c",
     "frontend/src/compose.tsx#ComposeForm": "c6f8cd235fc5"
   }
 }

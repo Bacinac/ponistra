@@ -16,6 +16,6 @@
     "backend/apps/actions/language.py#compare": "ea920270224a",
     "backend/apps/actions/language.py#rewrite": "1d6c70fc402e",
     "backend/apps/actions/language.py#translate": "26dab72ccfcc",
-    "backend/apps/actions/registry.py#ACTIONS": "5a3e191c479c"
+    "backend/apps/actions/registry.py#ACTIONS": "fa1ad0f334d0"
   }
 }

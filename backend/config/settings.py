@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     "apps.memory",
     "apps.shares",
     "apps.drive",
+    "apps.collecting",
 ]
 
 MIDDLEWARE = [

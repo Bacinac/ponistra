@@ -77,7 +77,7 @@ COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=docker /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/libexec/docker/cli-plugins/
 COPY --from=fetch /fetch/docker-compose /usr/local/libexec/docker/cli-plugins/
 COPY settings.json /etc/ponistra/settings.json
-COPY projects.mjs chats.mjs memory.mjs terminal.mjs host.mjs /etc/ponistra/
+COPY projects.mjs chats.mjs memory.mjs terminal.mjs host.mjs worked.mjs /etc/ponistra/
 # The terminal runs on code-server's own node-pty and ws; a code-server that moves either fails here.
 RUN /usr/lib/code-server/lib/node --input-type=module -e "await import('/etc/ponistra/terminal.mjs')"
 # Every chat says through its hooks when it has answered or waits on its owner (D52), for whatever

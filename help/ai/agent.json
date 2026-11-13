@@ -10,7 +10,7 @@
   ],
   "describes": {
     "frontend/src/editor/AgentPanel.tsx#AgentPanel": "0e270c48ba9a",
-    "frontend/src/editor/actions.ts#ACTION_LOOKS": "6bee3d15d17d",
+    "frontend/src/editor/actions.ts#ACTION_LOOKS": "fb1cf7951a19",
     "backend/apps/actions/agent.py#ask": "ece954861b18",
     "backend/apps/actions/agent.py#turns_of": "16466254511c",
     "backend/apps/actions/agent.py#analyse": "1eb4f8462998",

@@ -12,6 +12,7 @@ from jsonschema import Draft202012Validator
 from pycrdt import Doc
 
 from apps.ai.model import Prompt
+from apps.collecting import acting as collecting
 from apps.content import schema
 from apps.content.operations import IDS
 from apps.content.sheets import Sheets
@@ -333,6 +334,9 @@ ACTIONS = {
         Action("mail.delete", "messages", acting.delete),
         Action("mail.block", "messages", acting.block, _given(by=BY)),
         Action("mail.always", "messages", acting.always, _given(to=MAIL_TO, by=BY)),
+        Action(
+            "mail.gather", "messages", collecting.gather, _given(collection={"type": "integer"})
+        ),
         Action(
             acting.TRIAGE, "messages", acting.triage, review="propose", model=acting.TRIAGE_MODEL
         ),

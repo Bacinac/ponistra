@@ -62,6 +62,7 @@ import { useHeldRelease } from './release';
 import { useFilePicker } from './upload';
 import { DictateButton } from './voice';
 import { setAside, useOpenWorkspace } from './workspace';
+import { Hours } from './workspaceHours';
 import { hasScreens, toNextScreen } from './meetingWindow';
 import { useThemeOf } from './theme';
 import { useFollowed } from './followed';
@@ -699,17 +700,24 @@ function pushable({ gate }: Project): boolean {
   );
 }
 
-const offered =
-  'inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-xs font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60';
-
-/** The push the coordinator's row offers once its round is consolidated and green. */
-function Offer({ disabled, onPress }: { disabled: boolean; onPress: () => void }) {
+/** What the coordinator's row offers once it is due, beneath the row: starting the round's chats,
+ * or the push of a round consolidated and green. */
+function Offer({
+  kind,
+  disabled,
+  onPress,
+}: {
+  kind: 'start' | 'push';
+  disabled: boolean;
+  onPress: () => void;
+}) {
   const { t } = useI18n();
+  const Icon = kind === 'start' ? Play : Upload;
   return (
     <div className="flex justify-end px-2 pb-1">
-      <button type="button" disabled={disabled} onClick={onPress} className={offered}>
-        <Upload size={14} aria-hidden />
-        {t('workspace.push')}
+      <button type="button" disabled={disabled} onClick={onPress} className={primaryButton}>
+        <Icon size={16} aria-hidden />
+        {t(kind === 'start' ? 'workspace.start' : 'workspace.push')}
       </button>
     </div>
   );
@@ -912,7 +920,6 @@ function RoundCard({
   const failed = commands.data?.commands.find(
     (each) => each.id === command.data?.id && each.state === 'failed',
   );
-  const unsent = round.chats.some((chat) => !chat.id);
   const asking = command.isPending || Boolean(round.asked);
   const asked = (kind: Kind, text?: string) =>
     command.mutate({ kind, round: round.id, ...(text && { text }) });
@@ -929,6 +936,7 @@ function RoundCard({
       lead.at !== null &&
       Date.parse(each.changed_at) < Date.parse(lead.at),
   );
+  const waiting = !round.started && round.chats.some((chat) => !chat.id);
   const pushable = finished && lead.state === 'idle' && !round.asked && consolidated && green;
   const [first, ...chats] = [lead, ...round.chats].map((member, index) => (
     <li key={member.id ?? `new-${index}`}>
@@ -949,7 +957,12 @@ function RoundCard({
           )
         }
       />
-      {index === 0 && pushable && <Offer disabled={asking} onPress={() => asked('push')} />}
+      {index === 0 && waiting && (
+        <Offer kind="start" disabled={command.isPending} onPress={() => asked('start')} />
+      )}
+      {index === 0 && pushable && (
+        <Offer kind="push" disabled={asking} onPress={() => asked('push')} />
+      )}
     </li>
   ));
   return (
@@ -973,22 +986,6 @@ function RoundCard({
       }}
       className={`mt-2 rounded ${over ? 'outline-2 -outline-offset-2 outline-focus' : ''}`}
     >
-      {!round.started && unsent && (
-        <div className="mx-2 mt-1 flex flex-wrap items-center gap-2 rounded-lg border border-accent bg-selected px-3 py-2">
-          <span className="min-w-0 flex-1 text-sm font-semibold">
-            {t('workspace.startWaiting')}
-          </span>
-          <button
-            type="button"
-            disabled={command.isPending}
-            onClick={() => asked('start')}
-            className={primaryButton}
-          >
-            <Play size={16} aria-hidden />
-            {t('workspace.start')}
-          </button>
-        </div>
-      )}
       {round.asked && (
         <p className="mt-1 px-2 text-sm text-muted" role="status">
           {t('workspace.asked').replace('{word}', round.asked)}
@@ -1302,6 +1299,7 @@ function ProjectSection({
               {chat.id === pushing && (
                 <>
                   <Offer
+                    kind="push"
                     disabled={pushed.isPending}
                     onPress={() => pushed.mutate({ kind: 'push', session: chat.id })}
                   />
@@ -1960,7 +1958,7 @@ function latest(projects: Project[]): string | null {
   return rounds[0]?.coordinator.id ?? null;
 }
 
-type Tab = 'overview' | 'chat' | 'memory' | 'terminal';
+type Tab = 'overview' | 'chat' | 'memory' | 'hours' | 'terminal';
 
 type View = Tab | 'start';
 
@@ -1976,6 +1974,7 @@ const VIEWS: Record<Tab, MessageKey> = {
   chat: 'workspace.view.chat',
   terminal: 'workspace.view.terminal',
   memory: 'workspace.view.memory',
+  hours: 'workspace.view.hours',
 };
 
 const TerminalPanel = lazily(() => import('./Terminal'), 'TerminalPanel');
@@ -2026,12 +2025,19 @@ function Pult({
       ),
     [projects],
   );
+  const named = (project: string) => {
+    if (!project) return t('workspace.general');
+    const found = projects.find((each) => each.name === project);
+    return found ? (titled(found) ?? project) : project.charAt(0).toUpperCase() + project.slice(1);
+  };
   const commands = useCommands();
   const [asked] = useSearchParams();
-  const [view, setView] = useState<View>(asked.get('view') === 'memory' ? 'memory' : 'overview');
   const askedView = asked.get('view');
+  const [view, setView] = useState<View>(
+    askedView === 'memory' || askedView === 'hours' ? askedView : 'overview',
+  );
   useEffect(() => {
-    if (askedView === 'memory') setView('memory');
+    if (askedView === 'memory' || askedView === 'hours') setView(askedView);
   }, [askedView]);
   const [picked, setPicked] = useState<string | null>(null);
   const [terminal, setTerminal] = useState<{ folder: string; name: string } | null>(null);
@@ -2162,6 +2168,8 @@ function Pult({
       )}
       {shown === 'terminal' ? null : shown === 'memory' ? (
         <Memory names={names} />
+      ) : shown === 'hours' ? (
+        <Hours named={named} />
       ) : begun ? (
         <NewChat
           key={`${begun.folder} ${begun.round}`}

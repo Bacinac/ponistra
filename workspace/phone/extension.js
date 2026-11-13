@@ -23,17 +23,15 @@ const readJson = (file) => {
   }
 };
 
-// A window that loads brings back the tabs its folder last had open in any window, and Claude Code
-// starts the chat of each, so a chat archived since would come back to life. Claude Code replaces a
-// revived tab with a new one a little later, which the grace still covers; projects.mjs keeps a chat
-// archived unless it stays open longer than that.
-const STARTED = Date.now();
-const REVIVING = 30 * 1000;
-
+// A window that loads or reconnects brings back the tabs its folder last had open in any window,
+// and Claude Code starts the chat of each, at times long after the window started, so a chat
+// archived since would come back to life. A new tab of an archived chat is closed whenever it
+// opens; an archived chat goes on in the tab already open, and once its owner writes to it there,
+// projects.mjs takes it out of the archive.
 const unrevived = (tabs, spared) => {
   const labels = new Set(
     (readJson(ARCHIVED) ?? [])
-      .filter((each) => each.id !== spared && each.label && each.at < STARTED)
+      .filter((each) => each.id !== spared && each.label)
       .map((each) => each.label),
   );
   const revived = tabs.filter((tab) => isChat(tab) && labels.has(tab.label));
@@ -47,7 +45,7 @@ const unrevived = (tabs, spared) => {
 
 const followTabs = (spared) =>
   vscode.window.tabGroups.onDidChangeTabs(({ opened }) => {
-    if (Date.now() - STARTED < REVIVING) unrevived(opened, spared);
+    unrevived(opened, spared);
   });
 
 exports.activate = async (context) => {

@@ -32,6 +32,7 @@ from apps.blobs import text
 from apps.calendar.models import Calendar
 from apps.calendar.views import LONGEST, created_event, describe_calendar, occurrences_of, zone_of
 from apps.collab import server as rooms
+from apps.collecting.models import Collection
 from apps.contacts import search as contacts
 from apps.contacts.views import summary
 from apps.content import blocks, schema
@@ -133,6 +134,11 @@ MAIL_DOES = {
         "Sends the mail of the messages' senders to the folder `to` from now on (as mail_move"
         ' names it), each sender by `by`: its "address" or the "domain" it writes from;'
         " what of it is here already goes too."
+    ),
+    "mail.gather": (
+        "Takes the messages into the user's collection `collection` (an id list_collections"
+        " gives), whatever it would say of them: their files go into its month's folder and"
+        " their bills into the table it sends."
     ),
 }
 
@@ -903,6 +909,19 @@ async def draft_mail(
     sent here."""
     grant = await _signed()
     return await call(_new_mail, grant, to, subject, text, cc or [], account, replaces)
+
+
+def _collections(user) -> dict[str, Any]:
+    found = Collection.objects.filter(owner=user).order_by("name", "pk")
+    return {"collections": list(found.values("id", "name", "active"))}
+
+
+@server.tool()
+async def list_collections() -> dict[str, Any]:
+    """The user's collections out of their mail, which gather bills and the like month by
+    month: their ids, names and whether each is gathering."""
+    grant = await _signed()
+    return await call(_collections, grant.user)
 
 
 @server.tool()

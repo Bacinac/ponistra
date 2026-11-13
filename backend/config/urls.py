@@ -10,6 +10,7 @@ from apps.blobs import views as blobs
 from apps.calendar import caldav, phone
 from apps.calendar import views as calendar
 from apps.chat import views as chat
+from apps.collecting import views as collecting
 from apps.comments import views as comments
 from apps.contacts import carddav
 from apps.contacts import views as contacts
@@ -183,6 +184,8 @@ urlpatterns = [
     path("api/workspace/commands", workspace.commands),
     path("api/workspace/chats/<str:session>", workspace.chat),
     path("api/workspace/changed", workspace.changed),
+    path("api/workspace/worked", workspace.worked),
+    path("api/workspace/hours", workspace.hours),
     path("api/workspace/door", workspace.door),
     path("api/memory", memory.memory),
     path("api/memory/waiting", memory.waiting),
@@ -253,6 +256,9 @@ urlpatterns = [
     path("api/drive", drive.drives),
     path("api/drive/<int:pk>", drive.drive),
     path("api/drive/<int:pk>/finish", drive.finish),
+    path("api/collections", collecting.collections),
+    path("api/collections/<int:pk>", collecting.collection),
+    path("api/collections/<int:pk>/months/<int:month>/send", collecting.month_sent),
     path("api/users", accounts.users),
     path("api/users/<int:pk>", accounts.user),
     path("api/users/<int:pk>/sessions", devices.theirs),

@@ -80,3 +80,47 @@ class Aside(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+
+class Transcript(models.Model):
+    """A chat's transcript the workspace measured the time worked from (VT1): the folder of
+    `~/.claude/projects` it is kept in, the project that folder belongs to (blank for the
+    workspace's own root), and how many bytes of it have been read. Time brought from Clockify
+    for the days before the transcripts begin is kept as a transcript of the namespace
+    `clockify`, one for each of its entries, read by nobody."""
+
+    namespace = models.CharField(max_length=255)
+    session = models.CharField(max_length=64)
+    project = models.CharField(max_length=255, blank=True)
+    read = models.BigIntegerField(default=0)
+    at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["namespace", "session"], name="workspace_transcript_once"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.namespace}/{self.session}"
+
+
+class Stretch(models.Model):
+    """Time a transcript shows worked: from its first moment to its last, no two of them further
+    apart than the pause that ends work (`worked.IDLE`)."""
+
+    transcript = models.ForeignKey(Transcript, on_delete=models.CASCADE, related_name="stretches")
+    began = models.DateTimeField()
+    ended = models.DateTimeField()
+
+    class Meta:
+        indexes = [models.Index(fields=["began"], name="workspace_stretch_began")]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(ended__gte=models.F("began")), name="workspace_stretch_forward"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.began}–{self.ended}"

@@ -30,6 +30,7 @@ const AREAS: Record<string, (key: QueryKey) => boolean> = {
     (root === 'mail' && part !== 'message' && part !== 'draft'),
   health: ([root]) => root === 'health',
   workspace: ([root]) => root === 'workspace',
+  worked: ([root]) => root === 'worked',
   memory: ([root]) => root === 'memory',
   drive: ([root]) => root === 'drive',
   meetings: ([root]) => root === 'meeting-recordings' || root === 'meeting-relay',

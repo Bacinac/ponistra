@@ -1306,3 +1306,43 @@ test('a notification of a proposal opens the Memory tab', async () => {
   const proposals = await screen.findByRole('region', { name: 'Prijedlozi za memoriju' });
   within(proposals).getByRole('button', { name: 'Odbij' });
 });
+
+test('the time worked shows each month by project and the chosen month by day', async () => {
+  const asked: (string | null)[] = [];
+  const month = (given: string, alpha: number) => ({
+    month: given,
+    projects: { alpha, '': 1800 },
+    total: alpha + 1800,
+    wall: alpha,
+  });
+  served({
+    'GET /api/workspace/hours': (request) => {
+      const chosen = new URL(request.url).searchParams.get('month');
+      asked.push(chosen);
+      const shown = chosen ?? '2026-11';
+      return {
+        months: [month('2026-11', 9000), month('2026-10', 3600)],
+        month: shown,
+        days: [
+          {
+            day: `${shown}-12`,
+            projects: { alpha: shown === '2026-11' ? 9000 : 3600, '': 1800 },
+            total: (shown === '2026-11' ? 9000 : 3600) + 1800,
+            wall: shown === '2026-11' ? 9000 : 3600,
+          },
+        ],
+      };
+    },
+  });
+  const { user } = open('/workspace?view=hours', OWNER);
+  const months = await screen.findByRole('region', { name: 'Mjesec' });
+  within(months).getByRole('row', { name: 'Alpha 2:30' });
+  within(months).getByRole('row', { name: 'Općenito 0:30' });
+  within(months).getByRole('row', { name: 'Ukupno 3:00' });
+  within(months).getByRole('row', { name: 'Bez preklapanja 2:30' });
+  const days = screen.getByRole('region', { name: 'Po danima' });
+  within(days).getByRole('row', { name: '12. 11. 2:30 0:30 3:00 2:30' });
+  await user.selectOptions(within(months).getByRole('combobox'), '2026-10');
+  await within(days).findByRole('row', { name: '12. 10. 1:00 0:30 1:30 1:00' });
+  expect(asked).toEqual([null, '2026-10']);
+});

@@ -10,7 +10,7 @@ import hmac
 import json
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import httpx2
 import icu
@@ -29,6 +29,7 @@ from apps.core.asyncdb import database
 from apps.users.sessions import CONFIRMED as CONFIRMED_AT
 from apps.users.sessions import fresh
 
+from . import worked as measured
 from .models import Aside, Command
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,13 @@ BY_NAME = icu.Collator.createInstance(icu.Locale("hr"))
 LISTED = 50
 SAID = 20_000
 TITLE = 100
+NAMESPACE = re.compile(rf"-[A-Za-z0-9_-]{{0,254}}|{measured.CLOCKIFY}")
+TRANSCRIPT = re.compile(r"[A-Za-z0-9-]{1,64}")
+MONTH = re.compile(r"\d{4}-(0[1-9]|1[0-2])")
+TRANSCRIPTS_SENT = 100
+STRETCHES_SENT = 10_000
+# Milliseconds since 1970 up to 2100, the bounds of a moment a transcript can hold.
+LATEST = 4_102_444_800_000
 Kind = Command.Kind
 State = Command.State
 # What only a recent confirmation of who the owner is lets through (D33), for a working day: the
@@ -401,15 +409,19 @@ def reported(outcomes) -> None:
             settled(pk, state, error if isinstance(error, str) else "")
 
 
+def _from_workspace(request) -> bool:
+    given = request.headers.get("Authorization", "")
+    return bool(settings.WORKSPACE_TOKEN) and hmac.compare_digest(
+        given.encode(), f"Bearer {settings.WORKSPACE_TOKEN}".encode()
+    )
+
+
 @csrf_exempt
 def changed(request):
     """The workspace saying that what it lists changed, with the token it is asked with."""
     if request.method != "POST":
         return JsonResponse({"error": "method_not_allowed"}, status=405)
-    given = request.headers.get("Authorization", "")
-    if not settings.WORKSPACE_TOKEN or not hmac.compare_digest(
-        given.encode(), f"Bearer {settings.WORKSPACE_TOKEN}".encode()
-    ):
+    if not _from_workspace(request):
         return JsonResponse({"error": "refused"}, status=403)
     try:
         said = json.loads(request.body or b"{}")
@@ -428,6 +440,73 @@ def changed(request):
 
     told()
     return HttpResponse(status=204)
+
+
+def _moment(given) -> datetime:
+    if not isinstance(given, int) or isinstance(given, bool) or not 0 <= given < LATEST:
+        raise Refused(400, "invalid_stretches")
+    return datetime.fromtimestamp(given // 1000, UTC) + timedelta(milliseconds=given % 1000)
+
+
+def _measured(given) -> tuple[str, str, str, int | None, list[tuple[datetime, datetime]]]:
+    if not isinstance(given, dict):
+        raise Refused(400, "invalid_transcripts")
+    namespace, session = given.get("namespace"), given.get("session")
+    project, read, listed = given.get("project") or "", given.get("read"), given.get("stretches")
+    if not isinstance(namespace, str) or not NAMESPACE.fullmatch(namespace):
+        raise Refused(400, "invalid_namespace")
+    if not isinstance(session, str) or not TRANSCRIPT.fullmatch(session):
+        raise Refused(400, "invalid_session")
+    if not isinstance(project, str) or len(project) > 255 or "/" in project:
+        raise Refused(400, "invalid_project")
+    if read is not None and (not isinstance(read, int) or isinstance(read, bool) or read < 0):
+        raise Refused(400, "invalid_read")
+    if not isinstance(listed, list) or len(listed) > STRETCHES_SENT:
+        raise Refused(400, "invalid_stretches")
+    spans = []
+    for each in listed:
+        if not isinstance(each, list) or len(each) != 2:
+            raise Refused(400, "invalid_stretches")
+        began, ended = _moment(each[0]), _moment(each[1])
+        if ended < began:
+            raise Refused(400, "invalid_stretches")
+        spans.append((began, ended))
+    return namespace, session, project, read, spans
+
+
+@csrf_exempt
+def worked(request):
+    """The workspace asking how far it read each transcript, or saying what stretches of work it
+    found in some since (VT1), with the token it is asked with."""
+    if not _from_workspace(request):
+        return JsonResponse({"error": "refused"}, status=403)
+    if request.method == "GET":
+        return JsonResponse({"read": measured.marks()})
+    if request.method != "POST":
+        return JsonResponse({"error": "method_not_allowed"}, status=405)
+    try:
+        listed = json.loads(request.body or b"{}").get("transcripts")
+        if not isinstance(listed, list) or len(listed) > TRANSCRIPTS_SENT:
+            raise Refused(400, "invalid_transcripts")
+        found = [_measured(each) for each in listed]
+    except ValueError, AttributeError:
+        return JsonResponse({"error": "invalid_transcripts"}, status=400)
+    except Refused as refused:
+        return JsonResponse({"error": refused.error}, status=refused.status)
+    for each in found:
+        measured.kept(*each)
+    return HttpResponse(status=204)
+
+
+@api("GET")
+def hours(request):
+    """The time worked on the workspace's projects, by month and by day of one month."""
+    if not owns(request.user):
+        return JsonResponse({"error": "not_the_owner"}, status=403)
+    month = request.GET.get("month")
+    if month is not None and not MONTH.fullmatch(month):
+        raise Refused(400, "invalid_month")
+    return JsonResponse(measured.hours(month))
 
 
 def door(request):

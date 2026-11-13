@@ -6,6 +6,6 @@
   "describes": {
     "frontend/src/editor/Proposals.tsx#ProposalPopover": "7e6ea5208c9e",
     "frontend/src/editor/Proposals.tsx#kindOf": "b80a6c52ebdc",
-    "frontend/src/editor/actions.ts#ACTION_LOOKS": "6bee3d15d17d"
+    "frontend/src/editor/actions.ts#ACTION_LOOKS": "fb1cf7951a19"
   }
 }

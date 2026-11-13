@@ -22,6 +22,7 @@ import {
   X,
   type LucideIcon,
   Plane,
+  Receipt,
 } from 'lucide-react';
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import { Link, Navigate, NavLink, useParams } from 'react-router';
@@ -35,6 +36,7 @@ import { iconButton, sideRow } from './styles';
 
 const Agents = lazily(() => import('./agents'), 'Agents');
 const AppPasswords = lazily(() => import('./appPasswords'), 'AppPasswords');
+const Collections = lazily(() => import('./collections'), 'Collections');
 const Consents = lazily(() => import('./consents'), 'Consents');
 const Devices = lazily(() => import('./devices'), 'Devices');
 const DriveSettings = lazily(() => import('./drive'), 'DriveSettings');
@@ -85,6 +87,7 @@ export const ACCOUNT: { heading: MessageKey; entries: (Entry & { body: Component
       { to: '/settings/mail-accounts', icon: AtSign, title: 'mail.accounts', body: MailAccounts },
       { to: '/settings/senders', icon: MailX, title: 'mail.senders', body: MailSettings },
       { to: '/settings/away', icon: Plane, title: 'away.title', body: AwaySettings },
+      { to: '/settings/collections', icon: Receipt, title: 'collections.title', body: Collections },
     ],
   },
   {

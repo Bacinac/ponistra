@@ -20,6 +20,7 @@ from apps.agents import oauth, tools
 from apps.agents import server as agents
 from apps.agents.models import Client, Grant, Token
 from apps.blobs import store
+from apps.collecting.models import Collection, Item
 from apps.content.blocks import Block, Run
 from apps.content.tests.helpers import Room, fill
 from apps.documents.models import Tab
@@ -427,6 +428,32 @@ async def test_an_agent_does_to_mail_what_the_list_does_but_delete_it(doors):
     assert "several_mailboxes" in await doors.refused("mail_seen", messages=both)
     await MailGrant.objects.filter(mailbox=box, user=user).adelete()
     assert "not_found" in await doors.refused("read_message", message=shared.pk)
+
+
+async def test_an_agent_takes_messages_into_a_collection_it_lists(doors):
+    user, browser = await signed_in()
+    await doors.register()
+    verifier = secrets.token_urlsafe(48)
+    await doors.exchange((await let_in(doors, browser, verifier))["code"], verifier)
+    collection = await Collection.objects.acreate(
+        owner=user, name="Troškovi", since=datetime(2026, 1, 1).date()
+    )
+    listed = await doors.call("list_collections")
+    assert listed == {"collections": [{"id": collection.pk, "name": "Troškovi", "active": True}]}
+    message = await sync_to_async(stored)(user, "Račun")
+    taken = await doors.call(
+        "mail_gather", messages=[message.pk], parameters={"collection": collection.pk}
+    )
+    assert taken == {"changed": 1}
+    item = await Item.objects.aget()
+    assert (item.message_id, item.chosen, item.state) == (message.pk, True, "waiting")
+    ana = await sync_to_async(User.objects.create_user)("ana@example.com", "Kamen-Most-Rijeka-71")
+    other = await Collection.objects.acreate(
+        owner=ana, name="Tuđa", since=datetime(2026, 1, 1).date()
+    )
+    assert "not_found" in await doors.refused(
+        "mail_gather", messages=[message.pk], parameters={"collection": other.pk}
+    )
 
 
 def _carrying(message: Message, part: str, name: str, content: bytes, inline: bool = False) -> None:

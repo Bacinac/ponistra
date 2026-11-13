@@ -7,7 +7,7 @@ Settings gather in one place everything that applies to your account: signing in
 1. Press your initials in the top right corner, {t:frame.account}, and choose {t:settings.title}. Typing {t:settings.title} into the search box does the same.
 2. Choose a page in the left column. Under {t:settings.signIn} are {t:signIn.choice}, {t:password.title}, {t:passkeys.title} and {t:appPasswords.title}.
 3. Under {t:settings.devices} are {t:devices.mine} and {t:notifications.title}.
-4. Under {t:settings.mail} are {t:mail.accounts}, {t:mail.senders} and [{t:away.title}](help:mail/away).
+4. Under {t:settings.mail} are {t:mail.accounts}, {t:mail.senders}, [{t:away.title}](help:mail/away) and [{t:collections.title}](help:mail/collections).
 5. Under {t:settings.leaving} is [{t:drive.title}](help:account/google-drive).
 6. Under {t:settings.ai} are {t:agents.title}, {t:consents.title} and {t:translation.title}.
 7. On a phone the list of pages is a page of its own. An open page goes back to the list with {t:frame.close}.

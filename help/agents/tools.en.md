@@ -20,6 +20,7 @@ An agent can read:
 - the latest messages of a folder, yours or a shared mailbox's you read, the unread alone if it asks;
 - a message with its attachments and an attachment's text, but never the file itself;
 - your calendars, events, tasks and contacts;
+- your mail [collections](help:mail/collections);
 - the articles of this help, in your language;
 - how an action it started went.
 
@@ -29,7 +30,7 @@ An agent can write:
 - text into a tab, as proposals you accept or reject, in the action {t:action.agentEdit} that is undone at once;
 - the actions of the document's menu, except accepting and rejecting proposals and actions over several documents;
 - a draft reply, forward or new message, which you send;
-- actions on messages, at once and in Ponistra only: read and unread, the flag, moving to a folder, snoozing, waiting for an answer, blocking senders and a rule for where their mail goes, in a shared mailbox only where you may change it;
+- actions on messages, at once and in Ponistra only: read and unread, the flag, moving to a folder, snoozing, waiting for an answer, blocking senders and a rule for where their mail goes, adding to your collection from your own mailbox only, in a shared mailbox only where you may change it;
 - an event in a calendar, without attendees, and a task;
 - a link on your page of links, in the group it names;
 - a board, a page of HTML you open in Ponistra, with the data the board keeps.

@@ -8,6 +8,7 @@ from logging import getLogger
 from django.db import transaction
 from django.utils import timezone
 
+from apps.collecting import loop as collecting
 from apps.core.api import Refused
 from apps.core.asyncdb import database, drain
 from apps.push import notices as push
@@ -162,7 +163,9 @@ async def _step() -> bool:
         return True
     if await database(snoozing.due, own_thread=True)():
         return True
-    return await database(awaiting.due, own_thread=True)()
+    if await database(awaiting.due, own_thread=True)():
+        return True
+    return await database(collecting.step, own_thread=True)()
 
 
 async def later() -> None:

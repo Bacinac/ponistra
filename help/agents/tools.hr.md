@@ -20,6 +20,7 @@ Agent može čitati:
 - najnovije poruke mape, vaše ili zajedničkog sandučića koji čitate, samo nepročitane ako to zatraži;
 - poruku s privicima i tekst privitka, ali nikad samu datoteku;
 - vaše kalendare, događaje, zadatke i kontakte;
+- vaše [zbirke](help:mail/collections) pošte;
 - članke ove pomoći, na vašem jeziku;
 - kako je prošla radnja koju je pokrenuo.
 
@@ -29,7 +30,7 @@ Agent može upisivati:
 - tekst u karticu, kao prijedloge koje vi prihvaćate ili odbijate, u radnji {t:action.agentEdit} koja se poništava odjednom;
 - radnje iz izbornika dokumenta, osim prihvaćanja i odbijanja prijedloga i radnji nad više dokumenata;
 - skicu odgovora, prosljeđivanja ili nove poruke, koju šaljete vi;
-- radnje nad porukama, odmah i samo u Ponistri: pročitano i nepročitano, zastavicu, premještanje u mapu, odgodu, čekanje odgovora, blokiranje pošiljatelja i pravilo kamo ide njihova pošta, u zajedničkom sandučiću samo ako u njemu smijete mijenjati;
+- radnje nad porukama, odmah i samo u Ponistri: pročitano i nepročitano, zastavicu, premještanje u mapu, odgodu, čekanje odgovora, blokiranje pošiljatelja i pravilo kamo ide njihova pošta, dodavanje u vašu zbirku samo iz vašeg sandučića, u zajedničkom sandučiću samo ako u njemu smijete mijenjati;
 - događaj u kalendaru, bez pozvanih osoba, i zadatak;
 - poveznicu na vašu stranicu poveznica, u grupu koju imenuje;
 - ploču, stranicu HTML-a koju otvarate u Ponistri, s podacima koje ploča čuva.

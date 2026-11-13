@@ -12,6 +12,7 @@
     "tool:find_contacts",
     "tool:get_run",
     "tool:list_calendars",
+    "tool:list_collections",
     "tool:list_events",
     "tool:list_folder",
     "tool:list_mail",
@@ -60,8 +61,9 @@
     "backend/apps/agents/tools.py#_action_tool": "20aff40c69e7",
     "backend/apps/agents/tools.py#_ran": "ff354b431166",
     "backend/apps/agents/tools.py#RUNNABLE": "d9ab1afca81a",
-    "backend/apps/agents/tools.py#MAIL_DOES": "f5d0762b6690",
+    "backend/apps/agents/tools.py#MAIL_DOES": "0707abc2b902",
     "backend/apps/agents/tools.py#_mail_tool": "598ab54b820b",
-    "backend/apps/agents/tools.py#_acted": "c0987e1e9dc6"
+    "backend/apps/agents/tools.py#_acted": "c0987e1e9dc6",
+    "backend/apps/agents/tools.py#list_collections": "36fd4f90cf4b"
   }
 }
