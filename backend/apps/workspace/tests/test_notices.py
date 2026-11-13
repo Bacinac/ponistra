@@ -146,7 +146,8 @@ def test_a_round_consolidates_itself_once_its_chats_have_just_finished(
     lead, round, before, consolidates
 ):
     projects = listed(member(CHAT, "idle"), lead=member(LEAD, lead, title="Koordinator"), **round)
-    assert due({"ready": before}, projects) == ([ROUND] if consolidates else [])
+    asked = [each["id"] for each in due({"consolidating": before}, projects)]
+    assert asked == ([ROUND] if consolidates else [])
 
 
 RESETS = "2026-11-15T21:00:00.000Z"
@@ -241,6 +242,37 @@ def test_a_round_whose_chats_finished_asks_its_coordinator_to_consolidate(owner)
         AUTO,
         True,
     )
+    changed()
+    assert Command.objects.count() == 1
+
+
+def test_a_round_whose_coordinator_was_busy_consolidates_once_it_is_free(owner):
+    busy = member(LEAD, "working", title="Koordinator")
+    changed()
+    owner.projects = listed(member(CHAT, "idle"), lead=busy)
+    changed()
+    assert not Command.objects.exists()
+    owner.projects = listed(member(CHAT, "idle"))
+    changed()
+    changed()
+    assert Command.objects.get().round == ROUND
+
+
+def test_a_round_whose_chats_run_again_consolidates_again(owner):
+    changed()
+    owner.projects = listed(member(CHAT, "idle"))
+    changed()
+    owner.projects = listed(member(CHAT, "working", at="2026-11-11T17:00:00Z"))
+    changed()
+    owner.projects = listed(member(CHAT, "idle", at="2099-11-11T17:30:00Z"))
+    changed()
+    assert Command.objects.count() == 2
+
+
+def test_a_round_asked_before_its_state_was_kept_is_not_asked_again(owner):
+    changed()
+    Command.objects.create(kind=Command.Kind.CONSOLIDATE, round=ROUND, text=AUTO, auto=True)
+    owner.projects = listed(member(CHAT, "idle"))
     changed()
     assert Command.objects.count() == 1
 

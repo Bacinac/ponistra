@@ -519,23 +519,18 @@ test('a session named as its title is not named twice beneath it', async () => {
 
 const UNPUSHED = { ...GATE, checked: { tree: 'd'.repeat(40), at: '2026-11-11T16:00:00Z' } };
 
-test('a round is offered Objedini in its coordinator’s row once every chat finished', async () => {
-  const asked: Asked[] = [];
+test('a round whose chats all finished is not offered to consolidate, as it does so itself', async () => {
   served({
-    ...commanded(asked),
     'GET /api/workspace/projects': () => ({
       ...PROJECTS,
       projects: [{ ...PROJECTS.projects[1], chats: [], rounds: [FINISHED_ROUND] }],
     }),
   });
-  const { user } = open('/workspace', OWNER);
+  open('/workspace', OWNER);
   const round = await screen.findByRole('region', { name: /^Krug / });
+  within(round).getByRole('button', { name: /Plan kruga/ });
+  expect(within(round).queryByRole('button', { name: 'Objedini' })).toBeNull();
   expect(within(round).queryByRole('button', { name: 'Pushaj' })).toBeNull();
-  const lead = within(round)
-    .getByRole('button', { name: /Plan kruga/ })
-    .closest('li');
-  await user.click(within(lead as HTMLElement).getByRole('button', { name: 'Objedini' }));
-  await waitFor(() => expect(asked).toEqual([{ kind: 'consolidate', round: ROUND.id }]));
 });
 
 test('a consolidated round with a green tree not yet pushed is offered Pushaj instead', async () => {

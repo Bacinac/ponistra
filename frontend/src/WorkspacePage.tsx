@@ -702,23 +702,14 @@ function pushable({ gate }: Project): boolean {
 const offered =
   'inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-xs font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60';
 
-/** What the coordinator's row offers once it is due, beneath the row's button. */
-function Offer({
-  kind,
-  disabled,
-  onPress,
-}: {
-  kind: 'consolidate' | 'push';
-  disabled: boolean;
-  onPress: () => void;
-}) {
+/** The push the coordinator's row offers once its round is consolidated and green. */
+function Offer({ disabled, onPress }: { disabled: boolean; onPress: () => void }) {
   const { t } = useI18n();
-  const Icon = kind === 'push' ? Upload : GitMerge;
   return (
     <div className="flex justify-end px-2 pb-1">
       <button type="button" disabled={disabled} onClick={onPress} className={offered}>
-        <Icon size={14} aria-hidden />
-        {t(kind === 'push' ? 'workspace.push' : 'workspace.consolidate')}
+        <Upload size={14} aria-hidden />
+        {t('workspace.push')}
       </button>
     </div>
   );
@@ -938,12 +929,7 @@ function RoundCard({
       lead.at !== null &&
       Date.parse(each.changed_at) < Date.parse(lead.at),
   );
-  const offer =
-    finished && lead.state === 'idle' && !round.asked
-      ? consolidated && green
-        ? 'push'
-        : 'consolidate'
-      : null;
+  const pushable = finished && lead.state === 'idle' && !round.asked && consolidated && green;
   const [first, ...chats] = [lead, ...round.chats].map((member, index) => (
     <li key={member.id ?? `new-${index}`}>
       <MemberLine
@@ -963,9 +949,7 @@ function RoundCard({
           )
         }
       />
-      {index === 0 && offer && (
-        <Offer kind={offer} disabled={asking} onPress={() => asked(offer)} />
-      )}
+      {index === 0 && pushable && <Offer disabled={asking} onPress={() => asked('push')} />}
     </li>
   ));
   return (
@@ -1318,7 +1302,6 @@ function ProjectSection({
               {chat.id === pushing && (
                 <>
                   <Offer
-                    kind="push"
                     disabled={pushed.isPending}
                     onPress={() => pushed.mutate({ kind: 'push', session: chat.id })}
                   />
@@ -2140,7 +2123,7 @@ function Pult({
               type="button"
               aria-pressed={shown === each}
               onClick={() => setView(each)}
-              className={`${button} ${shown === each ? 'bg-selected' : ''}`}
+              className={`${button} ${shown === each ? 'bg-selected' : ''} ${each === 'memory' ? 'ml-auto' : ''}`}
             >
               {t(VIEWS[each])}
               {each === 'overview' && waiting > 0 && (

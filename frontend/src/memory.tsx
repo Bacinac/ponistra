@@ -2,11 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { getJson, postJson } from './api';
-import { Loaded } from './frame';
+import { Loading } from './frame';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import { button, primaryButton } from './styles';
-import { codeText, errorMessage } from './tree';
+import { codeText, errorMessage, Failure } from './tree';
 
 type FindingKind =
   'orphan' | 'dangling' | 'link' | 'frontmatter' | 'oversize' | 'stale' | 'long' | 'unreadable';
@@ -540,7 +540,7 @@ export function Memory({ names }: { names: Names }) {
     queryFn: () => getJson<Overview>('/api/memory'),
     retry: false,
   });
-  return (
-    <Loaded query={query}>{(overview) => <MemoryView overview={overview} names={names} />}</Loaded>
-  );
+  if (query.isPending) return <Loading />;
+  if (query.isError) return <Failure error={query.error} />;
+  return <MemoryView overview={query.data} names={names} />;
 }

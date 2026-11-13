@@ -12,7 +12,7 @@
     "memory.staleAfter"
   ],
   "describes": {
-    "frontend/src/memory.tsx#Memory": "35c3a3ccd66f",
+    "frontend/src/memory.tsx#Memory": "9ef4a14fda00",
     "frontend/src/memory.tsx#useMemoryWaiting": "c8b9af981e44",
     "frontend/src/memory.tsx#MemoryView": "92d4ef05b90e",
     "backend/apps/memory/ledger.py#synced": "20ae605ef1ca",

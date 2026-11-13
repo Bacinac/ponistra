@@ -9,6 +9,7 @@ and `objedini` stops at a chat that still asks or failed."""
 
 import threading
 import uuid
+from datetime import datetime
 
 from asgiref.sync import async_to_sync
 from django.conf import settings
@@ -119,22 +120,34 @@ def limited(before: dict, usage: dict | None) -> tuple[list[str], list[tuple[dic
     return shown, told
 
 
-def due(before: dict, projects: list[dict]) -> list[str]:
-    """The rounds to consolidate by themselves: every chat of each has just finished, its
-    coordinator is free, nothing is asked of it and its owner left it to consolidate itself."""
-    ready = set(before.get("ready", []))
+def due(before: dict, projects: list[dict]) -> list[dict]:
+    """The rounds to consolidate by themselves: every chat of each has finished, its coordinator
+    is free, nothing is asked of it, its owner left it to consolidate itself and it was not yet
+    asked to since its chats last finished. A coordinator still busy when the chats finish is
+    asked once it is free."""
+    asked = set(before.get("consolidating", []))
     return [
-        round["id"]
+        round
         for project in projects
         for round in project.get("rounds", [])
         if round["started"]
         and round["chats"]
         and all(chat["state"] in FINISHED for chat in round["chats"])
-        and round["id"] not in ready
+        and round["id"] not in asked
         and round["coordinator"]["state"] == "idle"
         and round.get("auto", True)
         and not round.get("asked")
     ]
+
+
+def _consolidated(round: dict) -> bool:
+    """Whether the round was asked to consolidate after its chats last changed, which the state
+    seen before may not know."""
+    ats = [chat["at"] for chat in round["chats"] if chat.get("at")]
+    since = Command.objects.filter(kind=Command.Kind.CONSOLIDATE, round=round["id"])
+    if ats:
+        since = since.filter(created_at__gte=datetime.fromisoformat(max(ats)))
+    return since.exists()
 
 
 def told() -> None:
@@ -159,6 +172,13 @@ def told() -> None:
             shown, news = compared(before, listed["projects"])
             shown["limits"], over = limited(before, listed.get("usage"))
             news += over
+            rounds = [] if first else due(before, listed["projects"])
+            shown["consolidating"] = (
+                shown["ready"]
+                if first
+                else [round for round in before.get("consolidating", []) if round in shown["ready"]]
+                + [round["id"] for round in rounds]
+            )
             seen.shown = shown
             seen.save()
             if first:
@@ -167,9 +187,10 @@ def told() -> None:
                 push.tell(owners, Notice.Kind.CODE, data, tag=tag)
             asked = [
                 Command.objects.create(
-                    kind=Command.Kind.CONSOLIDATE, round=round, text=AUTO, auto=True
+                    kind=Command.Kind.CONSOLIDATE, round=round["id"], text=AUTO, auto=True
                 )
-                for round in due(before, listed["projects"])
+                for round in rounds
+                if not _consolidated(round)
             ]
         for command in asked:
             async_to_sync(sent)(command)

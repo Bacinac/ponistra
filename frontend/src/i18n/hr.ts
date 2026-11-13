@@ -36,7 +36,6 @@ export const hr = {
   'workspace.coordinator': 'Koordinator',
   'workspace.start': 'Pokreni krug',
   'workspace.startWaiting': 'Chatovi kruga čekaju pokretanje',
-  'workspace.consolidate': 'Objedini',
   'workspace.state.new': 'Nije poslan',
   'workspace.state.working': 'Radi',
   'workspace.copy': 'Kopiraj',
