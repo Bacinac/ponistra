@@ -37,6 +37,7 @@ class Command(models.Model):
         ARCHIVE = "archive"
         RESTART = "restart"
         STOP = "stop"
+        MOVE = "move"
 
     class State(models.TextChoices):
         SENT = "sent"

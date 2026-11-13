@@ -43,6 +43,8 @@ The same {t:workspace.yes} and {t:workspace.no} also stand in the conversation w
 2. Choose what it needs:
    - {t:workspace.openChat} opens the chat in the editor. It is disabled while the agent works or waits for you.
    - {t:tree.rename} gives the chat a new name of up to 100 characters; the editor and the list of sessions show the same name.
+   - {t:workspace.moveUnder} moves the chat under the coordinator of another round of the same project.
+   - {t:workspace.auto}, in the coordinator's menu, turns on and off whether the coordinator brings the round's work together by itself.
    - {t:workspace.close} stops a chat in use, in the workspace and in the editor; the chat stays on the list and carries on with a message or in the editor.
    - {t:workspace.archive} takes the chat off the project's list; one in use is closed first, as with {t:workspace.close}. A window of the editor that brings back an archived chat's tab when it loads again closes it at once. A chat you open again yourself and leave open for longer than two minutes comes back to the list.
 
@@ -55,12 +57,20 @@ The same {t:workspace.yes} and {t:workspace.no} also stand in the conversation w
 
 ### A round of chats
 
-1. On the {t:rail.projects} page find the round under its project. The round begins with a line holding the time it opened and the {t:workspace.auto} checkbox. Below it stands {t:workspace.coordinator}, the chat that opened the round, and below the coordinator, indented, the round's chats.
+1. On the {t:rail.projects} page find the round under its project. The round begins with the row of {t:workspace.coordinator}, the chat that opened the round and bears its name, and below the coordinator, indented, stand the round's chats.
 2. If the chats have not started yet, press {t:workspace.start}. The workspace starts each chat of the round with the task written for it.
 3. Press a chat of the round to read it in the conversation on the page. {t:workspace.openChat} opens it in the editor.
-4. When every chat of the round is done and the coordinator is idle, {t:workspace.consolidate} appears below the coordinator's row; press it. The coordinator then brings the round's work together. With {t:workspace.auto} on, the coordinator gets it by itself as soon as every chat of the round is done.
+4. When every chat of the round is done and the coordinator is idle, {t:workspace.consolidate} appears below the coordinator's row; press it. The coordinator then brings the round's work together. With {t:workspace.auto} on in the coordinator's menu, the coordinator gets it by itself as soon as every chat of the round is done.
 
 5. Once the work is brought together, the check found it green and no push has carried it yet, {t:workspace.push} stands below the coordinator's row instead; when the coordinator has already closed the round, the button stands below its row in the project's list of chats. Press it. The coordinator then pushes the work; a release to production still needs your explicit word in the chat.
+
+### Moving to another round
+
+1. On the {t:rail.projects} page drag a chat with the mouse onto a round of the same project and let it go. A frame around the round shows that it takes the chat. {t:workspace.moveUnder} in the chat's menu does the same, on a phone too.
+2. The chat joins the round. If it was in another round, that round's coordinator is told the chat is no longer its own.
+3. The chat and its new coordinator are told of the move as soon as they can read it: once they finish the step they are working on and do not wait for your answer. The chat tells the coordinator its steps and area, and the coordinator leads it like the others and includes it in {t:workspace.consolidate}.
+
+A coordinator dragged onto another round brings its whole round along: its chats and the coordinator itself become chats of that round, and its round leaves the page. It hands the state of its round to the new coordinator in a message. No round takes a chat of another project, and nothing moves into or out of a round already sent {t:workspace.consolidate} or {t:workspace.push} until it has carried it out.
 
 ### Restarting the workspace
 

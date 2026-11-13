@@ -43,6 +43,8 @@ Isti {t:workspace.yes} i {t:workspace.no} stoje i u razgovoru kad je odabran raz
 2. Odaberite što treba:
    - {t:workspace.openChat} otvara razgovor u uređivaču. Onemogućeno je dok agent radi ili čeka vas.
    - {t:tree.rename} daje razgovoru novo ime, do 100 znakova; isto ime vidi se u uređivaču i u popisu sesija.
+   - {t:workspace.moveUnder} premješta razgovor pod koordinatora drugog kruga istog projekta.
+   - {t:workspace.auto}, u izborniku koordinatora, uključuje i isključuje da koordinator sam spoji posao kruga.
    - {t:workspace.close} zaustavlja razgovor u radu, u radnom prostoru i u uređivaču; razgovor ostaje na popisu i nastavlja se porukom ili u uređivaču.
    - {t:workspace.archive} uklanja razgovor s popisa projekta; ako je u radu, najprije se zatvara, kao kod {t:workspace.close}. Uređivač koji pri ponovnom učitavanju vrati karticu arhiviranog razgovora odmah je zatvara. Razgovor koji poslije sami otvorite i ostavite otvorenim dulje od dvije minute vraća se na popis.
 
@@ -55,12 +57,20 @@ Isti {t:workspace.yes} i {t:workspace.no} stoje i u razgovoru kad je odabran raz
 
 ### Krug razgovora
 
-1. Na stranici {t:rail.projects} pronađite krug ispod njegova projekta. Krug počinje retkom s vremenom otvaranja i kvačicom {t:workspace.auto}. Ispod njega stoji {t:workspace.coordinator}, razgovor koji je krug otvorio, a ispod koordinatora, uvučeni, razgovori kruga.
+1. Na stranici {t:rail.projects} pronađite krug ispod njegova projekta. Krug počinje retkom {t:workspace.coordinator}, razgovorom koji je krug otvorio i nosi njegovo ime, a ispod koordinatora, uvučeni, stoje razgovori kruga.
 2. Ako razgovori još nisu krenuli, pritisnite {t:workspace.start}. Radni prostor pokreće svaki razgovor kruga sa zadatkom koji mu je upisan.
 3. Pritisnite razgovor kruga da ga pročitate u razgovoru na stranici. {t:workspace.openChat} ga otvara u uređivaču.
-4. Kad su svi razgovori kruga gotovi, a koordinator miruje, ispod retka koordinatora pojavi se {t:workspace.consolidate}; pritisnite ga. Koordinator tada spaja posao kruga. Ako je uključeno {t:workspace.auto}, koordinator to dobije sam čim su svi razgovori kruga gotovi.
+4. Kad su svi razgovori kruga gotovi, a koordinator miruje, ispod retka koordinatora pojavi se {t:workspace.consolidate}; pritisnite ga. Koordinator tada spaja posao kruga. Ako je u izborniku koordinatora uključeno {t:workspace.auto}, koordinator to dobije sam čim su svi razgovori kruga gotovi.
 
 5. Kad je posao spojen, provjera ga je našla zelenim, a push ga još nije odnio, ispod retka koordinatora umjesto toga stoji {t:workspace.push}; ako je koordinator krug već zatvorio, gumb stoji ispod njegova retka u popisu razgovora projekta. Pritisnite ga. Koordinator tada pusha posao; izdanje na produkciju i dalje traži vašu izričitu riječ u razgovoru.
+
+### Premještanje u drugi krug
+
+1. Na stranici {t:rail.projects} mišem povucite razgovor na krug istog projekta i pustite ga. Okvir oko kruga pokazuje da ga prima. Isto radi {t:workspace.moveUnder} u izborniku razgovora, i na telefonu.
+2. Razgovor ulazi u krug. Ako je bio u drugom krugu, njegov koordinator dobije poruku da razgovor više nije njegov.
+3. Razgovor i novi koordinator dobiju poruku o premještanju čim ih mogu pročitati: kad završe korak na kojem rade i ne čekaju vaš odgovor. Razgovor javi koordinatoru svoje korake i područje, a koordinator ga vodi kao ostale i uključuje u {t:workspace.consolidate}.
+
+Koordinator povučen na drugi krug donosi cijeli svoj krug: njegovi razgovori i on sam postaju razgovori tog kruga, a njegov krug nestaje sa stranice. On novom koordinatoru porukom preda stanje svog kruga. Razgovor drugog projekta nijedan krug ne prima, a krugu kojem je naredba {t:workspace.consolidate} ili {t:workspace.push} već poslana ništa se ne premješta dok je ne izvrši.
 
 ### Restart radnog prostora
 

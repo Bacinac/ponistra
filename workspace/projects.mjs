@@ -100,7 +100,7 @@ const STATES = { busy: 'working', waiting: 'waiting', idle: 'idle' };
 const ASKED = { consolidate: 'objedini', push: 'pushaj' };
 // What goes into a chat's process, which waits while the chat works in the editor.
 const CARRIED = new Set(['say', 'rename', 'model', ...Object.keys(ASKED)]);
-const KINDS = new Set([...CARRIED, 'chat', 'answer', 'open', 'close', 'archive', 'start', 'auto', 'restart', 'stop']);
+const KINDS = new Set([...CARRIED, 'chat', 'answer', 'open', 'close', 'archive', 'start', 'auto', 'restart', 'stop', 'move']);
 const COMMAND = /^(\d{1,18})\.json$/;
 // A command for a chat that works in the editor all this long fails.
 const UNTAKEN = 60 * 60 * 1000;
@@ -449,10 +449,11 @@ const labelOf = (transcript) => {
   return title ? tabLabel(title) : null;
 };
 
-// Each chat of a round, closed rounds' included, by its coordinator.
+// Each chat of a round, closed rounds' included, by its coordinator; a chat moved on from a closed
+// round is shown under the round it is in now.
 const coordinators = () => {
   const found = new Map();
-  for (const { round } of roundFiles()) {
+  for (const { round } of roundFiles().sort((one, other) => Boolean(other.round.closed) - Boolean(one.round.closed))) {
     if (typeof round.coordinator !== 'string') continue;
     for (const chat of round.chats) if (chat?.sessionId) found.set(chat.sessionId, round.coordinator);
   }
@@ -744,11 +745,12 @@ const endedAway = () => {
 };
 
 // The coordinator of a closed round ends once it is idle, as it goes on to push, release and restart
-// after closing it; one leading a round still open stays, and one ended starts again with a message.
+// after closing it; one leading or working in a round still open stays, and one ended starts again with a message.
 const left = () => {
   const rounds = roundFiles();
   const live = running();
-  const leading = new Set(rounds.filter(({ round }) => !round.closed).map(({ round }) => round.coordinator));
+  const open = rounds.filter(({ round }) => !round.closed).map(({ round }) => round);
+  const leading = new Set(open.flatMap((round) => [round.coordinator, ...round.chats.map((chat) => chat?.sessionId)]));
   const now = new Date().toISOString();
   for (const { file, round } of rounds) {
     if (!round.closed || round.left) continue;
@@ -859,6 +861,105 @@ const openRound = (id) => {
   return found;
 };
 
+const RULES = '`~/.claude/skills/nastavi/SKILL.md`, odjeljak „3. Zadatak svakog chata”';
+
+const leaderOf = (round) => `sesija \`coordinator\` iz \`~/.claude/ponistra-rounds/${round}.json\``;
+
+const titleIn = (folder, id) => {
+  const transcript = transcriptOf(folder, id);
+  return (existsSync(transcript) && titleOf(tailOf(transcript, statSync(transcript).size))) || id;
+};
+
+// A chat dropped on a round's coordinator joins that round; the coordinator of another round
+// brings its whole round along and stays in it as one of its chats. What each of them is told
+// waits in the round it joined until that chat can read it.
+const moved = (session, target, live) => {
+  const { file, round } = openRound(target);
+  if (folderOf(session, live) !== round.folder) throw new Refusal(409, 'other_project');
+  if (round.coordinator === session || round.chats.some((chat) => chat?.sessionId === session))
+    throw new Refusal(409, 'same_round');
+  const pending = deferred();
+  if (wordOf(target, pending)) throw new Refusal(409, 'asked');
+  const open = roundFiles().filter((each) => !each.round.closed && each.id !== target);
+  const led = open.find((each) => each.round.coordinator === session);
+  const from = open.find((each) => each.round.chats.some((chat) => chat?.sessionId === session));
+  const told = [...(round.tell ?? [])];
+  const said = (to, text) => SESSION.test(to ?? '') && told.push({ session: to, text });
+  const name = titleIn(round.folder, session);
+  let chats = round.chats;
+  if (led) {
+    if (wordOf(led.id, pending)) throw new Refusal(409, 'asked');
+    const brought = led.round.chats.map((chat) =>
+      chat?.sessionId || typeof chat?.prompt !== 'string'
+        ? chat
+        : { ...chat, prompt: chat.prompt.replaceAll(led.id, target) },
+    );
+    chats = [...chats, { prompt: null, sessionId: session }, ...brought];
+    rmSync(led.file, { force: true });
+    const members = brought.map((chat) => chat?.sessionId).filter((id) => SESSION.test(id ?? ''));
+    said(
+      session,
+      `Tvoj krug \`${led.id}\` spojen je u krug \`${target}\`. Više ne koordiniraš ni ne objedinjuješ: od sada si chat kruga \`${target}\` po pravilima iz ${RULES}, s oznakom \`${target}\`, a koordinator ti je ${leaderOf(target)}. Jednom porukom mu predaj stanje: svoje korake i područje, i za svaki chat kruga \`${led.id}\` korake, područje i što čeka. Ispravi \`round\` na \`${target}\` u retku \`sessions/\` za sebe i za chatove kruga \`${led.id}\` na ploči plana.`,
+    );
+    for (const id of members)
+      said(
+        id,
+        `Krug \`${led.id}\` spojen je u krug \`${target}\`. Koordinator ti je od sada ${leaderOf(target)}; ime mu čitaš istom naredbom iz zadatka, s oznakom \`${target}\`. Sve ostalo vrijedi kao dosad.`,
+      );
+    said(
+      round.coordinator,
+      `U tvoj krug \`${target}\` spojen je krug \`${led.id}\` („${name}”): njegovi chatovi i njegov dosadašnji koordinator (sesija \`${session}\`) od sada su tvoji, kao chatovi kruga. On će ti porukom predati stanje. Pazi da im se područja ne sudaraju s područjima tvojih chatova i uključi ih u \`objedini\`.`,
+    );
+  } else {
+    chats = [...chats, { prompt: null, sessionId: session }];
+    if (from) {
+      writeJson(from.file, {
+        ...from.round,
+        chats: from.round.chats.filter((chat) => chat?.sessionId !== session),
+      });
+      said(
+        from.round.coordinator,
+        `Chat „${name}” (sesija \`${session}\`) premješten je u krug \`${target}\`. Više nije tvoj: ne koordiniraš ga i ne uključuješ ga u \`objedini\` ovog kruga.`,
+      );
+    }
+    said(
+      session,
+      `Premješten si u krug \`${target}\`. Od sada radiš kao chat tog kruga po pravilima iz ${RULES}, s oznakom \`${target}\`; koordinator ti je ${leaderOf(target)}. Tvoji koraci i područje ostaju ono na čemu si dosad radio. Upiši ili ispravi \`sessions/<svoje ime iz ListAgents>\` na ploči plana s \`round: ${target}\`, pa koordinatoru porukom javi koje korake i područje držiš i što si dosad promijenio.`,
+    );
+    said(
+      round.coordinator,
+      `U tvoj krug \`${target}\` premješten je chat „${name}” (sesija \`${session}\`)${from ? ` iz kruga \`${from.id}\`` : ''}. Od sada ga koordiniraš kao ostale: javit će ti svoje korake i područje. Pazi da se ne sudara s područjima drugih chatova kruga i uključi ga u \`objedini\`.`,
+    );
+  }
+  writeJson(file, { ...round, chats, tell: told });
+  return round.folder;
+};
+
+// What a round's chats were told when one joined it, given once the chat can take it: one chat at
+// a time, as two takeovers of it would start it twice, and never while it waits on a question, as
+// what it is told then would answer it.
+const telling = new Set();
+
+const toldOf = () => {
+  for (const { id, round } of roundFiles()) {
+    if (round.closed || !Array.isArray(round.tell)) continue;
+    for (const session of new Set(round.tell.map((each) => each.session))) {
+      if (telling.has(session)) continue;
+      telling.add(session);
+      takenOver(session, round.folder)
+        .then((chat) => {
+          if (!chat || chat.asked) return;
+          const now = roundAt(id);
+          const texts = (now.round.tell ?? []).filter((each) => each.session === session);
+          for (const { text } of texts) chat.said(text, []);
+          writeJson(now.file, { ...now.round, tell: now.round.tell.filter((each) => each.session !== session) });
+        })
+        .catch((error) => console.error(`a chat of ${id} was not told it joined`, error))
+        .finally(() => telling.delete(session));
+    }
+  }
+};
+
 const sessionGiven = (session) => {
   if (typeof session !== 'string' || !SESSION.test(session)) throw new Refusal(400, 'invalid_session');
   return session;
@@ -967,6 +1068,9 @@ const ordered = async (given) => {
     const session = sessionGiven(given.session);
     interrupt(session);
     command = { ...command, folder: live.get(session)?.cwd ?? null, session, state: 'done' };
+  } else if (kind === 'move') {
+    const session = sessionGiven(given.session);
+    command = { ...command, folder: moved(session, given.round, live), round: given.round, session, state: 'done' };
   } else if (kind === 'open' || kind === 'close' || kind === 'archive') {
     const session = sessionGiven(given.session);
     const folder = folderOf(session, live);
@@ -1162,6 +1266,7 @@ const tell = async () => {
     swept();
     led();
     culled();
+    toldOf();
     for (const command of deferred()) void carry(command);
     const live = running();
     for (const stream of streams) sent(stream);

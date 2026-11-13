@@ -65,8 +65,9 @@ BY_SESSION = {
     Kind.CLOSE,
     Kind.ARCHIVE,
     Kind.STOP,
+    Kind.MOVE,
 }
-BY_ROUND = {Kind.START, Kind.CONSOLIDATE, Kind.PUSH, Kind.AUTO}
+BY_ROUND = {Kind.START, Kind.CONSOLIDATE, Kind.PUSH, Kind.AUTO, Kind.MOVE}
 ANSWERS = {"yes", "no"}
 SWITCHES = {"on", "off"}
 # What a chat's model reads as a picture, each small enough to reach it whole.

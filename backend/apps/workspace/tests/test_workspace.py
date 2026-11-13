@@ -213,6 +213,10 @@ def test_the_owner_reads_a_chat_through_the_workspace(owner, workspace):
         ({"kind": "answer", "session": SESSION, "text": "no"}, {"session": SESSION, "text": "no"}),
         ({"kind": "archive", "session": SESSION}, {"session": SESSION}),
         ({"kind": "stop", "session": SESSION}, {"session": SESSION}),
+        (
+            {"kind": "move", "session": SESSION, "round": ROUND},
+            {"session": SESSION, "round": ROUND},
+        ),
         ({"kind": "close", "session": SESSION}, {"session": SESSION}),
         ({"kind": "open", "session": SESSION}, {"session": SESSION}),
         (
@@ -290,6 +294,8 @@ def test_a_message_carries_no_file_but_an_image_of_its_own(owner, workspace):
         ({"kind": "auto", "round": ROUND, "text": "sometimes"}, "invalid_text"),
         ({"kind": "model", "session": SESSION, "text": "Opus 5.5"}, "invalid_model"),
         ({"kind": "model", "text": "opus"}, "invalid_session"),
+        ({"kind": "move", "session": SESSION}, "invalid_round"),
+        ({"kind": "move", "round": ROUND}, "invalid_session"),
         ({"kind": "chat", "folder": "work", "text": "nastavi"}, "invalid_folder"),
         ({"kind": "say", "session": SESSION, "text": "x", "images": "a"}, "invalid_images"),
         ({"kind": "say", "session": SESSION, "text": "x", "images": ["0" * 64]}, "invalid_images"),

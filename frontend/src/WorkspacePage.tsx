@@ -12,6 +12,7 @@ import {
   ImagePlus,
   Pencil,
   FileDiff,
+  FolderInput,
   GitMerge,
   MessageSquarePlus,
   Monitor,
@@ -52,7 +53,7 @@ import { useI18n } from './i18n';
 import { Memory, useMemoryWaiting } from './memory';
 import { type Host, Limits, Machine, type Usage } from './workspaceLimits';
 import type { MessageKey } from './i18n/hr';
-import { ContextMenuArea, Menu, MenuChoices, MenuItem } from './menu';
+import { ContextMenuArea, Menu, MenuChoices, MenuItem, MenuSub } from './menu';
 import { useMenuPress } from './press';
 import { button, field, iconButton, primaryButton } from './styles';
 import { codeText, errorMessage, Failure } from './tree';
@@ -191,7 +192,8 @@ type Kind =
   | 'open'
   | 'archive'
   | 'restart'
-  | 'stop';
+  | 'stop'
+  | 'move';
 
 type Progress = 'sent' | 'taken' | 'done' | 'failed';
 
@@ -711,21 +713,41 @@ function Offer({
   );
 }
 
-/** A chat's line; its menu opens, renames, closes or archives the chat. */
+/** The project whose chats the list shows, and its rounds, which a chat may be moved into. */
+interface Moves {
+  folder: string;
+  rounds: Round[];
+}
+
+const Moving = createContext<Moves | null>(null);
+
+/** The chat being dragged, which a round's drop target reads before the drop shows it. */
+let carried: { session: string; folder: string } | null = null;
+
+function joins(round: Round, session: string): boolean {
+  return round.coordinator.id !== session && !round.chats.some((chat) => chat.id === session);
+}
+
+/** A chat's line; its menu opens, renames, moves under a round's coordinator, closes or archives
+    the chat, and a mouse drags it onto a coordinator. */
 function ChatRow({
   session,
   title,
   state,
+  menu,
   children,
 }: {
   session: string;
   title: string;
   state: State;
+  menu?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useI18n();
   const press = useMenuPress();
   const opened = useContext(Opening);
+  const moves = useContext(Moving);
+  const targets = moves?.rounds.filter((round) => joins(round, session)) ?? [];
   const archived = useCommand();
   const commands = useCommands();
   const [renaming, setRenaming] = useState(false);
@@ -745,6 +767,19 @@ function ChatRow({
               onSelect={() => opened(session)}
             />
             <MenuItem icon={Pencil} label={t('tree.rename')} onSelect={() => setRenaming(true)} />
+            {targets.length > 0 && (
+              <MenuSub icon={FolderInput} label={t('workspace.moveUnder')}>
+                {targets.map((round) => (
+                  <MenuItem
+                    key={round.id}
+                    icon={UsersRound}
+                    label={round.coordinator.title}
+                    onSelect={() => archived.mutate({ kind: 'move', session, round: round.id })}
+                  />
+                ))}
+              </MenuSub>
+            )}
+            {menu}
             {state !== 'closed' && (
               <MenuItem
                 icon={X}
@@ -760,7 +795,21 @@ function ChatRow({
           </>
         }
       >
-        <div {...press}>{children}</div>
+        <div
+          {...press}
+          draggable={Boolean(moves?.rounds.length) && matchMedia('(pointer: fine)').matches}
+          onDragStart={(event) => {
+            if (!moves) return;
+            carried = { session, folder: moves.folder };
+            event.dataTransfer.setData('text/plain', title);
+            event.dataTransfer.effectAllowed = 'move';
+          }}
+          onDragEnd={() => {
+            carried = null;
+          }}
+        >
+          {children}
+        </div>
       </ContextMenuArea>
       {archived.isError && (
         <p className="px-2 text-sm text-danger">{errorMessage(archived.error, t)}</p>
@@ -786,11 +835,13 @@ function MemberLine({
   coordinator,
   chosen,
   onChoose,
+  menu,
 }: {
   member: Member;
   coordinator: boolean;
   chosen: boolean;
   onChoose: Choose;
+  menu?: ReactNode;
 }) {
   const { t } = useI18n();
   const state = STATES[member.state];
@@ -824,7 +875,7 @@ function MemberLine({
     );
   }
   return (
-    <ChatRow session={id} title={member.title} state={member.state}>
+    <ChatRow session={id} title={member.title} state={member.state} menu={menu}>
       <button
         type="button"
         aria-current={chosen || undefined}
@@ -848,13 +899,17 @@ function RoundCard({
   chosen: string | null;
   onChoose: Choose;
 }) {
-  const { t, formatDay, formatTime } = useI18n();
+  const { t } = useI18n();
   const command = useCommand();
   const commands = useCommands();
-  const created = round.created ? new Date(round.created) : null;
-  const title = created
-    ? t('workspace.round').replace('{when}', `${formatDay(created)} ${formatTime(created)}`)
-    : round.id;
+  const moves = useContext(Moving);
+  const [over, setOver] = useState(false);
+  const accepts = () =>
+    carried !== null && carried.folder === moves?.folder && joins(round, carried.session);
+  const title = t('workspace.round').replace('{name}', round.coordinator.title);
+  const failed = commands.data?.commands.find(
+    (each) => each.id === command.data?.id && each.state === 'failed',
+  );
   const unsent = round.chats.some((chat) => !chat.id);
   const asking = command.isPending || Boolean(round.asked);
   const asked = (kind: Kind, text?: string) =>
@@ -885,6 +940,17 @@ function RoundCard({
         coordinator={index === 0}
         chosen={member.id !== null && member.id === chosen}
         onChoose={onChoose}
+        menu={
+          index === 0 && (
+            <MenuItem
+              icon={GitMerge}
+              label={t('workspace.auto')}
+              checked={round.auto}
+              disabled={command.isPending}
+              onSelect={() => asked('auto', round.auto ? 'off' : 'on')}
+            />
+          )
+        }
       />
       {index === 0 && offer && (
         <Offer kind={offer} disabled={asking} onPress={() => asked(offer)} />
@@ -892,19 +958,26 @@ function RoundCard({
     </li>
   ));
   return (
-    <section aria-label={title} className="mt-2">
-      <div className="flex min-w-0 flex-wrap items-center gap-1 px-2">
-        <h3 className="min-w-0 flex-1 truncate text-[11px] text-muted">{title}</h3>
-        <label className={small}>
-          <input
-            type="checkbox"
-            checked={round.auto}
-            disabled={command.isPending}
-            onChange={(event) => asked('auto', event.target.checked ? 'on' : 'off')}
-          />
-          {t('workspace.auto')}
-        </label>
-      </div>
+    <section
+      aria-label={title}
+      onDragOver={(event) => {
+        if (!accepts()) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        setOver(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(false);
+      }}
+      onDrop={(event) => {
+        setOver(false);
+        if (!accepts()) return;
+        event.preventDefault();
+        command.mutate({ kind: 'move', session: carried!.session, round: round.id });
+        carried = null;
+      }}
+      className={`mt-2 rounded ${over ? 'outline-2 -outline-offset-2 outline-focus' : ''}`}
+    >
       {!round.started && unsent && (
         <div className="mx-2 mt-1 flex flex-wrap items-center gap-2 rounded-lg border border-accent bg-selected px-3 py-2">
           <span className="min-w-0 flex-1 text-sm font-semibold">
@@ -928,6 +1001,9 @@ function RoundCard({
       )}
       {command.isError && (
         <p className="mt-1 px-2 text-sm text-danger">{errorMessage(command.error, t)}</p>
+      )}
+      {failed?.error && (
+        <p className="mt-1 px-2 text-sm text-danger">{codeText(failed.error, t)}</p>
       )}
       <ul className="mt-0.5 flex flex-col gap-0.5">
         {first}
@@ -1214,37 +1290,45 @@ function ProjectSection({
       </ContextMenuArea>
       {moved.isError && <p className="px-2 text-sm text-danger">{errorMessage(moved.error, t)}</p>}
       <StatusLine project={project} />
-      {project.rounds.map((round) => (
-        <RoundCard key={round.id} round={round} green={green} chosen={chosen} onChoose={onChoose} />
-      ))}
-      <ul className="mt-1 flex flex-col gap-0.5">
-        {ledBy(chats).map(({ chat, led }) => (
-          <li key={chat.id}>
-            <ChatLine chat={chat} chosen={chosen} onChoose={onChoose} />
-            {chat.id === pushing && (
-              <>
-                <Offer
-                  kind="push"
-                  disabled={pushed.isPending}
-                  onPress={() => pushed.mutate({ kind: 'push', session: chat.id })}
-                />
-                {pushed.isError && (
-                  <p className="px-2 text-sm text-danger">{errorMessage(pushed.error, t)}</p>
-                )}
-              </>
-            )}
-            {led.length > 0 && (
-              <ul className="ml-4 flex flex-col gap-0.5 border-l border-line pl-1">
-                {led.map((each) => (
-                  <li key={each.id}>
-                    <ChatLine chat={each} chosen={chosen} onChoose={onChoose} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </li>
+      <Moving value={{ folder: project.path, rounds: project.rounds }}>
+        {project.rounds.map((round) => (
+          <RoundCard
+            key={round.id}
+            round={round}
+            green={green}
+            chosen={chosen}
+            onChoose={onChoose}
+          />
         ))}
-      </ul>
+        <ul className="mt-1 flex flex-col gap-0.5">
+          {ledBy(chats).map(({ chat, led }) => (
+            <li key={chat.id}>
+              <ChatLine chat={chat} chosen={chosen} onChoose={onChoose} />
+              {chat.id === pushing && (
+                <>
+                  <Offer
+                    kind="push"
+                    disabled={pushed.isPending}
+                    onPress={() => pushed.mutate({ kind: 'push', session: chat.id })}
+                  />
+                  {pushed.isError && (
+                    <p className="px-2 text-sm text-danger">{errorMessage(pushed.error, t)}</p>
+                  )}
+                </>
+              )}
+              {led.length > 0 && (
+                <ul className="ml-4 flex flex-col gap-0.5 border-l border-line pl-1">
+                  {led.map((each) => (
+                    <li key={each.id}>
+                      <ChatLine chat={each} chosen={chosen} onChoose={onChoose} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </Moving>
     </section>
   );
 }

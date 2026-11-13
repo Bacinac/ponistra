@@ -370,7 +370,11 @@ test('a round shows what each of its chats is doing and is started from here', a
   expect(within(round).queryByRole('button', { name: 'Objedini' })).toBeNull();
   expect(within(round).queryByRole('button', { name: 'Pushaj' })).toBeNull();
   await user.click(within(round).getByRole('button', { name: 'Pokreni krug' }));
-  await user.click(within(round).getByRole('checkbox', { name: 'Objedini sam' }));
+  expect(within(round).queryByRole('checkbox')).toBeNull();
+  fireEvent.contextMenu(row(/Plan kruga/));
+  const auto = await screen.findByRole('menuitemcheckbox', { name: 'Objedini sam' });
+  expect(auto.getAttribute('aria-checked')).toBe('true');
+  await user.click(auto);
   const id = ROUND.id;
   await waitFor(() =>
     expect(asked).toEqual([
@@ -378,6 +382,108 @@ test('a round shows what each of its chats is doing and is started from here', a
       { kind: 'auto', round: id, text: 'off' },
     ]),
   );
+});
+
+const OTHER_ROUND = {
+  ...ROUND,
+  id: 'alpha-20261111-1500',
+  coordinator: { ...ROUND.coordinator, id: 'other', name: 'alpha-77', title: 'Uvoz tablica' },
+  chats: [],
+};
+
+test('a chat is moved under a coordinator of its project from its menu', async () => {
+  const asked: Asked[] = [];
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: [{ ...PROJECTS.projects[1], rounds: [ROUND, OTHER_ROUND] }],
+    }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const alpha = await screen.findByRole('region', { name: 'Alpha' });
+  fireEvent.contextMenu(within(alpha).getByRole('button', { name: /Nova tablica/ }));
+  (await screen.findByRole('menuitem', { name: 'Premjesti pod' })).focus();
+  await user.keyboard('{ArrowRight}');
+  (await screen.findByRole('menuitem', { name: 'Uvoz tablica' })).focus();
+  await user.keyboard('{Enter}');
+  await waitFor(() =>
+    expect(asked).toEqual([{ kind: 'move', session: 'busy', round: OTHER_ROUND.id }]),
+  );
+  const lead = screen.getByRole('region', { name: 'Krug Plan kruga' });
+  fireEvent.contextMenu(within(lead).getByRole('button', { name: /Kod → Krugovi/ }));
+  (await screen.findByRole('menuitem', { name: 'Premjesti pod' })).focus();
+  await user.keyboard('{ArrowRight}');
+  await screen.findByRole('menuitem', { name: 'Uvoz tablica' });
+  expect(screen.queryByRole('menuitem', { name: 'Plan kruga' })).toBeNull();
+});
+
+test('a coordinator dropped on another brings its round along, a chat of another project is not taken', async () => {
+  const asked: Asked[] = [];
+  const beta = {
+    ...PROJECTS.projects[1],
+    name: 'beta',
+    path: '/work/beta',
+    plan: null,
+    chats: [{ ...CHAT, id: 'far', title: 'Drugi projekt', at: '2026-11-08T09:00:00Z', open: true }],
+    rounds: [],
+  };
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: [{ ...PROJECTS.projects[1], rounds: [ROUND, OTHER_ROUND] }, beta],
+    }),
+  });
+  open('/workspace', OWNER);
+  const target = await screen.findByRole('region', { name: 'Krug Uvoz tablica' });
+  const source = screen.getByRole('region', { name: 'Krug Plan kruga' });
+  const lead = within(source).getByRole('button', { name: /Plan kruga/ }).parentElement!;
+  const dataTransfer = {
+    types: ['text/plain'],
+    setData: () => undefined,
+    effectAllowed: '',
+    dropEffect: '',
+  };
+  fireEvent.dragStart(lead, { dataTransfer });
+  expect(fireEvent.dragOver(source, { dataTransfer })).toBe(true);
+  expect(fireEvent.dragOver(target, { dataTransfer })).toBe(false);
+  fireEvent.drop(target, { dataTransfer });
+  await waitFor(() =>
+    expect(asked).toEqual([{ kind: 'move', session: 'lead', round: OTHER_ROUND.id }]),
+  );
+  const far = screen.getByRole('button', { name: /Drugi projekt/ }).parentElement!;
+  fireEvent.dragStart(far, { dataTransfer });
+  expect(fireEvent.dragOver(target, { dataTransfer })).toBe(true);
+  fireEvent.dragEnd(far);
+});
+
+test('a move the workspace refuses says why under the round it was dropped on', async () => {
+  const asked: Asked[] = [];
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: [{ ...PROJECTS.projects[1], rounds: [ROUND, OTHER_ROUND] }],
+    }),
+    'GET /api/workspace/commands': () => ({
+      commands: asked.map((given, at) => ({
+        ...COMMAND,
+        ...given,
+        id: at + 1,
+        state: 'failed',
+        error: 'asked',
+      })),
+    }),
+  });
+  open('/workspace', OWNER);
+  const target = await screen.findByRole('region', { name: 'Krug Uvoz tablica' });
+  const chat = screen.getByRole('button', { name: /Nova tablica/ }).parentElement!;
+  const dataTransfer = { types: ['text/plain'], setData: () => undefined, effectAllowed: '' };
+  fireEvent.dragStart(chat, { dataTransfer });
+  fireEvent.dragOver(target, { dataTransfer });
+  fireEvent.drop(target, { dataTransfer });
+  await within(target).findByText('Koordinatoru je naredba već poslana.');
 });
 
 const FINISHED_ROUND = {
