@@ -7,7 +7,7 @@ import { useSession } from './auth';
 import { CALENDAR, RESOURCE_KINDS, type Resource } from './calendarData';
 import { Cancel, ConfirmDialog, Modal, Picker } from './dialogs';
 import { Loaded, PrimaryAction } from './frame';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
 import { field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
@@ -124,7 +124,7 @@ function Inventory({ resources }: { resources: Resource[] }) {
   const close = () => setDialog(null);
   const cell = 'px-2 py-2 whitespace-nowrap';
   return (
-    <SettingsFrame
+    <AdminFrame
       title={t('resources.title')}
       primary={
         <PrimaryAction
@@ -206,7 +206,7 @@ function Inventory({ resources }: { resources: Resource[] }) {
           <strong>{dialog.resource.name}</strong> {t('resources.deleteWarning')}
         </ConfirmDialog>
       )}
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

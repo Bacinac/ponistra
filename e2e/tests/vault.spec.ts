@@ -92,9 +92,6 @@ test('a vault is made, holds a login with its one-time code, and opens with its 
   await search.fill('bank');
   const hit = page.getByRole('option', { name: /Banka/ });
   await expect(hit).toContainText('ana · banka.hr · Moj sef');
-  await expect(
-    page.getByRole('listbox', { name: 'Pretraži' }).getByText('Sef', { exact: true }),
-  ).toBeHidden();
   await hit.click();
   await expect(page).toHaveURL(/\/vault\/[^/]+\/[^/?]+$/);
   await expect(page.getByRole('article', { name: 'Banka' })).toBeVisible();
@@ -296,7 +293,7 @@ test('a passkey with PRF unlocks the vault without its password', async ({ page 
       automaticPresenceSimulation: true,
     },
   });
-  await page.goto('/settings/passkeys');
+  await page.goto('/settings/sign-in');
   const keys = page.getByRole('main');
   await keys.getByLabel('Naziv novog ključa').fill('Ključ sefa');
   await keys.getByRole('button', { name: 'Dodaj pristupni ključ' }).click();

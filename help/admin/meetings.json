@@ -12,7 +12,7 @@
   ],
   "describes": {
     "frontend/src/relay.tsx#RelayForm": "f000e0e46f00",
-    "frontend/src/relay.tsx#RelayPage": "7f07374ec926",
+    "frontend/src/relay.tsx#RelayPage": "56ecd8402c90",
     "backend/apps/meetings/views.py#relay_setting": "30654040706b",
     "backend/apps/meetings/relay.py#change": "cdd80a2be14d",
     "backend/apps/meetings/relay.py#servers": "12b41e40742c",

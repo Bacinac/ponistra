@@ -8,7 +8,7 @@ import { Cancel, Close, ConfirmDialog, Modal, Picker } from './dialogs';
 import { Loaded, Loading, Lobby, PrimaryAction } from './frame';
 import { useI18n } from './i18n';
 import { ActionsMenu, MenuItem } from './menu';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { field, primaryButton } from './styles';
 import { errorMessage } from './tree';
 import { CopyButton } from './vault/parts';
@@ -218,7 +218,7 @@ function Applications({ issuer, applications }: { issuer: string; applications: 
   const close = () => setDialog(null);
   const cell = 'px-2 py-2 whitespace-nowrap';
   return (
-    <SettingsFrame
+    <AdminFrame
       title={t('identity.title')}
       primary={
         <PrimaryAction
@@ -317,7 +317,7 @@ function Applications({ issuer, applications }: { issuer: string; applications: 
           <strong>{dialog.application.name}</strong> {t('identity.deleteWarning')}
         </ConfirmDialog>
       )}
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

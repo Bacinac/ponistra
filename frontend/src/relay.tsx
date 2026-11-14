@@ -5,7 +5,7 @@ import { getJson, patchJson } from './api';
 import { useSession } from './auth';
 import { Loaded } from './frame';
 import { useI18n } from './i18n';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { field, primaryButton } from './styles';
 import { errorMessage } from './tree';
 
@@ -132,10 +132,10 @@ export function RelayPage() {
   });
   if (!me?.is_admin) return <Navigate to="/" replace />;
   return (
-    <SettingsFrame title={t('relay.title')}>
+    <AdminFrame title={t('relay.title')}>
       <Loaded query={relay}>
         {(data) => <RelayForm key={data.changed_at ?? ''} relay={data} />}
       </Loaded>
-    </SettingsFrame>
+    </AdminFrame>
   );
 }

@@ -248,7 +248,7 @@ def test_each_kind_is_worded_in_the_browsers_language(ana):
     )
     assert notices.worded(passkey, "en", 0)["title"] == "A passkey was added"
     assert notices.worded(passkey, "en", 0)["body"] == "Laptop"
-    assert notices.worded(passkey, "en", 0)["url"] == "/settings/passkeys"
+    assert notices.worded(passkey, "en", 0)["url"] == "/settings/sign-in"
     long = Notice(
         user=ana,
         kind=Notice.Kind.RING,

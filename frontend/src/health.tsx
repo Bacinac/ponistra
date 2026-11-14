@@ -7,7 +7,7 @@ import { useSession } from './auth';
 import { Cancel, Close, ConfirmDialog, Labelled, Modal } from './dialogs';
 import { formatSize } from './explorer';
 import { Loaded } from './frame';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
 import { problemText } from './problems';
 import type { MessageKey } from './i18n/hr';
@@ -421,7 +421,7 @@ function Report({ health }: { health: Health }) {
   const size = (bytes: number) => formatSize(bytes, formatNumber);
   const { snapshots } = health;
   return (
-    <SettingsFrame title={t('health.title')}>
+    <AdminFrame title={t('health.title')}>
       <div className="flex w-full max-w-3xl flex-col gap-8">
         <p className="text-sm text-muted">
           {t('status.version')} {health.version}
@@ -512,7 +512,7 @@ function Report({ health }: { health: Health }) {
           />
         </Section>
       </div>
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

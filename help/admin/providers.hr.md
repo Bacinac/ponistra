@@ -4,7 +4,7 @@ Da bi se računi e-pošte kod Googlea i Microsofta prijavljivali preko pružatel
 
 ## Kako se koristi
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:providers.title}.
+1. Otvorite {t:admin.title} i odaberite {t:providers.title}.
 2. Pod {t:providers.signIn}, za {t:providers.google} ili {t:providers.microsoft}, pritisnite {t:providers.copy} uz {t:providers.redirect}.
 3. Kod pružatelja izradite registraciju aplikacije s tom adresom za povratak, kako opisuje uputa ispod naziva pružatelja.
 4. Upišite {t:providers.clientId} i {t:providers.secret}, a za Microsoft i {t:providers.expires}.

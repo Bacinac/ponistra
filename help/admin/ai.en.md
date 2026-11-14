@@ -6,7 +6,7 @@ An administrator turns on Claude and speech to text for the whole installation, 
 
 ### Claude
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:ai.title}.
+1. Open {t:admin.title} and choose {t:ai.title}.
 2. Type the {t:ai.key} and tick {t:ai.enabled}.
 3. Press {t:ai.save}.
 

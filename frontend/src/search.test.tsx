@@ -36,6 +36,7 @@ test('settings, the theme and the language stand in the box as commands on every
     'GET /api/tasks': () => ({ tasks: [] }),
     'GET /api/calendar/days-off': () => ({ days_off: [] }),
     'GET /api/search': () => NOTHING,
+    'GET /api/passkeys': () => ({ passkeys: [] }),
     'PATCH /api/auth/preferences': async (request) => ({
       user: { id: 1, email: 'ja@example.com', name: 'Ja', ...(await request.json()) },
     }),
@@ -56,8 +57,8 @@ test('settings, the theme and the language stand in the box as commands on every
   await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'));
   await choose('kao sustav', 'Tema: Kao sustav');
   await waitFor(() => expect(document.documentElement.dataset.theme).toBeUndefined());
-  await choose('lozink', 'Postavke: Lozinka');
-  await waitFor(() => expect(router.state.location.pathname).toBe('/settings/password'));
+  await choose('prijav', 'Postavke: Prijava');
+  await waitFor(() => expect(router.state.location.pathname).toBe('/settings/sign-in'));
   await user.clear(search);
   await user.type(search, 'jezik');
   expect((await option('Jezik: Hrvatski')).getAttribute('aria-disabled')).toBe('true');

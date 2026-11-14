@@ -6,9 +6,9 @@
   ],
   "quiet": [],
   "describes": {
-    "frontend/src/settings.tsx#ACCOUNT": "8a8ade02e45c",
+    "frontend/src/settings.tsx#ACCOUNT": "ead091a35c82",
     "frontend/src/settings.tsx#INSTALLATION": "a29515589c55",
-    "frontend/src/settings.tsx#Side": "8efe7b687dd9",
+    "frontend/src/settings.tsx#Side": "52ba5e5bfc60",
     "frontend/src/settings.tsx#SettingsPage": "f5aeb2ec2d24"
   }
 }

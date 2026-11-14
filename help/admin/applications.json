@@ -15,7 +15,7 @@
     "frontend/src/identity.tsx#AuthorizePage": "2365531b1f3f",
     "frontend/src/identity.tsx#Secret": "d274485cce9e",
     "frontend/src/identity.tsx#ApplicationDialog": "493b8e14c4c6",
-    "frontend/src/identity.tsx#Applications": "af2717a82864",
+    "frontend/src/identity.tsx#Applications": "543525b2c1cb",
     "frontend/src/identity.tsx#ApplicationsPage": "4d8e7a3ed387",
     "backend/apps/identity/views.py#allowed": "ed028bd959ef",
     "backend/apps/identity/views.py#claims_of": "cf9a8f1ff58f",

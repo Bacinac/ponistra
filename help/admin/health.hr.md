@@ -4,7 +4,7 @@ Administrator na jednom mjestu vidi inačicu instalacije, probleme koje je Ponis
 
 ## Kako se koristi
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:health.title}.
+1. Otvorite {t:admin.title} i odaberite {t:health.title}.
 2. Ako na vrhu stoji {t:health.problems}, pročitajte što ne radi i od kada.
 3. Pod {t:health.services} pogledajte piše li uz svaku uslugu {t:health.answers} ili {t:health.silent}.
 4. Pod {t:health.snapshots} provjerite {t:health.snapshots.newest} i {t:health.snapshots.due}.

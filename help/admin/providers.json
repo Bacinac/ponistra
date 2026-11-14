@@ -16,7 +16,7 @@
   "describes": {
     "frontend/src/providers.tsx#ClientForm": "8ee77438366c",
     "frontend/src/providers.tsx#endsSoon": "83de0f47565a",
-    "frontend/src/providers.tsx#ProvidersPage": "ea14e512e865",
+    "frontend/src/providers.tsx#ProvidersPage": "5915e5fd5201",
     "backend/apps/mail/views.py#client": "a5c1d2125262"
   }
 }

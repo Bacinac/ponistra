@@ -9,7 +9,7 @@ import { Cancel, ConfirmDialog, Modal, Picker } from './dialogs';
 import { Loaded, PrimaryAction } from './frame';
 import { useI18n } from './i18n';
 import { MenuItem } from './menu';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
 import { useFilePicker } from './upload';
@@ -294,7 +294,7 @@ function Closures({ workdays }: { workdays: Workdays }) {
   const close = () => setDialog(null);
   const cell = 'px-2 py-2 whitespace-nowrap';
   return (
-    <SettingsFrame
+    <AdminFrame
       title={t('workdays.title')}
       primary={
         <PrimaryAction
@@ -374,7 +374,7 @@ function Closures({ workdays }: { workdays: Workdays }) {
           <strong>{dialog.closure.name}</strong> {t('workdays.deleteWarning')}
         </ConfirmDialog>
       )}
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

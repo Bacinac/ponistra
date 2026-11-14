@@ -4,7 +4,7 @@ An administrator keeps the list of rooms, equipment and vehicles that users book
 
 ## How to use it
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:resources.title}.
+1. Open {t:admin.title} and choose {t:resources.title}.
 2. Press {t:resources.new}.
 3. Type the {t:resources.name}, choose the {t:resources.kind} ({t:resources.kind.room}, {t:resources.kind.equipment}, {t:resources.kind.vehicle} or {t:resources.kind.other}) and if you like the {t:resources.capacity} and {t:resources.place}.
 4. Leave {t:resources.active} ticked and press {t:tree.create}.

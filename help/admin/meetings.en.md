@@ -6,7 +6,7 @@ An administrator sets the external TURN service through which a meeting's pictur
 
 ### Cloudflare
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:relay.title}.
+1. Open {t:admin.title} and choose {t:relay.title}.
 2. Under {t:relay.provider} choose Cloudflare.
 3. Enter the {t:relay.keyId} and the {t:relay.token} of a TURN key from Cloudflare's dashboard.
 4. Press {t:ai.save}.

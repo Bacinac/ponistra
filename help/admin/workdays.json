@@ -12,7 +12,7 @@
   ],
   "describes": {
     "frontend/src/workdays.tsx#Country": "4202c60e9244",
-    "frontend/src/workdays.tsx#Closures": "cc5cd151482a",
+    "frontend/src/workdays.tsx#Closures": "83f780a61ec2",
     "frontend/src/workdays.tsx#ClosureDialog": "fa9615ad0af4",
     "frontend/src/workdays.tsx#ImportDialog": "0015fdabd438",
     "frontend/src/workdays.tsx#WorkdaysPage": "b77d64f148d6",

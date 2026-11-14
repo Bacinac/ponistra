@@ -11,7 +11,7 @@
   "describes": {
     "frontend/src/resources.tsx#ResourcesPage": "6fa3312fa85f",
     "frontend/src/resources.tsx#ResourceDialog": "b69d6aa01283",
-    "frontend/src/resources.tsx#Inventory": "afe4de38dcb6",
+    "frontend/src/resources.tsx#Inventory": "305f200cfee9",
     "backend/apps/calendar/views.py#resources": "da51b91ed377",
     "backend/apps/calendar/views.py#resource": "c0c6d710c003"
   }

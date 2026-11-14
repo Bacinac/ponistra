@@ -5,10 +5,8 @@ import {
   Bot,
   CalendarOff,
   DoorOpen,
-  Fingerprint,
   HardDrive,
   HeartPulse,
-  KeyRound,
   KeySquare,
   Languages,
   LogIn,
@@ -17,7 +15,6 @@ import {
   MonitorSmartphone,
   ScrollText,
   Sparkles,
-  Timer,
   Users,
   Video,
   X,
@@ -47,7 +44,6 @@ const Notifications = lazily(() => import('./notifications'), 'Notifications');
 const Passkeys = lazily(() => import('./passkeys'), 'Passkeys');
 const PasswordForm = lazily(() => import('./auth'), 'PasswordForm');
 const SignInChoice = lazily(() => import('./auth'), 'SignInChoice');
-const TimeSettings = lazily(() => import('./workspaceHours'), 'TimeSettings');
 const ReadingLanguages = lazily(() => import('./translation'), 'ReadingLanguages');
 
 interface Entry {
@@ -56,29 +52,38 @@ interface Entry {
   title: MessageKey;
 }
 
+function SignIn() {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-col gap-8">
+      <SignInChoice />
+      <section aria-label={t('passkeys.title')} className="flex flex-col gap-3">
+        <h2 className="text-base font-semibold">{t('passkeys.title')}</h2>
+        <Passkeys />
+      </section>
+      <section aria-label={t('password.title')} className="flex flex-col gap-3">
+        <h2 className="text-base font-semibold">{t('password.title')}</h2>
+        <PasswordForm />
+      </section>
+    </div>
+  );
+}
+
 export const ACCOUNT: {
   heading: MessageKey;
-  owner?: boolean;
   entries: (Entry & { body: ComponentType })[];
 }[] = [
   {
-    heading: 'settings.signIn',
+    heading: 'settings.account',
     entries: [
-      { to: '/settings/sign-in', icon: LogIn, title: 'signIn.choice', body: SignInChoice },
-      { to: '/settings/password', icon: KeyRound, title: 'password.title', body: PasswordForm },
-      { to: '/settings/passkeys', icon: Fingerprint, title: 'passkeys.title', body: Passkeys },
+      { to: '/settings/sign-in', icon: LogIn, title: 'settings.signIn', body: SignIn },
+      { to: '/settings/devices', icon: MonitorSmartphone, title: 'devices.mine', body: Devices },
       {
         to: '/settings/app-passwords',
         icon: KeySquare,
         title: 'appPasswords.title',
         body: AppPasswords,
       },
-    ],
-  },
-  {
-    heading: 'settings.devices',
-    entries: [
-      { to: '/settings/devices', icon: MonitorSmartphone, title: 'devices.mine', body: Devices },
       {
         to: '/settings/notifications',
         icon: Bell,
@@ -97,12 +102,6 @@ export const ACCOUNT: {
     ],
   },
   {
-    heading: 'settings.leaving',
-    entries: [
-      { to: '/settings/google', icon: HardDrive, title: 'drive.title', body: DriveSettings },
-    ],
-  },
-  {
     heading: 'settings.ai',
     entries: [
       { to: '/settings/agents', icon: Bot, title: 'agents.title', body: Agents },
@@ -116,10 +115,9 @@ export const ACCOUNT: {
     ],
   },
   {
-    heading: 'settings.workspace',
-    owner: true,
+    heading: 'settings.documents',
     entries: [
-      { to: '/settings/hours', icon: Timer, title: 'workspace.view.hours', body: TimeSettings },
+      { to: '/settings/google', icon: HardDrive, title: 'drive.title', body: DriveSettings },
     ],
   },
 ];
@@ -156,56 +154,86 @@ function Group({ heading, entries }: { heading: string; entries: Entry[] }) {
 
 function Side() {
   const { t } = useI18n();
-  const session = useSession().data;
-  const admin = session?.user?.is_admin;
   return (
     <nav aria-label={t('settings.title')} className="flex flex-col gap-4">
-      {ACCOUNT.filter(({ owner }) => !owner || session?.user?.workspace).map(
-        ({ heading, entries }) => (
-          <Group key={heading} heading={t(heading)} entries={entries} />
-        ),
-      )}
-      {admin && <Group heading={t('settings.installation')} entries={INSTALLATION} />}
+      {ACCOUNT.map(({ heading, entries }) => (
+        <Group key={heading} heading={t(heading)} entries={entries} />
+      ))}
     </nav>
   );
 }
 
-/** The frame of every page of the settings: the user's own and the installation's. On a phone
-    the list of them is a page of its own, which each closes back to. */
-export function SettingsFrame({
-  title,
-  actions,
-  primary,
-  more,
-  children,
-}: {
+function AdminSide() {
+  const { t } = useI18n();
+  return (
+    <nav aria-label={t('admin.title')} className="flex flex-col gap-0.5">
+      {INSTALLATION.map(({ to, icon: Icon, title }) => (
+        <NavLink key={to} to={to} className={sideRow}>
+          <Icon size={16} aria-hidden className="shrink-0" />
+          <span className="truncate">{t(title)}</span>
+        </NavLink>
+      ))}
+    </nav>
+  );
+}
+
+interface FrameProps {
   title: string;
   actions?: ReactNode;
   primary?: ReactNode;
   more?: ReactNode;
   children: ReactNode;
-}) {
+}
+
+/** On a phone the list of pages is a page of its own, which each closes back to. */
+function PagesFrame({
+  home,
+  side,
+  title,
+  actions,
+  primary,
+  more,
+  children,
+}: FrameProps & { home: string; side: ReactNode }) {
   const { t } = useI18n();
   const wide = useWide();
   return (
     <Frame
       title={title}
       folders={false}
-      side={wide ? <Side /> : undefined}
+      side={wide ? side : undefined}
       actions={actions}
       primary={primary}
       more={more}
     >
       {!wide && (
-        <Link
-          to="/settings"
-          aria-label={t('frame.close')}
-          className={`${iconButton} mb-2 inline-flex`}
-        >
+        <Link to={home} aria-label={t('frame.close')} className={`${iconButton} mb-2 inline-flex`}>
           <X size={16} aria-hidden />
         </Link>
       )}
       {children}
+    </Frame>
+  );
+}
+
+export function SettingsFrame(props: FrameProps) {
+  return <PagesFrame home="/settings" side={<Side />} {...props} />;
+}
+
+/** The frame of every page of the installation's administration. */
+export function AdminFrame(props: FrameProps) {
+  return <PagesFrame home="/admin" side={<AdminSide />} {...props} />;
+}
+
+export function AdminPage() {
+  const { t } = useI18n();
+  const wide = useWide();
+  const admin = useSession().data?.user?.is_admin;
+  if (!admin) return <Navigate to="/settings" replace />;
+  if (wide) return <Navigate to={INSTALLATION[0].to} replace />;
+  return (
+    <Frame title={t('admin.title')} folders={false}>
+      <AdminSide />
     </Frame>
   );
 }

@@ -117,12 +117,10 @@ export function usePlaces(): Palette {
           ]
         : [];
       const settings = [
-        ...ACCOUNT.filter(({ owner: only }) => !only || owner).flatMap(({ entries }) =>
+        ...ACCOUNT.flatMap(({ entries }) =>
           entries.map((entry) => ({ entry, heading: t('settings.title') })),
         ),
-        ...(admin
-          ? INSTALLATION.map((entry) => ({ entry, heading: t('settings.installation') }))
-          : []),
+        ...(admin ? INSTALLATION.map((entry) => ({ entry, heading: t('admin.title') })) : []),
       ].map(({ entry, heading }): Choice => ({
         id: `place:${entry.to}`,
         label: `${heading}: ${t(entry.title)}`,

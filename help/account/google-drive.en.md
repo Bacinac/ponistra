@@ -7,7 +7,7 @@ Takes your Google Drive and the shared drives you see into Ponistra and follows 
 1. Connect your Google account to your mail through Google ([Mail accounts](help:mail/accounts)). If
    the account was connected before Ponistra asked to read Drive, press
    {t:mail.oauthAgain.google}.
-2. Open [Settings](/settings/google), then {t:drive.title} under {t:settings.leaving}.
+2. Open [Settings](/settings/google), then {t:drive.title} under {t:settings.documents}.
 3. Beside the account's address press {t:drive.begin}. While copying, it shows {t:drive.copying}
    with the number of files taken.
 4. Once the copy is done, it shows {t:drive.ready} with the time of the last pass. Below are the

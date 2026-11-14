@@ -36,6 +36,7 @@ const HealthPage = lazily(() => import('./health'), 'HealthPage');
 const JournalPage = lazily(() => import('./journal'), 'JournalPage');
 const HelpPage = lazily(() => import('./help'), 'HelpPage');
 const LinksPage = lazily(() => import('./links'), 'LinksPage');
+const StartPage = lazily(() => import('./links'), 'StartPage');
 const MailPage = lazily(() => import('./mail'), 'MailPage');
 const MeetingPage = lazily(() => import('./MeetingPage'), 'MeetingPage');
 const NotesPage = lazily(() => import('./notes'), 'NotesPage');
@@ -47,6 +48,7 @@ const ResourcesPage = lazily(() => import('./resources'), 'ResourcesPage');
 const RetentionPage = lazily(() => import('./retention'), 'RetentionPage');
 const SearchPage = lazily(() => import('./SearchPage'), 'SearchPage');
 const SettingsPage = lazily(() => import('./settings'), 'SettingsPage');
+const AdminPage = lazily(() => import('./settings'), 'AdminPage');
 const SharedPage = lazily(() => import('./FolderPage'), 'SharedPage');
 const FavouritesPage = lazily(() => import('./FolderPage'), 'FavouritesPage');
 const BoardsPage = lazily(() => import('./FolderPage'), 'BoardsPage');
@@ -220,6 +222,19 @@ export default function App() {
       </Crash>
     );
   }
+  if (pathname === '/start') {
+    return (
+      <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route path="/start" element={<StartPage />} />
+          </Routes>
+        </Suspense>
+        <Followed />
+        <PushBridge />
+      </Crash>
+    );
+  }
   if (pathname.startsWith('/meet/')) {
     return (
       <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
@@ -282,6 +297,7 @@ export default function App() {
                 <Route path="/health" element={<HealthPage />} />
                 <Route path="/journal" element={<JournalPage />} />
                 <Route path="/settings/:section?" element={<SettingsPage />} />
+                <Route path="/admin" element={<AdminPage />} />
                 <Route path="/mail" element={<MailPage />} />
                 <Route path="/mail/:folder" element={<MailPage />} />
                 <Route path="/mail/:folder/:message" element={<MailPage />} />

@@ -13,7 +13,7 @@ Na stranici {t:auth.title} ulazite u Ponistru lozinkom ili pristupnim ključem, 
 
 ### Način prijave
 
-1. U Postavkama otvorite {t:signIn.choice}.
+1. U Postavkama otvorite {t:settings.signIn}; {t:signIn.choice} je na vrhu.
 2. Odaberite {t:signIn.none}, {t:password.title} ili {t:signIn.passkey}.
 3. Kad je odabran pristupni ključ, stranica prijave nudi samo gumb {t:auth.passkey}. Za prijavu lozinkom na njoj pritisnite {t:auth.withPassword}.
 

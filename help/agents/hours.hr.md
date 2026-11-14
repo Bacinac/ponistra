@@ -6,7 +6,7 @@ Izmjereno vrijeme rada na projektima radnog prostora Ponistra upisuje u Clockify
 
 ### Odredište
 
-1. Otvorite Postavke, pod {t:settings.workspace} odaberite {t:workspace.view.hours}.
+1. Na stranici {t:rail.projects} otvorite {t:workspace.view.hours} i pritisnite {t:workspace.hours.settings}
 2. Pod {t:workspace.sheets.heading}, kod {t:workspace.sheets.clockify} ili {t:workspace.sheets.taskstreamer}, pritisnite {t:workspace.sheets.setUp}
 3. Upišite {t:workspace.sheets.key}; za TaskStreamer još {t:workspace.sheets.address} i {t:workspace.sheets.person}.
 4. Ostavite ili promijenite {t:workspace.sheets.label} (zadano {t:workspace.sheets.labelDefault}) i {t:workspace.sheets.since}, pa pritisnite {t:tree.save}.

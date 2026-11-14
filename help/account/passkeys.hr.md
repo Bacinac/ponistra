@@ -6,7 +6,7 @@ Pristupnim ključem prijavljujete se otiskom prsta, licem ili PIN-om uređaja, b
 
 ### Dodavanje ključa
 
-1. U Postavkama otvorite {t:passkeys.title}.
+1. U Postavkama otvorite {t:settings.signIn}; {t:passkeys.title} je ispod polja {t:signIn.choice}.
 2. Upišite {t:passkeys.newName}, na primjer naziv uređaja.
 3. Pritisnite {t:passkeys.add}. Dok traje, gumb prikazuje: {t:passkeys.adding}
 4. Potvrdite na uređaju otiskom prsta, licem ili PIN-om.

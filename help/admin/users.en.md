@@ -6,7 +6,7 @@ On the {t:users.title} page an administrator opens accounts, changes them, signs
 
 ### A new user
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:users.title}.
+1. Open {t:admin.title} and choose {t:users.title}.
 2. Press {t:users.new}.
 3. Type the {t:users.firstName}, {t:users.lastName}, {t:auth.email} and {t:auth.password}.
 4. If needed, tick {t:users.admin} and the user's groups, then press {t:tree.create}.

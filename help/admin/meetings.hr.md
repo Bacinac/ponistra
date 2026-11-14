@@ -6,7 +6,7 @@ Administrator određuje vanjski TURN servis kroz koji slika i zvuk sastanka sti�
 
 ### Cloudflare
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:relay.title}.
+1. Otvorite {t:admin.title} i odaberite {t:relay.title}.
 2. Pod {t:relay.provider} odaberite Cloudflare.
 3. Upišite {t:relay.keyId} i {t:relay.token} TURN ključa iz Cloudflareove nadzorne ploče.
 4. Pritisnite {t:ai.save}.

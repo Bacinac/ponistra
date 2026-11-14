@@ -7,7 +7,7 @@ import { useSession } from './auth';
 import { Cancel, ConfirmDialog, FolderPickDialog, Modal, Picker } from './dialogs';
 import { Loaded, PrimaryAction } from './frame';
 import { useI18n } from './i18n';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { button, field, iconButton, primaryButton } from './styles';
 import { errorMessage, useNode } from './tree';
 
@@ -290,7 +290,7 @@ function Retention({
   const ruleName = (rule: Rule) =>
     `${t(`retention.what.${rule.what}`)}: ${rule.folder?.title ?? t('retention.everywhere')}`;
   return (
-    <SettingsFrame
+    <AdminFrame
       title={t('retention.title')}
       primary={
         <PrimaryAction
@@ -452,7 +452,7 @@ function Retention({
           <strong>{dialog.hold.name}</strong>
         </ConfirmDialog>
       )}
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

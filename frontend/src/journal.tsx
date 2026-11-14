@@ -6,7 +6,7 @@ import { useSession } from './auth';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import { problemText } from './problems';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { button, field } from './styles';
 import { errorMessage } from './tree';
 
@@ -179,7 +179,7 @@ function Journal() {
     queryFn: () => getJson<{ users: Person[] }>('/api/users'),
   });
   return (
-    <SettingsFrame title={t('journal.title')}>
+    <AdminFrame title={t('journal.title')}>
       <div className="flex w-full max-w-5xl flex-col gap-4">
         <div className="flex flex-wrap gap-3">
           <label className="flex flex-col gap-1 text-sm">
@@ -217,7 +217,7 @@ function Journal() {
         </div>
         <Entries group={group} person={person} />
       </div>
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

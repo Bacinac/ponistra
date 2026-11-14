@@ -8,10 +8,10 @@ Svaka stranica Ponistre ima isti okvir: traku modula, zaglavlje s pretragom i iz
 
 ### Moduli
 
-1. Na traci modula ({t:rail.label}) odaberite {t:rail.today}, {t:rail.calendar}, {t:rail.mail}, {t:rail.chat} ili {t:rail.documents}. Na širokom zaslonu traka je uz lijevi rub, a na mobitelu uz donji.
+1. Na traci modula ({t:rail.label}) odaberite {t:rail.today}, {t:rail.calendar}, {t:rail.mail}, {t:rail.chat} ili {t:rail.documents}. Na širokom zaslonu traka je uz lijevi rub, a na mobitelu uz donji, gdje nema {t:rail.calendar}: otvara se poveznicom {t:rail.calendar} uz dnevni raspored na stranici {t:rail.today}. Na mobitelu naslov stranice stoji u zasebnom retku ispod gumba zaglavlja.
 2. Logo Ponistre na vrhu trake vodi na {t:rail.today}.
 3. Stranica koja pripada modulu, kao {t:rail.contacts} u modulu {t:rail.chat}, u zaglavlju ispred naslova ima naziv modula kojim se vraćate u njega.
-4. Ako ste vlasnik radnog prostora za kod, na traci je i {t:rail.projects}, [stranica s projektima i razgovorima](help:agents/projects).
+4. Ako ste vlasnik radnog prostora za kod, na traci je i {t:rail.projects}, [stranica s projektima i razgovorima](help:agents/projects); na mobitelu je umjesto toga u izborniku {t:frame.account}.
 
 ### Lijevi stupac
 
@@ -26,7 +26,7 @@ Svaka stranica Ponistre ima isti okvir: traku modula, zaglavlje s pretragom i iz
 
 1. Pritisnite krug s vašim inicijalima u desnom kutu zaglavlja ({t:frame.account}).
 2. Pod {t:frame.language} i {t:frame.theme} birate jezik i izgled sučelja.
-3. {t:settings.title} otvara postavke vašeg računa, a {t:auth.signOut} vas odjavljuje.
+3. {t:settings.title} otvara postavke vašeg računa, {t:admin.title} (samo administratoru) stranice cijele instalacije, a {t:auth.signOut} vas odjavljuje.
 4. {t:about.title} otvara podatke o aplikaciji.
 
 ### Pomoć

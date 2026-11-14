@@ -4,7 +4,7 @@ Dnevnik bilježi što se događalo s instalacijom u cjelini: prijave i neuspjele
 
 ## Kako se koristi
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:journal.title}.
+1. Otvorite {t:admin.title} i odaberite {t:journal.title}.
 2. Upisi stoje od najnovijeg prema starijima. Uz svaki piše {t:log.when}, {t:log.who}, {t:log.what} i {t:journal.address} s koje je došao zahtjev.
 3. Pod {t:journal.group} odaberite {t:journal.group.all}, {t:journal.group.sign_ins}, {t:journal.group.accounts}, {t:journal.group.settings} ili {t:journal.group.health}.
 4. Pod {t:journal.person} odaberite korisnika da vidite samo ono što je on napravio ili što je napravljeno njemu, ili {t:journal.everyone}.

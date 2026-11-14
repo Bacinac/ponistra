@@ -6,7 +6,7 @@
   ],
   "quiet": [],
   "describes": {
-    "frontend/src/retention.tsx#Retention": "1c26afc48795",
+    "frontend/src/retention.tsx#Retention": "b2d4e5041129",
     "frontend/src/retention.tsx#RuleDialog": "1563dbb170a8",
     "frontend/src/retention.tsx#HoldDialog": "b017a6454171",
     "backend/apps/retention/views.py#rules": "46e50058717e",

@@ -69,7 +69,7 @@ test('a user with a passkey confirms with it', async ({ browser, baseURL }) => {
   ]);
   const page = await context.newPage();
   await authenticator(context, page);
-  await page.goto('/settings/passkeys');
+  await page.goto('/settings/sign-in');
   await page.getByLabel('Naziv novog ključa').fill('Laptop');
   await page.getByRole('button', { name: 'Dodaj pristupni ključ' }).click();
   await expect(page.getByRole('cell', { name: 'Laptop' })).toBeVisible();

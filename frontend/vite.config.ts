@@ -517,6 +517,9 @@ export default defineConfig(({ command, mode }) => ({
     // The maps stay in the image beside what it serves (frontend/Dockerfile), for
     // scripts/stack.sh to read a crash's stack the server logged.
     sourcemap: 'hidden',
+    // The brand's files stay files under a content hash: the icon links and the manifest name them,
+    // and a logo inlined as data: would not tell its light and dark versions apart.
+    assetsInlineLimit: (file) => (file.includes('/assets/brand/') ? false : undefined),
     // The editor, ECharts and pdf.js are each a chunk of their own, which only the page that needs
     // it loads.
     chunkSizeWarningLimit: 700,

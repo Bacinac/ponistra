@@ -1346,3 +1346,14 @@ test('the time worked shows each month by project and the chosen month by day', 
   await within(days).findByRole('row', { name: '12. 10. 1:00 0:30 1:30 1:00' });
   expect(asked).toEqual([null, '2026-10']);
 });
+
+test('the time sheets are set from the time worked, in a dialog of their own', async () => {
+  served({
+    'GET /api/workspace/hours': () => ({ months: [], month: null, days: [] }),
+    'GET /api/workspace/sheets': () => ({ projects: [], removal: null, sheets: {} }),
+  });
+  const { user } = open('/workspace?view=hours', OWNER);
+  await user.click(await screen.findByRole('button', { name: 'Postavke…' }));
+  const dialog = await screen.findByRole('dialog', { name: 'Vrijeme rada' });
+  await within(dialog).findByRole('region', { name: 'Upis vremena' });
+});

@@ -5,7 +5,7 @@ import { deleteJson, getJson, patchJson } from './api';
 import { useSession } from './auth';
 import { actionLabel } from './editor/actions';
 import { Loaded, Loading } from './frame';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
 import { SPEECH } from './voice';
 import { field, primaryButton } from './styles';
@@ -295,7 +295,7 @@ function Settings({ setting }: { setting: Setting }) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   return (
-    <SettingsFrame title={t('ai.title')}>
+    <AdminFrame title={t('ai.title')}>
       <div className="flex w-full max-w-3xl flex-col gap-8">
         <KeyForm
           path="/api/ai"
@@ -315,7 +315,7 @@ function Settings({ setting }: { setting: Setting }) {
         <SpeechForm />
         <Usage />
       </div>
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

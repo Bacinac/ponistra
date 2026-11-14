@@ -6,7 +6,7 @@
     "users.deleteGroupWarning"
   ],
   "describes": {
-    "frontend/src/users.tsx#Directory": "2e0e1c86d9ac",
+    "frontend/src/users.tsx#Directory": "3fa010447eef",
     "backend/apps/users/accounts.py#groups": "49e539aeffda",
     "backend/apps/users/accounts.py#group": "722f9fcddc89"
   }

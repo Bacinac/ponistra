@@ -592,10 +592,7 @@ test('an account signs in through its provider once an administrator has entered
   expect(entered).toEqual({ client_id: 'ponistra-id', secret: 's3cret', expires: '2028-10-24' });
   await expect(microsoft.getByLabel('Tajna klijenta')).toHaveValue('');
 
-  await page
-    .getByRole('navigation', { name: 'Postavke' })
-    .getByRole('link', { name: 'Računi e-pošte' })
-    .click();
+  await page.goto('/settings/mail-accounts');
   await page.getByRole('button', { name: 'Poveži račun' }).click();
   await expect(dialog.getByRole('button', { name: 'Poveži s Googleom' })).toBeHidden();
   await dialog.getByLabel('Adresa e-pošte').fill('ime@outlook.com');

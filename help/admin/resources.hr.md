@@ -4,7 +4,7 @@ Administrator vodi popis soba, opreme i vozila koje korisnici rezerviraju stavlj
 
 ## Kako se koristi
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:resources.title}.
+1. Otvorite {t:admin.title} i odaberite {t:resources.title}.
 2. Pritisnite {t:resources.new}.
 3. Upišite {t:resources.name}, odaberite {t:resources.kind} ({t:resources.kind.room}, {t:resources.kind.equipment}, {t:resources.kind.vehicle} ili {t:resources.kind.other}) te po želji {t:resources.capacity} i {t:resources.place}.
 4. Ostavite označeno {t:resources.active} i pritisnite {t:tree.create}.

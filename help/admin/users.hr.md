@@ -6,7 +6,7 @@ Na stranici {t:users.title} administrator otvara račune, mijenja ih, odjavljuje
 
 ### Novi korisnik
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:users.title}.
+1. Otvorite {t:admin.title} i odaberite {t:users.title}.
 2. Pritisnite {t:users.new}.
 3. Upišite {t:users.firstName}, {t:users.lastName}, {t:auth.email} i {t:auth.password}.
 4. Po potrebi označite {t:users.admin} i grupe korisnika, pa pritisnite {t:tree.create}.

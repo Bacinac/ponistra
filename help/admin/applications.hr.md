@@ -6,7 +6,7 @@ Druge aplikacije vaše organizacije mogu svoje korisnike prijavljivati preko Pon
 
 ### Nova aplikacija
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:identity.title}.
+1. Otvorite {t:admin.title} i odaberite {t:identity.title}.
 2. Pritisnite {t:identity.new}.
 3. Upišite {t:identity.name} i {t:identity.redirects}.
 4. Pod {t:identity.who} odaberite {t:identity.who.everyone} ili {t:identity.who.admins}, pa pritisnite {t:tree.create}.

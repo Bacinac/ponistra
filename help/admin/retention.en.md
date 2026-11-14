@@ -6,7 +6,7 @@ Retention rules set how long documents, files, mail and chat are kept before any
 
 ### A retention rule
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:retention.title}.
+1. Open {t:admin.title} and choose {t:retention.title}.
 2. Press {t:retention.newRule}.
 3. Under {t:retention.what} choose {t:retention.what.documents}, {t:retention.what.files}, {t:retention.what.mail} or {t:retention.what.chat}.
 4. For documents and files leave {t:retention.everywhere} on, or turn it off, press {t:retention.chooseFolder}, choose a folder and press {t:retention.pick}.

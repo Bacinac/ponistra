@@ -11,7 +11,7 @@
     "health.disk.freeOf"
   ],
   "describes": {
-    "frontend/src/health.tsx#Report": "b996236084fd",
+    "frontend/src/health.tsx#Report": "3ef42f802a50",
     "frontend/src/health.tsx#HealthPage": "408808f1e03d",
     "frontend/src/health.tsx#diskLabel": "181e5161a019",
     "backend/apps/health/views.py#services": "79f7a1056541",

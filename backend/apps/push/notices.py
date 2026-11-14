@@ -137,7 +137,7 @@ WORDS = {
 # Where the user sees, and can take back, what a security notice tells of.
 SECURITY = {
     "sign_in": "/settings/devices",
-    "passkey": "/settings/passkeys",
+    "passkey": "/settings/sign-in",
     "app_password": "/settings/app-passwords",
 }
 # What a chat waiting on its owner can be answered from the notification itself, as its panel's

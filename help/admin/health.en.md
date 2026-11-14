@@ -4,7 +4,7 @@ In one place an administrator sees the installation's version, the problems Poni
 
 ## How to use it
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:health.title}.
+1. Open {t:admin.title} and choose {t:health.title}.
 2. If {t:health.problems} stands at the top, read what is not working and since when.
 3. Under {t:health.services}, see whether each service says {t:health.answers} or {t:health.silent}.
 4. Under {t:health.snapshots}, check {t:health.snapshots.newest} and {t:health.snapshots.due}.

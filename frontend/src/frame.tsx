@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu as MenuIcon,
   Pencil,
+  ServerCog,
   Settings,
   FolderKanban,
   LayoutDashboard,
@@ -439,6 +440,7 @@ function UserMenu() {
   const navigate = useNavigate();
   const user = useSession().data?.user;
   const logout = useLogout();
+  const goToProjects = useGoToProjects();
   const [about, setAbout] = useState(false);
   if (!user) return null;
   const name = user.name || t('log.outsider');
@@ -477,10 +479,22 @@ function UserMenu() {
           {user.workspace && <PageThemeMenu page="projects" icon={FolderKanban} />}
           <PageThemeMenu page="meetings" icon={Video} />
           <DropdownMenu.Separator className="my-1 h-px bg-line" />
+          {user.workspace && (
+            <DropdownMenu.Item className={`${menuItem} md:hidden`} onSelect={goToProjects}>
+              <FolderKanban size={16} aria-hidden className="text-muted" />
+              {t('rail.projects')}
+            </DropdownMenu.Item>
+          )}
           {!user.visitor && (
             <DropdownMenu.Item className={menuItem} onSelect={() => navigate('/settings')}>
               <Settings size={16} aria-hidden className="text-muted" />
               {t('settings.title')}
+            </DropdownMenu.Item>
+          )}
+          {user.is_admin && (
+            <DropdownMenu.Item className={menuItem} onSelect={() => navigate('/admin')}>
+              <ServerCog size={16} aria-hidden className="text-muted" />
+              {t('admin.title')}
             </DropdownMenu.Item>
           )}
           <DropdownMenu.Item className={menuItem} onSelect={() => logout.mutate()}>
@@ -678,6 +692,7 @@ function same(a: Chrome, b: Chrome): boolean {
 
 /** The settings of the installation keep their addresses; the settings column lists them. */
 export const INSTALLATION_PATHS = [
+  '/admin',
   '/users',
   '/resources',
   '/workdays',
@@ -814,7 +829,7 @@ function Rail({ className }: { className: string }) {
           label={t(`rail.${id}`)}
           current={id === here}
           count={counts[id]}
-          className="flex"
+          className={id === 'calendar' ? 'hidden md:flex' : 'flex'}
         />
       ))}
       {owner && (
@@ -823,7 +838,7 @@ function Rail({ className }: { className: string }) {
           icon={FolderKanban}
           label={t('rail.projects')}
           current={pathname === '/workspace'}
-          className="flex"
+          className="hidden md:flex"
           onClick={(event) => {
             event.preventDefault();
             goToProjects();
@@ -942,7 +957,7 @@ export function Shell({ children }: { children: ReactNode }) {
                 className={`hidden md:flex ${SIDE_SEPARATOR}`}
               />
               <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                <header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-line px-2 md:border-b-0">
+                <header className="relative flex shrink-0 flex-wrap items-center gap-x-2 border-b border-line px-2 md:h-12 md:flex-nowrap md:border-b-0">
                   <NavLink to="/" title={t('rail.today')} className="shrink-0 rounded-lg md:hidden">
                     <BrandIcon />
                   </NavLink>
@@ -956,7 +971,11 @@ export function Shell({ children }: { children: ReactNode }) {
                       <MenuIcon size={18} />
                     </button>
                   )}
-                  <div ref={setCrumbs} className="min-w-0 flex-1" />
+                  <div className="h-12 flex-1 md:hidden" />
+                  <div
+                    ref={setCrumbs}
+                    className="order-last min-w-0 basis-full px-1 pb-2 empty:hidden md:order-none md:basis-auto md:flex-1 md:px-0 md:pb-0"
+                  />
                   <div ref={setActions} className="flex shrink-0 items-center gap-2 empty:hidden" />
                   {chrome.searchable && !visitor && <SearchBox here={chrome.here} />}
                   {!visitor && <VoiceButton />}

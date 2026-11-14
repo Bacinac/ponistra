@@ -225,13 +225,12 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   await page.setViewportSize({ width: 600, height: 800 });
   await page.goto('/');
   await expect.poll(async () => (await rail.boundingBox())?.y).toBeGreaterThan(700);
-  await expect(rail.getByRole('link')).toHaveText(order);
-  await rail.getByRole('link', { name: 'Kalendar' }).click();
-  await expect(page).toHaveURL(/\/calendar$/);
-  await expect(rail.getByRole('link', { name: 'Kalendar' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
+  await expect(rail.getByRole('link')).toHaveText(['Danas', 'Pošta', 'Razgovori', 'Dokumenti']);
+  const account = (await page.getByRole('button', { name: /^Račun / }).boundingBox())!;
+  const title = (await page.getByRole('heading', { level: 1, name: 'Danas' }).boundingBox())!;
+  expect(title.y).toBeGreaterThanOrEqual(account.y + account.height);
+  await page.getByRole('main').getByRole('link', { name: 'Kalendar' }).click();
+  await expect(page).toHaveURL(/\/calendar\/day\//);
   await rail.getByRole('link', { name: 'Razgovori' }).click();
   await page.getByRole('link', { name: 'Kontakti', exact: true }).click();
   await expect(page).toHaveURL(/\/contacts$/);

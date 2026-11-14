@@ -6,7 +6,7 @@ With a passkey you sign in with a fingerprint, your face or the device's PIN, wi
 
 ### Adding a passkey
 
-1. In Settings open {t:passkeys.title}.
+1. In Settings open {t:settings.signIn}; {t:passkeys.title} is below {t:signIn.choice}.
 2. Type {t:passkeys.newName}, for example the device's name.
 3. Press {t:passkeys.add}. Meanwhile the button shows: {t:passkeys.adding}
 4. Confirm on the device with a fingerprint, face or PIN.

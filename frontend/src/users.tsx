@@ -29,7 +29,7 @@ import {
 import { Cancel, ConfirmDialog, Modal, NameDialog } from './dialogs';
 import { Loaded, PrimaryAction } from './frame';
 import { saveJob } from './jobs';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import { ActionsMenu, MenuItem, MenuSeparator } from './menu';
@@ -644,7 +644,7 @@ function Directory({ accounts }: { accounts: Accounts }) {
   const cell = 'px-2 py-2 whitespace-nowrap';
 
   return (
-    <SettingsFrame
+    <AdminFrame
       title={t('users.title')}
       actions={
         <button type="button" className={button} onClick={() => setDialog({ type: 'group' })}>
@@ -870,7 +870,7 @@ function Directory({ accounts }: { accounts: Accounts }) {
           <strong>{dialog.group.name}</strong> {t('users.deleteGroupWarning')}
         </ConfirmDialog>
       )}
-    </SettingsFrame>
+    </AdminFrame>
   );
 }
 

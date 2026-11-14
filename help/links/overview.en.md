@@ -30,6 +30,14 @@ An image dropped on a tile becomes that link's icon. For several links at once, 
 1. Press {t:create.new} then {t:links.load} You can also drop the files on the page.
 2. Choose bookmarks exported from a browser (HTML) or a Homepage dashboard (YAML), with images of the icons alongside if you like.
 
+### The browser's start page
+
+1. Set [the links start page](/start) as your browser's start page. It shows only your groups and tiles, across the whole window.
+2. A tile opens its address.
+3. The logo leads into Ponistra, and {t:links.edit} to the links page, where links are added, moved and edited.
+
+If you are not signed in, Ponistra asks you to sign in first and then opens the links start page.
+
 ## How it works
 
 A tile opens in a new tab. Ponistra adds `https://` to an address given without it. Once a link is saved it reads the page and takes its title, description and icon, except what you typed yourself; where the page is behind a sign-in, it takes only the site's icon.

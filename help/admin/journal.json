@@ -23,7 +23,7 @@
     "journal.yes"
   ],
   "describes": {
-    "frontend/src/journal.tsx#Journal": "496d979732bb",
+    "frontend/src/journal.tsx#Journal": "f526d499d579",
     "frontend/src/journal.tsx#Entries": "718ecd7e1752",
     "frontend/src/journal.tsx#told": "6ae378c0cdc5",
     "backend/apps/journal/views.py#journal": "e527e8d872ba",

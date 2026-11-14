@@ -1,9 +1,7 @@
 {
   "order": 25,
   "audience": "everyone",
-  "covers": [
-    "setting:/settings/hours"
-  ],
+  "covers": [],
   "quiet": [
     "workspace.sheets.removeText"
   ],
@@ -17,6 +15,7 @@
     "backend/apps/workspace/sheets.py#due": "8b9555f06d44",
     "backend/apps/workspace/sheets.py#compared": "7ed04cb6a9b5",
     "backend/apps/workspace/sheets.py#writing": "ab391585d8fc",
-    "workspace/worked.mjs#removed": "739eb325d5aa"
+    "workspace/worked.mjs#removed": "739eb325d5aa",
+    "frontend/src/workspaceHours.tsx#Hours": "a1bf76a6cb7e"
   }
 }

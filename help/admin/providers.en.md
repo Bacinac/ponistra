@@ -4,7 +4,7 @@ For mail accounts at Google and Microsoft to sign in through the provider instea
 
 ## How to use it
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:providers.title}.
+1. Open {t:admin.title} and choose {t:providers.title}.
 2. Under {t:providers.signIn}, for {t:providers.google} or {t:providers.microsoft}, press {t:providers.copy} beside the {t:providers.redirect}.
 3. At the provider make an app registration with that redirect address, as the note under the provider's name describes.
 4. Type the {t:providers.clientId} and {t:providers.secret}, and for Microsoft also {t:providers.expires}.

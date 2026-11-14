@@ -10,8 +10,7 @@
     "drive.folders",
     "drive.shared",
     "drive.finishAction",
-    "drive.stopAction",
-    "settings.leaving"
+    "drive.stopAction"
   ],
   "describes": {
     "frontend/src/drive.tsx#DriveSettings": "5c57f161d57c",

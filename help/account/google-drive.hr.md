@@ -7,7 +7,7 @@ Preuzima vaš Google Drive i dijeljene diskove koje vidite u Ponistru i prati ih
 1. Povežite svoj Google račun u poštu preko Googlea ([Računi e-pošte](help:mail/accounts)). Ako je
    račun povezan prije nego što je Ponistra tražila pristup Driveu, pritisnite
    {t:mail.oauthAgain.google}.
-2. Otvorite [Postavke](/settings/google), pa {t:drive.title} pod {t:settings.leaving}.
+2. Otvorite [Postavke](/settings/google), pa {t:drive.title} pod {t:settings.documents}.
 3. Uz adresu računa pritisnite {t:drive.begin}. Dok traje kopiranje, stoji {t:drive.copying} s
    brojem preuzetih datoteka.
 4. Kad je kopija gotova, stoji {t:drive.ready} s vremenom zadnjeg prolaza. Ispod su mape koje su

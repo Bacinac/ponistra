@@ -13,7 +13,7 @@ On the {t:auth.title} page you enter Ponistra with a password or a passkey, and 
 
 ### Sign-in method
 
-1. In Settings open {t:signIn.choice}.
+1. In Settings open {t:settings.signIn}; {t:signIn.choice} is at the top.
 2. Choose {t:signIn.none}, {t:password.title} or {t:signIn.passkey}.
 3. With the passkey chosen, the sign-in page offers only the {t:auth.passkey} button. To sign in with a password there, press {t:auth.withPassword}.
 

@@ -6,7 +6,7 @@ import { deleteJson, getJson, patchJson } from './api';
 import { useSession } from './auth';
 import { ConfirmDialog, Labelled } from './dialogs';
 import { Loaded } from './frame';
-import { SettingsFrame } from './settings';
+import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
 import { button, field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
@@ -248,7 +248,7 @@ export function ProvidersPage() {
   return (
     <Loaded query={clients}>
       {(data) => (
-        <SettingsFrame title={t('providers.title')}>
+        <AdminFrame title={t('providers.title')}>
           <div className="flex w-full max-w-xl flex-col gap-8">
             <Loaded query={setting}>{(found) => <OpenedForm setting={found} />}</Loaded>
             <section className="flex flex-col gap-4">
@@ -259,7 +259,7 @@ export function ProvidersPage() {
               ))}
             </section>
           </div>
-        </SettingsFrame>
+        </AdminFrame>
       )}
     </Loaded>
   );

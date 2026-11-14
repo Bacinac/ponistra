@@ -28,6 +28,7 @@ const PAGES = [
   '/documents',
   '/notes',
   '/links',
+  '/start',
   '/boards',
   '/favourites',
   '/shared',

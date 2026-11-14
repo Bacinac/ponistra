@@ -40,6 +40,23 @@ async function actions(user: ReturnType<typeof open>['user'], name: RegExp, item
   await user.click(await screen.findByRole('menuitem', { name: item }));
 }
 
+test('the account menu leads an administrator to the administration, its first page the users', async () => {
+  serve({
+    ...company(),
+    'GET /api/calendar/resources': () => ({ resources: [] }),
+    'GET /api/users': () => ({ users: [me], groups: [] }),
+  });
+  const { user, router, settled } = open('/resources', { id: 1, is_admin: true });
+  await settled();
+  await user.click(screen.getByRole('button', { name: /^Račun / }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Administracija' }));
+  await waitFor(() => expect(router.state.location.pathname).toBe('/users'));
+  const side = await screen.findByRole('navigation', { name: 'Administracija' });
+  expect(within(side).getByRole('link', { name: 'Sobe i resursi' }).getAttribute('href')).toBe(
+    '/resources',
+  );
+});
+
 test('an administrator erases a user and names who takes over their documents', async () => {
   let users = [me, ana, marko];
   let erased = '';

@@ -30,6 +30,14 @@ Sliku ispuštenu na pločicu Ponistra uzima kao ikonu te poveznice. Za više pov
 1. Pritisnite {t:create.new} pa {t:links.load} Datoteke možete i ispustiti na stranicu.
 2. Odaberite oznake izvezene iz preglednika (HTML) ili Homepage nadzornu ploču (YAML), po želji zajedno sa slikama ikona.
 
+### Početna stranica preglednika
+
+1. Postavite [početnu stranicu poveznica](/start) kao početnu stranicu preglednika. Na njoj su samo vaše grupe i pločice, preko cijelog prozora.
+2. Pločica otvara svoju adresu.
+3. Logo vodi u Ponistru, a {t:links.edit} na stranicu poveznica, gdje se poveznice dodaju, premještaju i uređuju.
+
+Ako niste prijavljeni, Ponistra najprije traži prijavu, a zatim otvara početnu stranicu poveznica.
+
 ## Kako radi
 
 Pločica se otvara u novoj kartici. Adresu bez `https://` Ponistra dopunjuje sama. Nakon spremanja pročita stranicu i uzme njezin naslov, opis i ikonu, osim onoga što ste sami upisali; ako je stranica iza prijave, uzima samo ikonu web mjesta.

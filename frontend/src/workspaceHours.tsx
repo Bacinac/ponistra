@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { deleteJson, getJson, patchJson, postJson, putJson } from './api';
-import { Cancel, ConfirmDialog, Labelled, Modal, NumberField, Picker } from './dialogs';
+import { Cancel, Close, ConfirmDialog, Labelled, Modal, NumberField, Picker } from './dialogs';
 import { Loading } from './frame';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
@@ -58,6 +58,29 @@ function local(day: string): Date {
 /** The time worked on the workspace's projects (VT1): each month by project, and the chosen month
  * by day. */
 export function Hours({ named }: { named: (project: string) => string }) {
+  const { t } = useI18n();
+  const [settings, setSettings] = useState(false);
+  return (
+    <div className="flex min-h-0 flex-col gap-4">
+      <div className="flex justify-end">
+        <button type="button" className={button} onClick={() => setSettings(true)}>
+          {t('workspace.hours.settings')}
+        </button>
+      </div>
+      <Worked named={named} />
+      {settings && (
+        <Modal wide heading={t('workspace.view.hours')} onClose={() => setSettings(false)}>
+          <TimeSettings />
+          <div className="flex justify-end">
+            <Close />
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function Worked({ named }: { named: (project: string) => string }) {
   const { t, formatMonth, formatShortDay } = useI18n();
   const clock = useClock();
   const [month, setMonth] = useState<string | null>(null);

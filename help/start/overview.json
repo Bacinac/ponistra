@@ -8,10 +8,10 @@
     "chat.unread"
   ],
   "describes": {
-    "frontend/src/frame.tsx#Shell": "e6dc99ce81e5",
-    "frontend/src/frame.tsx#Rail": "1dd52c045291",
+    "frontend/src/frame.tsx#Shell": "1d87effd83b2",
+    "frontend/src/frame.tsx#Rail": "c545995c9869",
     "frontend/src/frame.tsx#NextUp": "8651bfd3ccee",
-    "frontend/src/frame.tsx#UserMenu": "b7c038de6afc",
+    "frontend/src/frame.tsx#UserMenu": "e001fe13bd95",
     "frontend/src/frame.tsx#FolderTree": "529e1961eb25",
     "frontend/src/frame.tsx#Frame": "f1e2f3f66699",
     "frontend/src/frame.tsx#useWaiting": "edfc4f8357f3",

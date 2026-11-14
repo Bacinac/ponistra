@@ -6,7 +6,7 @@ Administrator uključuje Claudea i pretvaranje govora u tekst za cijelu instalac
 
 ### Claude
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:ai.title}.
+1. Otvorite {t:admin.title} i odaberite {t:ai.title}.
 2. Upišite {t:ai.key} i označite {t:ai.enabled}.
 3. Pritisnite {t:ai.save}.
 

@@ -4,7 +4,7 @@ Lozinkom računa prijavljujete se u Ponistru i potvrđujete osjetljive radnje ka
 
 ## Kako se koristi
 
-1. U Postavkama otvorite {t:password.title}.
+1. U Postavkama otvorite {t:settings.signIn}; {t:password.title} je ispod odjeljka {t:passkeys.title}.
 2. Upišite {t:password.new}.
 3. Pritisnite {t:password.change}.
 4. Ako Ponistra zatraži, potvrdite da ste to vi.

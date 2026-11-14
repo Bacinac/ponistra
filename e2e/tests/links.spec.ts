@@ -117,6 +117,15 @@ test('the page of links keeps its own groups, outside the documents, and loads a
   await page.reload();
   await expect(group.getByRole('link')).toHaveText([/Drugo/, /Prvo/]);
 
+  await page.goto('/start');
+  await expect(page.getByRole('navigation')).toHaveCount(0);
+  await expect(page.getByRole('region', { name: `Grupa ${stamp}` }).getByRole('link')).toHaveText([
+    /Drugo/,
+    /Prvo/,
+  ]);
+  await page.getByRole('link', { name: 'Uredi poveznice' }).click();
+  await expect(page).toHaveURL(/\/links$/);
+
   await heading.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Stupci' }).click();
   await page.getByRole('menuitemcheckbox', { name: '3', exact: true }).click();

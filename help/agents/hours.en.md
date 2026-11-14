@@ -6,7 +6,7 @@ Ponistra writes the time measured on the workspace's projects into Clockify or i
 
 ### A destination
 
-1. Open the Settings and, under {t:settings.workspace}, choose {t:workspace.view.hours}.
+1. On the {t:rail.projects} page open {t:workspace.view.hours} and press {t:workspace.hours.settings}
 2. Under {t:workspace.sheets.heading}, at {t:workspace.sheets.clockify} or {t:workspace.sheets.taskstreamer}, press {t:workspace.sheets.setUp}
 3. Enter the {t:workspace.sheets.key}; for TaskStreamer also the {t:workspace.sheets.address} and the {t:workspace.sheets.person}.
 4. Keep or change the {t:workspace.sheets.label} (by default {t:workspace.sheets.labelDefault}) and {t:workspace.sheets.since}, then press {t:tree.save}.

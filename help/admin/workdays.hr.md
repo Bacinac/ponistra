@@ -6,7 +6,7 @@ Administrator određuje državu i regiju čiji praznici vrijede u instalaciji, r
 
 ### Država i praznici
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:workdays.title}.
+1. Otvorite {t:admin.title} i odaberite {t:workdays.title}.
 2. Odaberite {t:workdays.country} i, gdje se praznici razlikuju po regijama, {t:workdays.subdivision} ili {t:workdays.wholeCountry}.
 3. Pod {t:workdays.holidays} provjerite praznike koji iz toga slijede.
 

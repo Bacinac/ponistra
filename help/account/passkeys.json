@@ -1,9 +1,7 @@
 {
   "order": 40,
   "audience": "everyone",
-  "covers": [
-    "setting:/settings/passkeys"
-  ],
+  "covers": [],
   "quiet": [
     "passkeys.due",
     "passkeys.note",

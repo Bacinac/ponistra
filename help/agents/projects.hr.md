@@ -99,7 +99,7 @@ Kad ljuska završi (naredba `exit`) ili se veza s njom prekine, terminal se sam 
 1. Na stranici {t:rail.projects} pritisnite {t:workspace.view.hours}, skroz desno u retku s {t:workspace.view.chat} (na telefonu s {t:workspace.view.overview}).
 2. Za zadnji mjesec stoji vrijeme po projektu, {t:workspace.hours.total} i {t:workspace.hours.wall}, a ispod, pod {t:workspace.hours.days}, isto po danu, svaki projekt u svom stupcu.
 3. Za drugi mjesec odaberite ga u polju {t:workspace.hours.month}.
-4. Upis u Clockify ili TaskStreamer i brisanje transkripata postavljaju se u [Upis vremena rada](help:agents/hours).
+4. Upis u Clockify ili TaskStreamer i brisanje transkripata postavljaju se gumbom {t:workspace.hours.settings} ([Upis vremena rada](help:agents/hours)).
 
 ## Kako radi
 

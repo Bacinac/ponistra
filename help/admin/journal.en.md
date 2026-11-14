@@ -4,7 +4,7 @@ The journal records what happened to the installation as a whole: sign-ins and f
 
 ## How to use it
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:journal.title}.
+1. Open {t:admin.title} and choose {t:journal.title}.
 2. Entries stand newest first. Each shows {t:log.when}, {t:log.who}, {t:log.what} and the {t:journal.address} the request came from.
 3. Under {t:journal.group}, choose {t:journal.group.all}, {t:journal.group.sign_ins}, {t:journal.group.accounts}, {t:journal.group.settings} or {t:journal.group.health}.
 4. Under {t:journal.person}, choose a user to see only what they did or what was done to them, or {t:journal.everyone}.

@@ -264,6 +264,15 @@ const saidIn = (lines) => {
         continue;
       }
     } else if (entry.isMeta) continue;
+    // An answer to the agent's question comes back as the tool's result, not as words of the owner.
+    const answers = entry.type === 'user' ? entry.toolUseResult?.answers : null;
+    if (answers && typeof answers === 'object') {
+      for (const answer of Object.values(answers)) {
+        const text = typeof answer === 'string' ? plain(answer) : '';
+        if (text) said.push({ role: 'user', text, at });
+      }
+      continue;
+    }
     const images = entry.type === 'user' ? blocks.filter((block) => block?.type === 'image').length : 0;
     const before = said.length;
     for (const block of blocks) {

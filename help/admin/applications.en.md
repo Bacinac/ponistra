@@ -6,7 +6,7 @@ Your organisation's other applications can sign their users in through Ponistra,
 
 ### A new application
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:identity.title}.
+1. Open {t:admin.title} and choose {t:identity.title}.
 2. Press {t:identity.new}.
 3. Type the {t:identity.name} and the {t:identity.redirects}.
 4. Under {t:identity.who} choose {t:identity.who.everyone} or {t:identity.who.admins}, then press {t:tree.create}.

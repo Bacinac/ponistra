@@ -20,7 +20,9 @@ import { ChoiceBar, ChoiceBox, useChoice, type Choice } from './choice';
 import { LinkDialog, NameDialog } from './dialogs';
 import { endDrag, startDrag } from './drag';
 import { Frame, Loading } from './frame';
+import { BrandIcon } from './Brand';
 import { useI18n } from './i18n';
+import type { MessageKey } from './i18n/hr';
 import { LINKS, useLinks, type Links, type Listed } from './linksData';
 import { runJob } from './jobs';
 import { ContextMenuArea, Menu, MenuItem, MenuSeparator, MenuSub } from './menu';
@@ -190,7 +192,27 @@ function Heading({ group }: { group: Group }) {
   );
 }
 
+function groupName(group: Group, t: (key: MessageKey) => string): string {
+  if (group.own) return ownName(group.own);
+  if (group.mine) return t('links.ungrouped');
+  return [t(ROOT_LABELS[group.root]), ...group.path.map((above) => above.title)].join(' / ');
+}
+
 const tile = 'flex h-full min-h-[4.25rem] w-full items-center gap-3 rounded-xl border p-3';
+
+function TileBody({ link }: { link: Listed }) {
+  return (
+    <>
+      <LinkIcon link={link} />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate font-medium">{link.title}</span>
+        <span className="truncate text-xs text-muted">
+          {link.description || site(link.href ?? '')}
+        </span>
+      </span>
+    </>
+  );
+}
 const marker = 'pointer-events-none absolute rounded-full bg-accent';
 
 function Tile({
@@ -233,13 +255,7 @@ function Tile({
         title={link.title}
         className={`${tile} shadow-sm transition select-none [-webkit-touch-callout:none] hover:-translate-y-0.5 hover:border-accent hover:shadow-md ${picked ? 'border-accent bg-selected' : 'border-line bg-raised'} ${iconing ? 'ring-2 ring-accent' : ''} ${choice.many > 0 && items ? 'pr-9' : ''}`}
       >
-        <LinkIcon link={link} />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate font-medium">{link.title}</span>
-          <span className="truncate text-xs text-muted">
-            {link.description || site(link.href ?? '')}
-          </span>
-        </span>
+        <TileBody link={link} />
       </PlaceLink>
       {choice.many > 0 && items && (
         <ChoiceBox
@@ -485,11 +501,7 @@ export function LinksPage() {
   }
 
   function section(group: Group) {
-    const name = group.own
-      ? ownName(group.own)
-      : group.mine
-        ? t('links.ungrouped')
-        : [t(ROOT_LABELS[group.root]), ...group.path.map((above) => above.title)].join(' / ');
+    const name = groupName(group, t);
     if (group.mine && !group.own && !group.links.length && dragging !== 'links') return null;
     const into = group.mine ? group.folder : null;
     const landing =
@@ -784,5 +796,69 @@ export function LinksPage() {
         )}
       </section>
     </Frame>
+  );
+}
+
+/** The links alone, the whole window theirs, as a browser's start page; they are edited on /links. */
+export function StartPage() {
+  const { t } = useI18n();
+  const links = useLinks();
+  const { own, others } = links.data ? grouped(links.data) : { own: [], others: [] };
+  const shown = [...own, ...others].filter((group) => group.links.length);
+  return (
+    <main className="min-h-dvh bg-surface px-4 py-6 text-ink md:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <header className="flex items-center gap-3">
+          <Link to="/" aria-label={t('rail.today')} title={t('rail.today')}>
+            <BrandIcon />
+          </Link>
+          <h1 className="min-w-0 flex-1 truncate text-lg font-semibold">{t('links.title')}</h1>
+          <Link
+            to="/links"
+            aria-label={t('links.edit')}
+            title={t('links.edit')}
+            className={iconButton}
+          >
+            <Pencil size={18} aria-hidden />
+          </Link>
+        </header>
+        {links.isError ? (
+          <Failure error={links.error} />
+        ) : !links.data ? (
+          <Loading />
+        ) : !shown.length ? (
+          <p className="text-muted">{t('links.empty')}</p>
+        ) : (
+          shown.map((group) => {
+            const name = groupName(group, t);
+            return (
+              <section
+                key={`${group.mine ? 'own' : group.root}:${group.folder}`}
+                aria-label={name}
+                className="flex flex-col gap-3"
+              >
+                <h2 className="text-base font-semibold text-muted">{name}</h2>
+                <ul
+                  style={columnsOf(group)}
+                  className={`grid gap-3 ${group.own?.columns ? '' : 'grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]'}`}
+                >
+                  {group.links.map((link) => (
+                    <li key={link.id}>
+                      <PlaceLink
+                        to={nodeHref(link)}
+                        title={link.title}
+                        className={`${tile} border-line bg-raised shadow-sm transition hover:-translate-y-0.5 hover:border-accent hover:shadow-md`}
+                      >
+                        <TileBody link={link} />
+                      </PlaceLink>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })
+        )}
+      </div>
+    </main>
   );
 }

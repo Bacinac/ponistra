@@ -3,7 +3,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import { expect, test } from 'vitest';
 import { open, serve } from './testing';
 
-test('an administrator keeps the rooms and resources from the settings', async () => {
+test('an administrator keeps the rooms and resources', async () => {
   const kept: {
     id: number;
     name: string;
@@ -44,16 +44,8 @@ test('an administrator keeps the rooms and resources from the settings', async (
       );
     },
   });
-  const { user, router, settled } = open('/', { is_admin: true });
+  const { user, settled } = open('/resources', { is_admin: true });
   await settled();
-  await user.click(screen.getByRole('button', { name: /^Račun / }));
-  await user.click(await screen.findByRole('menuitem', { name: 'Postavke' }));
-  await user.click(
-    within(await screen.findByRole('navigation', { name: 'Postavke' })).getByRole('link', {
-      name: 'Sobe i resursi',
-    }),
-  );
-  await waitFor(() => expect(router.state.location.pathname).toMatch(/\/resources$/));
   await screen.findByText('Još nema nijedne sobe ni resursa.');
 
   await user.click(screen.getByRole('button', { name: 'Novi resurs' }));

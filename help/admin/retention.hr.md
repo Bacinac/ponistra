@@ -6,7 +6,7 @@ Pravila čuvanja određuju koliko se dugo dokumenti, datoteke, pošta i razgovor
 
 ### Pravilo čuvanja
 
-1. U {t:settings.title}, pod {t:settings.installation}, odaberite {t:retention.title}.
+1. Otvorite {t:admin.title} i odaberite {t:retention.title}.
 2. Pritisnite {t:retention.newRule}.
 3. Pod {t:retention.what} odaberite {t:retention.what.documents}, {t:retention.what.files}, {t:retention.what.mail} ili {t:retention.what.chat}.
 4. Za dokumente i datoteke ostavite uključeno {t:retention.everywhere}, ili ga isključite, pritisnite {t:retention.chooseFolder}, odaberite mapu i pritisnite {t:retention.pick}.

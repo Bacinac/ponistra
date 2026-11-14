@@ -6,7 +6,7 @@ An administrator decides the country and region whose holidays hold in the insta
 
 ### Country and holidays
 
-1. In {t:settings.title}, under {t:settings.installation}, choose {t:workdays.title}.
+1. Open {t:admin.title} and choose {t:workdays.title}.
 2. Choose the {t:workdays.country} and, where holidays differ by region, the {t:workdays.subdivision} or {t:workdays.wholeCountry}.
 3. Under {t:workdays.holidays} check the holidays that follow from it.
 
