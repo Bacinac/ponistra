@@ -22,7 +22,7 @@ Stranica Danas na jednom mjestu prikazuje raspored dana, zadatke na redu, poštu
 
 1. U okviru {t:today.mail} pritisnite poruku da biste je otvorili, ili {t:rail.mail} za cijelu poštu.
 2. U okviru {t:today.recent} pritisnite dokument, ili {t:rail.documents} za sve dokumente.
-3. Ako ste nešto dodali u {t:favourites.title}, ispod je i taj okvir. Broj uz njegov naslov otvara cijeli popis.
+3. Ako ste nešto dodali u {t:favourites.title}, taj okvir stoji ispod okvira {t:today.mail}. Broj uz njegov naslov otvara cijeli popis.
 
 ## Kako radi
 

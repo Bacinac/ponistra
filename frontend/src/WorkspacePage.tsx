@@ -2068,7 +2068,7 @@ function Pult({
   const begun = shown === 'start' ? starting : null;
   const closeTerminal = () => {
     setTerminal(null);
-    setView(wide ? 'chat' : 'overview');
+    setView((now) => (now === 'terminal' ? (wide ? 'chat' : 'overview') : now));
   };
   // The workspace lets the chat's process go first, as a session never runs in two.
   const open = (chat: Known) =>

@@ -382,25 +382,24 @@ def _there(sheet: Sheet, first: date, last: date) -> list[tuple[date, str, bool,
         "GET",
         params={
             "user": sheet.person,
-            "from": first.isoformat(),
-            "to": (last - timedelta(days=1)).isoformat(),
+            "date_from": first.isoformat(),
+            "date_to": (last - timedelta(days=1)).isoformat(),
         },
     )
-    listed = answer.get("entries") if isinstance(answer, dict) else None
-    if not isinstance(listed, list):
+    if not isinstance(answer, list):
         raise Unwritten("sheet_answer")
     there = []
-    for entry in listed:
+    for entry in answer:
         if not isinstance(entry, dict):
             continue
-        began, ended = _moment(entry.get("started_at")), _moment(entry.get("ended_at"))
+        began, ended = _moment(entry.get("start")), _moment(entry.get("end"))
         day = _moment(entry.get("date"))
         if began and day:
             there.append(
                 (
                     day.date(),
                     entry.get("project") or "",
-                    bool(entry.get("tool")),
+                    True,
                     _seconds_of(began, ended),
                 )
             )

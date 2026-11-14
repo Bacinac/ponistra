@@ -22,7 +22,7 @@ The Today page shows in one place the day's schedule, the tasks due, the mail th
 
 1. In {t:today.mail} press a message to open it, or {t:rail.mail} for all mail.
 2. In {t:today.recent} press a document, or {t:rail.documents} for all documents.
-3. If you have added anything to {t:favourites.title}, that box is below too. The number beside its heading opens the whole list.
+3. If you have added anything to {t:favourites.title}, that box stands below {t:today.mail}. The number beside its heading opens the whole list.
 
 ## How it works
 

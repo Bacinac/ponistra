@@ -92,7 +92,7 @@ Ponovni odlazak na {t:rail.projects} dovodi taj isti prozor u prvi plan, umjesto
 4. Gumb {t:workspace.view.terminal} na vrhu vraća terminal dok gledate razgovor ili memoriju; naredba u njemu za to vrijeme radi dalje.
 5. {t:workspace.terminal.close} desno iznad terminala zatvara ga i završava ljusku sa svime što je u njoj pokrenuto.
 
-Kad ljuska završi (naredba `exit`), ispod terminala piše: {t:workspace.terminal.exited} Kad se veza prekine, piše: {t:workspace.terminal.dropped} U oba slučaja {t:workspace.terminal.reopen} otvara novu ljusku u istoj mapi.
+Kad ljuska završi (naredba `exit`) ili se veza s njom prekine, terminal se sam zatvori; ikona {t:workspace.terminal.open} otvara novu ljusku. Ako se terminal ne može otvoriti, ispod njega piše: {t:workspace.terminal.unopened} {t:workspace.terminal.reopen} pokušava ponovno.
 
 ### Vrijeme rada
 

@@ -2,7 +2,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Terminal as Xterm, type ITheme } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { postJson } from './api';
 import { useI18n } from './i18n';
 import { useHeldRelease } from './release';
@@ -11,7 +11,9 @@ import { codeText, errorMessage } from './tree';
 import { onScheme } from './theme';
 
 const PATH = '/api/workspace/terminal';
-const EXITED = 4000;
+// A socket that died on its way never reports closing, so the page asks and waits for the answer.
+const PINGED = 20_000;
+const ANSWERED_WITHIN = 10_000;
 const ANSI = [
   'black',
   'red',
@@ -52,7 +54,8 @@ function look(element: HTMLElement): ITheme {
   return theme;
 }
 
-/** A login shell in the project's folder of the workspace (KR25), ended when this is closed. */
+/** A login shell in the project's folder of the workspace (KR25), ended when this is closed and
+ * closed when the shell ends or its connection is lost. */
 export function TerminalPanel({
   folder,
   name,
@@ -65,8 +68,9 @@ export function TerminalPanel({
   const { t } = useI18n();
   const host = useRef<HTMLDivElement>(null);
   const [opened, setOpened] = useState(0);
-  const [ended, setEnded] = useState<'exited' | 'dropped' | null>(null);
+  const closing = useEffectEvent(onClose);
   const [failure, setFailure] = useState<Error | null>(null);
+  const [unopened, setUnopened] = useState(false);
   const [refused, setRefused] = useState<'copy' | 'paste' | null>(null);
   useHeldRelease(true);
 
@@ -90,6 +94,14 @@ export function TerminalPanel({
     const encoder = new TextEncoder();
     let socket: WebSocket | null = null;
     let gone = false;
+    let pinging: ReturnType<typeof setInterval> | undefined;
+    let unanswered: ReturnType<typeof setTimeout> | undefined;
+    let started = false;
+    const ended = () => {
+      if (gone) return;
+      gone = true;
+      closing();
+    };
     const sent = (data: string | Uint8Array<ArrayBuffer>) => {
       if (socket?.readyState === WebSocket.OPEN) socket.send(data);
     };
@@ -100,13 +112,29 @@ export function TerminalPanel({
         const opening = new WebSocket(`${scheme}//${location.host}${PATH}`);
         socket = opening;
         opening.binaryType = 'arraybuffer';
-        opening.onopen = () =>
+        opening.onopen = () => {
           opening.send(JSON.stringify({ folder, cols: terminal.cols, rows: terminal.rows }));
-        opening.onmessage = (event) => {
-          if (event.data instanceof ArrayBuffer) terminal.write(new Uint8Array(event.data));
+          pinging = setInterval(() => {
+            opening.send('ping');
+            unanswered ??= setTimeout(ended, ANSWERED_WITHIN);
+          }, PINGED);
         };
-        opening.onclose = (event) => {
-          if (!gone) setEnded(event.code === EXITED ? 'exited' : 'dropped');
+        opening.onmessage = (event) => {
+          if (event.data instanceof ArrayBuffer) {
+            started = true;
+            terminal.write(new Uint8Array(event.data));
+          } else if (event.data === 'pong') {
+            clearTimeout(unanswered);
+            unanswered = undefined;
+          }
+        };
+        opening.onclose = () => {
+          if (started) ended();
+          else if (!gone) {
+            clearInterval(pinging);
+            clearTimeout(unanswered);
+            setUnopened(true);
+          }
         };
         terminal.focus();
       },
@@ -144,6 +172,8 @@ export function TerminalPanel({
     });
     return () => {
       gone = true;
+      clearInterval(pinging);
+      clearTimeout(unanswered);
       element.removeEventListener('contextmenu', clicked);
       unscheme();
       sized.disconnect();
@@ -156,8 +186,8 @@ export function TerminalPanel({
   }, [folder, opened]);
 
   const reopen = () => {
-    setEnded(null);
     setFailure(null);
+    setUnopened(false);
     setOpened((count) => count + 1);
   };
   return (
@@ -182,10 +212,10 @@ export function TerminalPanel({
           {refused === 'copy' ? t('workspace.copyFailed') : codeText('clipboard_refused', t)}
         </p>
       )}
-      {(ended || failure) && (
+      {(failure || unopened) && (
         <div role="status" className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-          <span className={ended === 'exited' ? 'text-muted' : 'text-danger'}>
-            {failure ? errorMessage(failure, t) : t(`workspace.terminal.${ended!}`)}
+          <span className="text-danger">
+            {failure ? errorMessage(failure, t) : t('workspace.terminal.unopened')}
           </span>
           <button type="button" onClick={reopen} className={button}>
             <RotateCcw size={14} aria-hidden />

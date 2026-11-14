@@ -81,21 +81,35 @@ export function TodayPage() {
           <p className="text-2xl font-semibold first-letter:uppercase">{formatDay(now)}</p>
           {shown.data && <p className="text-sm text-muted">{summary.join(' · ')}</p>}
         </div>
-        <div className="grid items-start gap-4 lg:grid-cols-2">
-          <Schedule
-            today={today}
-            now={now}
-            events={events}
-            holidays={holidays}
-            birthdays={birthdays}
-            pending={shown.isPending}
-            error={shown.error}
-            onOpen={(occurrence) => setDialog({ type: 'event', occurrence })}
-          />
-          <TasksTile />
-          <Waiting />
-          <Recent />
-          <Favourites />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+          <div className="contents lg:flex lg:min-w-0 lg:flex-1 lg:flex-col lg:gap-4">
+            <div className="order-1">
+              <Schedule
+                today={today}
+                now={now}
+                events={events}
+                holidays={holidays}
+                birthdays={birthdays}
+                pending={shown.isPending}
+                error={shown.error}
+                onOpen={(occurrence) => setDialog({ type: 'event', occurrence })}
+              />
+            </div>
+            <div className="order-3">
+              <Waiting />
+            </div>
+            <div className="order-5">
+              <Favourites />
+            </div>
+          </div>
+          <div className="contents lg:flex lg:min-w-0 lg:flex-1 lg:flex-col lg:gap-4">
+            <div className="order-2">
+              <TasksTile />
+            </div>
+            <div className="order-4">
+              <Recent />
+            </div>
+          </div>
         </div>
       </div>
       {dialog?.type === 'new' && (

@@ -92,7 +92,7 @@ Going to {t:rail.projects} again brings that same window forward rather than ope
 4. The {t:workspace.view.terminal} button at the top brings the terminal back while you look at a chat or the memory; a command in it keeps running meanwhile.
 5. {t:workspace.terminal.close} at the right above the terminal closes it and ends the shell with everything started in it.
 
-When the shell ends (the `exit` command), below the terminal it says: {t:workspace.terminal.exited} When the connection is lost, it says: {t:workspace.terminal.dropped} Either way {t:workspace.terminal.reopen} opens a new shell in the same folder.
+When the shell ends (the `exit` command) or the connection to it is lost, the terminal closes by itself; the {t:workspace.terminal.open} icon opens a new shell. If the terminal cannot be opened, below it says: {t:workspace.terminal.unopened} {t:workspace.terminal.reopen} tries again.
 
 ### Time worked
 

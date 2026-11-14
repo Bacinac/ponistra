@@ -15,7 +15,7 @@
     "calendar.allDay"
   ],
   "describes": {
-    "frontend/src/TodayPage.tsx#TodayPage": "01ae8347e467",
+    "frontend/src/TodayPage.tsx#TodayPage": "bb7830f94b2e",
     "frontend/src/TodayPage.tsx#Schedule": "9328b7dd1ed6",
     "frontend/src/TodayPage.tsx#Waiting": "c2b4926defae",
     "frontend/src/TodayPage.tsx#Recent": "f664b7d78561",

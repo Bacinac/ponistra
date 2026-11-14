@@ -5,7 +5,8 @@ folder (workspace/terminal.mjs). It opens only under a recent confirmation of wh
 
     browser → {"folder": <project path>, "cols": …, "rows": …}
     then binary frames both ways: what the owner types and what the shell writes;
-    browser → {"cols": …, "rows": …} resizes the terminal.
+    browser → {"cols": …, "rows": …} resizes the terminal;
+    browser → "ping", answered "pong", by which the page finds a socket that died on its way.
 
 The socket closes with EXITED once the shell exits (its status the reason), REFUSED for anyone
 but the owner freshly confirmed, and UNREACHABLE when the workspace could not be reached or
@@ -38,6 +39,8 @@ UNREACHABLE = 4502
 # What the workspace closes with that the page tells apart: the shell ended, a project it does
 # not know, too many terminals open.
 PASSED = {EXITED, 4404, 4429}
+PING = "ping"
+PONG = "pong"
 FRAME = 1 << 20
 FOLDER = 4096
 SIDE = range(2, 1001)
@@ -82,11 +85,14 @@ def _admitted(signed: Signed) -> bool:
     return fresh(session.get(CONFIRMED), CONFIRMED_FOR)
 
 
-async def _typed(receive, workspace: ClientConnection) -> None:
+async def _typed(receive, send, workspace: ClientConnection) -> None:
     with suppress(ConnectionClosed):
         while (message := await receive())["type"] == "websocket.receive":
             if (data := message.get("bytes")) is not None:
                 await workspace.send(data)
+                continue
+            if message.get("text") == PING:
+                await send({"type": "websocket.send", "text": PONG})
                 continue
             with suppress(ValueError):
                 if size := _size(json.loads(message.get("text") or "")):
@@ -114,7 +120,7 @@ async def _relayed(receive, send, folder: str, cols: int, rows: int) -> tuple[in
         ) as workspace:
             async with create_task_group() as group:
                 group.start_soon(_shown, workspace, send, group.cancel_scope)
-                await _typed(receive, workspace)
+                await _typed(receive, send, workspace)
     except (OSError, TimeoutError, WebSocketException) as error:
         logger.warning("the code workspace did not open a terminal: %s", error)
         return UNREACHABLE, ""

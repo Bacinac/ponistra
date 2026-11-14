@@ -278,6 +278,50 @@ def test_the_month_compared_with_what_clockify_holds(served, now):
     ]
 
 
+def test_the_month_compared_with_what_taskstreamer_holds(served, now):
+    kept(HERE, CHAT, "ponistra", 10, [span("2026-11-12T08:00:00", "2026-11-12T09:00:00")])
+    asked = []
+
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        asked.append(dict(request.url.params))
+        return httpx2.Response(
+            200,
+            json=[
+                {
+                    "id": 7,
+                    "date": "2026-11-12",
+                    "project": "Ponistra",
+                    "start": "2026-11-12T09:00:00+01:00",
+                    "end": "2026-11-12T09:20:00+01:00",
+                    "description": f"{LABEL} — ponistra",
+                    "timesheet_status": "draft",
+                }
+            ],
+        )
+
+    served(answer)
+    sheet = Sheet.objects.create(
+        kind=Sheet.Kind.TASKSTREAMER,
+        key=seal(sheets.SEALED, "tsk_secret"),
+        address="https://ts.example.com",
+        person="ivo@example.com",
+        projects={"ponistra": "Ponistra"},
+        label=LABEL,
+        since=date(2026, 11, 1),
+    )
+    compared = sheets.compared(sheet, "2026-11")
+    assert asked == [
+        {"user": "ivo@example.com", "date_from": "2026-11-01", "date_to": "2026-11-30"}
+    ]
+    assert compared["days"] == [
+        {
+            "day": "2026-11-12",
+            "state": "differs",
+            "projects": [{"project": "Ponistra", "measured": 3600, "own": 1200, "others": 0}],
+        },
+    ]
+
+
 @pytest.fixture
 def owner(settings):
     settings.WORKSPACE = OWNER

@@ -154,6 +154,8 @@ async def test_the_owners_terminal_passes_what_is_typed_and_shown_until_the_shel
         assert await browser.shown() == b"$ "
         browser.type("ls č\r".encode())
         assert await browser.shown() == "ls č\r".encode()
+        browser.to_server.send_nowait({"type": "websocket.receive", "text": "ping"})
+        assert await browser.message() == {"type": "websocket.send", "text": "pong"}
         for size in ({"cols": 90, "rows": 20}, {"cols": 0, "rows": 20}):
             browser.to_server.send_nowait({"type": "websocket.receive", "text": json.dumps(size)})
         browser.type(b"exit\r")

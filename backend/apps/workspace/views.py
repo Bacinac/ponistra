@@ -666,8 +666,8 @@ def sheet_kept(request, kind):
                 "GET",
                 params={
                     "user": changed.person,
-                    "from": changed.since.isoformat(),
-                    "to": changed.since.isoformat(),
+                    "date_from": changed.since.isoformat(),
+                    "date_to": changed.since.isoformat(),
                 },
                 key=key,
             )
