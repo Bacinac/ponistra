@@ -262,6 +262,8 @@ urlpatterns = [
     path("api/collections", collecting.collections),
     path("api/collections/<int:pk>", collecting.collection),
     path("api/collections/<int:pk>/months/<int:month>/send", collecting.month_sent),
+    path("api/collections/<int:pk>/months/<int:month>/items", collecting.month_items),
+    path("api/collections/<int:pk>/items/<int:item>", collecting.item),
     path("api/users", accounts.users),
     path("api/users/<int:pk>", accounts.user),
     path("api/users/<int:pk>/sessions", devices.theirs),

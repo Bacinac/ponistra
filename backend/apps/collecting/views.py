@@ -1,7 +1,9 @@
 """The user's collections out of their mail (ZB): what each takes, where it keeps it, to whom and
 when it goes; and each month, which its owner may send again or for the first time."""
 
+import re
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -16,11 +18,13 @@ from apps.core.asyncdb import notify
 from apps.mail import sending
 from apps.mail.models import Account
 
-from . import months, taking
+from . import converting, months, taking
 from .models import Collection, Item, Month
 
 LISTED = 50
 MONTHS = 13
+CURRENCY = re.compile(r"^([A-Z]{3})?$")
+FIGURE = re.compile(r"^\d{1,12}(\.\d{1,2})?$")
 
 
 def _node(node) -> dict | None:
@@ -79,6 +83,7 @@ def describe(collection: Collection) -> dict:
         "hour": collection.hour,
         "sends": collection.sends,
         "text": collection.text,
+        "currency": collection.currency,
         "active": collection.active,
         "error": collection.error,
         "months": [_month(each, collection) for each in found],
@@ -147,6 +152,13 @@ def _since(data: dict) -> date:
     return given
 
 
+def _currency(data: dict, found: Collection) -> str:
+    given = data.get("currency", found.currency)
+    if not isinstance(given, str) or not CURRENCY.match(given):
+        raise Refused(400, "collecting_invalid_currency")
+    return given
+
+
 def _accounts(user, data: dict) -> tuple[list[int], Account | None]:
     own = set(Account.objects.filter(owner=user).values_list("pk", flat=True))
     given = data.get("accounts", [])
@@ -192,7 +204,12 @@ def _kept(user, data: dict, found: Collection) -> Collection:
         found.mark = 0
     for field, value in taken.items():
         setattr(found, field, value)
-    found.name, found.text, found.sends = name.strip(), text, sends
+    currency = _currency(data, found)
+    if currency != found.currency:
+        Item.objects.filter(collection=found, rated=Item.Rated.REFERENCE).update(
+            converted=None, rate=None, rated=Item.Rated.NONE
+        )
+    found.name, found.text, found.sends, found.currency = name.strip(), text, sends, currency
     found.recognise, found.to, found.account = recognise, to, account
     found.day, found.hour = _whole(data, "day", 1, 28), _whole(data, "hour", 0, 23)
     found.active, found.error = _flag(data, "active"), ""
@@ -244,3 +261,60 @@ def month_sent(request, pk, month):
     months.touched(pk)
     notify(sending.LATER)
     return JsonResponse({})
+
+
+def _item(item: Item) -> dict:
+    return {
+        "id": item.pk,
+        "state": item.state,
+        "error": item.error,
+        "subject": item.subject,
+        "supplier": item.supplier,
+        "date": item.date.isoformat() if item.date else None,
+        "amount": None if item.amount is None else str(item.amount),
+        "currency": item.currency,
+        "converted": None if item.converted is None else str(item.converted),
+        "rated": item.rated,
+        "files": len(item.files),
+        "message": item.message_id,
+        "folder": item.message.folder_id if item.message else None,
+        "node": _node(item.node),
+    }
+
+
+@api("GET")
+def month_items(request, pk, month):
+    """What the month took: each bill kept, each passed over and each not read, by date."""
+    found = Month.objects.filter(collection=_mine(request.user, pk), pk=month).first()
+    if found is None:
+        raise Refused(404, "not_found")
+    items = found.items.select_related("message", "node").order_by("date", "created_at", "pk")
+    return JsonResponse({"items": [_item(each) for each in items]})
+
+
+@api("PUT")
+def item(request, pk, item):
+    """The bill's amount in the collection's currency as the owner's bank charged it, or, given
+    none, by the reference rate again."""
+    found = (
+        Item.objects.filter(collection=_mine(request.user, pk), pk=item, state=Item.State.KEPT)
+        .select_related("collection", "message", "node")
+        .first()
+    )
+    if found is None:
+        raise Refused(404, "not_found")
+    given = body(request).get("converted")
+    if given is None:
+        value = None
+    elif not isinstance(given, str) or not FIGURE.match(given):
+        raise Refused(400, "collecting_invalid_converted")
+    else:
+        try:
+            value = Decimal(given)
+        except InvalidOperation:
+            raise Refused(400, "collecting_invalid_converted") from None
+    if not found.collection.currency or found.amount is None:
+        raise Refused(409, "collecting_unconverted")
+    converting.by_hand(found, value)
+    months.touched(pk)
+    return JsonResponse(_item(found))

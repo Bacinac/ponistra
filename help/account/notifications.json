@@ -17,6 +17,6 @@
     "frontend/src/sw.js": "99dd4a5553bf",
     "backend/apps/push/notices.py#tell": "fdb19e56011d",
     "backend/apps/push/notices.py#change": "e6ba4fd7f4d1",
-    "backend/apps/push/notices.py#worded": "bf6682cbb07a"
+    "backend/apps/push/notices.py#worded": "a88b5446d90d"
   }
 }

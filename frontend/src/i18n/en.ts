@@ -1416,6 +1416,10 @@ export const en: Record<MessageKey, string> = {
   'collections.sends': 'How it sends',
   'collections.draft': 'Prepare a draft',
   'collections.send': 'Send by itself',
+  'collections.currency': 'Amounts also in',
+  'collections.converted': "Amount in the collection's currency",
+  'collections.byHand': 'entered by hand',
+  'collections.unfiled': 'No file',
   'collections.text': 'Message text',
   'collections.active': 'The collection is on',
   'collections.paused': 'Off',
@@ -1444,6 +1448,11 @@ export const en: Record<MessageKey, string> = {
   'error.collecting_invalid_senders': 'A sender must be an email address or a domain.',
   'error.collecting_invalid_words': 'A word in the subject may have at most 100 characters.',
   'error.collecting_invalid_to': 'A recipient address is not valid.',
+  'error.collecting_invalid_currency': 'The currency must be a three-letter code, such as EUR.',
+  'error.collecting_invalid_converted': 'The amount must be a number with at most two decimals.',
+  'error.collecting_unconverted': 'This item has no amount to convert.',
+  'error.collecting_unrated':
+    "The European Central Bank has no rate for the currency of one of the items. Enter that item's amount by hand and send the month again.",
   'error.collecting_invalid_since':
     'The date the collection takes messages from cannot be in the future.',
   'error.collecting_invalid_day': 'The day of the month must be between 1 and 28.',

@@ -46,6 +46,7 @@ WORDS = {
         "later_away_failed": "Automatski odgovor nije poslan",
         "health": "Ponistra traži pažnju administratora",
         "uploaded": "Nova datoteka u mapi {folder}",
+        "bill": "Račun bez datoteke: {collection}",
         "problem_service": "Ne odgovara: {name}",
         "problem_queue": "Red stoji: {name}",
         "problem_disk": "Disk je gotovo pun",
@@ -95,6 +96,7 @@ WORDS = {
         "later_away_failed": "An automatic answer was not sent",
         "health": "Ponistra needs its administrator",
         "uploaded": "New file in {folder}",
+        "bill": "A bill without its file: {collection}",
         "problem_service": "Not answering: {name}",
         "problem_queue": "Queue stalled: {name}",
         "problem_disk": "A disk is almost full",
@@ -236,6 +238,17 @@ def worded(notice: Notice, language: str, waiting: int) -> dict:
             title = words["uploaded"].format(folder=data["folder"])
             body = f"{data['sender']}: {data['title']}" if data["sender"] else data["title"]
             url = f"/p/{data['node']}"
+        case Notice.Kind.BILL:
+            title = words["bill"].format(collection=data["collection"])
+            amount = data["amount"]
+            if amount and language == "hr":
+                amount = amount.replace(".", ",")
+            body = " · ".join(
+                part
+                for part in (data["supplier"], f"{amount or ''} {data['currency']}".strip())
+                if part
+            )
+            url = f"/mail/{data['folder']}/{data['message']}"
         case Notice.Kind.LATER:
             title = words[f"later_{data['event']}"]
             body = data["subject"] or words["untitled"]

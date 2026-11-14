@@ -24,7 +24,7 @@ from apps.mail import sending
 from apps.mail import views as mail
 from apps.mail.models import Account, Unsent
 
-from . import months
+from . import converting, months
 from .models import Collection, Item, Month
 
 log = getLogger(__name__)
@@ -34,9 +34,11 @@ LATE = timedelta(hours=6)
 EPOCH = date(1899, 12, 30)
 LOCK = 0x5C21B10E
 WIDTHS = (28, 12, 14, 9, 40, 50)
+CONVERTED = 14
 WORDS = {
     "hr": {
         "columns": ("Dobavljač", "Datum", "Iznos", "Valuta", "Datoteke", "Predmet"),
+        "converted": "Iznos u {currency}",
         "total": "Ukupno",
         "months": (
             "siječanj veljača ožujak travanj svibanj lipanj srpanj kolovoz rujan listopad "
@@ -47,6 +49,7 @@ WORDS = {
     },
     "en": {
         "columns": ("Supplier", "Date", "Amount", "Currency", "Files", "Subject"),
+        "converted": "Amount in {currency}",
         "total": "Total",
         "months": (
             "January February March April May June July August September October November December"
@@ -56,6 +59,7 @@ WORDS = {
     },
 }
 ACCOUNT_GONE = "mail_account_gone"
+UNRATED = "collecting_unrated"
 
 
 def words_of(owner) -> dict:
@@ -136,30 +140,53 @@ def _amount(value: Decimal | None, words: dict) -> dict | None:
     return {"value": float(value), "format": words["amount"]}
 
 
-def tabled(items: list[Item], titles: dict[str, str], words: dict) -> dict:
-    """The month's table: a row for each bill, then a total in each currency. Text goes in as
-    text, never as typed, so a subject that reads as a number or a formula stays what it is."""
-    rows = [[_text(column, strong=True) for column in words["columns"]]]
+def _columns(words: dict, into: str) -> list[str]:
+    """The table's columns, the amount in the collection's currency after the bill's own."""
+    columns = list(words["columns"])
+    if into:
+        columns.insert(4, words["converted"].format(currency=into))
+    return columns
+
+
+def _converted_total(items: list[Item]) -> Decimal:
+    return sum((item.converted for item in items if item.converted is not None), Decimal(0))
+
+
+def tabled(items: list[Item], titles: dict[str, str], words: dict, into: str = "") -> dict:
+    """The month's table: a row for each bill, then a total in each currency and in the
+    collection's own. Text goes in as text, never as typed, so a subject that reads as a number
+    or a formula stays what it is."""
+    widths = list(WIDTHS)
+    if into:
+        widths.insert(4, CONVERTED)
+    rows = [[_text(column, strong=True) for column in _columns(words, into)]]
     for item in items:
-        rows.append(
-            [
-                _text(item.supplier),
-                _serial(item.date, words),
-                _amount(item.amount, words),
-                _text(item.currency),
-                _text(_file_names(item, titles)),
-                _text(item.subject),
-            ]
-        )
+        row = [
+            _text(item.supplier),
+            _serial(item.date, words),
+            _amount(item.amount, words),
+            _text(item.currency),
+            _text(_file_names(item, titles)),
+            _text(item.subject),
+        ]
+        if into:
+            row.insert(4, _amount(item.converted, words))
+        rows.append(row)
     totals = _totals(items)
-    if totals:
-        rows.append([None] * len(WIDTHS))
+    if totals or into:
+        rows.append([None] * len(widths))
     for currency, total in sorted(totals.items()):
         rows.append(
             [_text(words["total"], strong=True), None, _amount(total, words), _text(currency)]
-            + [None] * (len(WIDTHS) - 4)
+            + [None] * (len(widths) - 4)
         )
-    return {"op": "table", "at": {"start": "body"}, "widths": list(WIDTHS), "rows": rows}
+    if into:
+        rows.append(
+            [_text(words["total"], strong=True), None, None, _text(into)]
+            + [_amount(_converted_total(items), words)]
+            + [None] * (len(widths) - 5)
+        )
+    return {"op": "table", "at": {"start": "body"}, "widths": widths, "rows": rows}
 
 
 def _written_table(month: Month, folder: Node, title: str, operation: dict) -> Node:
@@ -188,23 +215,38 @@ def letter(collection: Collection, items: list[Item], titles: dict, account: Acc
     lines = [f"<p>{escape(line)}</p>" for line in collection.text.rstrip("\n").split("\n") if line]
     cell = 'style="border:1px solid #c8d0d0;padding:4px 8px"'
     right = 'style="border:1px solid #c8d0d0;padding:4px 8px;text-align:right"'
-    head = "".join(f"<th {cell}>{escape(name)}</th>" for name in words["columns"][:5])
+    into = collection.currency
+    shown = 6 if into else 5
+    head = "".join(f"<th {cell}>{escape(name)}</th>" for name in _columns(words, into)[:shown])
+
+    def figure(value: Decimal | None) -> str:
+        return "" if value is None else _number(value, language)
+
+    blank = f"<td {cell}></td>"
     rows = [
         "<tr>"
         f"<td {cell}>{escape(item.supplier)}</td>"
         f"<td {cell}>{_day(item.date, language)}</td>"
-        f"<td {right}>{'' if item.amount is None else _number(item.amount, language)}</td>"
+        f"<td {right}>{figure(item.amount)}</td>"
         f"<td {cell}>{escape(item.currency)}</td>"
-        f"<td {cell}>{escape(_file_names(item, titles))}</td>"
+        + (f"<td {right}>{figure(item.converted)}</td>" if into else "")
+        + f"<td {cell}>{escape(_file_names(item, titles))}</td>"
         "</tr>"
         for item in items
     ]
     rows += [
-        f"<tr><th {cell}>{escape(words['total'])}</th><td {cell}></td>"
+        f"<tr><th {cell}>{escape(words['total'])}</th>{blank}"
         f"<th {right}>{_number(total, language)}</th><td {cell}>{escape(currency)}</td>"
-        f"<td {cell}></td></tr>"
+        + blank * (shown - 4)
+        + "</tr>"
         for currency, total in sorted(_totals(items).items())
     ]
+    if into:
+        rows.append(
+            f"<tr><th {cell}>{escape(words['total'])}</th>{blank}{blank}"
+            f"<td {cell}>{escape(into)}</td>"
+            f"<th {right}>{_number(_converted_total(items), language)}</th>{blank}</tr>"
+        )
     table = (
         '<table style="border-collapse:collapse">'
         f"<thead><tr>{head}</tr></thead><tbody>{''.join(rows)}</tbody></table>"
@@ -231,7 +273,11 @@ def delivered(month: Month) -> None:
     or leaving at once."""
     collection = month.collection
     owner = collection.owner
-    items = list(month.items.filter(state=Item.State.KEPT).order_by("date", "pk"))
+    items = list(
+        month.items.filter(state=Item.State.KEPT)
+        .select_related("collection")
+        .order_by("date", "pk")
+    )
     folder = months.folder_for(month)
     files = list(
         Node.objects.filter(parent=folder, kind=Node.Kind.FILE, trashed_at=None)
@@ -249,10 +295,15 @@ def delivered(month: Month) -> None:
         Month.objects.filter(pk=month.pk).update(failed=ACCOUNT_GONE, asked_at=None)
         months.touched(collection.pk)
         return
+    if not all(converting.converted(item) for item in items):
+        Month.objects.filter(pk=month.pk).update(failed=UNRATED, asked_at=None)
+        months.touched(collection.pk)
+        return
     words = words_of(owner)
     title = f"{collection.name} {month.month:%Y-%m}"
     titles = {str(node.pk): _file_name(node) for node in files}
-    sheet = _written_table(month, folder, title, tabled(items, titles, words))
+    operation = tabled(items, titles, words, collection.currency)
+    sheet = _written_table(month, folder, title, operation)
     with xlsx.workbook(sheet) as book:
         blob = store.put(book)
     attached = [

@@ -1409,6 +1409,10 @@ export const hr = {
   'collections.sends': 'Način slanja',
   'collections.draft': 'Pripremi skicu',
   'collections.send': 'Pošalji sam',
+  'collections.currency': 'Iznosi i u valuti',
+  'collections.converted': 'Iznos u valuti zbirke',
+  'collections.byHand': 'upisano rukom',
+  'collections.unfiled': 'Bez datoteke',
   'collections.text': 'Tekst poruke',
   'collections.active': 'Zbirka je uključena',
   'collections.paused': 'Isključena',
@@ -1437,6 +1441,11 @@ export const hr = {
   'error.collecting_invalid_senders': 'Pošiljatelj mora biti adresa e-pošte ili domena.',
   'error.collecting_invalid_words': 'Riječ u predmetu može imati najviše 100 znakova.',
   'error.collecting_invalid_to': 'Adresa primatelja nije ispravna.',
+  'error.collecting_invalid_currency': 'Valuta mora biti oznaka od tri slova, primjerice EUR.',
+  'error.collecting_invalid_converted': 'Iznos mora biti broj s najviše dvije decimale.',
+  'error.collecting_unconverted': 'Ova stavka nema iznos koji bi se preračunao.',
+  'error.collecting_unrated':
+    'Za valutu jedne od stavki nema tečaja Europske središnje banke. Upišite iznos te stavke rukom i pošaljite mjesec ponovno.',
   'error.collecting_invalid_since':
     'Datum od kojeg zbirka uzima poruke ne smije biti u budućnosti.',
   'error.collecting_invalid_day': 'Dan u mjesecu mora biti između 1 i 28.',

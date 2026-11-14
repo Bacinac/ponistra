@@ -7,6 +7,25 @@ import { open, serve } from './testing';
 test('a collection is made with consent to recognise bills, and its month is sent on request', async () => {
   const kept: Collection[] = [];
   const asked: string[] = [];
+  const written: string[] = [];
+  const items = [
+    {
+      id: 11,
+      state: 'kept',
+      error: '',
+      subject: 'Your account has been funded',
+      supplier: 'OpenAI',
+      date: '2026-10-18',
+      amount: '5.48',
+      currency: 'USD',
+      converted: '4.71',
+      rated: 'reference',
+      files: 0,
+      message: 41,
+      folder: 3,
+      node: null,
+    },
+  ];
   serve({
     'GET /api/mail/accounts': () => ({ accounts: [] }),
     'GET /api/actions': () => ({ ai: true }),
@@ -46,6 +65,13 @@ test('a collection is made with consent to recognise bills, and its month is sen
       asked.push(`${params.id}/${params.month}`);
       return {};
     },
+    'GET /api/collections/:id/months/:month/items': () => ({ items }),
+    'PUT /api/collections/:id/items/:item': async (request, params) => {
+      const { converted } = await request.json();
+      written.push(`${params.item}:${converted}`);
+      items[0] = { ...items[0], converted, rated: 'hand' };
+      return items[0];
+    },
   });
   const page = open('/settings/collections');
   await page.settled();
@@ -58,9 +84,26 @@ test('a collection is made with consent to recognise bills, and its month is sen
   await page.user.click(within(consent).getByRole('button', { name: 'Dopusti' }));
 
   await screen.findByRole('heading', { name: 'Troškovi' });
-  expect(kept[0]).toMatchObject({ senders: ['anthropic.com'], recognise: true, sends: 'draft' });
+  expect(kept[0]).toMatchObject({
+    senders: ['anthropic.com'],
+    recognise: true,
+    sends: 'draft',
+    currency: 'EUR',
+  });
   expect(screen.getByText('Uzeto: 2 · Nije račun: 1')).toBeTruthy();
   expect(screen.getByText('Nije poslano')).toBeTruthy();
   await page.user.click(screen.getByRole('button', { name: 'Pošalji sada' }));
   await waitFor(() => expect(asked).toEqual(['7/3']));
+
+  await page.user.click(screen.getByRole('button', { name: /listopad 2026/ }));
+  expect(await screen.findByText('5,48 USD')).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Bez datoteke' }).getAttribute('href')).toBe(
+    '/mail/3/41',
+  );
+  const converted = screen.getByLabelText('Iznos u valuti zbirke OpenAI');
+  expect((converted as HTMLInputElement).value).toBe('4,71');
+  await page.user.clear(converted);
+  await page.user.type(converted, '4,80{Enter}');
+  await waitFor(() => expect(written).toEqual(['11:4.80']));
+  expect(await screen.findByText('upisano rukom')).toBeTruthy();
 });

@@ -34,6 +34,8 @@ interface I18n {
   t: (key: MessageKey) => string;
   formatDate: (iso: string) => string;
   formatNumber: (value: number) => string;
+  /** A sum of money, always to the cent. */
+  formatAmount: (value: number) => string;
   /** A calendar month, given as YYYY-MM. */
   formatMonth: (month: string) => string;
   /** A time of day, as a clock shows it. */
@@ -72,6 +74,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       timeStyle: 'short',
     });
     const number = new Intl.NumberFormat(LOCALES[language]);
+    const amount = new Intl.NumberFormat(LOCALES[language], {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
     const month = new Intl.DateTimeFormat(LOCALES[language], { month: 'long', year: 'numeric' });
     const time = new Intl.DateTimeFormat(LOCALES[language], { timeStyle: 'short' });
     const day = new Intl.DateTimeFormat(LOCALES[language], {
@@ -102,6 +108,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       t: (key) => dictionaries[language][key],
       formatDate: (iso) => dateTime.format(new Date(iso)),
       formatNumber: (value) => number.format(value),
+      formatAmount: (value) => amount.format(value),
       formatMonth: (given) => {
         const [year, at] = given.split('-').map(Number);
         return month.format(new Date(year, at - 1, 1));

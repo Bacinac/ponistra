@@ -73,6 +73,7 @@ class Notice(models.Model):
         HEALTH = "health"
         UPLOADED = "uploaded"
         CODE = "code"
+        BILL = "bill"
 
     class Urgency(models.TextChoices):
         NORMAL = "normal"

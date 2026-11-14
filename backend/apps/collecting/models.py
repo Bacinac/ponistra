@@ -38,6 +38,8 @@ class Collection(models.Model):
     hour = models.PositiveSmallIntegerField(default=9)
     sends = models.CharField(max_length=5, choices=Sends, default=Sends.DRAFT)
     text = models.TextField(blank=True)
+    # The ISO 4217 currency each bill's amount is also given in; empty, none.
+    currency = models.CharField(max_length=3, default="EUR", blank=True)
     active = models.BooleanField(default=True)
     # The highest message read through, from which the next look goes on.
     mark = models.BigIntegerField(default=0)
@@ -83,8 +85,8 @@ class Month(models.Model):
 
 
 class Item(models.Model):
-    """A message a collection took: waiting to be read, kept with what it says, passed over as
-    no bill, or failed with why."""
+    """A message a collection took, or a file its owner put in a month's folder: waiting to be
+    read, kept with what it says, passed over as no bill, or failed with why."""
 
     class State(models.TextChoices):
         WAITING = "waiting"
@@ -92,10 +94,18 @@ class Item(models.Model):
         PASSED = "passed"
         FAILED = "failed"
 
+    class Rated(models.TextChoices):
+        NONE = ""
+        REFERENCE = "reference"
+        HAND = "hand"
+
     collection = models.ForeignKey(Collection, on_delete=models.DB_CASCADE, related_name="items")
     month = models.ForeignKey(Month, on_delete=models.DB_CASCADE, related_name="items")
     message = models.ForeignKey(
         "mail.Message", null=True, on_delete=models.DB_SET_NULL, related_name="+"
+    )
+    node = models.ForeignKey(
+        "documents.Node", null=True, on_delete=models.DB_SET_NULL, related_name="+"
     )
     # Added by the owner's hand, kept whatever the model says of it.
     chosen = models.BooleanField(default=False)
@@ -107,6 +117,13 @@ class Item(models.Model):
     date = models.DateField(null=True)
     amount = models.DecimalField(max_digits=14, decimal_places=2, null=True)
     currency = models.CharField(max_length=3, blank=True)
+    # The amount in the collection's currency, by the reference rate of the day or as its owner
+    # wrote it, and the units of the bill's currency to one of the collection's.
+    converted = models.DecimalField(max_digits=14, decimal_places=2, null=True)
+    rate = models.DecimalField(max_digits=18, decimal_places=6, null=True)
+    rated = models.CharField(max_length=9, choices=Rated, default=Rated.NONE, blank=True)
+    # The owner was told it came without a file.
+    told = models.BooleanField(default=False)
     # The ids of the files it put in its month's folder.
     files = models.JSONField(default=list)
     run = models.ForeignKey(
@@ -117,7 +134,8 @@ class Item(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["collection", "message"], name="collecting_item_once")
+            models.UniqueConstraint(fields=["collection", "message"], name="collecting_item_once"),
+            models.UniqueConstraint(fields=["collection", "node"], name="collecting_file_once"),
         ]
         indexes = [
             models.Index(

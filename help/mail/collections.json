@@ -14,17 +14,17 @@
   ],
   "describes": {
     "frontend/src/collections.tsx#Collections": "d3cabba6ee30",
-    "frontend/src/collections.tsx#CollectionForm": "ddb944cbf759",
-    "frontend/src/collections.tsx#MonthRow": "36aa3da73881",
+    "frontend/src/collections.tsx#CollectionForm": "12172b9ecedf",
+    "frontend/src/collections.tsx#MonthRow": "a026fc6706d8",
     "frontend/src/collections.tsx#GatherDialog": "f902f6998909",
-    "backend/apps/collecting/views.py#_kept": "fa31cc5f103e",
+    "backend/apps/collecting/views.py#_kept": "df1e438a2be7",
     "backend/apps/collecting/views.py#month_sent": "76805068702b",
     "backend/apps/collecting/taking.py#named_by": "eaf3ea9661ae",
-    "backend/apps/collecting/taking.py#read": "79bd77479fdd",
+    "backend/apps/collecting/taking.py#read": "c71107947788",
     "backend/apps/collecting/taking.py#placed": "9aba03f03e53",
-    "backend/apps/collecting/recognising.py#read": "7daf56e3c8a0",
+    "backend/apps/collecting/recognising.py#read": "e8d59697aa6c",
     "backend/apps/collecting/delivering.py#due": "1ddb752392ec",
-    "backend/apps/collecting/delivering.py#delivered": "fb1ca650f82d",
+    "backend/apps/collecting/delivering.py#delivered": "a106714358de",
     "backend/apps/collecting/acting.py#gather": "4796500be132",
     "backend/apps/collecting/months.py#month_for": "1beb5290fd78"
   }

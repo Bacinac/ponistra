@@ -8,7 +8,7 @@ from decimal import Decimal, InvalidOperation
 
 from apps.ai import installation, model
 from apps.ai.model import Choice, Prompt
-from apps.mail.models import Attachment, Message
+from apps.mail.models import Message
 from apps.search.models import BlobText
 
 from .models import Item
@@ -29,6 +29,13 @@ Answer with one call to the bill tool. {asked} Give who issued it (the company a
 itself, not a payment service that sent it on their behalf), the date it was issued as \
 YYYY-MM-DD, the total paid or to pay as a number with a point before its decimals and without \
 the currency, and the currency as its ISO 4217 code. Leave out what the message does not say."""
+FILED = """You read one file the user put among their bills in PONISTRA, an office suite: \
+invoices, receipts and other confirmations of a payment owed or made. The user's message is the \
+text of the file, page by page.
+
+Answer with one call to the bill tool. {asked} Give who issued it, the date it was issued as \
+YYYY-MM-DD, the total paid or to pay as a number with a point before its decimals and without \
+the currency, and the currency as its ISO 4217 code. Leave out what the file does not say."""
 ASK = "Say whether it is such a bill; if it is not, give nothing else."
 CHOSEN = "The user chose it as a bill: say it is one."
 BILL = Choice(
@@ -48,31 +55,35 @@ BILL = Choice(
 )
 
 
-def content(message: Message, files: list[Attachment]) -> str:
-    sender = message.sender or {}
-    lines = [
-        f"From: {sender.get('name', '')} <{sender.get('address', '')}>",
-        f"Date: {message.date.isoformat()}",
-        f"Subject: {message.subject}",
-        "",
-        message.text[:TEXT],
-    ]
+def content(message: Message | None, files: list[tuple[str, str]]) -> str:
+    """The message, or the file its owner put among their bills, as the model reads it; each
+    file given by its name and blob."""
+    lines = []
+    if message is not None:
+        sender = message.sender or {}
+        lines = [
+            f"From: {sender.get('name', '')} <{sender.get('address', '')}>",
+            f"Date: {message.date.isoformat()}",
+            f"Subject: {message.subject}",
+            "",
+            message.text[:TEXT],
+        ]
     texts = {
         found.blob_id: found
-        for found in BlobText.objects.filter(blob_id__in=[each.blob_id for each in files])
+        for found in BlobText.objects.filter(blob_id__in=[blob for _, blob in files])
     }
-    for each in files:
-        found = texts.get(each.blob_id)
+    for name, blob in files:
+        found = texts.get(blob)
         pages = found.pages.order_by("number") if found else []
         read = "\n\n".join(f"[page {page.number}]\n{page.text}" for page in pages if page.text)
         if read:
-            lines += ["", f"[file {each.name or each.part}]", read]
+            lines += ["", f"[file {name}]", read]
     return "\n".join(lines)[:LONGEST]
 
 
-def prompt(message: Message, files: list[Attachment], chosen: bool) -> Prompt:
+def prompt(message: Message | None, files: list[tuple[str, str]], chosen: bool) -> Prompt:
     return Prompt(
-        READ.format(asked=CHOSEN if chosen else ASK),
+        (READ if message is not None else FILED).format(asked=CHOSEN if chosen else ASK),
         content(message, files),
         {"bill": BILL},
         effort="low",
@@ -96,7 +107,7 @@ def _amount(given) -> Decimal | None:
         return None
 
 
-def read(item: Item, message: Message, files: list[Attachment], spend) -> dict | None:
+def read(item: Item, message: Message | None, files: list[tuple[str, str]], spend) -> dict | None:
     """What the model found of the message, or None where it says it is no bill. A model the
     installation does not let the owner reach raises `installation.Unavailable`, and one that
     fails `model.Failed`."""

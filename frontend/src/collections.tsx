@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FolderOpen, Plus, Send } from 'lucide-react';
+import { ChevronDown, ChevronRight, FolderOpen, Mail, Plus, Send } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { ApiError, deleteJson, getJson, postJson, putJson } from './api';
@@ -51,9 +51,27 @@ export interface Collection {
   hour: number;
   sends: 'draft' | 'send';
   text: string;
+  currency: string;
   active: boolean;
   error: string;
   months: CollectionMonth[];
+}
+
+interface CollectionItem {
+  id: number;
+  state: 'waiting' | 'kept' | 'passed' | 'failed';
+  error: string;
+  subject: string;
+  supplier: string;
+  date: string | null;
+  amount: string | null;
+  currency: string;
+  converted: string | null;
+  rated: '' | 'reference' | 'hand';
+  files: number;
+  message: number | null;
+  folder: number | null;
+  node: Placed | null;
 }
 
 type Written = Omit<Collection, 'id' | 'folder' | 'error' | 'months'>;
@@ -92,6 +110,7 @@ function fresh(): Written {
     hour: 9,
     sends: 'draft',
     text: '',
+    currency: 'EUR',
     active: true,
   };
 }
@@ -302,6 +321,19 @@ function CollectionForm({
               </select>
             )}
           </Labelled>
+          <Labelled label={t('collections.currency')}>
+            {(id) => (
+              <input
+                id={id}
+                value={given.currency}
+                maxLength={3}
+                onChange={(event) =>
+                  change({ currency: event.target.value.toUpperCase().replace(/[^A-Z]/g, '') })
+                }
+                className={`${field} w-20`}
+              />
+            )}
+          </Labelled>
         </div>
         <div role="radiogroup" aria-label={t('collections.sends')} className="flex flex-col gap-1">
           {(['draft', 'send'] as const).map((each) => (
@@ -377,10 +409,101 @@ function CollectionForm({
   );
 }
 
+function ConvertedField({ collection, item }: { collection: Collection; item: CollectionItem }) {
+  const { t, language, formatAmount } = useI18n();
+  const queryClient = useQueryClient();
+  const shown = item.converted === null ? '' : formatAmount(Number(item.converted));
+  const [text, setText] = useState(shown);
+  const [was, setWas] = useState(shown);
+  if (shown !== was) {
+    setWas(shown);
+    setText(shown);
+  }
+  const save = useMutation({
+    mutationFn: (converted: string | null) =>
+      putJson(`/api/collections/${collection.id}/items/${item.id}`, { converted }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: COLLECTIONS }),
+  });
+  const saved = () => {
+    const written =
+      language === 'hr' ? text.replace(/[\s.]/g, '').replace(',', '.') : text.replace(/[\s,]/g, '');
+    if (text === shown) return;
+    save.mutate(written === '' ? null : written);
+  };
+  return (
+    <span className="flex items-center gap-1">
+      <input
+        value={text}
+        inputMode="decimal"
+        aria-label={`${t('collections.converted')} ${item.supplier}`}
+        onChange={(event) => setText(event.target.value)}
+        onBlur={saved}
+        onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
+        className={`${field} w-24 text-right`}
+      />
+      <span className="text-muted">{collection.currency}</span>
+      {item.rated === 'hand' && <span className="text-muted">{t('collections.byHand')}</span>}
+      {save.isError && <span className="text-danger">{errorMessage(save.error, t)}</span>}
+    </span>
+  );
+}
+
+function MonthItems({ collection, month }: { collection: Collection; month: CollectionMonth }) {
+  const { t, formatDays, formatAmount } = useI18n();
+  const found = useQuery({
+    queryKey: [...COLLECTIONS, collection.id, 'months', month.id],
+    queryFn: () =>
+      getJson<{ items: CollectionItem[] }>(
+        `/api/collections/${collection.id}/months/${month.id}/items`,
+      ),
+  });
+  if (!found.data) return <Loading />;
+  return (
+    <ul className="flex w-full flex-col gap-1 pl-6">
+      {found.data.items.map((item) => (
+        <li key={item.id} className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="w-24 text-muted">
+            {item.date ? formatDays(item.date, item.date) : ''}
+          </span>
+          <span className="min-w-0 flex-1 truncate">{item.supplier || item.subject}</span>
+          {item.state === 'kept' ? (
+            <>
+              <span className="w-28 text-right">
+                {item.amount === null
+                  ? ''
+                  : `${formatAmount(Number(item.amount))} ${item.currency}`}
+              </span>
+              {collection.currency && item.amount !== null && (
+                <ConvertedField collection={collection} item={item} />
+              )}
+              {item.files === 0 &&
+                (item.message !== null && item.folder !== null ? (
+                  <Link to={`/mail/${item.folder}/${item.message}`} className="text-danger">
+                    <Mail className="mr-1 inline size-4" />
+                    {t('collections.unfiled')}
+                  </Link>
+                ) : (
+                  <span className="text-danger">{t('collections.unfiled')}</span>
+                ))}
+            </>
+          ) : (
+            <span className={item.state === 'failed' ? 'text-danger' : 'text-muted'}>
+              {item.state === 'failed' && item.error
+                ? codeText(item.error, t)
+                : t(`collections.${item.state === 'failed' ? 'missed' : item.state}`)}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function MonthRow({ collection, month }: { collection: Collection; month: CollectionMonth }) {
   const { t, formatDate, formatMonth, formatNumber } = useI18n();
   const queryClient = useQueryClient();
   const [again, setAgain] = useState(false);
+  const [open, setOpen] = useState(false);
   const send = useMutation({
     mutationFn: () => postJson(`/api/collections/${collection.id}/months/${month.id}/send`),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: COLLECTIONS }),
@@ -407,7 +530,19 @@ function MonthRow({ collection, month }: { collection: Collection; month: Collec
   ).filter(([, count]) => count > 0);
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line py-2 text-sm">
-      <span className="w-32 font-medium">{formatMonth(month.month)}</span>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((now) => !now)}
+        className="flex w-32 items-center gap-1 text-left font-medium"
+      >
+        {open ? (
+          <ChevronDown className="size-4" aria-hidden />
+        ) : (
+          <ChevronRight className="size-4" aria-hidden />
+        )}
+        {formatMonth(month.month)}
+      </button>
       <span className="text-muted">
         {counted.map(([label, count]) => `${t(label)}: ${formatNumber(count)}`).join(' · ')}
       </span>
@@ -435,6 +570,7 @@ function MonthRow({ collection, month }: { collection: Collection; month: Collec
         )}
       </span>
       {send.isError && <p className="w-full text-danger">{errorMessage(send.error, t)}</p>}
+      {open && <MonthItems collection={collection} month={month} />}
       {again && (
         <ConfirmDialog
           heading={t('collections.sendAgain')}

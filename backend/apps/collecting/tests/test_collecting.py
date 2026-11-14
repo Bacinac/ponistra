@@ -3,6 +3,7 @@ import secrets
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 
+import httpx2
 import pytest
 from asgiref.sync import sync_to_async
 from django.utils import timezone
@@ -12,11 +13,14 @@ from apps.actions.models import ActionRun
 from apps.ai import installation, model
 from apps.ai.tests.recorded import Recorded, message, used
 from apps.blobs import store
-from apps.collecting import delivering, months, taking
+from apps.collecting import converting, delivering, months, taking
 from apps.collecting.models import Collection, Item, Month
 from apps.core import sealed
 from apps.documents.models import Node
+from apps.documents.views import created
 from apps.mail.models import Account, Attachment, Folder, Message, Role, Unsent
+from apps.push import notices
+from apps.push.models import Notice
 from apps.search.models import BlobPage, BlobText
 from apps.users.models import User
 
@@ -25,6 +29,28 @@ pytestmark = pytest.mark.django_db
 JSON = "application/json"
 PDF = b"%PDF-1.7\n%"
 MARTA = [{"name": "Marta", "address": "marta@example.com"}]
+RATES = {"USD": "1.2500", "GBP": "0.8000"}
+
+
+@pytest.fixture(autouse=True)
+def asked(monkeypatch):
+    """The reference rates the collection asked the central bank for, as currency and the last
+    day asked."""
+    asked = []
+
+    def answer(request):
+        currency = request.url.path.rsplit("/", 1)[1].split(".")[1]
+        last = request.url.params["endPeriod"]
+        asked.append((currency, last))
+        if currency not in RATES:
+            return httpx2.Response(404)
+        rows = f"KEY,TIME_PERIOD,OBS_VALUE\nx,2026-01-02,9.9\nx,{last},{RATES[currency]}\n"
+        return httpx2.Response(200, text=rows)
+
+    monkeypatch.setattr(
+        converting, "client", lambda: httpx2.Client(transport=httpx2.MockTransport(answer))
+    )
+    return asked
 
 
 @pytest.fixture
@@ -287,19 +313,30 @@ def _month_on_its_day(browser, account, inbox):
     assert unsent.held.count() == 3
     html = unsent.written["html"]
     assert "<p>Pozdrav Marta,</p>" in html and "25,25" in html and "5,25" in html
+    assert "Iznos u EUR" in html and "20,20" in html
     book = load_workbook(
         io.BytesIO(store.path_of(unsent.written["files"][-1]["sha256"]).read_bytes())
     )
     rows = list(book.active.values)
-    assert rows[0] == ("Dobavljač", "Datum", "Iznos", "Valuta", "Datoteke", "Predmet")
-    assert rows[1][:5] == (
+    assert rows[0] == (
+        "Dobavljač",
+        "Datum",
+        "Iznos",
+        "Valuta",
+        "Iznos u EUR",
+        "Datoteke",
+        "Predmet",
+    )
+    assert rows[1][:6] == (
         "Billing",
         datetime(2026, 10, 3),
         20,
         "USD",
+        16,
         "2026-10-03 Invoice-1.pdf",
     )
-    assert rows[-1][:4] == ("Ukupno", None, 25.25, "USD")
+    assert rows[-2][:4] == ("Ukupno", None, 25.25, "USD")
+    assert rows[-1][:5] == ("Ukupno", None, None, "EUR", 20.2)
     assert delivering.due(at(2026, 11, 12)) is None
     delivering.delivered(month)
     again = Month.objects.get(pk=month.pk)
@@ -384,3 +421,133 @@ def test_another_users_collection_is_not_found(browser, account):
     browser.force_login(stranger)
     assert browser.get(f"/api/collections/{collection.pk}").status_code == 404
     assert browser.get("/api/collections").json() == {"collections": []}
+
+
+def test_a_bill_in_another_currency_carries_its_amount_by_the_rate_of_the_day_before(
+    browser, account, inbox, monkeypatch, asked
+):
+    monkeypatch.setattr(installation, "enabled", lambda: True)
+    bill = {"bill": True, "supplier": "Anthropic, PBC", "date": "2026-10-02"}
+    monkeypatch.setattr(
+        model,
+        "answer",
+        Recorded(
+            message("tool_use", used("u1", "bill", {**bill, "amount": "21.60", "currency": "USD"}))
+        ),
+    )
+    mail(account, inbox, "Receipt", "b@anthropic.com", at(2026, 10, 3), ("r.pdf", PDF, "$21.60"))
+    made(browser, recognise=True, consent="once")
+    drained()
+    kept = Item.objects.get()
+    assert (kept.converted, kept.rate, kept.rated) == (
+        Decimal("17.28"),
+        Decimal("1.25"),
+        Item.Rated.REFERENCE,
+    )
+    assert asked == [("USD", "2026-10-01")]
+    collection = Collection.objects.get()
+    url = f"/api/collections/{collection.pk}/items/{kept.pk}"
+    assert browser.put(url, {"converted": "17,50"}, content_type=JSON).status_code == 400
+    answer = browser.put(url, {"converted": "17.50"}, content_type=JSON).json()
+    assert (answer["converted"], answer["rated"]) == ("17.50", "hand")
+    assert Item.objects.get().rate == Decimal("1.234286")
+    answer = browser.put(url, {"converted": None}, content_type=JSON).json()
+    assert (answer["converted"], answer["rated"]) == ("17.28", "reference")
+    month = Month.objects.get()
+    items = browser.get(f"/api/collections/{collection.pk}/months/{month.pk}/items").json()
+    assert [
+        (each["supplier"], each["amount"], each["converted"], each["files"])
+        for each in items["items"]
+    ] == [("Anthropic, PBC", "21.60", "17.28", 1)]
+
+
+def test_a_currency_without_a_rate_holds_the_month_back(browser, account, inbox, monkeypatch):
+    made(browser)
+    Collection.objects.update(created_at=at(2026, 10, 1))
+    mail(account, inbox, "Invoice", "b@anthropic.com", at(2026, 10, 3), ("i.pdf", PDF, ""))
+    drained()
+    Item.objects.update(amount="900", currency="JPY")
+    month = delivering.due(at(2026, 11, 11, 10))
+    delivering.delivered(month)
+    month = Month.objects.get()
+    assert (month.failed, month.delivered_at, month.unsent) == (delivering.UNRATED, None, None)
+
+
+def filed(folder, owner, title, text):
+    blob = store.put(io.BytesIO(PDF + title.encode()))
+    read = BlobText.objects.create(blob=blob, page_count=1, extracted_at=timezone.now())
+    BlobPage.objects.create(source=read, number=1, text=text)
+    return created(folder, Node.Kind.FILE, title, blob, owner, "pdf")
+
+
+def test_a_file_put_in_a_months_folder_joins_the_bill_of_its_amount(
+    browser, account, inbox, monkeypatch, owner
+):
+    monkeypatch.setattr(installation, "enabled", lambda: True)
+    funded = {"bill": True, "supplier": "OpenAI", "amount": "5.48", "currency": "USD"}
+    recorded = Recorded(
+        message("tool_use", used("u1", "bill", {**funded, "date": "2026-10-18"})),
+        message("tool_use", used("u2", "bill", {**funded, "date": "2026-10-19"})),
+        message("tool_use", used("u3", "bill", {**funded, "date": "2026-10-18"})),
+        message(
+            "tool_use",
+            used(
+                "u4",
+                "bill",
+                {"bill": True, "supplier": "OpenAI", "amount": "23.00", "currency": "EUR"},
+            ),
+        ),
+    )
+    monkeypatch.setattr(model, "answer", recorded)
+    mail(account, inbox, "Your account has been funded", "noreply@ai.example", at(2026, 10, 18))
+    made(
+        browser,
+        recognise=True,
+        consent="once",
+        attached=False,
+        senders=["ai.example"],
+        words=["funded"],
+    )
+    drained()
+    bill = Item.objects.get()
+    assert (bill.files, bill.told) == ([], True)
+    folder = months.folder_for(bill.month)
+    invoice = filed(folder, owner, "Invoice-0014", "Total $5.48")
+    receipt = filed(folder, owner, "Receipt-2217", "Amount paid $5.48")
+    taking.forget(bill.collection_id)
+    drained()
+    assert list(Item.objects.values_list("files", flat=True)) == [
+        [str(invoice.pk), str(receipt.pk)]
+    ]
+    plus = filed(folder, owner, "Invoice-HUE963DL", "Total €23.00")
+    taking.forget(bill.collection_id)
+    drained()
+    own = Item.objects.get(node=plus)
+    assert (own.state, own.amount, own.currency, own.files, own.converted) == (
+        Item.State.KEPT,
+        Decimal("23.00"),
+        "EUR",
+        [str(plus.pk)],
+        Decimal("23.00"),
+    )
+    assert "Total €23.00" in str(recorded.asked[3]["messages"])
+    taking.forget(bill.collection_id)
+    drained()
+    assert Item.objects.count() == 2
+
+
+def test_a_bill_without_its_file_is_told_by_the_message_that_brought_it():
+    data = {
+        "collection": "Troškovi",
+        "supplier": "OpenAI",
+        "amount": "5.48",
+        "currency": "USD",
+        "folder": 3,
+        "message": 41,
+    }
+    worded = notices.worded(Notice(kind=Notice.Kind.BILL, data=data), "hr", 0)
+    assert (worded["title"], worded["body"], worded["url"]) == (
+        "Račun bez datoteke: Troškovi",
+        "OpenAI · 5,48 USD",
+        "/mail/3/41",
+    )
