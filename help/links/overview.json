@@ -7,9 +7,9 @@
   ],
   "quiet": [],
   "describes": {
-    "frontend/src/links.tsx#LinksPage": "4f607950ed6a",
+    "frontend/src/links.tsx#LinksPage": "cb067eb83e94",
     "frontend/src/links.tsx#GroupHeading": "e2d643792b67",
-    "frontend/src/links.tsx#Tile": "8643272dd8e7",
+    "frontend/src/links.tsx#Tile": "b0e7e7e55ec7",
     "frontend/src/dialogs.tsx#LinkDialog": "e9b866bb18c7",
     "backend/apps/documents/links.py#address_of": "404acfa3d078",
     "backend/apps/documents/links.py#read": "8af4adcdd3cb",

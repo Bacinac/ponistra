@@ -5,6 +5,7 @@ import { unavailable } from './api';
 import { LoginForm, PasskeyDue, SetupForm, useSession } from './auth';
 import { forgetDoor, rememberedDoor } from './door';
 import { Loading, Lobby, Shell } from './frame';
+import { START } from './linksWindow';
 import { BESIDE } from './workspace';
 import { queriesTrail, reportCrash } from './crashes';
 import { useFollowed } from './followed';
@@ -36,7 +37,6 @@ const HealthPage = lazily(() => import('./health'), 'HealthPage');
 const JournalPage = lazily(() => import('./journal'), 'JournalPage');
 const HelpPage = lazily(() => import('./help'), 'HelpPage');
 const LinksPage = lazily(() => import('./links'), 'LinksPage');
-const StartPage = lazily(() => import('./links'), 'StartPage');
 const MailPage = lazily(() => import('./mail'), 'MailPage');
 const MeetingPage = lazily(() => import('./MeetingPage'), 'MeetingPage');
 const NotesPage = lazily(() => import('./notes'), 'NotesPage');
@@ -222,14 +222,15 @@ export default function App() {
       </Crash>
     );
   }
-  if (pathname === '/start') {
+  if (pathname === START) {
     return (
       <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
         <Suspense fallback={<Loading />}>
           <Routes>
-            <Route path="/start" element={<StartPage />} />
+            <Route path="/start" element={<LinksPage alone />} />
           </Routes>
         </Suspense>
+        <JobBar />
         <Followed />
         <PushBridge />
       </Crash>

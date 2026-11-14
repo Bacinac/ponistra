@@ -20,14 +20,13 @@ import { ChoiceBar, ChoiceBox, useChoice, type Choice } from './choice';
 import { LinkDialog, NameDialog } from './dialogs';
 import { endDrag, startDrag } from './drag';
 import { Frame, Loading } from './frame';
-import { BrandIcon } from './Brand';
+import { Brand } from './Brand';
 import { useI18n } from './i18n';
-import type { MessageKey } from './i18n/hr';
 import { LINKS, useLinks, type Links, type Listed } from './linksData';
 import { runJob } from './jobs';
 import { ContextMenuArea, Menu, MenuItem, MenuSeparator, MenuSub } from './menu';
 import { useMenuPress } from './press';
-import { iconButton, primaryButton } from './styles';
+import { iconButton, primaryButton, button } from './styles';
 import {
   errorMessage,
   Failure,
@@ -192,27 +191,7 @@ function Heading({ group }: { group: Group }) {
   );
 }
 
-function groupName(group: Group, t: (key: MessageKey) => string): string {
-  if (group.own) return ownName(group.own);
-  if (group.mine) return t('links.ungrouped');
-  return [t(ROOT_LABELS[group.root]), ...group.path.map((above) => above.title)].join(' / ');
-}
-
 const tile = 'flex h-full min-h-[4.25rem] w-full items-center gap-3 rounded-xl border p-3';
-
-function TileBody({ link }: { link: Listed }) {
-  return (
-    <>
-      <LinkIcon link={link} />
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate font-medium">{link.title}</span>
-        <span className="truncate text-xs text-muted">
-          {link.description || site(link.href ?? '')}
-        </span>
-      </span>
-    </>
-  );
-}
 const marker = 'pointer-events-none absolute rounded-full bg-accent';
 
 function Tile({
@@ -255,7 +234,13 @@ function Tile({
         title={link.title}
         className={`${tile} shadow-sm transition select-none [-webkit-touch-callout:none] hover:-translate-y-0.5 hover:border-accent hover:shadow-md ${picked ? 'border-accent bg-selected' : 'border-line bg-raised'} ${iconing ? 'ring-2 ring-accent' : ''} ${choice.many > 0 && items ? 'pr-9' : ''}`}
       >
-        <TileBody link={link} />
+        <LinkIcon link={link} />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <span className="truncate font-medium">{link.title}</span>
+          <span className="truncate text-xs text-muted">
+            {link.description || site(link.href ?? '')}
+          </span>
+        </span>
       </PlaceLink>
       {choice.many > 0 && items && (
         <ChoiceBox
@@ -387,8 +372,56 @@ type Dialog =
   | { editing: Listed }
   | { renaming: Listed };
 
-export function LinksPage() {
+/** The page alone, the whole window its own, as the window the links open in on a computer: the
+    links only, until a long press on the logo opens them to editing. */
+function Alone({
+  title,
+  primary,
+  editing,
+  onEdit,
+  children,
+}: {
+  title: string;
+  primary: ReactNode;
+  editing: boolean;
+  onEdit: (editing: boolean) => void;
+  children: ReactNode;
+}) {
   const { t } = useI18n();
+  const press = useMenuPress();
+  return (
+    <main className="min-h-dvh bg-surface px-4 py-6 text-ink md:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <header className="flex min-h-9 items-center gap-3">
+          <div
+            {...press}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              onEdit(true);
+            }}
+            className="min-w-0 flex-1 select-none [-webkit-touch-callout:none]"
+          >
+            <Brand compact />
+          </div>
+          <h1 className="sr-only">{title}</h1>
+          {editing && (
+            <>
+              {primary}
+              <button type="button" onClick={() => onEdit(false)} className={button}>
+                {t('links.done')}
+              </button>
+            </>
+          )}
+        </header>
+        {children}
+      </div>
+    </main>
+  );
+}
+
+export function LinksPage({ alone = false }: { alone?: boolean }) {
+  const { t } = useI18n();
+  const [editing, setEditing] = useState(!alone);
   const links = useLinks();
   const folder = links.data?.folder ?? null;
   const place = usePlace(folder);
@@ -501,7 +534,11 @@ export function LinksPage() {
   }
 
   function section(group: Group) {
-    const name = groupName(group, t);
+    const name = group.own
+      ? ownName(group.own)
+      : group.mine
+        ? t('links.ungrouped')
+        : [t(ROOT_LABELS[group.root]), ...group.path.map((above) => above.title)].join(' / ');
     if (group.mine && !group.own && !group.links.length && dragging !== 'links') return null;
     const into = group.mine ? group.folder : null;
     const landing =
@@ -539,7 +576,9 @@ export function LinksPage() {
           dropped();
         }}
       >
-        {group.own ? (
+        {!editing ? (
+          <h2 className="flex min-h-8 items-center text-base font-semibold text-muted">{name}</h2>
+        ) : group.own ? (
           <GroupHeading
             group={group.own}
             name={name}
@@ -570,8 +609,8 @@ export function LinksPage() {
                 link={link}
                 choice={choice}
                 spot={spot}
-                draggable={fine && mine}
-                items={linkItems(link)}
+                draggable={editing && fine && mine}
+                items={editing ? linkItems(link) : null}
                 onDragStart={(event) =>
                   started(event, { links: choice.has(link.id) ? choice.chosen : [link.id] })
                 }
@@ -617,39 +656,37 @@ export function LinksPage() {
     );
   }
 
-  return (
-    <Frame
-      title={t('links.title')}
-      primary={
-        <Menu
-          trigger={
-            <button type="button" disabled={!links.data} className={primaryButton}>
-              <Plus size={16} aria-hidden />
-              <span className="sr-only sm:not-sr-only">{t('create.new')}</span>
-              <ChevronDown size={16} aria-hidden />
-            </button>
-          }
-        >
-          <MenuItem
-            icon={Globe}
-            label={t('create.link')}
-            onSelect={() => setDialog({ making: 'link', into: null })}
-          />
-          <MenuItem
-            icon={Folder}
-            label={t('links.newGroup')}
-            onSelect={() => setDialog({ making: 'group' })}
-          />
-          <MenuSeparator />
-          <MenuItem
-            icon={FileUp}
-            label={t('links.load')}
-            disabled={load.isPending}
-            onSelect={picker.open}
-          />
-        </Menu>
+  const primary = (
+    <Menu
+      trigger={
+        <button type="button" disabled={!links.data} className={primaryButton}>
+          <Plus size={16} aria-hidden />
+          <span className="sr-only sm:not-sr-only">{t('create.new')}</span>
+          <ChevronDown size={16} aria-hidden />
+        </button>
       }
     >
+      <MenuItem
+        icon={Globe}
+        label={t('create.link')}
+        onSelect={() => setDialog({ making: 'link', into: null })}
+      />
+      <MenuItem
+        icon={Folder}
+        label={t('links.newGroup')}
+        onSelect={() => setDialog({ making: 'group' })}
+      />
+      <MenuSeparator />
+      <MenuItem
+        icon={FileUp}
+        label={t('links.load')}
+        disabled={load.isPending}
+        onSelect={picker.open}
+      />
+    </Menu>
+  );
+  const content = (
+    <>
       <section
         className="flex w-full max-w-6xl flex-col gap-10"
         onKeyDown={(event) =>
@@ -661,13 +698,13 @@ export function LinksPage() {
           )
         }
         onDragOver={(event) => {
-          if (dragged.current || !event.dataTransfer.types.includes('Files')) return;
+          if (!editing || dragged.current || !event.dataTransfer.types.includes('Files')) return;
           event.preventDefault();
           event.dataTransfer.dropEffect = 'copy';
           aim(null);
         }}
         onDrop={(event) => {
-          if (dragged.current || !event.dataTransfer.files.length) return;
+          if (!editing || dragged.current || !event.dataTransfer.files.length) return;
           event.preventDefault();
           load.mutate([...event.dataTransfer.files]);
         }}
@@ -795,70 +832,15 @@ export function LinksPage() {
           />
         )}
       </section>
-    </Frame>
+    </>
   );
-}
-
-/** The links alone, the whole window theirs, as a browser's start page; they are edited on /links. */
-export function StartPage() {
-  const { t } = useI18n();
-  const links = useLinks();
-  const { own, others } = links.data ? grouped(links.data) : { own: [], others: [] };
-  const shown = [...own, ...others].filter((group) => group.links.length);
-  return (
-    <main className="min-h-dvh bg-surface px-4 py-6 text-ink md:px-8">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <header className="flex items-center gap-3">
-          <Link to="/" aria-label={t('rail.today')} title={t('rail.today')}>
-            <BrandIcon />
-          </Link>
-          <h1 className="min-w-0 flex-1 truncate text-lg font-semibold">{t('links.title')}</h1>
-          <Link
-            to="/links"
-            aria-label={t('links.edit')}
-            title={t('links.edit')}
-            className={iconButton}
-          >
-            <Pencil size={18} aria-hidden />
-          </Link>
-        </header>
-        {links.isError ? (
-          <Failure error={links.error} />
-        ) : !links.data ? (
-          <Loading />
-        ) : !shown.length ? (
-          <p className="text-muted">{t('links.empty')}</p>
-        ) : (
-          shown.map((group) => {
-            const name = groupName(group, t);
-            return (
-              <section
-                key={`${group.mine ? 'own' : group.root}:${group.folder}`}
-                aria-label={name}
-                className="flex flex-col gap-3"
-              >
-                <h2 className="text-base font-semibold text-muted">{name}</h2>
-                <ul
-                  style={columnsOf(group)}
-                  className={`grid gap-3 ${group.own?.columns ? '' : 'grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]'}`}
-                >
-                  {group.links.map((link) => (
-                    <li key={link.id}>
-                      <PlaceLink
-                        to={nodeHref(link)}
-                        title={link.title}
-                        className={`${tile} border-line bg-raised shadow-sm transition hover:-translate-y-0.5 hover:border-accent hover:shadow-md`}
-                      >
-                        <TileBody link={link} />
-                      </PlaceLink>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            );
-          })
-        )}
-      </div>
-    </main>
+  return alone ? (
+    <Alone title={t('links.title')} primary={primary} editing={editing} onEdit={setEditing}>
+      {content}
+    </Alone>
+  ) : (
+    <Frame title={t('links.title')} primary={primary}>
+      {content}
+    </Frame>
   );
 }

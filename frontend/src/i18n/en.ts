@@ -2930,7 +2930,7 @@ export const en: Record<MessageKey, string> = {
   'boards.empty': 'No boards yet.',
   'boards.group': 'Group on Boards…',
   'links.title': 'Links',
-  'links.edit': 'Edit links',
+  'links.done': 'Done',
   'links.newGroup': 'New group',
   'links.load': 'Load links…',
   'links.ungrouped': 'No group',

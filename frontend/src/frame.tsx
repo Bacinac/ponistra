@@ -68,6 +68,7 @@ import { SearchBox } from './search';
 import { VoiceButton } from './voice';
 import { useGoToProjects } from './workspace';
 import { MODULES, type Module } from './modules';
+import { openLinks } from './linksWindow';
 import { PLACES } from './places';
 import { Splitter, useWidth, type Column } from './split';
 import {
@@ -371,7 +372,13 @@ function FolderTree({
       </NavLink>
       <SharedBranch {...level} />
       {KEPT_APART.map(({ to, end, icon: Icon, label }) => (
-        <NavLink key={to} to={to} end={end} className={sideRow}>
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={sideRow}
+          onClick={to === '/links' ? (event) => openLinks() && event.preventDefault() : undefined}
+        >
           <Icon size={16} aria-hidden className="shrink-0 text-muted" />
           {t(label)}
         </NavLink>

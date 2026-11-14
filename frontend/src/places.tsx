@@ -38,6 +38,7 @@ import {
 } from './theme';
 import { fold } from './vault/search';
 import { useReachable } from './live';
+import { openLinks } from './linksWindow';
 import { useGoToProjects } from './workspace';
 
 /** Every part of the suite one goes to by name: the modules, and the places within them a user
@@ -103,7 +104,7 @@ export function usePlaces(): Palette {
         label: `${t('places.open')}: ${t(label)}`,
         icon,
         disabled: false,
-        run: () => navigate(to),
+        run: () => (id === 'links' && openLinks()) || navigate(to),
       }));
       const projects: Choice[] = owner
         ? [

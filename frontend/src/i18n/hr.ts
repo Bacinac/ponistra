@@ -2925,7 +2925,7 @@ export const hr = {
   'boards.empty': 'Još nema nijedne ploče.',
   'boards.group': 'Grupa na Pločama…',
   'links.title': 'Poveznice',
-  'links.edit': 'Uredi poveznice',
+  'links.done': 'Gotovo',
   'links.newGroup': 'Nova grupa',
   'links.load': 'Učitaj poveznice…',
   'links.ungrouped': 'Bez grupe',

@@ -80,8 +80,21 @@ test('the page of links keeps its own groups, outside the documents, and loads a
     route.fulfill({ contentType: 'text/html', body: '<title>Stranica</title>' }),
   );
   await page.goto('/documents');
-  await page.getByRole('link', { name: 'Poveznice', exact: true }).click();
-  await expect(page).toHaveURL(/\/links$/);
+  const [alone] = await Promise.all([
+    page.waitForEvent('popup'),
+    page.getByRole('link', { name: 'Poveznice', exact: true }).click(),
+  ]);
+  await expect(alone).toHaveURL(/\/start$/);
+  await expect(alone.getByRole('heading', { name: 'Poveznice', level: 1 })).toBeVisible();
+  await expect(alone.getByRole('button', { name: 'Novo' })).toHaveCount(0);
+  await alone.getByRole('img', { name: 'Ponistra', exact: true }).click({ button: 'right' });
+  await expect(alone.getByRole('button', { name: 'Novo' })).toBeVisible();
+  await alone.getByRole('button', { name: 'Gotovo' }).click();
+  await expect(alone.getByRole('button', { name: 'Novo' })).toHaveCount(0);
+  await expect(alone.getByRole('navigation')).toHaveCount(0);
+  await alone.close();
+  await expect(page).toHaveURL(/\/documents$/);
+  await page.goto('/links');
   await expect(page.getByRole('heading', { name: 'Poveznice', level: 1 })).toBeVisible();
 
   await created(page, 'Nova grupa', { Naziv: `Grupa ${stamp}` });
@@ -116,15 +129,6 @@ test('the page of links keeps its own groups, outside the documents, and loads a
   await expect(group.getByRole('link')).toHaveText([/Drugo/, /Prvo/]);
   await page.reload();
   await expect(group.getByRole('link')).toHaveText([/Drugo/, /Prvo/]);
-
-  await page.goto('/start');
-  await expect(page.getByRole('navigation')).toHaveCount(0);
-  await expect(page.getByRole('region', { name: `Grupa ${stamp}` }).getByRole('link')).toHaveText([
-    /Drugo/,
-    /Prvo/,
-  ]);
-  await page.getByRole('link', { name: 'Uredi poveznice' }).click();
-  await expect(page).toHaveURL(/\/links$/);
 
   await heading.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Stupci' }).click();
