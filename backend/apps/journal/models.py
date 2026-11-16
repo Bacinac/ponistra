@@ -23,6 +23,8 @@ class Entry(models.Model):
         PASSWORD_CHANGED = "password_changed"
         PASSKEY_ADDED = "passkey_added"
         PASSKEY_REMOVED = "passkey_removed"
+        AUTHENTICATOR_ADDED = "authenticator_added"
+        AUTHENTICATOR_REMOVED = "authenticator_removed"
         APP_PASSWORD_ADDED = "app_password_added"
         APP_PASSWORD_REMOVED = "app_password_removed"
         APPLICATION_ADDED = "application_added"

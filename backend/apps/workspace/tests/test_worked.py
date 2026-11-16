@@ -3,8 +3,10 @@ from datetime import datetime
 import pytest
 from django.test import Client
 
-from apps.workspace.models import Stretch, Transcript
-from apps.workspace.worked import CLOCKIFY, hours, kept
+from apps.actions.models import ActionRun
+from apps.workspace.models import Limits, Spend, Stretch, Transcript
+from apps.workspace.spend import summed
+from apps.workspace.worked import CLOCKIFY, Found, Spent, hours, kept
 
 pytestmark = pytest.mark.django_db
 
@@ -118,6 +120,7 @@ def test_the_workspace_says_what_it_found_and_hears_how_far_it_read(client, sett
     assert response.status_code == 204
     assert client.get(worked, HTTP_AUTHORIZATION="Bearer token").json() == {
         "read": {f"{HERE}/{CHAT}": 4096},
+        "last": {},
         "removal": None,
     }
     assert Stretch.objects.get(transcript__namespace=HERE).ended == at("2026-11-12T08:30:00.250")
@@ -167,3 +170,116 @@ def test_the_owner_alone_reads_the_hours(api, settings):
     listed = api.get("/api/workspace/hours?month=2026-11").json()
     assert listed["days"][0]["projects"] == {"ponistra": 3600}
     assert Client().get("/api/workspace/hours").status_code in (401, 403)
+
+
+def spent(hour: str, model: str = "claude-opus-5-5", tokens: int = 1000) -> Spent:
+    return Spent(at(hour), model, 1, tokens, tokens, tokens, tokens)
+
+
+def tokens(**where) -> int:
+    return sum(Spend.objects.filter(**where).values_list("input", flat=True))
+
+
+def test_tokens_count_once_from_where_the_reading_began_at_the_mark():
+    hour = "2026-11-12T08:00:00"
+    kept(HERE, CHAT, "ponistra", 100, [], Found(origin=0, last="msg_1", spent=[spent(hour)]))
+    # Told again after its answer was lost: the reading began before the mark.
+    kept(HERE, CHAT, "ponistra", 100, [], Found(origin=0, last="msg_1", spent=[spent(hour)]))
+    kept(HERE, CHAT, "ponistra", 200, [], Found(origin=100, last="msg_2", spent=[spent(hour)]))
+    assert tokens() == 2000
+    transcript = Transcript.objects.get()
+    assert (transcript.read, transcript.last, transcript.chat) == (200, "msg_2", CHAT)
+
+
+def test_a_copy_counts_its_tokens_only_for_a_transcript_not_known_before():
+    kept(HERE, CHAT, "ponistra", None, [], Found(spent=[spent("2026-11-12T08:00:00")]))
+    kept(HERE, CHAT, "ponistra", None, [], Found(spent=[spent("2026-11-12T08:00:00")]))
+    assert tokens() == 1000
+
+
+def test_an_agents_tokens_belong_to_its_chat_and_each_round_keeps_its_own():
+    agent = f"{CHAT}-a327d22ee4ed4e98f"
+    hour = "2026-11-12T08:00:00"
+    kept(HERE, CHAT, "ponistra", 10, [], Found(chat=CHAT, title="Izvoz", spent=[spent(hour)]))
+    kept(HERE, agent, "ponistra", 10, [], Found(chat=CHAT, round="r1", spent=[spent(hour)]))
+    shown = summed("2026-11")
+    assert [(each["chat"], each["title"], each["input"]) for each in shown["chats"]] == [
+        (CHAT, "Izvoz", 2000)
+    ]
+    assert [(each["round"], each["input"]) for each in shown["rounds"]] == [("r1", 1000)]
+
+
+def test_the_spend_is_worth_the_apis_prices_and_names_the_models_without_one():
+    kept(
+        HERE,
+        CHAT,
+        "ponistra",
+        10,
+        [],
+        Found(
+            spent=[
+                Spent(at("2026-11-12T08:00:00"), "claude-opus-5-5", 3, 1_000_000, 0, 0, 0),
+                spent("2026-11-12T09:00:00", "claude-fable-5-2"),
+            ]
+        ),
+    )
+    ActionRun.objects.create(action="text.summarise", target={}, cost="0.25")
+    shown = summed()
+    [month] = [each for each in shown["months"] if each["month"] == "2026-11"]
+    assert (month["worth"], month["unpriced"], month["turns"]) == (4.0, ["claude-fable-5-2"], 4)
+    assert [each["name"] for each in shown["models"]] == ["claude-opus-5-5", "claude-fable-5-2"]
+    assert day(shown, "2026-11-12")["worth"] == 4.0
+
+
+def test_the_week_reads_as_percent_per_dollar_spent_in_its_window():
+    kept(
+        HERE,
+        CHAT,
+        "ponistra",
+        10,
+        [],
+        Found(spent=[Spent(at("2026-11-12T08:00:00"), "claude-opus-5-5", 1, 1_000_000, 0, 0, 0)]),
+    )
+    week = {"kind": "week", "name": None, "percent": 20, "resets": "2026-11-15T09:00:00+00:00"}
+    session = {"kind": "session", "name": None, "percent": 5, "resets": "2026-11-12T12:00:00+00:00"}
+    Limits.objects.create(at=at("2026-11-12T10:00:00"), windows=[session, week])
+    shown = summed("2026-11")
+    assert shown["rate"] == 5.0
+    assert shown["limits"] == [{"at": "2026-11-12T10:00:00+00:00", "session": 5, "week": 20}]
+
+
+@pytest.mark.parametrize(
+    "spent, error",
+    [
+        ([{"hour": 1, "model": "claude-opus-5-5"}], "invalid_spent"),
+        ([{"hour": 3_600_000, "model": "a b"}], "invalid_spent"),
+        ([{"hour": 3_600_000, "model": "m", "input": -1}], "invalid_spent"),
+        ([{"hour": 3_600_000, "model": "m"}, {"hour": 3_600_000, "model": "m"}], "invalid_spent"),
+    ],
+)
+def test_the_tokens_told_are_checked(client, settings, spent, error):
+    settings.WORKSPACE_TOKEN = "token"
+    sent = {"transcripts": [{"namespace": HERE, "session": CHAT, "stretches": [], "spent": spent}]}
+    response = client.post("/api/workspace/worked", sent, JSON, HTTP_AUTHORIZATION="Bearer token")
+    assert (response.status_code, response.json()) == (400, {"error": error})
+
+
+def test_the_workspace_keeps_the_limits_each_time_they_change(client, settings):
+    settings.WORKSPACE_TOKEN = "token"
+    week = {"kind": "week", "name": None, "percent": 41, "resets": "2026-11-15T09:00:00Z"}
+    limits = {"at": "2026-11-12T10:00:00.000Z", "windows": [week], "credits": None}
+    for given in (limits, limits, {**limits, "windows": [{"kind": "year"}]}):
+        response = client.post(
+            "/api/workspace/changed", {"limits": given}, JSON, HTTP_AUTHORIZATION="Bearer token"
+        )
+        assert response.status_code == 204
+    [kept_limits] = Limits.objects.all()
+    assert kept_limits.windows[0]["percent"] == 41
+
+
+def test_only_the_owner_reads_the_spend(api, settings):
+    settings.WORKSPACE = "owner@example.com"
+    assert api.get("/api/workspace/spend").status_code == 403
+    settings.WORKSPACE = api.user.email
+    assert api.get("/api/workspace/spend?month=2026-11").json()["month"] == "2026-11"
+    assert api.get("/api/workspace/spend?month=11").status_code == 400

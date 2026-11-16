@@ -13,7 +13,7 @@ const { get } = vi.hoisted(() => {
   return { get };
 });
 
-import { LoginForm, providerStart, SignInChoice } from './auth';
+import { LoginForm, providerStart, SESSION_KEY, SignInChoice, type Session } from './auth';
 import { I18nProvider } from './i18n';
 
 function pending(request: CredentialRequestOptions) {
@@ -24,11 +24,23 @@ function pending(request: CredentialRequestOptions) {
   });
 }
 
-function signIn(chosen: string) {
+const SIGNED_OUT = {
+  user: null,
+  due: null,
+  setup: false,
+  site: '',
+  passkeys: true,
+  second_factor: null,
+  providers: [],
+} satisfies Session;
+
+function signIn(chosen: string, session: Partial<Session> = {}) {
   localStorage.setItem('ponistra.signIn', chosen);
   localStorage.setItem('ponistra.language', 'hr');
+  const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
+  client.setQueryData(SESSION_KEY, { ...SIGNED_OUT, ...session });
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <I18nProvider>
         <LoginForm />
       </I18nProvider>
@@ -87,14 +99,61 @@ test('the button withdraws the offer before it asks', async () => {
   expect(get.mock.calls[1][0]).not.toHaveProperty('mediation');
 });
 
+test('a passkey refused at once, as the platform refuses while it lets go of the offer, is asked once more', async () => {
+  const credential = { toJSON: () => ({ id: 'k' }) };
+  get
+    .mockRejectedValueOnce(new DOMException('busy', 'NotAllowedError'))
+    .mockResolvedValueOnce(credential);
+  const sent: unknown[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input).endsWith('/api/auth/passkey')) sent.push(JSON.parse(String(init?.body)));
+      return Promise.resolve(Response.json({ challenge: 'c' }));
+    }),
+  );
+  signIn('passkey');
+  await userEvent.click(passkey());
+  await waitFor(() => expect(sent).toEqual([{ credential: { id: 'k' } }]));
+  expect(get).toHaveBeenCalledTimes(2);
+});
+
+test('where passkeys are off the page offers only the password', async () => {
+  signIn('passkey', { passkeys: false });
+  expect(screen.getByLabelText('E-pošta')).toHaveProperty('autocomplete', 'username');
+  expect(screen.queryByRole('button', { name: 'Prijavi se pristupnim ključem' })).toBeNull();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(get).not.toHaveBeenCalled();
+});
+
+test('a password the second factor holds asks for the code, and a wrong one says so', async () => {
+  const sent: unknown[] = [];
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((_: RequestInfo | URL, init?: RequestInit) => {
+      sent.push(JSON.parse(String(init?.body)));
+      return Promise.resolve(Response.json({ error: 'invalid_code' }, { status: 400 }));
+    }),
+  );
+  signIn('', { second_factor: { code: true, passkey: false } });
+  expect(screen.queryByLabelText('Lozinka')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Potvrdi pristupnim ključem' })).toBeNull();
+  await userEvent.type(screen.getByLabelText('Kôd iz aplikacije za autentifikaciju'), '123456');
+  await userEvent.click(screen.getByRole('button', { name: 'Prijavi se' }));
+  expect(await screen.findByText('Kôd nije ispravan.')).toBeTruthy();
+  expect(sent).toEqual([{ code: '123456' }]);
+});
+
 test('a passkey cannot be the choice of an account without one', async () => {
   vi.stubGlobal(
     'fetch',
     vi.fn(() => Promise.resolve(Response.json({ passkeys: [] }))),
   );
   localStorage.setItem('ponistra.language', 'hr');
+  const client = new QueryClient({ defaultOptions: { queries: { staleTime: Infinity } } });
+  client.setQueryData(SESSION_KEY, SIGNED_OUT);
   render(
-    <QueryClientProvider client={new QueryClient()}>
+    <QueryClientProvider client={client}>
       <I18nProvider>
         <SignInChoice />
       </I18nProvider>
@@ -107,19 +166,7 @@ test('a passkey cannot be the choice of an account without one', async () => {
 
 test('a sign-in at an outside provider starts there and tells what it came back with', async () => {
   history.replaceState(null, '', '/documents?sign_in=outside_domains');
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((input: RequestInfo | URL) =>
-      Promise.resolve(
-        Response.json(
-          String(input).endsWith('/api/auth/session')
-            ? { user: null, providers: [{ id: 7, name: 'Entra' }] }
-            : { challenge: 'c' },
-        ),
-      ),
-    ),
-  );
-  signIn('password');
+  signIn('password', { providers: [{ id: 7, name: 'Entra' }] });
 
   expect(await screen.findByText('Adresa nije u domenama ovog izvora korisnika.')).toBeTruthy();
   expect(window.location.search).toBe('');

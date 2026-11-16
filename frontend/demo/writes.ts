@@ -586,6 +586,28 @@ function nodeWrites(): Write[] {
   ];
 }
 
+/** A project put under Others on Projects, or back, as the backend marks it in what it lists. */
+function workspaceWrites(): Write[] {
+  return [
+    {
+      method: 'POST',
+      path: /^\/api\/workspace\/projects$/,
+      run: (server, asked) => {
+        const { name, aside } = (asked.body ?? {}) as Fields;
+        if (typeof name !== 'string' || !name)
+          return { status: 400, body: { error: 'invalid_name' } };
+        if (typeof aside !== 'boolean') return { status: 400, body: { error: 'invalid_aside' } };
+        for (const [, listed] of server.reads<{ projects: Fields[] }>(
+          /^GET \/api\/workspace\/projects(\?|$)/,
+        ))
+          for (const project of listed.projects) if (project.name === name) project.aside = aside;
+        server.tell(['workspace']);
+        return { status: 204 };
+      },
+    },
+  ];
+}
+
 /** A page that crashed says so in the browser's console; the demo has no log to report to. */
 function crashWrites(): Write[] {
   return [{ method: 'POST', path: /^\/api\/crashes$/, run: () => ({ status: 204 }) }];
@@ -598,5 +620,6 @@ export const WRITES: Write[] = [
   ...mailWrites(),
   ...mailMarkWrites(),
   ...nodeWrites(),
+  ...workspaceWrites(),
   ...crashWrites(),
 ];

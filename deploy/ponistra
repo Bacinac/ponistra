@@ -133,6 +133,17 @@ placed() {
 	fi
 }
 
+# What the owner of the code workspace does first, once Ponistra runs with it.
+opened() {
+	[ -n "$(setting PONISTRA_WORKSPACE)" ] || return 0
+	if [ -n "$(setting PONISTRA_WORKSPACE_URL)" ]; then
+		echo "The code workspace at $(setting PONISTRA_WORKSPACE_URL) is linked: $(setting PONISTRA_WORKSPACE) opens it as Projects in Ponistra"
+	else
+		echo "The code workspace is on: $(setting PONISTRA_WORKSPACE) opens it as Projects in Ponistra, and signs in to Claude Code"
+		echo "there with claude auth login in the terminal of General"
+	fi
+}
+
 # The owner's code workspace (D34): VS Code in the browser for one user, and whether its agent may
 # run Docker on this host.
 workspace() {
@@ -221,6 +232,7 @@ install() {
 	volumes
 	started || fail "Ponistra $RELEASE did not start; docker compose logs backend"
 	echo "Ponistra $RELEASE is running: open https://$PONISTRA_DOMAIN/ and enter the code $code (kept in .env)"
+	opened
 	echo "Snapshots stay on this disk until the off-site copy is set up on System health; keep the recovery kit it gives away from this server"
 	echo "Meetings from outside the local network need UDP 7882 and TCP 7881 forwarded to this host;"
 	echo "and networks that let out neither, a relay: PONISTRA_TURN=<a name pointing straight at this host> in .env,"
@@ -303,6 +315,7 @@ restore() {
 		settle "$ran"
 	fi
 	started || fail "Ponistra $ran did not start after the restore; docker compose logs postgres backend"
+	# shellcheck disable=SC2016
 	in_postgres 'rm -rf "$PGDATA.before"'
 	echo "Ponistra $ran is running with the database of snapshot $snapshot as it was at ${1:-the newest moment the WAL reaches}"
 }
@@ -323,6 +336,7 @@ rebuilt() {
 		fail "the restore failed, and the installation runs as it was"
 	}
 	docker compose stop postgres
+	# shellcheck disable=SC2016
 	in_postgres 'rm -rf "$PGDATA.before" && mv "$PGDATA" "$PGDATA.before" && mv /restoring/data "$PGDATA" && chown -R postgres:postgres "$PGDATA" && rm -rf /restoring/*'
 }
 
@@ -370,7 +384,7 @@ add_workspace() {
 	umask 022
 	[ -n "$(setting PONISTRA_WORKSPACE)" ] || return 0
 	started || fail "Ponistra did not start with the code workspace; docker compose logs workspace"
-	echo "The code workspace is on: $(setting PONISTRA_WORKSPACE) opens it as Code in Ponistra's rail"
+	opened
 }
 
 status() {

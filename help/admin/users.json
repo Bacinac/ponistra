@@ -17,7 +17,7 @@
     "frontend/src/devices.tsx#DevicesDialog": "b9f62d6c4f56",
     "backend/apps/users/accounts.py#users": "d245125b021e",
     "backend/apps/users/accounts.py#user": "30f38b6a9d37",
-    "backend/apps/users/accounts.py#handed_password": "00a346104c53",
+    "backend/apps/users/accounts.py#handed_password": "591b9193fd21",
     "frontend/src/users.tsx#EraseDialog": "790d6e9f531a",
     "backend/apps/users/erasure.py#erase": "c85041015655",
     "backend/apps/users/erasure.py#handed": "ddb8d63f134a",

@@ -39,6 +39,7 @@ WORDS = {
         "untitled": "(bez predmeta)",
         "sign_in": "Nova prijava u Ponistru",
         "passkey": "Dodan je pristupni ključ",
+        "authenticator": "Dodana je aplikacija za autentifikaciju",
         "app_password": "Dodana je lozinka aplikacije",
         "later_failed": "Poruka nije poslana",
         "later_refused": "Neki primatelji nisu primili poruku",
@@ -89,6 +90,7 @@ WORDS = {
         "untitled": "(no subject)",
         "sign_in": "New sign-in to Ponistra",
         "passkey": "A passkey was added",
+        "authenticator": "An authenticator app was added",
         "app_password": "An app password was added",
         "later_failed": "A message was not sent",
         "later_refused": "Some recipients did not get a message",
@@ -138,6 +140,7 @@ WORDS = {
 SECURITY = {
     "sign_in": "/settings/devices",
     "passkey": "/settings/sign-in",
+    "authenticator": "/settings/sign-in",
     "app_password": "/settings/app-passwords",
 }
 # What a chat waiting on its owner can be answered from the notification itself, as its panel's

@@ -19,9 +19,10 @@ from django.utils.decorators import sync_and_async_middleware
 SIGNED_IN = "signed_in"
 SEEN = "seen_at"
 OFFLINE = "offline"
-# Signed in with a password while the policy holds the user to passkeys: until they add one,
-# the API answers nothing else.
-PASSKEY_DUE = "passkey_due"
+# What a session signed in with a password must add before the API answers anything else:
+# "passkey" while the policy holds the user to passkeys, "factor" (an authenticator app or a
+# passkey) while it asks for a second factor the user has none of.
+DUE = "due"
 # When the person at the browser last showed who they are, by signing in or confirming since:
 # what an open session must not do alone waits for a recent one (D33).
 CONFIRMED = "confirmed_at"
@@ -142,7 +143,7 @@ def address_of(request) -> str | None:
         return None
 
 
-def started(request, way: str, passkey_due: bool = False) -> None:
+def started(request, way: str, due: str | None = None) -> None:
     """Marks the session just signed in with the browser that signed in with it, and clears the
     sessions that have run out."""
     from apps.journal import entries
@@ -154,8 +155,8 @@ def started(request, way: str, passkey_due: bool = False) -> None:
         "address": address_of(request),
         "at": timezone.now().isoformat(),
     }
-    if passkey_due:
-        request.session[PASSKEY_DUE] = True
+    if due:
+        request.session[DUE] = due
 
 
 def confirm(session) -> None:

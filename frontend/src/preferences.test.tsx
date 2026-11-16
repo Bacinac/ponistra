@@ -20,9 +20,11 @@ function answer(given: object) {
       backdrop: null,
       ...given,
     },
-    passkey_due: false,
+    due: null,
     setup: false,
     site: '',
+    passkeys: true,
+    second_factor: null,
   };
 }
 

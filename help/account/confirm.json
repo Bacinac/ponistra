@@ -6,12 +6,12 @@
     "confirm.provider"
   ],
   "describes": {
-    "frontend/src/confirmation.tsx#Asking": "67f0da5c7c35",
+    "frontend/src/confirmation.tsx#Asking": "7926285ee56c",
     "frontend/src/api.ts#request": "0d8a9206fe3b",
-    "backend/apps/users/confirmation.py#confirm": "944b22aa6d67",
-    "backend/apps/users/confirmation.py#by_password": "225f1fda4d00",
+    "backend/apps/users/confirmation.py#confirm": "ef29b2a5a49a",
+    "backend/apps/users/confirmation.py#by_password": "cc59a1aaa1b0",
     "backend/apps/users/sessions.py#fresh": "8659074704c4",
-    "backend/apps/core/api.py#api": "7bb2a14f54af",
+    "backend/apps/core/api.py#api": "164dbe30461b",
     "frontend/src/confirmation.tsx#confirmAt": "492823108455",
     "backend/apps/identity/signin.py#_finished": "e3652c9763c3",
     "backend/apps/identity/models.py#Provider": "a84de49ac769"

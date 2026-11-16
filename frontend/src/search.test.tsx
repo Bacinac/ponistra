@@ -37,6 +37,7 @@ test('settings, the theme and the language stand in the box as commands on every
     'GET /api/calendar/days-off': () => ({ days_off: [] }),
     'GET /api/search': () => NOTHING,
     'GET /api/passkeys': () => ({ passkeys: [] }),
+    'GET /api/authenticator': () => ({ authenticator: false, confirmed_at: null }),
     'PATCH /api/auth/preferences': async (request) => ({
       user: { id: 1, email: 'ja@example.com', name: 'Ja', ...(await request.json()) },
     }),

@@ -44,7 +44,7 @@ Deaktiviran korisnik ne može se prijaviti i odjavljuje se sa svih uređaja. Nje
 
 Uz ime korisnika koji se prijavljuje kod izdavatelja ili dolazi iz imenika piše naziv tog izvora. Korisniku iz imenika adresa e-pošte, ime, lozinka i aktivnost mijenjaju se samo u imeniku, pa su u dijalogu {t:users.edit} ta polja i {t:users.deactivate} onemogućeni, kao i grupe koje dolaze od izvora. Vidi [Vanjska prijava i imenici](help:admin/sources).
 
-Lozinka koju administrator postavi drugom korisniku njegov je put natrag nakon izgubljenog uređaja. Ako instalacija tom korisniku propisuje pristupni ključ, njegovi se pristupni ključevi pritom brišu, a novi dodaje pri sljedećoj prijavi.
+Lozinka koju administrator postavi drugom korisniku njegov je put natrag nakon izgubljenog uređaja. Pritom se briše njegova aplikacija za autentifikaciju, a ako instalacija tom korisniku propisuje pristupni ključ ili traži drugi korak, i njegovi pristupni ključevi; nove dodaje pri sljedećoj prijavi.
 
 Izvoz je jedna zip datoteka sa svime što instalacija drži o korisniku: podaci računa, svaki zapis koji ga imenuje kao JSON po vrsti podatka (pošta, kalendari, kontakti, zadaci, razgovori, komentari, uređaji, pristupi dokumentima i drugo), svaka poruka pošte kao datoteka .eml, fotografije njegovih kontakata, njegova vlastita pozadina za sastanke te njegovi dokumenti kao datoteke Ponistre i njegove datoteke kakve jesu, po mapama u kojima stoje. Popis dijelova nalazi se u datoteci manifest.json. Lozinke, ključevi i tokeni ne izvoze se, kao ni postavke instalacije. Sadržaj sefa zaključan je u pregledniku, pa ga korisnik izvozi sam iz sefa. Pripremljena datoteka ostaje na poslužitelju 1 sat.
 

@@ -19,6 +19,7 @@ const PAGES = {
   'GET /api/mail/waiting': () => ({ messages: [] }),
   'GET /api/notes': () => ({ folder: null, notes: [] }),
   'GET /api/passkeys': () => ({ passkeys: [] }),
+  'GET /api/authenticator': () => ({ authenticator: false, confirmed_at: null }),
 };
 
 test('a place within a module goes up to it from the header, a module’s own page does not', async () => {

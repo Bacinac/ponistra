@@ -1,5 +1,6 @@
 # scripts/demo.sh over compose.check.yml: the recording is of one version of the code, so the
-# backend and the reader do not reload while other work edits the tree.
+# backend and the reader do not reload while other work edits the tree; Sarah holds the code
+# workspace.
 services:
   backend:
     command:
@@ -13,5 +14,37 @@ services:
       - "on"
       - --timeout-graceful-shutdown
       - "15"
+    volumes:
+      - workspace:/data/workspace
+    environment:
+      PONISTRA_WORKSPACE: sarah@lipastudio.test
+      PONISTRA_WORKSPACE_TOKEN: demo
   reader:
     entrypoint: ["python", "-m", "apps.reader"]
+  # Sarah's code workspace for the Projects page: the workspace's own service alone, without the
+  # editor, over the home help_seed writes (e2e/demo/workspace.mjs).
+  workspace:
+    profiles: !reset []
+    image: ponistra/workspace:dev
+    container_name: !reset null
+    restart: "no"
+    entrypoint: ["/usr/lib/code-server/lib/node", "/demo/workspace.mjs"]
+    environment:
+      HOME: /home/sarah
+      PONISTRA_PUBLIC_URL: http://backend:8030
+      PONISTRA_WORKSPACE_TOKEN: demo
+    working_dir: /home/sarah
+    volumes: !override
+      - workspace:/home/sarah
+      - ./e2e/demo/workspace.mjs:/demo/workspace.mjs:ro
+    healthcheck:
+      test: ["CMD", "/usr/lib/code-server/lib/node", "-e", "fetch('http://127.0.0.1:8081/').then(() => process.exit(0), () => process.exit(1))"]
+      interval: 2s
+      start_period: 30s
+
+volumes:
+  workspace:
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: uid=1000,gid=1000,mode=0700

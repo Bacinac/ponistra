@@ -287,6 +287,7 @@ const started = (session, folder, fresh, model = null) => {
     }
     if (code && code !== ENDED_BY_US && !stopping) console.error(`the chat ${session} ended with ${code}: ${errors.trim()}`);
     else if (signal && signal !== 'SIGTERM') console.error(`the chat ${session} ended by ${signal}`);
+    else console.log(`the chat ${session} ended${stopping ? ' with the workspace' : ''}`);
     changed();
   });
   changed();

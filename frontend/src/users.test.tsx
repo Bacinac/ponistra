@@ -28,7 +28,7 @@ function company() {
     'GET /api/company': () => ({ folders: [] }),
     'GET /api/vault/company': () => ({ collections: [] }),
     'GET /api/vault/recovery': () => ({ on: false }),
-    'GET /api/policy': () => ({ passkeys: 'nobody', outside: 'everyone' }),
+    'GET /api/policy': () => ({ passkeys: 'nobody', second_factor: false, outside: 'everyone' }),
     'GET /api/identity/providers': () => ({ providers: [] }),
   };
 }

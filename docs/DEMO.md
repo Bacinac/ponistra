@@ -14,7 +14,8 @@ examples: documents with headings, tables, pictures and comments, tables with
 formulas and charts, presentations, PDF files, folders of files and their
 versions, mail in threads with attachments and flags, a calendar with
 invitations and rooms, contacts, tasks, chat with reactions, a past meeting with
-its minutes, boards, links, notes and favourites. The company, its people and
+its minutes, boards, links, notes and favourites, and the Projects page of a
+developer with rounds of chats, their working time and what they spend. The company, its people and
 everything they wrote are fictional.
 
 Editing works: a document opens with its recorded state and takes changes in

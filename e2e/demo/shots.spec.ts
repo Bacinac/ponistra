@@ -72,6 +72,7 @@ const SCREENS: { file: string; at: () => string; ready?: (page: Page) => Promise
     },
   },
   { file: 'calendar', at: () => '/calendar/week' },
+  { file: 'projects', at: () => '/workspace' },
 ];
 
 test('take the README pictures', async ({ browser }) => {

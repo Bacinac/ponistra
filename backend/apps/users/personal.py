@@ -40,6 +40,7 @@ VERSION = 1
 # Binary fields (keys, sealed secrets) and those the database derives stay out of every one.
 PARTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("users.Passkey", "user"): (),
+    ("users.Authenticator", "user"): (),
     ("users.AppPassword", "user"): ("digest",),
     ("users.Session", "user"): ("session_key", "session_data"),
     ("identity.Identity", "user"): (),

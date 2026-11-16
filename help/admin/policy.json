@@ -6,9 +6,9 @@
     "policy.note"
   ],
   "describes": {
-    "frontend/src/users.tsx#PolicySection": "f0baed43f9cc",
-    "frontend/src/users.tsx#OutsidePolicySection": "e6de9f7d2388",
-    "backend/apps/users/accounts.py#sign_in_policy": "666dd8b4d624",
-    "backend/apps/users/models.py#Policy": "3382a2e43e7d"
+    "frontend/src/users.tsx#PolicySection": "4884488a58af",
+    "frontend/src/users.tsx#OutsidePolicySection": "1f9b6b9bc8b1",
+    "backend/apps/users/accounts.py#sign_in_policy": "b3eb6542ab77",
+    "backend/apps/users/models.py#Policy": "10301d8ad2e0"
   }
 }

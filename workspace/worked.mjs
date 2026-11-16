@@ -16,6 +16,12 @@
 // An archived chat's transcript, with the folder of what it keeps beside it, is removed as many days
 // after archiving as PONISTRA says (VT3), never while it runs or belongs to a round still open, and
 // only once PONISTRA holds the time worked read from it to its last line.
+//
+// The same reading counts the tokens each answer took (PJ3), by hour, model and the round its chat
+// was in, from the chat's own transcript and those of its agents (`<session>/subagents/agent-*.jsonl`,
+// which count toward its tokens but not its time). Claude Code writes an answer as one line per
+// block, each with the answer's whole usage, so an answer counts once by its id, the last counted
+// one kept with the mark so that an answer split across two readings counts once too.
 
 import { closeSync, openSync, readdirSync, readFileSync, readSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -28,7 +34,10 @@ const CHUNK = 16 * 1024 * 1024;
 // Half of what PONISTRA takes in one request.
 const SENT = 50;
 const TRANSCRIPT = /^([0-9a-f-]{36})\.jsonl$/;
+const AGENT = /^agent-([0-9a-z]{1,27})\.jsonl$/;
 const STAMP = Buffer.from('"timestamp"');
+const TITLED = Buffer.from('-title"');
+const HOUR = 60 * 60 * 1000;
 const DAY = 24 * 60 * 60 * 1000;
 const STARTING = 60 * 60 * 1000;
 // How many passes go by between asking PONISTRA again what it holds and what it removes.
@@ -54,15 +63,47 @@ const projectsOf = (root) => {
   };
 };
 
-const momentOf = (line) => {
+const parsedOf = (line) => {
   try {
-    const { timestamp } = JSON.parse(line.toString('utf8'));
-    if (typeof timestamp !== 'string') return null;
-    const moment = Date.parse(timestamp);
-    return Number.isNaN(moment) ? null : moment;
+    return JSON.parse(line.toString('utf8'));
   } catch {
     return null;
   }
+};
+
+const momentOf = (entry) => {
+  if (typeof entry?.timestamp !== 'string') return null;
+  const moment = Date.parse(entry.timestamp);
+  return Number.isNaN(moment) ? null : moment;
+};
+
+// What one reading of a transcript found: its moments, the tokens of each answer by hour and
+// model, the id of the last answer counted and the chat's title, the one its owner gave first.
+const finding = (last) => {
+  const moments = [];
+  const spent = new Map();
+  const found = { last, custom: null, made: null };
+  const take = (entry) => {
+    const moment = momentOf(entry);
+    if (moment !== null) moments.push(moment);
+    if (entry.type === 'custom-title' && entry.customTitle) found.custom = String(entry.customTitle);
+    if (entry.type === 'ai-title' && entry.aiTitle) found.made = String(entry.aiTitle);
+    const { id, model, usage } = entry.message ?? {};
+    if (entry.type !== 'assistant' || !usage || typeof id !== 'string' || id === found.last) return;
+    found.last = id;
+    if (moment === null || typeof model !== 'string' || model.startsWith('<')) return;
+    const hour = Math.floor(moment / HOUR) * HOUR;
+    const key = `${hour} ${model}`;
+    const each = spent.get(key) ?? { hour, model, turns: 0, input: 0, output: 0, cache_read: 0, cache_write: 0 };
+    each.turns += 1;
+    each.input += usage.input_tokens ?? 0;
+    each.output += usage.output_tokens ?? 0;
+    each.cache_read += usage.cache_read_input_tokens ?? 0;
+    each.cache_write += usage.cache_creation_input_tokens ?? 0;
+    spent.set(key, each);
+  };
+  const result = () => ({ moments, spent: [...spent.values()], last: found.last, title: (found.custom ?? found.made)?.slice(0, 200) ?? null });
+  return { take, result };
 };
 
 export const stretchesOf = (moments) => {
@@ -75,9 +116,10 @@ export const stretchesOf = (moments) => {
   return stretches;
 };
 
-// The moments of the whole lines from a place in a transcript, and where the last of them ends.
-export const readFrom = async (file, from, size) => {
-  const moments = [];
+// What the whole lines from a place in a transcript hold, and where the last of them ends; `last`
+// is the answer counted last before that place.
+export const readFrom = async (file, from, size, last = null) => {
+  const { take, result } = finding(last);
   const descriptor = openSync(file, 'r');
   let at = from;
   let read = from;
@@ -92,9 +134,9 @@ export const readFrom = async (file, from, size) => {
       let start = 0;
       for (let end = buffer.indexOf(10, start); end !== -1; end = buffer.indexOf(10, start)) {
         const line = buffer.subarray(start, end);
-        if (line.includes(STAMP)) {
-          const moment = momentOf(line);
-          if (moment !== null) moments.push(moment);
+        if (line.includes(STAMP) || line.includes(TITLED)) {
+          const entry = parsedOf(line);
+          if (entry) take(entry);
         }
         start = end + 1;
       }
@@ -105,7 +147,7 @@ export const readFrom = async (file, from, size) => {
   } finally {
     closeSync(descriptor);
   }
-  return { read, moments };
+  return { read, ...result() };
 };
 
 const told = async (method, payload) => {
@@ -121,41 +163,73 @@ const told = async (method, payload) => {
   return method === 'GET' ? answer.json() : null;
 };
 
+// A folder's transcripts: each chat's own, and its agents', which belong to it.
+const transcriptsIn = (folder) => {
+  const found = [];
+  for (const name of readdirSync(folder)) {
+    const session = name.match(TRANSCRIPT)?.[1];
+    if (session) found.push({ session, chat: session, file: join(folder, name), own: true });
+  }
+  for (const { chat } of [...found]) {
+    const agents = join(folder, chat, 'subagents');
+    let names;
+    try {
+      names = readdirSync(agents);
+    } catch {
+      continue;
+    }
+    for (const name of names) {
+      const agent = name.match(AGENT)?.[1];
+      if (agent) found.push({ session: `${chat}-${agent}`, chat, file: join(agents, name), own: false });
+    }
+  }
+  return found;
+};
+
 // Reads each transcript on from its mark, or a copy's from the start, and tells PONISTRA what it
-// found, the marks moving only once PONISTRA has it.
-export const measure = async (kept, marks = null) => {
+// found, the marks moving only once PONISTRA has it. `marks` holds {read, last} by transcript;
+// `roundOf` names the round a chat is in now.
+export const measure = async (kept, marks = null, roundOf = () => '') => {
   const projectOf = projectsOf(process.env.PONISTRA_ROOT);
   const batch = [];
   const send = async () => {
     const sending = batch.splice(0);
     await told('POST', { transcripts: sending });
-    if (marks) for (const each of sending) marks.set(`${each.namespace}/${each.session}`, each.read);
+    if (marks) for (const each of sending) marks.set(`${each.namespace}/${each.session}`, { read: each.read, last: each.last });
   };
   for (const space of readdirSync(kept, { withFileTypes: true })) {
     // Another name of a folder holds the same transcripts.
     if (!space.isDirectory()) continue;
-    for (const name of readdirSync(join(kept, space.name))) {
-      const session = name.match(TRANSCRIPT)?.[1];
-      if (!session) continue;
-      const file = join(kept, space.name, name);
+    for (const { session, chat, file, own } of transcriptsIn(join(kept, space.name))) {
       let size;
       try {
         size = statSync(file).size;
       } catch {
         continue;
       }
-      let from = marks?.get(`${space.name}/${session}`) ?? 0;
+      const mark = marks?.get(`${space.name}/${session}`);
+      let from = mark?.read ?? 0;
+      let last = mark?.last ?? null;
       // Written anew from the start: what was found in it stays, and it is read once more.
-      if (from > size) from = 0;
+      if (from > size) {
+        from = 0;
+        last = null;
+      }
       if (from === size) continue;
-      const { read, moments } = await readFrom(file, from, size);
-      if (marks && read === from) continue;
+      const found = await readFrom(file, from, size, last);
+      if (marks && found.read === from) continue;
       batch.push({
         namespace: space.name,
         session,
+        chat,
         project: projectOf(space.name),
-        read: marks ? read : null,
-        stretches: stretchesOf(moments),
+        round: roundOf(chat),
+        from,
+        read: marks ? found.read : null,
+        last: found.last,
+        title: found.title,
+        stretches: own ? stretchesOf(found.moments) : [],
+        spent: found.spent,
       });
       if (batch.length === SENT) await send();
     }
@@ -185,7 +259,7 @@ export const removed = (kept, marks, after, archived, held, now = Date.now()) =>
       }
       const at = since.get(id) ?? stat.mtimeMs;
       const wait = since.has(id) ? after * DAY : Math.max(after * DAY, STARTING);
-      if (now - Math.max(at, stat.mtimeMs) < wait || marks.get(`${space.name}/${id}`) !== stat.size) continue;
+      if (now - Math.max(at, stat.mtimeMs) < wait || marks.get(`${space.name}/${id}`)?.read !== stat.size) continue;
       rmSync(file, { force: true });
       rmSync(join(kept, space.name, id), { recursive: true, force: true });
       gone.push(`${space.name}/${id}`);
@@ -194,7 +268,8 @@ export const removed = (kept, marks, after, archived, held, now = Date.now()) =>
   return gone;
 };
 
-// `chats` says which chats are archived ({id, at}) and which are held: running or in a round still open.
+// `chats` says which chats are archived ({id, at}), which are held: running or in a round still
+// open, and the round each chat is in (`rounds`, by session).
 export const followWork = (chats) => {
   let marks = null;
   let measuring = false;
@@ -206,11 +281,12 @@ export const followWork = (chats) => {
       const asking = passes % ASKED_EVERY === 0;
       passes += 1;
       const held = asking ? await told('GET') : null;
-      marks ??= new Map(Object.entries(held.read));
-      await measure(KEPT, marks);
+      const marked = held && new Map(Object.entries(held.read).map(([key, read]) => [key, { read, last: held.last[key] ?? null }]));
+      marks ??= marked;
+      const { archived, held: running, rounds } = chats();
+      await measure(KEPT, marks, (chat) => rounds.get(chat) ?? '');
       if (held) {
-        const { archived, held: running } = chats();
-        const gone = removed(KEPT, new Map(Object.entries(held.read)), held.removal, archived, running);
+        const gone = removed(KEPT, marked, held.removal, archived, running);
         if (gone.length) console.log(`removed the transcripts of ${gone.length} archived chats: ${gone.join(', ')}`);
       }
     } catch (error) {

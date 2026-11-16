@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
+  CalendarClock,
   Check,
   ChevronDown,
   ChevronRight,
@@ -63,6 +64,8 @@ import { useFilePicker } from './upload';
 import { DictateButton } from './voice';
 import { setAside, useOpenWorkspace } from './workspace';
 import { Hours } from './workspaceHours';
+import { Spend } from './workspaceSpend';
+import { type OtherRound, StartWhen, useWhenText, type When } from './workspaceWhen';
 import { hasScreens, toNextScreen } from './meetingWindow';
 import { useThemeOf } from './theme';
 import { useFollowed } from './followed';
@@ -93,6 +96,8 @@ interface Chat {
   model: string | null;
   changes: Changes | null;
   coordinator: string | null;
+  done: string | null;
+  kept: boolean;
 }
 
 /** A model a chat may run on: Claude Code's short name for it, its name and the model it means. */
@@ -130,6 +135,9 @@ interface Round {
   id: string;
   created: string | null;
   started: string | null;
+  when: When | null;
+  paused: string[];
+  done: string | null;
   auto: boolean;
   asked: string | null;
   coordinator: Member;
@@ -195,9 +203,10 @@ type Kind =
   | 'archive'
   | 'restart'
   | 'stop'
-  | 'move';
+  | 'move'
+  | 'cancel';
 
-type Progress = 'sent' | 'taken' | 'done' | 'failed';
+type Progress = 'sent' | 'waiting' | 'taken' | 'done' | 'failed';
 
 /** What the owner asked of the workspace from here, and how far it got (D52). */
 interface Command {
@@ -209,6 +218,7 @@ interface Command {
   text: string | null;
   images: number;
   auto: boolean;
+  when: When | null;
   state: Progress;
   error: string | null;
   created_at: string;
@@ -222,6 +232,7 @@ interface Asked {
   session?: string;
   text?: string;
   images?: string[];
+  when?: When;
 }
 
 type Said =
@@ -280,6 +291,7 @@ const COMMANDS = ['workspace', 'commands'];
 
 const PROGRESS: Record<Progress, { label: MessageKey; look: string }> = {
   sent: { label: 'workspace.progress.sent', look: 'text-muted' },
+  waiting: { label: 'workspace.progress.waiting', look: 'text-muted' },
   taken: { label: 'workspace.progress.taken', look: 'text-accent' },
   done: { label: 'workspace.progress.done', look: 'text-ink' },
   failed: { label: 'workspace.progress.failed', look: 'font-semibold text-danger' },
@@ -700,24 +712,66 @@ function pushable({ gate }: Project): boolean {
   );
 }
 
+const OFFERS = {
+  start: { icon: Play, label: 'workspace.start' },
+  push: { icon: Upload, label: 'workspace.push' },
+  close: { icon: X, label: 'workspace.close' },
+} as const;
+
 /** What the coordinator's row offers once it is due, beneath the row: starting the round's chats,
- * or the push of a round consolidated and green. */
+ * the push of a round consolidated and green, or closing a coordinator that has done its round;
+ * a round's start may instead wait on a condition. */
 function Offer({
   kind,
   disabled,
   onPress,
+  onWhen,
 }: {
-  kind: 'start' | 'push';
+  kind: keyof typeof OFFERS;
   disabled: boolean;
   onPress: () => void;
+  onWhen?: () => void;
 }) {
   const { t } = useI18n();
-  const Icon = kind === 'start' ? Play : Upload;
+  const { icon: Icon, label } = OFFERS[kind];
   return (
-    <div className="flex justify-end px-2 pb-1">
+    <div className="flex justify-end gap-2 px-2 pb-1">
+      {onWhen && (
+        <button type="button" disabled={disabled} onClick={onWhen} className={button}>
+          <CalendarClock size={16} aria-hidden />
+          {t('workspace.startWhen')}
+        </button>
+      )}
       <button type="button" disabled={disabled} onClick={onPress} className={primaryButton}>
         <Icon size={16} aria-hidden />
-        {t(kind === 'start' ? 'workspace.start' : 'workspace.push')}
+        {t(label)}
+      </button>
+    </div>
+  );
+}
+
+/** What waits on a condition to start, in words, and taking the wait back. */
+function Awaiting({
+  when,
+  rounds,
+  disabled,
+  onCancel,
+}: {
+  when: When;
+  rounds: OtherRound[];
+  disabled: boolean;
+  onCancel: () => void;
+}) {
+  const { t } = useI18n();
+  const said = useWhenText();
+  return (
+    <div className="flex items-center justify-end gap-2 px-2 pb-1 text-sm">
+      <span className="flex min-w-0 items-center gap-1 text-muted">
+        <CalendarClock size={14} aria-hidden className="shrink-0" />
+        <span className="truncate">{said(when, rounds)}</span>
+      </span>
+      <button type="button" disabled={disabled} onClick={onCancel} className={button}>
+        {t('workspace.cancelWhen')}
       </button>
     </div>
   );
@@ -730,6 +784,9 @@ interface Moves {
 }
 
 const Moving = createContext<Moves | null>(null);
+
+/** Every round still open, which another may wait on to close. */
+const OpenRounds = createContext<OtherRound[]>([]);
 
 /** The chat being dragged, which a round's drop target reads before the drop shows it. */
 let carried: { session: string; folder: string } | null = null;
@@ -913,7 +970,9 @@ function RoundCard({
   const command = useCommand();
   const commands = useCommands();
   const moves = useContext(Moving);
+  const others = useContext(OpenRounds).filter((each) => each.id !== round.id);
   const [over, setOver] = useState(false);
+  const [timing, setTiming] = useState(false);
   const accepts = () =>
     carried !== null && carried.folder === moves?.folder && joins(round, carried.session);
   const title = t('workspace.round').replace('{name}', round.coordinator.title);
@@ -957,8 +1016,29 @@ function RoundCard({
           )
         }
       />
-      {index === 0 && waiting && (
-        <Offer kind="start" disabled={command.isPending} onPress={() => asked('start')} />
+      {index === 0 &&
+        waiting &&
+        (round.when ? (
+          <Awaiting
+            when={round.when}
+            rounds={others}
+            disabled={command.isPending}
+            onCancel={() => asked('cancel')}
+          />
+        ) : (
+          <Offer
+            kind="start"
+            disabled={command.isPending}
+            onPress={() => asked('start')}
+            onWhen={() => setTiming(true)}
+          />
+        ))}
+      {index === 0 && round.done && lead.id && lead.state === 'idle' && (
+        <Offer
+          kind="close"
+          disabled={command.isPending}
+          onPress={() => command.mutate({ kind: 'close', session: lead.id! })}
+        />
       )}
       {index === 0 && pushable && (
         <Offer kind="push" disabled={asking} onPress={() => asked('push')} />
@@ -990,6 +1070,27 @@ function RoundCard({
         <p className="mt-1 px-2 text-sm text-muted" role="status">
           {t('workspace.asked').replace('{word}', round.asked)}
         </p>
+      )}
+      {round.paused.length > 0 && (
+        <p className="mt-1 px-2 text-sm text-danger" role="status">
+          {t('workspace.paused')}
+        </p>
+      )}
+      {timing && (
+        <StartWhen
+          heading={t('workspace.startWhen')}
+          repeats={false}
+          rounds={others}
+          pending={command.isPending}
+          error={command.error}
+          onChoose={(when) =>
+            command.mutate(
+              { kind: 'start', round: round.id, when },
+              { onSuccess: () => setTiming(false) },
+            )
+          }
+          onClose={() => setTiming(false)}
+        />
       )}
       {command.isError && (
         <p className="mt-1 px-2 text-sm text-danger">{errorMessage(command.error, t)}</p>
@@ -1041,8 +1142,10 @@ function NewChat({
   useEffect(() => typed.current?.focus(), []);
   const pictures = usePictures();
   const started = useCommand();
+  const rounds = useContext(OpenRounds);
+  const [timing, setTiming] = useState(false);
   const failed = started.data?.state === 'failed' ? started.data.error : null;
-  const start = () => {
+  const start = (when?: When) => {
     const text = said.trim();
     if (!round && !text) return;
     started.mutate(
@@ -1051,10 +1154,12 @@ function NewChat({
         folder,
         text: round ? (text ? `nastavi: ${text}` : 'nastavi') : text,
         ...(pictures.items.length && { images: pictures.given() }),
+        ...(when && { when }),
       },
       {
         onSuccess: (command) => {
           if (command.session) onStarted(command.session);
+          else if (command.state === 'waiting') onClose();
         },
       },
     );
@@ -1089,8 +1194,21 @@ function NewChat({
           className={`${field} w-full`}
         />
         <Pictures pictures={pictures} />
-        {started.isError && <p className="text-sm text-danger">{errorMessage(started.error, t)}</p>}
+        {started.isError && !timing && (
+          <p className="text-sm text-danger">{errorMessage(started.error, t)}</p>
+        )}
         {failed && <p className="text-sm text-danger">{codeText(failed, t)}</p>}
+        {timing && (
+          <StartWhen
+            heading={t('workspace.startWhen')}
+            repeats
+            rounds={rounds}
+            pending={started.isPending}
+            error={started.error}
+            onChoose={(when) => start(when)}
+            onClose={() => setTiming(false)}
+          />
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <DictateButton
             onText={(text) => setSaid((now) => (now.trim() ? `${now.trimEnd()} ${text}` : text))}
@@ -1098,6 +1216,15 @@ function NewChat({
           <PictureButton pictures={pictures} />
           <button type="button" onClick={onClose} className={`${button} ml-auto`}>
             {t('tree.cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTiming(true)}
+            disabled={started.isPending || !pictures.ready || (!round && !said.trim())}
+            className={button}
+          >
+            <CalendarClock size={16} aria-hidden />
+            {t('workspace.startWhen')}
           </button>
           <button
             type="submit"
@@ -1176,7 +1303,7 @@ function ProjectSection({
   chosen,
   onChoose,
   onTerminal,
-  starting: asked,
+  starting: begun,
   onStart,
 }: {
   project: Project;
@@ -1187,16 +1314,23 @@ function ProjectSection({
   onStart: (starting: Starting) => void;
 }) {
   const { t, formatNumber } = useI18n();
-  const starting = asked?.folder === project.path ? (asked.round ? 'round' : 'chat') : null;
+  const starting = begun?.folder === project.path ? (begun.round ? 'round' : 'chat') : null;
   const [archived, setArchived] = useState(false);
   const name = titled(project) ?? t('workspace.general');
   const pushed = useCommand();
+  const asked = useCommand();
+  const commands = useCommands();
+  const rounds = useContext(OpenRounds);
+  const timed = (commands.data?.commands ?? []).filter(
+    (each) =>
+      each.kind === 'chat' && each.state === 'waiting' && each.when && each.folder === project.path,
+  );
   const moved = useAside();
   const folder = project.name;
   const press = useMenuPress();
   const navigate = useNavigate();
   const green = pushable(project);
-  const closed = project.chats.filter((chat) => !chat.open).length;
+  const closed = project.chats.filter((chat) => !chat.open && !chat.kept).length;
   const due =
     green && !project.rounds.length
       ? ledBy(project.chats).find(({ led }) => led.length > 0)?.chat
@@ -1204,7 +1338,7 @@ function ProjectSection({
   const pushing = due && !AT_WORK.has(due.state) ? due.id : null;
   const chats = archived
     ? project.chats
-    : project.chats.filter((chat) => chat.open || chat.id === pushing);
+    : project.chats.filter((chat) => chat.open || chat.kept || chat.id === pushing);
   return (
     <section aria-label={name} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
       <ContextMenuArea
@@ -1282,6 +1416,18 @@ function ProjectSection({
       </ContextMenuArea>
       {moved.isError && <p className="px-2 text-sm text-danger">{errorMessage(moved.error, t)}</p>}
       <StatusLine project={project} />
+      {asked.isError && <p className="px-2 text-sm text-danger">{errorMessage(asked.error, t)}</p>}
+      {timed.map((each) => (
+        <div key={each.id} className="mt-1 px-2 py-1">
+          <p className="truncate text-sm">{each.text?.split('\n')[0]}</p>
+          <Awaiting
+            when={each.when!}
+            rounds={rounds}
+            disabled={asked.isPending}
+            onCancel={() => asked.mutate({ kind: 'cancel', text: String(each.id) })}
+          />
+        </div>
+      ))}
       <Moving value={{ folder: project.path, rounds: project.rounds }}>
         {project.rounds.map((round) => (
           <RoundCard
@@ -1296,6 +1442,13 @@ function ProjectSection({
           {ledBy(chats).map(({ chat, led }) => (
             <li key={chat.id}>
               <ChatLine chat={chat} chosen={chosen} onChoose={onChoose} />
+              {((chat.done && chat.open && chat.state === 'idle') || (chat.kept && !chat.open)) && (
+                <Offer
+                  kind="close"
+                  disabled={asked.isPending}
+                  onPress={() => asked.mutate({ kind: 'close', session: chat.id })}
+                />
+              )}
               {chat.id === pushing && (
                 <>
                   <Offer
@@ -1958,7 +2111,7 @@ function latest(projects: Project[]): string | null {
   return rounds[0]?.coordinator.id ?? null;
 }
 
-type Tab = 'overview' | 'chat' | 'memory' | 'hours' | 'terminal';
+type Tab = 'overview' | 'chat' | 'memory' | 'hours' | 'spend' | 'terminal';
 
 type View = Tab | 'start';
 
@@ -1969,12 +2122,15 @@ interface Starting {
   round: boolean;
 }
 
+const LINKED = ['memory', 'hours', 'spend'] as const;
+
 const VIEWS: Record<Tab, MessageKey> = {
   overview: 'workspace.view.overview',
   chat: 'workspace.view.chat',
   terminal: 'workspace.view.terminal',
   memory: 'workspace.view.memory',
   hours: 'workspace.view.hours',
+  spend: 'workspace.view.spend',
 };
 
 const TerminalPanel = lazily(() => import('./Terminal'), 'TerminalPanel');
@@ -2032,12 +2188,10 @@ function Pult({
   };
   const commands = useCommands();
   const [asked] = useSearchParams();
-  const askedView = asked.get('view');
-  const [view, setView] = useState<View>(
-    askedView === 'memory' || askedView === 'hours' ? askedView : 'overview',
-  );
+  const askedView = LINKED.find((each) => each === asked.get('view')) ?? null;
+  const [view, setView] = useState<View>(askedView ?? 'overview');
   useEffect(() => {
-    if (askedView === 'memory' || askedView === 'hours') setView(askedView);
+    if (askedView) setView(askedView);
   }, [askedView]);
   const [picked, setPicked] = useState<string | null>(null);
   const [terminal, setTerminal] = useState<{ folder: string; name: string } | null>(null);
@@ -2088,35 +2242,47 @@ function Pult({
     const chat = known.get(session);
     if (chat) open(chat);
   };
+  const openRounds = projects.flatMap((project) =>
+    project.rounds.map((round) => ({
+      id: round.id,
+      title: `${named(project.name ?? '')} · ${round.coordinator.title}`,
+    })),
+  );
   const list = (
-    <div className="flex min-w-0 flex-col gap-6">
-      <div className="flex flex-col gap-4">
-        <Machine host={host} onMeasure={() => reread.mutate()} measuring={reread.isPending} />
-        <Limits usage={usage} onMeasure={() => measured.mutate()} measuring={measured.isPending} />
-      </div>
-      <Waiting known={known} onChoose={choose} />
-      {projects
-        .filter((project) => !project.aside)
-        .map((project) => (
-          <ProjectSection
-            key={project.path}
-            project={project}
-            chosen={chosen?.id ?? null}
-            onChoose={choose}
-            onTerminal={openTerminal}
-            starting={begun}
-            onStart={start}
+    <OpenRounds value={openRounds}>
+      <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex flex-col gap-4">
+          <Machine host={host} onMeasure={() => reread.mutate()} measuring={reread.isPending} />
+          <Limits
+            usage={usage}
+            onMeasure={() => measured.mutate()}
+            measuring={measured.isPending}
           />
-        ))}
-      <Others
-        projects={projects.filter((project) => project.aside)}
-        chosen={chosen?.id ?? null}
-        onChoose={choose}
-        onTerminal={openTerminal}
-        starting={begun}
-        onStart={start}
-      />
-    </div>
+        </div>
+        <Waiting known={known} onChoose={choose} />
+        {projects
+          .filter((project) => !project.aside)
+          .map((project) => (
+            <ProjectSection
+              key={project.path}
+              project={project}
+              chosen={chosen?.id ?? null}
+              onChoose={choose}
+              onTerminal={openTerminal}
+              starting={begun}
+              onStart={start}
+            />
+          ))}
+        <Others
+          projects={projects.filter((project) => project.aside)}
+          chosen={chosen?.id ?? null}
+          onChoose={choose}
+          onTerminal={openTerminal}
+          starting={begun}
+          onStart={start}
+        />
+      </div>
+    </OpenRounds>
   );
   const page = (
     <div className={`flex flex-col ${wide ? 'h-full' : ''}`}>
@@ -2170,6 +2336,8 @@ function Pult({
         <Memory names={names} />
       ) : shown === 'hours' ? (
         <Hours named={named} />
+      ) : shown === 'spend' ? (
+        <Spend named={named} />
       ) : begun ? (
         <NewChat
           key={`${begun.folder} ${begun.round}`}

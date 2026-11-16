@@ -62,7 +62,15 @@ test('a device marked to work offline opens its documents without the network, a
   // Signing out, ending the device or a session run out all reach the page as nobody signed in.
   await page.route('**/api/auth/session', (route) =>
     route.fulfill({
-      json: { user: null, passkey_due: false, setup: false, site: '', providers: [] },
+      json: {
+        user: null,
+        due: null,
+        setup: false,
+        site: '',
+        passkeys: true,
+        second_factor: null,
+        providers: [],
+      },
     }),
   );
   await page.goto('/');

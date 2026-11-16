@@ -44,7 +44,7 @@ A deactivated user cannot sign in and is signed out of every device. Their docum
 
 Beside the name of a user who signs in at a provider or comes from a directory stands that source's name. A directory's user has their email address, name, password and active state changed only in the directory, so in the {t:users.edit} dialog those fields and {t:users.deactivate} are disabled, as are the groups that come from the source. See [Outside sign-in and directories](help:admin/sources).
 
-A password an administrator sets for another user is their way back after a lost device. If the installation requires that user to have a passkey, their passkeys are deleted with it, and they add a new one at their next sign-in.
+A password an administrator sets for another user is their way back after a lost device. Their authenticator app is deleted with it and, if the installation requires that user to have a passkey or asks for a second step, their passkeys too; they add new ones at their next sign-in.
 
 The export is one zip file with everything the installation holds about the user: the account's details, every record that names them as JSON by kind of data (mail, calendars, contacts, tasks, conversations, comments, devices, access to documents and more), every mail message as an .eml file, the photos of their contacts, their own background for meetings, and their documents as Ponistra files and their files as they are, by the folders they stand in. The list of parts is in the file manifest.json. Passwords, keys and tokens are not exported, nor are the installation's settings. The vault's contents are locked in the browser, so the user exports them from the vault themselves. The prepared file stays on the server for 1 hour.
 

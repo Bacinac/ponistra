@@ -1,0 +1,23 @@
+{
+  "order": 45,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "authenticator.qr",
+    "authenticator.due",
+    "authenticator.removeWarning",
+    "authenticator.scan"
+  ],
+  "describes": {
+    "frontend/src/authenticator.tsx#Authenticator": "876868ea3f22",
+    "frontend/src/auth.tsx#SecondFactor": "dd564413b9d8",
+    "frontend/src/auth.tsx#Due": "2279fe51e317",
+    "backend/apps/users/authenticator.py#authenticator": "e44463c11a22",
+    "backend/apps/users/authenticator.py#confirmed": "5461e75cc130",
+    "backend/apps/users/views.py#second": "307c11caf792",
+    "backend/apps/users/factors.py#taken": "e6706b356b84",
+    "backend/apps/users/factors.py#wrong": "aafef5822fa6",
+    "backend/apps/users/factors.py#offered_to": "47c64d2c8c20",
+    "backend/apps/users/factors.py#owed": "97bce5fd08ce"
+  }
+}

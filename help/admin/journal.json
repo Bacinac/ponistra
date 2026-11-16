@@ -30,7 +30,7 @@
     "backend/apps/journal/entries.py#signed_in": "7ca92e806157",
     "backend/apps/journal/entries.py#forgotten": "f90abcb5491b",
     "backend/apps/journal/entries.py#failed": "543243622fbe",
-    "backend/apps/journal/entries.py#GROUPS": "70c8ea61fb5e",
+    "backend/apps/journal/entries.py#GROUPS": "ca59a271364d",
     "backend/apps/users/accounts.py#user": "30f38b6a9d37"
   }
 }

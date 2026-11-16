@@ -6,11 +6,13 @@ import { Fingerprint, KeyRound, LogIn } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ApiError, getJson, patchJson, postJson, unavailable } from './api';
 import { useI18n } from './i18n';
+import { Authenticator } from './authenticator';
 import {
   makePasskey,
   PASSKEYS,
   passkeyMessage,
   passkeyOffered,
+  passkeySecond,
   passkeySignIn,
   passkeysWork,
 } from './passkeys';
@@ -43,13 +45,20 @@ export interface Me extends User {
   backdrop: string | null;
 }
 
+/** What a session signed in with a password must add before anything else: the passkey the
+    policy holds the user to, or a second factor they have none of. */
+export type Owed = 'passkey' | 'factor';
+
 export interface Session {
   user: Me | null;
-  /** Signed in with a password while the passkey policy holds the user, who has none yet. */
-  passkey_due: boolean;
+  due: Owed | null;
   setup: boolean;
   /** Where the installation is reached from outside, as its own links carry it. */
   site: string;
+  /** Whether the installation offers passkeys to sign in with. */
+  passkeys: boolean;
+  /** What a password that was right waits for before it signs in. */
+  second_factor: { code: boolean; passkey: boolean } | null;
   /** The outside providers one may sign in at, offered while nobody is signed in (U1). */
   providers: Provider[];
 }
@@ -152,18 +161,25 @@ export function useLogout() {
 }
 
 export function LoginForm() {
+  const second = useSession().data?.second_factor;
+  return second ? <SecondFactor asked={second} /> : <PasswordOrPasskey />;
+}
+
+function PasswordOrPasskey() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const session = useSession().data;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [leading, setLeading] = useState(keptSignIn);
   const [refused, setRefused] = useState<Error | null>(null);
   const [offers, setOffers] = useState(0);
   const [answered] = useState(answerOf);
-  const providers = useSession().data?.providers ?? [];
+  const providers = session?.providers ?? [];
+  const passkeys = passkeysWork && !!session?.passkeys;
   const offer = useRef<AbortController | null>(null);
-  // The server keeps one challenge a session, so the options of an offer being withdrawn must land
-  // before those of what follows it.
+  // The browser takes one passkey request at a time, so an offer being withdrawn must end before
+  // the button's request begins.
   const offerOver = useRef<Promise<void>>(Promise.resolve());
   const login = useMutation({
     mutationFn: () => postJson<Session>('/api/auth/login', { email, password }),
@@ -182,8 +198,8 @@ export function LoginForm() {
     },
   });
   const failure = login.error instanceof ApiError ? login.error.code : undefined;
-  const passkeyFirst = passkeysWork && leading === 'passkey';
-  const offered = passkeysWork && !leading;
+  const passkeyFirst = passkeys && leading === 'passkey';
+  const offered = passkeys && !leading;
 
   useEffect(() => {
     if (!offered) return;
@@ -257,7 +273,7 @@ export function LoginForm() {
           </button>
         </>
       )}
-      {passkeysWork && (
+      {passkeys && (
         <button
           type="button"
           disabled={passkey.isPending}
@@ -314,7 +330,8 @@ export function LoginForm() {
 export function SignInChoice() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const chosen = useSession().data?.user?.sign_in ?? '';
+  const session = useSession().data;
+  const chosen = session?.user?.sign_in ?? '';
   const kept = useQuery({
     queryKey: PASSKEYS,
     queryFn: () => getJson<{ passkeys: unknown[] }>('/api/passkeys'),
@@ -335,9 +352,11 @@ export function SignInChoice() {
         >
           <option value="">{t('signIn.none')}</option>
           <option value="password">{t('password.title')}</option>
-          <option value="passkey" disabled={!kept.data?.passkeys.length}>
-            {t('signIn.passkey')}
-          </option>
+          {session?.passkeys && (
+            <option value="passkey" disabled={!kept.data?.passkeys.length}>
+              {t('signIn.passkey')}
+            </option>
+          )}
         </select>
       </label>
       {choose.isError && <p className="text-sm text-danger">{errorMessage(choose.error, t)}</p>}
@@ -345,11 +364,111 @@ export function SignInChoice() {
   );
 }
 
-/** The one thing a user the passkey policy holds can do until they have a passkey. */
-export function PasskeyDue() {
+/** What a password that was right waits for: the authenticator app's code, or a passkey of the
+ * user's. Going back drops the password, which is asked again. */
+function SecondFactor({ asked }: { asked: NonNullable<Session['second_factor']> }) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const logout = useLogout();
+  const [code, setCode] = useState('');
+  const signedIn = (session: Session) => queryClient.setQueryData(SESSION_KEY, session);
+  const expired = (error: Error) => {
+    if (error instanceof ApiError && error.code === 'no_pending_sign_in') {
+      void queryClient.invalidateQueries({ queryKey: SESSION_KEY });
+    }
+  };
+  const byCode = useMutation({
+    mutationFn: () => postJson<Session>('/api/auth/second', { code }),
+    onSuccess: signedIn,
+    onError: (error) => {
+      setCode('');
+      expired(error);
+    },
+  });
+  const byPasskey = useMutation({
+    mutationFn: () => passkeySecond<Session>(),
+    onSuccess: signedIn,
+    onError: expired,
+  });
+  const failure = byCode.error ?? byPasskey.error;
+  const passkey = asked.passkey && passkeysWork;
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    byPasskey.reset();
+    byCode.mutate();
+  }
+
+  return (
+    <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-3">
+      <h2 className="text-lg font-semibold">{t('auth.secondTitle')}</h2>
+      {asked.code && (
+        <>
+          <label className="flex flex-col gap-1 text-sm">
+            {t('authenticator.code')}
+            <input
+              required
+              autoFocus
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9 ]{6,7}"
+              maxLength={7}
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              className={field}
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={byCode.isPending}
+            className={`${primaryButton} justify-center py-2 text-base`}
+          >
+            {byCode.isPending ? t('auth.signingIn') : t('auth.signIn')}
+          </button>
+        </>
+      )}
+      {passkey && (
+        <button
+          type="button"
+          disabled={byPasskey.isPending}
+          onClick={() => {
+            byCode.reset();
+            byPasskey.mutate();
+          }}
+          className={`${asked.code ? button : primaryButton} justify-center py-2 text-base`}
+        >
+          <Fingerprint size={18} aria-hidden />
+          {t('confirm.passkey')}
+        </button>
+      )}
+      {failure && (
+        <p className="text-sm text-danger">
+          {failure instanceof ApiError && failure.code === 'invalid_code'
+            ? t('authenticator.invalid')
+            : failure instanceof ApiError && failure.code === 'no_pending_sign_in'
+              ? t('auth.secondExpired')
+              : passkeyMessage(failure, t)}
+        </p>
+      )}
+      <button
+        type="button"
+        disabled={logout.isPending}
+        onClick={() => logout.mutate()}
+        className={`${button} justify-center py-2 text-base`}
+      >
+        {t('auth.back')}
+      </button>
+    </form>
+  );
+}
+
+/** The one thing a user can do until they have the passkey the policy holds them to, or a second
+ * factor it asks for: an authenticator app, or a passkey where the installation offers them. */
+export function Due({ due }: { due: Owed }) {
+  const { t } = useI18n();
+  const queryClient = useQueryClient();
+  const logout = useLogout();
+  const passkeys = passkeysWork && !!useSession().data?.passkeys;
   const [name, setName] = useState('');
   const add = useMutation({
     mutationFn: () => makePasskey(name),
@@ -362,35 +481,45 @@ export function PasskeyDue() {
   }
 
   return (
-    <form onSubmit={submit} className="flex w-full max-w-sm flex-col gap-3">
-      <h2 className="text-lg font-semibold">{t('passkeys.dueTitle')}</h2>
-      <p className="text-sm">{t('passkeys.due')}</p>
-      {passkeysWork ? (
-        <label className="flex flex-col gap-1 text-sm">
-          {t('passkeys.newName')}
-          <input
-            required
-            maxLength={150}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className={field}
-          />
-        </label>
-      ) : (
-        <p className="text-sm text-danger">{t('passkeys.unsupported')}</p>
+    <div className="flex w-full max-w-sm flex-col gap-3">
+      <h2 className="text-lg font-semibold">
+        {t(due === 'passkey' ? 'passkeys.dueTitle' : 'authenticator.dueTitle')}
+      </h2>
+      <p className="text-sm">{t(due === 'passkey' ? 'passkeys.due' : 'authenticator.due')}</p>
+      {due === 'factor' && (
+        <Authenticator onAdded={() => queryClient.invalidateQueries({ queryKey: SESSION_KEY })} />
       )}
-      {add.isError && <p className="text-sm text-danger">{passkeyMessage(add.error, t)}</p>}
+      {(due === 'passkey' || passkeys) && (
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          {due === 'factor' && <h3 className="text-base font-semibold">{t('passkeys.title')}</h3>}
+          {passkeysWork ? (
+            <label className="flex flex-col gap-1 text-sm">
+              {t('passkeys.newName')}
+              <input
+                required
+                maxLength={150}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className={field}
+              />
+            </label>
+          ) : (
+            <p className="text-sm text-danger">{t('passkeys.unsupported')}</p>
+          )}
+          {add.isError && <p className="text-sm text-danger">{passkeyMessage(add.error, t)}</p>}
+          {passkeysWork && (
+            <button
+              type="submit"
+              disabled={add.isPending}
+              className={`${primaryButton} justify-center py-2 text-base`}
+            >
+              <Fingerprint size={18} aria-hidden />
+              {t(add.isPending ? 'passkeys.adding' : 'passkeys.add')}
+            </button>
+          )}
+        </form>
+      )}
       {logout.isError && <p className="text-sm text-danger">{errorMessage(logout.error, t)}</p>}
-      {passkeysWork && (
-        <button
-          type="submit"
-          disabled={add.isPending}
-          className={`${primaryButton} justify-center py-2 text-base`}
-        >
-          <Fingerprint size={18} aria-hidden />
-          {t(add.isPending ? 'passkeys.adding' : 'passkeys.add')}
-        </button>
-      )}
       <button
         type="button"
         disabled={logout.isPending}
@@ -399,7 +528,7 @@ export function PasskeyDue() {
       >
         {t('auth.signOut')}
       </button>
-    </form>
+    </div>
   );
 }
 

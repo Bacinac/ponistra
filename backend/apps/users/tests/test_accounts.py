@@ -41,7 +41,7 @@ def test_a_lost_device_comes_back_through_a_password_an_administrator_sets(admin
     given = "Novi-Most-Rijeka-72"
     admin.patch(f"/api/users/{ana.pk}", {"password": given}, content_type=JSON)
     assert not ana.passkeys.exists()
-    assert signing_in(ana.email, given).json()["passkey_due"] is True
+    assert signing_in(ana.email, given).json()["due"] == "passkey"
 
 
 def test_a_password_set_keeps_the_passkeys_where_the_policy_holds_nobody_to_them(admin):
@@ -68,7 +68,7 @@ def test_the_access_command_lets_a_lone_administrator_back_in(admin):
     call_command("access", " IVO@example.com", stdout=printed)
     assert not admin.user.passkeys.exists()
     assert admin.get("/api/auth/session").json()["user"] is None
-    assert signing_in(admin.user.email, printed.getvalue().strip()).json()["passkey_due"] is True
+    assert signing_in(admin.user.email, printed.getvalue().strip()).json()["due"] == "passkey"
 
 
 @pytest.mark.parametrize(

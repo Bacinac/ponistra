@@ -5,9 +5,9 @@
 //
 // A round is a file `~/.claude/ponistra-rounds/<round>.json` (`nastavi` makes it, `objedini` closes
 // it): {round, folder, coordinator, created, started, closed, chats: [{prompt, sessionId}], named,
-// ended, left, auto}. Between the two this service alone writes it: once the round is started it
-// starts each chat (chats.mjs) and names its session, once it is closed it ends them, and its
-// coordinator once that is idle, unless it leads another round still open. The chats' panels
+// ended, archived, auto, when, fired, paused, done}. Between the two this service alone writes it,
+// but for `done`, which its coordinator writes: once the round is started it starts each chat
+// (chats.mjs) and names its session, once it is closed it ends them. The chats' panels
 // read it from the browser, behind the workspace's door and so without the token, and draw the
 // round as a group of sessions.
 //
@@ -18,6 +18,19 @@
 // and is then taken over here. Each command moves from sent to done or failed, and PONISTRA hears
 // every move with the next change. A chat says when it answered or waits on its owner through
 // Claude Code's hooks (heard.mjs), kept in `~/.claude/ponistra-heard/<session>.json`.
+//
+// A round or a new chat may wait to start until a condition holds (PJ4), `when` {on, at, every,
+// percent, round, pause, since}: a moment, once or every day or week (`time`), the weekly limit's
+// window beginning anew (`reset`), the five-hour window below `percent` (`below`), another round
+// closed (`round`) or the night's run of the project's gate failing (`red`), each only after
+// `since`, when it was set. A round waiting is its file's `when`, started once it holds (`fired`);
+// a chat waiting is its command, `waiting` until it starts, and again after each start while it
+// repeats. What started by a condition stops working while the weekly window is at `pause` or above,
+// each chat it stopped kept in `paused` and told to go on once the window is below it again.
+//
+// A round's coordinator says when it has done all of its round, consolidated, written the plan and
+// the memory and pushed if it was asked to, as `done` in the round's file; the page then offers to
+// close it (PJ5). A word sent to it from the page takes that back.
 //
 // Each project also says how its gate last went (`.git/ponistra-check`, written by its check
 // scripts) and each chat how much context it holds and what it has changed in the tree; the
@@ -100,7 +113,15 @@ const STATES = { busy: 'working', waiting: 'waiting', idle: 'idle' };
 const ASKED = { consolidate: 'objedini', push: 'pushaj' };
 // What goes into a chat's process, which waits while the chat works in the editor.
 const CARRIED = new Set(['say', 'rename', 'model', ...Object.keys(ASKED)]);
-const KINDS = new Set([...CARRIED, 'chat', 'answer', 'open', 'close', 'archive', 'start', 'auto', 'restart', 'stop', 'move']);
+const KINDS = new Set([...CARRIED, 'chat', 'answer', 'open', 'close', 'archive', 'start', 'auto', 'restart', 'stop', 'move', 'cancel']);
+const HOUR = 60 * 60 * 1000;
+const WEEK = 7 * 24 * HOUR;
+const REPEATS = { day: 24 * HOUR, week: WEEK };
+const CONDITIONS = new Set(['time', 'reset', 'below', 'round', 'red']);
+const AWAITED_EVERY = 60 * 1000;
+// What a chat stopped at the weekly limit is told once the window is below it again; never the word
+// `nastavi`, which opens a round.
+const RESUMED = 'Tjedni limit je opet ispod praga. Dovrši zadatak od mjesta gdje si stao.';
 const COMMAND = /^(\d{1,18})\.json$/;
 // A command for a chat that works in the editor all this long fails.
 const UNTAKEN = 60 * 60 * 1000;
@@ -477,8 +498,22 @@ const coordinators = () => {
   return found;
 };
 
+// The coordinator of a closed round stays on the page, running or not, until its owner closes it.
+const keptCoordinators = () =>
+  new Set(
+    roundFiles()
+      .filter(({ round }) => round.closed && !round.dismissed && SESSION.test(round.coordinator ?? ''))
+      .map(({ round }) => round.coordinator),
+  );
+
+const dismissedBy = (session) => {
+  const now = new Date().toISOString();
+  for (const { file, round } of roundFiles())
+    if (round.closed && !round.dismissed && round.coordinator === session) writeJson(file, { ...round, dismissed: now });
+};
+
 // Only an open chat's changes are read: its transcript is read whole, once and then as it grows.
-const chatOf = (path, id, live, trees, led) => {
+const chatOf = (path, id, live, trees, led, kept = new Set()) => {
   const transcript = transcriptOf(path, id);
   if (!existsSync(transcript)) return null;
   const stat = statSync(transcript);
@@ -498,7 +533,18 @@ const chatOf = (path, id, live, trees, led) => {
     model: modelOf(id, lines),
     changes: session ? changesOf(path, transcript, trees) : null,
     coordinator: led.get(id) ?? null,
+    done: session ? (doneBy().get(id) ?? null) : null,
+    kept: kept.has(id),
   };
+};
+
+// When each coordinator said it had done its round, the latest round it led.
+const doneBy = () => {
+  const found = new Map();
+  for (const { round } of roundFiles())
+    if (typeof round.done === 'string' && SESSION.test(round.coordinator ?? '') && !(found.get(round.coordinator) > round.done))
+      found.set(round.coordinator, round.done);
+  return found;
 };
 
 // The latest chats that run, each with the rest of its round's group, so that a coordinator is shown
@@ -509,6 +555,7 @@ const chatsOf = (path, live, trees, held) => {
   if (!existsSync(kept)) return [];
   const gone = archivedIn(path, live);
   const led = coordinators();
+  const leading = keptCoordinators();
   const settled = Date.now() - SETTLED;
   const found = readdirSync(kept)
     .filter((name) => TRANSCRIPT.test(name))
@@ -516,21 +563,21 @@ const chatsOf = (path, live, trees, held) => {
     .sort((one, other) => other.at - one.at);
   const stopped = found
     .slice(0, TRIED)
-    .filter(({ id, at }) => at < settled && !live.has(id) && !held.has(id) && !gone.has(id));
+    .filter(({ id, at }) => at < settled && !live.has(id) && !held.has(id) && !gone.has(id) && !leading.has(id));
   if (stopped.length) {
+    console.log(`archived the stopped chats ${stopped.map(({ id }) => id).join(', ')} of ${path}`);
     archive(stopped.map(({ id }) => ({ id, label: labelOf(transcriptOf(path, id)) })));
     for (const { id } of stopped) gone.add(id);
   }
-  const shown = (id) => live.has(id) && !held.has(id) && !gone.has(id);
+  const shown = (id) => !held.has(id) && (leading.has(id) || (live.has(id) && !gone.has(id)));
   const ids = found
     .filter(({ id }) => shown(id))
     .slice(0, TRIED)
     .map(({ id }) => id);
   const chats = new Map();
   for (const id of ids) {
-    if (chats.size === CHATS) break;
-    if (!shown(id)) continue;
-    const chat = chatOf(path, id, live, trees, led);
+    if (chats.size === CHATS && !leading.has(id)) continue;
+    const chat = chatOf(path, id, live, trees, led, leading);
     if (chat) chats.set(id, chat);
   }
   for (const chat of [...chats.values()]) {
@@ -538,7 +585,7 @@ const chatsOf = (path, live, trees, held) => {
     const group = [lead, ...[...led].filter(([, coordinator]) => coordinator === lead).map(([id]) => id)];
     for (const id of group) {
       if (chats.has(id) || !shown(id)) continue;
-      const found = chatOf(path, id, live, trees, led);
+      const found = chatOf(path, id, live, trees, led, leading);
       if (found) chats.set(id, found);
     }
   }
@@ -607,6 +654,9 @@ const roundsOf = (live, trees, pending) =>
       folder: round.folder,
       created: round.created ?? null,
       started: round.started ?? null,
+      when: round.when ?? null,
+      paused: round.paused ?? [],
+      done: round.done ?? null,
       auto: round.auto !== false,
       asked: wordOf(id, pending),
       coordinator: memberOf(round.folder, live, trees, round.coordinator, null),
@@ -765,31 +815,10 @@ const roundAt = (id) => {
   return { file, round };
 };
 
-// A closed round's chats end once; a round closed while this service was away keeps its chats and
-// its coordinator.
+// A closed round's chats end once; a round closed while this service was away keeps its chats.
 const endedAway = () => {
   for (const { file, round } of roundFiles())
-    if (round.closed && !round.ended) writeJson(file, { ...round, ended: round.closed, left: round.closed });
-};
-
-// The coordinator of a closed round ends once it is idle, as it goes on to push, release and restart
-// after closing it; one leading or working in a round still open stays, and one ended starts again with a message.
-const left = () => {
-  const rounds = roundFiles();
-  const live = running();
-  const open = rounds.filter(({ round }) => !round.closed).map(({ round }) => round);
-  const leading = new Set(open.flatMap((round) => [round.coordinator, ...round.chats.map((chat) => chat?.sessionId)]));
-  const now = new Date().toISOString();
-  for (const { file, round } of rounds) {
-    if (!round.closed || round.left) continue;
-    const id = round.coordinator;
-    const state = live.get(id)?.state;
-    if (SESSION.test(id ?? '') && !leading.has(id) && state) {
-      if (state !== 'idle') continue;
-      ended(id).catch((error) => console.error(`the coordinator of ${round.round} did not end`, error));
-    }
-    writeJson(file, { ...round, left: now });
-  }
+    if (round.closed && !round.ended) writeJson(file, { ...round, ended: round.closed });
 };
 
 const COORDINATOR = 'Koordinator';
@@ -822,9 +851,11 @@ const led = () => {
     if (round.closed) {
       if (round.ended && round.archived) continue;
       const chats = round.chats.map((chat) => chat?.sessionId).filter((id) => SESSION.test(id ?? ''));
-      if (!round.ended)
+      if (!round.ended) {
+        console.log(`the round ${round.round} closed: ending its chats ${chats.join(', ')}`);
         for (const id of chats)
           ended(id).catch((error) => console.error(`a chat of ${round.round} did not end`, error));
+      }
       if (!round.archived)
         archive(chats.map((id) => ({ id, label: labelOf(transcriptOf(round.folder, id)) })));
       writeJson(file, { ...round, ended: round.ended ?? now, archived: round.archived ?? now });
@@ -847,7 +878,6 @@ const led = () => {
       }
     }
   }
-  left();
 };
 
 const commandAt = (id) => join(COMMANDS, `${id}.json`);
@@ -873,11 +903,13 @@ const settle = (command, state, error = null) => {
 const swept = () => {
   const now = Date.now();
   for (const { file, round } of roundFiles())
-    if (round.closed && now - Date.parse(round.closed) > KEPT_CLOSED) rmSync(file, { force: true });
+    if (round.closed && (round.dismissed || !SESSION.test(round.coordinator ?? '')) && now - Date.parse(round.closed) > KEPT_CLOSED)
+      rmSync(file, { force: true });
   for (const command of commandFiles()) {
     const since = now - Date.parse(command.at);
     if (command.state === 'done' || command.state === 'failed') {
-      if (since > KEPT_SETTLED && reported.get(command.id) === movedTo(command)) rmSync(commandAt(command.id), { force: true });
+      if (since > KEPT_SETTLED && reported.get(command.id) === movedTo(command) && !command.paused?.length)
+        rmSync(commandAt(command.id), { force: true });
     } else if (command.state === 'sent' && since > UNTAKEN) settle(command, 'failed', 'chat_busy');
   }
 };
@@ -1043,6 +1075,164 @@ const carry = async (command) => {
   }
 };
 
+// A word sent to a coordinator takes back what it said it had done.
+const undone = (session) => {
+  for (const { file, round } of roundFiles())
+    if (round.coordinator === session && round.done) {
+      const { done: _done, ...kept } = round;
+      writeJson(file, kept);
+    }
+};
+
+const percentGiven = (value) => {
+  if (!Number.isInteger(value) || value < 1 || value > 100) throw new Refusal(400, 'invalid_when');
+  return value;
+};
+
+// A condition to start on as the owner gave it, from now; only a chat starts again and again.
+const whenGiven = (given, now, repeats) => {
+  if (!given || typeof given !== 'object' || !CONDITIONS.has(given.on)) throw new Refusal(400, 'invalid_when');
+  const when = { on: given.on, pause: given.pause == null ? null : percentGiven(given.pause), since: now };
+  if (given.on === 'time') {
+    const at = Date.parse(given.at);
+    const every = given.every ?? null;
+    if (!Number.isFinite(at) || (every !== null && (!repeats || !Object.hasOwn(REPEATS, every)))) throw new Refusal(400, 'invalid_when');
+    Object.assign(when, { at: new Date(at).toISOString(), every });
+  } else if (given.on === 'below') when.percent = percentGiven(given.percent);
+  else if (given.on === 'round') {
+    if (typeof given.round !== 'string' || !new RegExp(`^${ROUND}$`).test(given.round)) throw new Refusal(400, 'invalid_when');
+    roundAt(given.round);
+    when.round = given.round;
+  }
+  return when;
+};
+
+const windowNamed = (kind) => usageOf()?.windows?.find((each) => each.kind === kind) ?? null;
+
+// Whether the condition holds now for what waits on it in the folder.
+const holds = (when, folder, now) => {
+  const since = Date.parse(when.since);
+  if (when.on === 'time') return Date.parse(when.at) <= now;
+  if (when.on === 'round') {
+    const other = readJson(join(ROUNDS, `${when.round}.json`));
+    return !other || Boolean(other.closed);
+  }
+  if (when.on === 'red') {
+    const night = gateOf(folder)?.night;
+    return night?.outcome === 'failed' && Date.parse(night.at) > since;
+  }
+  const usage = usageOf();
+  if (!usage?.at || usage.error || Date.parse(usage.at) <= since) return false;
+  if (when.on === 'reset') {
+    const week = windowNamed('week');
+    return Boolean(week) && Date.parse(week.resets) - WEEK > since;
+  }
+  return (windowNamed('session')?.percent ?? 0) < when.percent;
+};
+
+// The next moment of a repeating start after now, at the same time of day on Zagreb's clock.
+const nextOf = (at, every, now) => {
+  const wall = wallOf(Date.parse(at));
+  for (let step = 1; ; step++) {
+    const moment = Date.parse(zagreb(new Date(wall + step * REPEATS[every]).toISOString().slice(0, 16).replace('T', ' ')));
+    if (moment > now) return new Date(moment).toISOString();
+  }
+};
+
+// The chats stopped at the weekly limit: those at work are stopped once the window reaches the
+// pause, and those stopped are told to go on once it is below it.
+const pausedOf = (paused, sessions, over, live, folder) => {
+  if (!over) {
+    for (const id of paused)
+      takenOver(id, folder)
+        .then((chat) => chat && say(chat, RESUMED))
+        .catch((error) => console.error(`the chat ${id} was not told to go on`, error));
+    return [];
+  }
+  const now = [...paused];
+  for (const id of sessions) {
+    if (now.includes(id) || live.get(id)?.state !== 'working' || !isHosted(id)) continue;
+    try {
+      interrupt(id);
+      now.push(id);
+    } catch (error) {
+      console.error(`the chat ${id} was not stopped at the weekly limit`, error);
+    }
+  }
+  return now;
+};
+
+const guarded = () => {
+  const usage = usageOf();
+  const week = windowNamed('week');
+  if (!usage?.at || usage.error || !week) return false;
+  const live = running();
+  let moved = false;
+  const changed = (paused = [], sessions, pause, folder) => {
+    const now = pausedOf(paused, sessions, week.percent >= pause, live, folder);
+    return JSON.stringify(now) === JSON.stringify(paused) ? null : now;
+  };
+  for (const { file, round } of roundFiles()) {
+    if (round.closed || !round.fired || !round.when?.pause) continue;
+    const sessions = round.chats.map((chat) => chat?.sessionId).filter((each) => SESSION.test(each ?? ''));
+    const paused = changed(round.paused, sessions, round.when.pause, round.folder);
+    if (paused) {
+      writeJson(file, { ...round, paused });
+      moved = true;
+    }
+  }
+  for (const command of commandFiles()) {
+    if (command.kind !== 'chat' || !command.when?.pause || !command.sessions?.length) continue;
+    const paused = changed(command.paused, command.sessions, command.when.pause, command.folder);
+    if (paused) {
+      writeJson(commandAt(command.id), { ...command, paused });
+      moved = true;
+    }
+  }
+  return moved;
+};
+
+// Starts what waits on a condition that now holds, and keeps what started so within the weekly
+// limit; true when anything moved.
+const awaited = () => {
+  const now = Date.now();
+  const at = new Date(now).toISOString();
+  let moved = false;
+  for (const { file, round } of roundFiles()) {
+    if (round.closed || round.started || !round.when || !holds(round.when, round.folder, now)) continue;
+    writeJson(file, { ...round, started: at, fired: at });
+    moved = true;
+  }
+  for (const command of commandFiles()) {
+    if (command.kind !== 'chat' || command.state !== 'waiting' || !command.when) continue;
+    if (!projectFolders().includes(command.folder)) {
+      settle(command, 'failed', 'no_project');
+      moved = true;
+      continue;
+    }
+    if (!holds(command.when, command.folder, now)) continue;
+    moved = true;
+    const session = randomUUID();
+    try {
+      begun(session, command.folder, command.text, command.images ?? []);
+    } catch (error) {
+      settle(command, 'failed', error instanceof Refusal ? error.message : 'unread');
+      continue;
+    }
+    const sessions = [...(command.sessions ?? []), session];
+    if (command.when.every)
+      writeJson(commandAt(command.id), {
+        ...command,
+        session,
+        sessions,
+        when: { ...command.when, at: nextOf(command.when.at, command.when.every, now), since: at },
+        at,
+      });
+    else settle({ ...command, session, sessions }, 'done');
+  }
+  return guarded() || moved;
+};
+
 // Carries out what the owner asked, at once or, for a chat working in the editor, once it is idle.
 const ordered = async (given) => {
   const { id, kind } = given;
@@ -1070,9 +1260,20 @@ const ordered = async (given) => {
     if (!projectFolders().includes(given.folder)) throw new Refusal(404, 'no_project');
     if (!text) throw new Refusal(400, 'invalid_text');
     const images = imagesGiven(given.images);
+    if (given.when != null) {
+      const when = whenGiven(given.when, now, true);
+      command = { ...command, folder: given.folder, text, images, when, sessions: [], paused: [], state: 'waiting' };
+      writeJson(commandAt(id), command);
+      return { state: 'waiting', error: null, session: null };
+    }
     const session = randomUUID();
     begun(session, given.folder, text, images);
     command = { ...command, folder: given.folder, session, text, images, state: 'done' };
+  } else if (kind === 'cancel' && given.round === undefined) {
+    const waiting = readJson(commandAt(Number(text)));
+    if (!/^\d{1,18}$/.test(text ?? '') || waiting?.kind !== 'chat' || waiting.state !== 'waiting') throw new Refusal(404, 'no_condition');
+    settle(waiting, 'failed', 'cancelled');
+    command = { ...command, folder: waiting.folder, text, state: 'done' };
   } else if (kind === 'say' || kind === 'rename' || kind === 'model') {
     const session = sessionGiven(given.session);
     const folder = folderOf(session, live);
@@ -1080,6 +1281,7 @@ const ordered = async (given) => {
     if (kind === 'model' && !modelsOf().some(({ value }) => value === text)) throw new Refusal(400, 'invalid_model');
     if (!text) throw new Refusal(400, 'invalid_text');
     command = { ...command, folder, session, text, images: kind === 'say' ? imagesGiven(given.images) : [] };
+    if (kind === 'say') undone(session);
     if (kind === 'rename' && !live.has(session)) {
       retitled(transcriptOf(folder, session), session, text);
       command.state = 'done';
@@ -1087,6 +1289,7 @@ const ordered = async (given) => {
   } else if (kind === 'push' && given.round === undefined) {
     const session = sessionGiven(given.session);
     command = { ...command, folder: folderOf(session, live), session, text: ASKED.push };
+    undone(session);
   } else if (kind === 'answer') {
     const session = sessionGiven(given.session);
     if (text !== 'yes' && text !== 'no') throw new Refusal(400, 'invalid_text');
@@ -1105,6 +1308,8 @@ const ordered = async (given) => {
     command = { ...command, folder, session, label: labelOf(transcriptOf(folder, session)) };
     if (kind === 'open') await released(session);
     else {
+      console.log(`the owner's ${kind} ends the chat ${session}`);
+      dismissedBy(session);
       if (kind === 'archive') archive([{ id: session, label: command.label }]);
       await ended(session);
     }
@@ -1113,7 +1318,17 @@ const ordered = async (given) => {
     const { file, round } = openRound(given.round);
     command = { ...command, folder: round.folder, round: given.round };
     if (kind === 'start') {
-      round.started ??= now;
+      if (round.started) throw new Refusal(409, 'round_started');
+      if (given.when != null) round.when = whenGiven(given.when, now, false);
+      else {
+        round.started = now;
+        delete round.when;
+      }
+      writeJson(file, round);
+      command.state = 'done';
+    } else if (kind === 'cancel') {
+      if (!round.when || round.started) throw new Refusal(409, 'no_condition');
+      delete round.when;
       writeJson(file, round);
       command.state = 'done';
     } else if (kind === 'auto') {
@@ -1123,6 +1338,7 @@ const ordered = async (given) => {
     } else {
       if (wordOf(given.round, deferred())) throw new Refusal(409, 'asked');
       command = { ...command, session: round.coordinator, text: text || ASKED[kind] };
+      undone(round.coordinator);
     }
   }
   if (kind === 'restart') {
@@ -1324,7 +1540,14 @@ let waiting = null;
 
 // What PONISTRA last heard of each command, so that it hears each move once.
 const reported = new Map();
-const movedTo = ({ state, error }) => `${state} ${error ?? ''}`;
+const movedTo = ({ state, error, session }) => `${state} ${error ?? ''} ${session ?? ''}`;
+// The plan's limits PONISTRA last kept, which it keeps again only once they change.
+let limitsTold = null;
+const limitsOf = () => {
+  const usage = usageOf();
+  return usage?.at && !usage.error ? { at: usage.at, windows: usage.windows, credits: usage.credits } : null;
+};
+const sameLimits = (one, other) => JSON.stringify([one?.windows, one?.credits]) === JSON.stringify([other?.windows, other?.credits]);
 
 const tell = async () => {
   waiting = null;
@@ -1332,6 +1555,7 @@ const tell = async () => {
   let moved;
   try {
     swept();
+    awaited();
     led();
     culled();
     toldOf();
@@ -1344,17 +1568,22 @@ const tell = async () => {
     console.error('the workspace could not read its sessions and rounds', error);
     return;
   }
-  if (now === last && !moved.length) return;
+  const limits = limitsOf();
+  const measuredAnew = limits && !sameLimits(limits, limitsTold);
+  if (now === last && !moved.length && !measuredAnew) return;
   last = now;
-  const commands = moved.map(({ id, state, error }) => ({ id, state, error }));
+  const commands = moved.map(({ id, state, error, session }) => ({ id, state, error, session }));
   try {
     const answer = await fetch(TOLD, {
       method: 'POST',
       headers: { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ commands }),
+      body: JSON.stringify({ commands, ...(measuredAnew && { limits }) }),
     });
     if (!answer.ok) console.error(`PONISTRA refused the change of the workspace: ${answer.status}`);
-    else for (const command of moved) reported.set(command.id, movedTo(command));
+    else {
+      for (const command of moved) reported.set(command.id, movedTo(command));
+      if (measuredAnew) limitsTold = limits;
+    }
   } catch (error) {
     console.error('PONISTRA was not told of the change of the workspace', error);
   }
@@ -1410,10 +1639,24 @@ const followGates = () => {
 followGates();
 setInterval(followGates, 60 * 1000).unref();
 followMemory();
+setInterval(() => {
+  try {
+    if (awaited()) waiting ??= setTimeout(tell, QUIET);
+  } catch (error) {
+    console.error('the workspace could not start what waits on a condition', error);
+  }
+}, AWAITED_EVERY).unref();
 followWork(() => {
-  const open = roundFiles().filter(({ round }) => !round.closed);
+  const all = roundFiles();
+  const open = all.filter(({ round }) => !round.closed);
   const inRounds = open.flatMap(({ round }) => [round.coordinator, ...round.chats.map((chat) => chat?.sessionId)]);
-  return { archived: archivedList(), held: new Set([...running().keys(), ...inRounds.filter(Boolean)]) };
+  // A chat is in the round it was last given to, an open one before a closed one.
+  const rounds = new Map();
+  const byAge = (one, other) => Boolean(other.round.closed) - Boolean(one.round.closed) || String(one.round.created).localeCompare(String(other.round.created));
+  for (const { id, round } of all.sort(byAge))
+    for (const session of [round.coordinator, ...round.chats.map((chat) => chat?.sessionId)])
+      if (SESSION.test(session ?? '')) rounds.set(session, id);
+  return { archived: archivedList(), held: new Set([...running().keys(), ...inRounds.filter(Boolean)]), rounds };
 });
 void tell();
 

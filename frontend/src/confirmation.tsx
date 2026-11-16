@@ -12,6 +12,8 @@ import { errorMessage } from './tree';
 interface Ways {
   passkey: boolean;
   password: boolean;
+  /** The authenticator app's code goes with the password. */
+  code: boolean;
   providers: Provider[];
 }
 
@@ -84,6 +86,7 @@ export function Confirmation() {
 function Asking({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
   const { t } = useI18n();
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
   const ways = useQuery({
     queryKey: ['confirm'],
     queryFn: () => getJson<Ways>('/api/auth/confirm'),
@@ -93,8 +96,10 @@ function Asking({ onDone, onClose }: { onDone: () => void; onClose: () => void }
   const providers = ways.data?.providers ?? [];
   const providerFailure = byProvider.error?.message;
   const byPassword = useMutation({
-    mutationFn: () => postJson('/api/auth/confirm', { password }),
+    mutationFn: () =>
+      postJson('/api/auth/confirm', ways.data?.code ? { password, code } : { password }),
     onSuccess: onDone,
+    onError: () => setCode(''),
   });
   const passkey = !!ways.data?.passkey && passkeysWork;
 
@@ -152,11 +157,28 @@ function Asking({ onDone, onClose }: { onDone: () => void; onClose: () => void }
               className={field}
             />
           </label>
+          {ways.data.code && (
+            <label className="flex flex-col gap-1 text-sm">
+              {t('authenticator.code')}
+              <input
+                required
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9 ]{6,7}"
+                maxLength={7}
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                className={field}
+              />
+            </label>
+          )}
           {byPassword.isError && (
             <p className="text-sm text-danger">
               {byPassword.error instanceof ApiError && byPassword.error.code === 'locked_out'
                 ? t('auth.locked')
-                : errorMessage(byPassword.error, t)}
+                : byPassword.error instanceof ApiError && byPassword.error.code === 'invalid_code'
+                  ? t('authenticator.invalid')
+                  : errorMessage(byPassword.error, t)}
             </p>
           )}
           <div className="flex justify-end gap-2">

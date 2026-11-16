@@ -90,22 +90,27 @@ def test_an_administrator_signs_a_user_out_of_one_browser_or_all(ana, admin):
 
 
 def test_a_policy_holds_administrators_to_passkeys_from_their_next_sign_in(ana, admin):
-    assert admin.get("/api/policy").json() == {"passkeys": "nobody", "outside": "everyone"}
+    assert admin.get("/api/policy").json() == {
+        "passkeys": "nobody",
+        "second_factor": False,
+        "outside": "everyone",
+    }
     assert admin.patch("/api/policy", {"passkeys": "sometimes"}, JSON).status_code == 400
     assert admin.patch("/api/policy", {"passkeys": "administrators"}, JSON).json() == {
         "passkeys": "administrators",
+        "second_factor": False,
         "outside": "everyone",
     }
     assert admin.get("/api/nodes").status_code == 200
-    assert signed_in().get("/api/auth/session").json()["passkey_due"] is False
+    assert signed_in().get("/api/auth/session").json()["due"] is None
     assert signed_in().patch("/api/policy", {"passkeys": "nobody"}, JSON).status_code == 403
 
     due = signed_in("ivo@example.com")
-    assert due.get("/api/auth/session").json()["passkey_due"] is True
+    assert due.get("/api/auth/session").json()["due"] == "passkey"
     assert due.get("/api/nodes").json() == {"error": "passkey_required"}
     device = Device()
     assert add(due, device).status_code == 201
-    assert due.get("/api/auth/session").json()["passkey_due"] is False
+    assert due.get("/api/auth/session").json()["due"] is None
     assert due.get("/api/nodes").status_code == 200
 
     refused = Client().post(

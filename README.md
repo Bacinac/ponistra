@@ -32,6 +32,10 @@ us, no subscription and no cloud of ours in between.
 
 ![Calendar](docs/screenshots/calendar.webp)
 
+**Projects:** rounds of Claude Code chats on each project, started by hand or when a condition is met, with their working time and what they spend.
+
+![Projects](docs/screenshots/projects.webp)
+
 </details>
 
 ## What it does
@@ -51,6 +55,11 @@ The calendar and the address book gather every account into one and serve a
 phone's own apps over CalDAV and CardDAV. Chat, meetings with sound, video and
 screen sharing, a recording and minutes, tasks, notes, links and boards share
 the same people and the same search.
+
+Projects, for those who develop with Claude Code, runs rounds of parallel chats
+on each project from a code workspace beside the installation: started by hand,
+at a time or when the plan's limits allow, with the working time and the tokens
+each chat, round and project spends kept in Postgres.
 
 ## What sets it apart
 

@@ -38,9 +38,11 @@ class Command(models.Model):
         RESTART = "restart"
         STOP = "stop"
         MOVE = "move"
+        CANCEL = "cancel"
 
     class State(models.TextChoices):
         SENT = "sent"
+        WAITING = "waiting"
         TAKEN = "taken"
         DONE = "done"
         FAILED = "failed"
@@ -53,6 +55,8 @@ class Command(models.Model):
     images = models.PositiveSmallIntegerField(default=0)
     # Asked by the workspace's own rule rather than the owner: a round consolidated by itself.
     auto = models.BooleanField(default=False)
+    # The condition a round or a chat starts on rather than at once (PJ4).
+    when = models.JSONField(null=True, blank=True)
     state = models.CharField(max_length=8, choices=State.choices, default=State.SENT)
     error = models.CharField(max_length=60, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -87,12 +91,17 @@ class Transcript(models.Model):
     `~/.claude/projects` it is kept in, the project that folder belongs to (blank for the
     workspace's own root), and how many bytes of it have been read. Time brought from Clockify
     for the days before the transcripts begin is kept as a transcript of the namespace
-    `clockify`, one for each of its entries, read by nobody."""
+    `clockify`, one for each of its entries, read by nobody. An agent a chat started has a
+    transcript of its own, belonging to the chat (`chat`), which counts toward its tokens (PJ3);
+    `last` is the answer counted last, `title` the chat's as its transcript last gave it."""
 
     namespace = models.CharField(max_length=255)
     session = models.CharField(max_length=64)
+    chat = models.CharField(max_length=64, blank=True)
     project = models.CharField(max_length=255, blank=True)
+    title = models.CharField(max_length=200, blank=True)
     read = models.BigIntegerField(default=0)
+    last = models.CharField(max_length=100, blank=True)
     at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -124,6 +133,44 @@ class Stretch(models.Model):
 
     def __str__(self) -> str:
         return f"{self.began}–{self.ended}"
+
+
+class Spend(models.Model):
+    """The tokens a transcript's answers took in one hour on one model while its chat was in a
+    round (blank for none): read anew, written, read from the cache and written to it (PJ3)."""
+
+    transcript = models.ForeignKey(Transcript, on_delete=models.CASCADE, related_name="spent")
+    hour = models.DateTimeField()
+    model = models.CharField(max_length=100)
+    round = models.CharField(max_length=100, blank=True)
+    turns = models.PositiveIntegerField(default=0)
+    input = models.PositiveBigIntegerField(default=0)
+    output = models.PositiveBigIntegerField(default=0)
+    cache_read = models.PositiveBigIntegerField(default=0)
+    cache_write = models.PositiveBigIntegerField(default=0)
+
+    class Meta:
+        indexes = [models.Index(fields=["hour"], name="workspace_spend_hour")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["transcript", "hour", "model", "round"], name="workspace_spend_once"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.transcript} {self.hour} {self.model}"
+
+
+class Limits(models.Model):
+    """The plan's limits as the workspace measured them, each time they changed (PJ3): its
+    windows, {kind, name, percent, resets}, and the extra usage it spent, if any."""
+
+    at = models.DateTimeField(unique=True)
+    windows = models.JSONField(default=list)
+    credits = models.JSONField(null=True)
+
+    def __str__(self) -> str:
+        return str(self.at)
 
 
 class Sheet(models.Model):

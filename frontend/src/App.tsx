@@ -2,7 +2,7 @@ import { Component, type ErrorInfo, type ReactNode, Suspense, useEffect } from '
 import { LoaderCircle } from 'lucide-react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
 import { unavailable } from './api';
-import { LoginForm, PasskeyDue, SetupForm, useSession } from './auth';
+import { Due, LoginForm, SetupForm, useSession } from './auth';
 import { forgetDoor, rememberedDoor } from './door';
 import { Loading, Lobby, Shell } from './frame';
 import { START } from './linksWindow';
@@ -176,10 +176,10 @@ export default function App() {
     return <Lobby>{session.data.setup ? <SetupForm /> : <LoginForm />}</Lobby>;
   }
   if (!session.data.user.visitor) forgetDoor();
-  if (session.data.passkey_due) {
+  if (session.data.due) {
     return (
       <Lobby>
-        <PasskeyDue />
+        <Due due={session.data.due} />
       </Lobby>
     );
   }

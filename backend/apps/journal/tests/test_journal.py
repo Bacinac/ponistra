@@ -111,7 +111,11 @@ def test_the_policy_is_written_only_when_it_changes(admin):
     for _ in range(2):
         admin.patch("/api/policy", {"passkeys": Policy.Passkeys.EVERYONE}, content_type=JSON)
     assert [entry.detail for entry in Entry.objects.filter(kind=Kind.POLICY_CHANGED)] == [
-        {"passkeys": Policy.Passkeys.EVERYONE, "outside": Policy.Outside.NOBODY}
+        {
+            "passkeys": Policy.Passkeys.EVERYONE,
+            "second_factor": False,
+            "outside": Policy.Outside.NOBODY,
+        }
     ]
 
 

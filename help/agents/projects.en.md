@@ -4,13 +4,23 @@ The desk of your code workspace: projects with their rounds and chats, a convers
 
 ## How to use it
 
+### Signing in to Claude Code
+
+The chats run Claude Code in the workspace, which signs in once, with a Claude subscription or a Console account.
+
+1. Open {t:rail.projects}: on a computer on the bar of modules, on a phone from the account menu.
+2. Press the {t:workspace.terminal.open} icon right of {t:workspace.general}.
+3. Type `claude auth login` and press Enter.
+4. Open the address the terminal prints, sign in and copy the code you are given.
+5. Paste the code into the terminal and press Enter.
+
 ### A new chat
 
 1. On the bar of modules press {t:rail.projects}.
 2. Find the project. {t:workspace.general} is the workspace as a whole, for chats that belong to no single project.
 3. Press the {t:workspace.newChat} icon right of the project's name (its name shows when the mouse rests on it).
 4. The form opens in the chat's place (on a phone in place of the list), the cursor already in its field. In the field {t:workspace.newChatText} type the first message, or press {t:speech.dictate} and say it. Images are added as in a message on the page.
-5. Press {t:workspace.startChat} or Enter, as in a message on the page. The chat starts in the workspace and shows in the form's place; the editor does not open.
+5. Press {t:workspace.startChat} or Enter, as in a message on the page. The chat starts in the workspace and shows in the form's place; the editor does not open. To start it later, press {t:workspace.startWhen} (the section Starting on a condition).
 
 ### Back to a chat
 
@@ -20,7 +30,7 @@ The desk of your code workspace: projects with their rounds and chats, a convers
 
 ### Talking to the agent on the page
 
-1. On the {t:rail.projects} page press a chat. On a phone {t:workspace.view.chat} then opens (the buttons at the top switch between {t:workspace.view.overview}, {t:workspace.view.chat}, [{t:workspace.view.memory}](help:agents/memory) and {t:workspace.view.hours}); on a computer the list stands in the left column, like the folders beside documents, and the chat to its right, until the {t:workspace.view.memory} button, far right in the row with {t:workspace.view.chat}, replaces it with the agent's memory. Each scrolls on its own, and the list is widened or narrowed by dragging the thin line between the list and the chat. Until you pick one, the coordinator of the latest round is shown.
+1. On the {t:rail.projects} page press a chat. On a phone {t:workspace.view.chat} then opens (the buttons at the top switch between {t:workspace.view.overview}, {t:workspace.view.chat}, [{t:workspace.view.memory}](help:agents/memory), {t:workspace.view.hours} and [{t:workspace.view.spend}](help:agents/spend)); on a computer the list stands in the left column, like the folders beside documents, and the chat to its right, until the {t:workspace.view.memory} button, far right in the row with {t:workspace.view.chat}, replaces it with the agent's memory. Each scrolls on its own, and the list is widened or narrowed by dragging the thin line between the list and the chat. Until you pick one, the coordinator of the latest round is shown.
 2. In the field {t:workspace.say} type a message, or press {t:speech.dictate} and say it.
 3. For an image, paste it into the field (Ctrl+V), drag it onto the field or press {t:workspace.addImage}. It shows small below the field; {t:workspace.removeImage} takes it off before sending. A right click in the field pastes the clipboard's text where the caret stands, or its image when it holds no text. If the browser does not let the clipboard be read, below the field it says: {t:error.clipboard_refused}
 4. Press {t:workspace.send} or Enter; Shift+Enter starts a new line, and on a phone Enter starts a new line, so the button sends. For frequent words press {t:workspace.quick.catchup}, {t:workspace.quick.continue} or {t:workspace.quick.handoff}; each is sent at once. A message you send stands at the foot of the conversation at once. Until the agent reads it, it is framed and below it says {t:workspace.unread}; the agent reads it when it finishes the step it is on, and it then becomes part of the conversation.
@@ -63,6 +73,19 @@ The same {t:workspace.yes} and {t:workspace.no} also stand in the conversation w
 4. When every chat of the round is done, the coordinator brings the round's work together by itself as soon as it is idle, while {t:workspace.auto} is on in its menu. With it off, write “objedini” to the coordinator when you want it.
 
 5. Once the work is brought together, the check found it green and no push has carried it yet, {t:workspace.push} stands below the coordinator's row instead; when the coordinator has already closed the round, the button stands below its row in the project's list of chats. Press it. The coordinator then pushes the work; a release to production still needs your explicit word in the chat.
+6. Once the coordinator says everything is finished (consolidation, plan, memory and the push if you asked for it) and is idle, {t:workspace.close} stands below its row. Press it and the coordinator stops.
+
+### Starting on a condition
+
+1. On the {t:rail.projects} page press {t:workspace.startWhen} beside {t:workspace.start} below the coordinator of a round not yet started, or beside {t:workspace.startChat} in the new chat form, once you have written the first message.
+2. In the {t:workspace.when.on} field choose when:
+   - {t:workspace.when.time}: a day and an hour. For a chat, the {t:workspace.when.repeat} field offers {t:workspace.when.once}, {t:workspace.when.daily} or {t:workspace.when.weekly}.
+   - {t:workspace.when.reset}: when the plan's weekly limit resets.
+   - {t:workspace.when.below}: when the five-hour window is below the percent in the {t:workspace.when.percent} field.
+   - {t:workspace.when.round}: when the round you choose in the {t:workspace.when.which} field closes; offered while another round is open.
+   - {t:workspace.when.red}: when the nightly run of all of that project's tests fails.
+3. So that the work does not eat the week, turn on {t:workspace.when.pausing} and enter {t:workspace.when.pause}.
+4. Press {t:workspace.when.set}. The round or the chat then waits below its project or coordinator, with the condition in words; {t:workspace.cancelWhen} calls it off.
 
 ### Moving to another round
 
@@ -105,6 +128,8 @@ When the shell ends (the `exit` command) or the connection to it is lost, the te
 
 The list is put together from the workspace itself: a project is every folder with Git at the workspace's root, so a new folder appears by itself. A project bears the name of its plan (“Plan DIDA” → DIDA), without one its folder's name with a capital first letter. Projects stand in alphabetical order and keep their place while they are worked on, and beside each stand the chats in use; a chat of an open round stands only in its round, and once the round is closed under its coordinator, indented. To the right of the project's name, on the same line, are the small buttons {t:workspace.newRound}, {t:workspace.newChat} and {t:workspace.terminal.open}. The project's plan opens with {t:workspace.openPlan} from the project's menu (right-click or a long press on its name). Below the name, indented like the chats and reaching no further than those buttons, stands the latest push; the other checks (the browser and the night run) are folded behind the arrow with a number at the end of that line ({t:workspace.gate}) and open with a click, each on a line of its own; when a check failed, the arrow is red, as is that check. A project not being worked on is moved with {t:workspace.others.put} from the project's menu (right-click or a long press on its name): it stands at the bottom under {t:workspace.others}, with the number of such projects, and opens on a click. As soon as a chat or a round starts in it, it returns to the main list by itself and stays there; {t:workspace.others.back} brings it back by hand. The choice is kept with the account, the same on every device. {t:workspace.general} is always at the top. Clicking a project's name shows the rest of its 5 latest chats too, each with the rest of its round, the number beside the name saying how many. The page follows the workspace: when a chat starts or stops working, stops at a question, a round changes or a project's check ends, the page updates by itself, on every device it is open on.
 
+The workspace installs Claude Code itself on its first start, from the Open VSX marketplace of extensions into its home. The chats, the editor's Claude panel and the terminal run the same program with the same sign-in, kept in the workspace, so signing in once in any of them serves all three.
+
 The workspace runs the chats itself: it holds one Claude Code process for each, so neither a new chat or round nor a message, answer, name or closing opens the editor. {t:workspace.openChat} opens only the chat on a phone, without the rest of the editor, and the whole editor with that chat on a computer. Each project has its own browser tab, so a chat of the same project comes into it. The chat is kept in the workspace, so the editor opens the same chat; the workspace then lets its process go, as one chat never runs in two processes. Should it run in two all the same, say in an editor window left open, the workspace stops the older one as soon as it is idle. A message to a chat working in the editor waits until it finishes its step, and the workspace then takes it over. After a restart the workspace carries on with the chats it ran by itself.
 
 The mark {t:workspace.inUse} stands beside a chat that runs, in the workspace or in the editor, and in its place the state when the agent works or waits for you.
@@ -141,17 +166,19 @@ A round is a set of chats in one project that the coordinator opened at once, ea
 
 {t:workspace.push} sends that word to the coordinator, as if you had typed it, as does consolidating by itself. Until the coordinator has taken it, a line under the round's line names the word sent to it, and {t:workspace.push} is not offered. {t:workspace.push}, {t:workspace.restart} and the terminal ask you to confirm who you are first if you have not in the last 8 hours.
 
-{t:workspace.auto} is on for every new round. When every chat of the round is done and the coordinator is not working, the coordinator gets “objedini sam od sebe” and brings the round together without asking; if it was still working then, it gets it as soon as it stops. A chat is done once it has taken at least one step and stopped; a chat just started, which has not written anything yet, is not. A word the coordinator had not taken before the round closed is no longer handed over. Should it meet a question, an error or a chat still working, it stops and tells you; the round then waits for you. A push never goes by itself. Once the round closes, its chats are closed and archived; the coordinator stays on the list until it has done its part. An archived chat you open again later stays on the list.
+{t:workspace.auto} is on for every new round. When every chat of the round is done and the coordinator is not working, the coordinator gets “objedini sam od sebe” and brings the round together without asking; if it was still working then, it gets it as soon as it stops. A chat is done once it has taken at least one step and stopped; a chat just started, which has not written anything yet, is not. A word the coordinator had not taken before the round closed is no longer handed over. Should it meet a question, an error or a chat still working, it stops and tells you; the round then waits for you. A push never goes by itself. Once the round closes, its chats are closed and archived; the coordinator stays on the list until you close it with {t:workspace.close}, even once it no longer runs; a message starts it again. An archived chat you open again later stays on the list.
 
 A command sent to a chat (a message, an answer, a new name, {t:workspace.openChat}, {t:workspace.close}, consolidation, {t:workspace.push}, {t:workspace.archive} or {t:workspace.stop}) stands at the foot of that chat with its state until it is carried out: {t:workspace.progress.sent}, {t:workspace.progress.taken} (the workspace received it) or {t:workspace.progress.failed} with the reason; once {t:workspace.progress.done}, it goes. When archiving fails, the reason also shows below the chat's line, and when a chat does not move to the editor, at the top of the page. The state changes by itself, on every device.
 
-While the round holds unsent chats that were not started, the {t:workspace.start} button stands below the coordinator's row. When the coordinator closes the round, the round leaves the page and the workspace stops its chats. It stops the coordinator only once it is idle, as after bringing the round together it still pushes, releases and restarts, and not at all while it leads another round still open. A coordinator stopped carries on with a message from the page or in the editor. In the editor the round stands as a group in the list of sessions, which every panel puts together when it loads.
+While the round holds unsent chats that were not started, the {t:workspace.start} button stands below the coordinator's row. When the coordinator closes the round, the round leaves the page and the workspace stops its chats. It does not stop the coordinator by itself, as after bringing the round together it still updates the plan and the memory, pushes, releases and restarts: once all is finished, it writes so into the round's file, and the page then offers it {t:workspace.close} while it is idle. A new word you send it from the page ({t:workspace.push}, consolidation or a message) withdraws that offer until it says it is finished again. A coordinator stopped carries on with a message from the page or in the editor. In the editor the round stands as a group in the list of sessions, which every panel puts together when it loads.
 
 A restart makes the workspace again from its Docker Compose definition, with its newest image. It cuts off every chat; those the workspace runs it carries on with by itself, and the others carry on with a message or in the editor. So the button is disabled while a chat works or waits for you, and while a {t:workspace.check} (the nightly or the browser's run) or a {t:workspace.release} runs in the workspace; hold the pointer over the button to see what runs. A run going outside the workspace, such as the nightly one on the server, is not cut off by a restart.
 
 The terminal is the workspace owner's bash shell, the same as in the editor's terminal: it sees the same files, Git, Docker and tools. Each terminal on the page is a shell of its own in the workspace and lives while the page is open; closing the terminal, going to another page, a new terminal for another project or a lost connection ends it, and with it whatever was started in it. For work that has to outlive closing it, use the editor's terminal or `nohup`. What the shell writes goes through Ponistra to the browser and is stored nowhere. The terminal's colours follow the interface's theme. On a computer the terminal is as tall as the page, on a phone three fifths of the screen. At most eight terminals can be open at once.
 
 The workspace measures the time worked by itself from the chats' transcripts it already reads: every chat's, those in the editor too, each moment a chat wrote down, a message, an answer or a tool. The moments of one project, from all its chats, make a block of work until more than 15 minutes pass between two; a block lasts at least 2 minutes and counts on the day it began, by Croatian time. Projects worked on at once each count in full, so a day's {t:workspace.hours.total} may pass 24 hours; {t:workspace.hours.wall} is the time any project was worked on, without overlap. The project is the folder in the workspace's root the chat began in, also when it began in a subfolder of it; a chat in the root itself counts under {t:workspace.general}. Every minute the workspace reads what is new in the transcripts and tells Ponistra, which keeps the time in its database with a mark of how far each transcript was read; what was once kept stays when a chat's transcript is deleted, and reading the same transcript again counts nothing twice. The page refreshes by itself when new time arrives.
+
+The workspace checks the condition every minute and on every change it reports to the page. Time is Croatian time, so a repeating chat starts at the same hour after the clocks change too. After each start a repeating chat waits for the next time, and every start is a new chat; any other condition starts once. The weekly reset, the five-hour threshold and a red nightly run count only from the moment you set the condition, so a state from before does not meet it. With {t:workspace.when.pause} set, the workspace stops the chats the condition started as soon as the weekly limit reaches that percent, and {t:workspace.paused} shows below the round; once the weekly window is below it again, each stopped chat is told to finish its work. The command of a repeating chat stands at the foot of its latest chat as {t:workspace.progress.waiting}.
 
 A change in the workspace also sends its owner a push notification: a chat waits for a decision, a round is ready, a round was consolidated, the browser's or the nightly run failed, and the round's coordinator finished a step with a message or waits for your input. It also tells you when the plan's weekly limit or a model's own limit passes 80%, and when a model past its limit starts spending credits, each once per week of the limit. The notification of a chat or coordinator that waits carries the buttons {t:workspace.yes} and {t:workspace.no}, which answer as in the chat on the page, without opening Ponistra; if the answer does not go through, the Projects page opens. Which notifications arrive is set in [Notifications](help:account/notifications).
 
@@ -160,17 +187,20 @@ A change in the workspace also sends its owner a push notification: a chat waits
 The page exists only for the owner of the code workspace.
 
 - {t:error.not_the_owner} Only the user it was assigned to sees the workspace.
-- {t:error.workspace_not_linked} The installation has no workspace token. The installation's administrator enters it.
+- {t:error.workspace_not_linked} The installation has no workspace token. The installation's administrator links the workspace on the server, as the installation guide describes.
 - {t:error.workspace_unreachable} The workspace is not running, or its token differs from the installation's. It also shows for a few seconds during a restart.
 - {t:error.no_round} The round was closed and removed meanwhile. The page updates by itself.
 - {t:error.round_closed} The coordinator has already closed the round, so it is no longer started or brought together.
+- {t:error.round_started} The round has already started, so it takes no condition any more.
+- {t:error.no_condition} The round or the chat has started meanwhile, or its condition was called off.
+- {t:error.invalid_when} The time has passed or carries no time zone, the percent is not between 1 and 100, or the round waited on does not exist.
 - {t:error.no_chat} The chat no longer exists in the workspace.
 - {t:error.no_project} The folder is not a project of the workspace.
 - {t:error.asked} The coordinator was already sent a word it has not taken yet.
 - {t:error.not_waiting} The chat got its answer meanwhile.
 - {t:error.chat_working} The chat started working or asking between the press and the handover, so it was not opened in the editor.
 - {t:error.chat_busy} A message to a chat working in the editor waits for it to finish its step; if it does not within an hour, the message fails.
-- {t:error.no_agent} The Claude Code extension, whose program runs the chats, is not installed in the workspace.
+- {t:error.no_agent} The Claude Code extension, whose program runs the chats, is not installed in the workspace. The workspace installs it when it starts and tries again at every start while it is missing; until then install Claude Code from the editor's Extensions view.
 - {t:error.not_ended} The chat's process did not stop.
 - {t:error.too_many_images} A message takes at most four images; the rest are not added.
 - {t:error.image_type} The image is not PNG, JPEG, GIF or WebP.
@@ -192,6 +222,7 @@ A chat without a title, such as one with no answer yet, is not on the list. The 
 ## Related
 
 - [Writing the time worked](help:agents/hours)
+- [Token spend](help:agents/spend)
 - [Agent's memory](help:agents/memory)
 - [Connecting an outside agent](help:agents/connecting)
 - [Spoken commands](help:start/voice)

@@ -39,7 +39,8 @@ Administrator instalacije u njezinu dnevniku vidi kada je pristupni ključ dodan
 - {t:passkeys.unsupported} Prijavite se tada lozinkom ili s drugog uređaja.
 - {t:passkeys.cancelled} Prikazuje se kad potvrdu na uređaju prekinete ili joj istekne vrijeme.
 - {t:passkeys.kept} Za taj uređaj ne treba drugi ključ.
-- Ako vam je prijava pristupnim ključem obavezna, zadnji ključ ne možete ukloniti.
+- Ako vam je prijava pristupnim ključem obavezna, zadnji ključ ne možete ukloniti. Isto vrijedi kad instalacija traži drugi korak, a [aplikaciju za autentifikaciju](help:account/authenticator) nemate.
+- Kad je administrator prijavu pristupnim ključem isključio, stranica prijave ga ne nudi i prijava njime se odbija: {t:error.passkeys_off}
 
 ## Povezano
 

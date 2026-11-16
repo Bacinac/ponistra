@@ -1,0 +1,20 @@
+{
+  "order": 27,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "workspace.spend.ofWeek",
+    "workspace.spend.millions",
+    "workspace.spend.thousands",
+    "workspace.spend.dollars",
+    "workspace.spend.unpriced"
+  ],
+  "describes": {
+    "frontend/src/workspaceSpend.tsx#Spend": "87d7739122fb",
+    "backend/apps/workspace/spend.py": "3867d9e4a4fd",
+    "backend/apps/workspace/views.py#spend": "6f3aea4c2aa5",
+    "backend/apps/workspace/views.py#limits_kept": "1bcc53c0d0d9",
+    "backend/apps/workspace/worked.py": "611f286894e3",
+    "workspace/worked.mjs": "24154be3227e"
+  }
+}

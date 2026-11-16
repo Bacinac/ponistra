@@ -12,6 +12,7 @@ const MEMBER = {
   context: null,
   changes: null,
   heard: null,
+  done: null,
 };
 
 const ROUND = {
@@ -20,6 +21,9 @@ const ROUND = {
   started: null,
   auto: true,
   asked: null,
+  when: null,
+  paused: [],
+  done: null,
   coordinator: {
     ...MEMBER,
     id: 'lead',
@@ -63,6 +67,8 @@ const CHAT = {
   hosted: false,
   waitingFor: null,
   coordinator: null,
+  done: null,
+  kept: false,
 };
 
 const GATE = {
@@ -1356,4 +1362,187 @@ test('the time sheets are set from the time worked, in a dialog of their own', a
   await user.click(await screen.findByRole('button', { name: 'Postavke…' }));
   const dialog = await screen.findByRole('dialog', { name: 'Vrijeme rada' });
   await within(dialog).findByRole('region', { name: 'Upis vremena' });
+});
+
+test('a round is set to start on a condition, which stops its chats past a weekly percent', async () => {
+  const asked: Asked[] = [];
+  served(commanded(asked));
+  const { user } = open('/workspace', OWNER);
+  const round = await screen.findByRole('region', { name: /^Krug / });
+  await user.click(within(round).getByRole('button', { name: 'Pokreni kad…' }));
+  const dialog = await screen.findByRole('dialog');
+  expect(within(dialog).queryByRole('combobox', { name: 'Ponavljanje' })).toBeNull();
+  await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Uvjet' }), 'below');
+  await user.click(within(dialog).getByRole('checkbox'));
+  await user.click(within(dialog).getByRole('button', { name: 'Postavi' }));
+  await waitFor(() =>
+    expect(asked).toEqual([
+      { kind: 'start', round: ROUND.id, when: { on: 'below', percent: 30, pause: 90 } },
+    ]),
+  );
+});
+
+test('a round waiting on a condition says on what, and the wait is taken back', async () => {
+  const asked: Asked[] = [];
+  const waiting = { ...ROUND, when: { on: 'reset', pause: 80 } };
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: PROJECTS.projects.map((each) =>
+        each.rounds.length ? { ...each, rounds: [waiting] } : each,
+      ),
+    }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const round = await screen.findByRole('region', { name: /^Krug / });
+  within(round).getByText('Kreće kad se tjedni limit obnovi · staje na 80 % tjedna');
+  expect(within(round).queryByRole('button', { name: 'Pokreni krug' })).toBeNull();
+  await user.click(within(round).getByRole('button', { name: 'Otkaži' }));
+  await waitFor(() => expect(asked).toEqual([{ kind: 'cancel', round: ROUND.id }]));
+});
+
+test('a new chat is set to start every day, waits under its project and is called off there', async () => {
+  const asked: Asked[] = [];
+  const kept: Asked[] = [];
+  served({
+    'GET /api/workspace/commands': () => ({ commands: kept }),
+    'POST /api/workspace/commands': async (request) => {
+      const given = (await request.json()) as Asked;
+      asked.push(given);
+      const command = { ...COMMAND, ...given, kind: 'chat', id: 7, state: 'waiting' };
+      if (given.kind === 'chat') kept.push(command);
+      return command;
+    },
+  });
+  const { user } = open('/workspace', OWNER);
+  const alpha = await screen.findByRole('region', { name: 'Alpha' });
+  await user.click(within(alpha).getByRole('button', { name: 'Novi chat' }));
+  const form = screen.getByRole('region', { name: 'Novi chat' });
+  await user.keyboard('catchup');
+  await user.click(within(form).getByRole('button', { name: 'Pokreni kad…' }));
+  const dialog = await screen.findByRole('dialog');
+  await user.selectOptions(within(dialog).getByRole('combobox', { name: 'Ponavljanje' }), 'day');
+  await user.click(within(dialog).getByRole('button', { name: 'Postavi' }));
+  await waitFor(() => expect(asked).toHaveLength(1));
+  const [chat] = asked;
+  expect(chat).toMatchObject({
+    kind: 'chat',
+    folder: '/work/alpha',
+    text: 'catchup',
+    when: { on: 'time', every: 'day', pause: null },
+  });
+  const at = new Date((chat.when as { at: string }).at);
+  expect([at.getHours(), at.getMinutes()]).toEqual([3, 30]);
+  expect(screen.queryByRole('region', { name: 'Novi chat' })).toBeNull();
+  await within(alpha).findByText(/^Kreće svaki dan, sljedeći put /);
+  await user.click(within(alpha).getByRole('button', { name: 'Otkaži' }));
+  await waitFor(() => expect(asked.at(-1)).toEqual({ kind: 'cancel', text: '7' }));
+});
+
+test('a coordinator that says its round is finished is offered to close, once it rests', async () => {
+  const asked: Asked[] = [];
+  const finished = {
+    ...ROUND,
+    started: '2026-11-11T13:40:00Z',
+    done: '2026-11-11T15:00:00Z',
+    chats: [],
+  };
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: PROJECTS.projects.map((each) =>
+        each.rounds.length ? { ...each, rounds: [finished] } : each,
+      ),
+    }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const round = await screen.findByRole('region', { name: /^Krug / });
+  await user.click(within(round).getByRole('button', { name: 'Zatvori' }));
+  await waitFor(() => expect(asked).toEqual([{ kind: 'close', session: 'lead' }]));
+});
+
+test("a closed round's coordinator stays on the page after it stops, until its owner closes it", async () => {
+  const asked: Asked[] = [];
+  const lead = {
+    ...CHAT,
+    id: 'lead-old',
+    title: 'Koordinator kruga',
+    at: AT,
+    open: false,
+    state: 'closed',
+    kept: true,
+  };
+  const [general, alpha] = PROJECTS.projects;
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: [general, { ...alpha, rounds: [], chats: [lead] }],
+    }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const project = await screen.findByRole('region', { name: 'Alpha' });
+  expect(within(project).queryByRole('button', { name: /Alpha/, expanded: false })).toBeNull();
+  const row = within(project)
+    .getByRole('button', { name: /Koordinator kruga/ })
+    .closest('li') as HTMLElement;
+  await user.click(within(row).getByRole('button', { name: 'Zatvori' }));
+  await waitFor(() => expect(asked).toEqual([{ kind: 'close', session: 'lead-old' }]));
+});
+
+test('the spend shows the tokens of the month by project, model, round and chat beside the limits', async () => {
+  const asked: (string | null)[] = [];
+  const tokens = (worth: number, unpriced: string[] = []) => ({
+    turns: 40,
+    input: 1_200_000,
+    output: 30_000,
+    cache_read: 25_000_000,
+    cache_write: 400_000,
+    worth,
+    unpriced,
+  });
+  served({
+    'GET /api/workspace/spend': (request) => {
+      const chosen = new URL(request.url).searchParams.get('month');
+      asked.push(chosen);
+      return {
+        months: [
+          { month: '2026-11', ...tokens(12.5, ['claude-fable-5-2']), api: 0.75 },
+          { month: '2026-10', ...tokens(3), api: 0 },
+        ],
+        month: chosen ?? '2026-11',
+        days: [{ day: '2026-11-12', ...tokens(12.5), api: 0.75 }],
+        projects: [{ project: 'alpha', ...tokens(12.5) }],
+        models: [
+          { name: 'claude-opus-5-5', ...tokens(12.5) },
+          { name: 'claude-fable-5-2', ...tokens(0, ['claude-fable-5-2']) },
+        ],
+        rounds: [{ round: ROUND.id, ...tokens(10) }],
+        chats: [{ chat: 'one', project: 'alpha', title: 'Kod → Krugovi', ...tokens(10) }],
+        actions: [{ action: 'text.summarise', runs: 3, cost: 0.75 }],
+        limits: [
+          { at: '2026-11-12T09:00:00Z', session: 35, week: 18 },
+          { at: '2026-11-12T13:00:00Z', session: 62, week: 21 },
+        ],
+        rate: 2,
+      };
+    },
+  });
+  const { user } = open('/workspace?view=spend', OWNER);
+  const month = await screen.findByRole('region', { name: 'Mjesec' });
+  within(month).getByRole('row', { name: 'Iz cachea 25 M' });
+  within(month).getByText('* Bez cijene: claude-fable-5-2');
+  const projects = screen.getByRole('region', { name: 'Po projektima' });
+  within(projects).getByRole('row', { name: /^Alpha 1,2 M 30 k 25 M 400 k 12,50 \$ ≈ 25 %$/ });
+  const models = screen.getByRole('region', { name: 'Po modelima' });
+  within(models).getByRole('row', { name: /^claude-fable-5-2 .* — ·$/ });
+  const chats = screen.getByRole('region', { name: 'Po chatovima' });
+  within(chats).getByRole('row', { name: /^Kod → Krugovi Alpha .* ≈ 20 %$/ });
+  const days = screen.getByRole('region', { name: 'Po danima' });
+  within(days).getByRole('row', { name: '12. 11. 40 12,50 $ 62 % 21 % 0,75 $' });
+  screen.getByRole('region', { name: 'Radnje Ponistre' });
+  await user.selectOptions(within(month).getByRole('combobox'), '2026-10');
+  await waitFor(() => expect(asked).toEqual([null, '2026-10']));
 });

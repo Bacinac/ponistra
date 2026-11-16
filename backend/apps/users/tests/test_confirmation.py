@@ -23,6 +23,8 @@ GUARDED = [
     ("post", "/api/passkeys/options"),
     ("post", "/api/passkeys"),
     ("delete", "/api/passkeys/1"),
+    ("post", "/api/authenticator"),
+    ("delete", "/api/authenticator"),
     ("post", "/api/app-passwords"),
     ("post", "/api/device/pairing"),
     ("post", "/api/agents/consent"),
@@ -78,6 +80,7 @@ def test_the_password_confirms(api):
     assert api.get("/api/auth/confirm").json() == {
         "passkey": False,
         "password": True,
+        "code": False,
         "providers": [],
     }
     wrong = api.post("/api/auth/confirm", {"password": "x"}, JSON)
@@ -122,6 +125,7 @@ def test_a_passkey_of_the_users_own_confirms(api):
     assert api.get("/api/auth/confirm").json() == {
         "passkey": True,
         "password": False,
+        "code": False,
         "providers": [],
     }
     refused = api.post("/api/auth/confirm", {"password": PASSWORD}, JSON)
@@ -150,6 +154,7 @@ def test_the_password_confirms_beside_a_passkey_where_the_policy_allows_it(api):
     assert api.get("/api/auth/confirm").json() == {
         "passkey": True,
         "password": True,
+        "code": False,
         "providers": [],
     }
     assert api.post("/api/auth/confirm", {"password": PASSWORD}, JSON).status_code == 204

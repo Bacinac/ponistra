@@ -95,11 +95,17 @@ interface CompanyKind {
   labels: Record<CompanyLabel, MessageKey>;
 }
 
-type Passkeys = 'nobody' | 'administrators' | 'everyone';
+type Passkeys = 'off' | 'nobody' | 'administrators' | 'everyone';
 
 const ROLES: Role[] = ['read', 'edit', 'own'];
-const PASSKEYS: Passkeys[] = ['nobody', 'administrators', 'everyone'];
+const PASSKEYS: Passkeys[] = ['off', 'nobody', 'administrators', 'everyone'];
 type Outside = 'nobody' | 'administrators' | 'everyone';
+
+interface Policy {
+  passkeys: Passkeys;
+  second_factor: boolean;
+  outside: Outside;
+}
 const OUTSIDE: Outside[] = ['nobody', 'administrators', 'everyone'];
 const COMPANY = ['company'];
 const POLICY = ['policy'];
@@ -539,7 +545,7 @@ function OutsidePolicySection() {
   const queryClient = useQueryClient();
   const policy = useQuery({
     queryKey: POLICY,
-    queryFn: () => getJson<{ passkeys: Passkeys; outside: Outside }>('/api/policy'),
+    queryFn: () => getJson<Policy>('/api/policy'),
   });
   const change = useMutation({
     mutationFn: (outside: Outside) => patchJson('/api/policy', { outside }),
@@ -575,10 +581,10 @@ function PolicySection() {
   const queryClient = useQueryClient();
   const policy = useQuery({
     queryKey: POLICY,
-    queryFn: () => getJson<{ passkeys: Passkeys; outside: Outside }>('/api/policy'),
+    queryFn: () => getJson<Policy>('/api/policy'),
   });
   const change = useMutation({
-    mutationFn: (passkeys: Passkeys) => patchJson('/api/policy', { passkeys }),
+    mutationFn: (changed: Partial<Policy>) => patchJson('/api/policy', changed),
     onSuccess: (changed) => queryClient.setQueryData(POLICY, changed),
   });
   const failure = policy.error ?? change.error;
@@ -591,7 +597,7 @@ function PolicySection() {
         <select
           value={policy.data?.passkeys ?? ''}
           disabled={!policy.isSuccess || change.isPending}
-          onChange={(event) => change.mutate(event.target.value as Passkeys)}
+          onChange={(event) => change.mutate({ passkeys: event.target.value as Passkeys })}
           className={field}
         >
           {PASSKEYS.map((option) => (
@@ -602,6 +608,15 @@ function PolicySection() {
         </select>
       </label>
       <p className="text-sm text-muted">{t('policy.note')}</p>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={policy.data?.second_factor ?? false}
+          disabled={!policy.isSuccess || change.isPending}
+          onChange={(event) => change.mutate({ second_factor: event.target.checked })}
+        />
+        {t('policy.secondFactor')}
+      </label>
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
     </section>
   );

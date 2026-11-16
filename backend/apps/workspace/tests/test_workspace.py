@@ -243,6 +243,29 @@ def test_the_owner_reads_a_chat_on_from_a_place_in_its_transcript(owner, workspa
             {"kind": "chat", "folder": "/work/alpha", "text": "nastavi"},
             {"folder": "/work/alpha", "text": "nastavi"},
         ),
+        (
+            {
+                "kind": "chat",
+                "folder": "/work/alpha",
+                "text": "pregledaj",
+                "when": {"on": "time", "at": "2026-11-16T03:30:00+01:00", "every": "day"},
+            },
+            {
+                "folder": "/work/alpha",
+                "text": "pregledaj",
+                "when": {"on": "time", "at": "2026-11-16T02:30:00+00:00", "every": "day"},
+            },
+        ),
+        (
+            {"kind": "start", "round": ROUND, "when": {"on": "below", "percent": 40, "pause": 90}},
+            {"round": ROUND, "when": {"on": "below", "percent": 40, "pause": 90}},
+        ),
+        (
+            {"kind": "start", "round": ROUND, "when": {"on": "round", "round": "drugi.krug"}},
+            {"round": ROUND, "when": {"on": "round", "round": "drugi.krug"}},
+        ),
+        ({"kind": "cancel", "round": ROUND}, {"round": ROUND}),
+        ({"kind": "cancel", "text": "42"}, {"text": "42"}),
     ],
 )
 def test_each_command_is_kept_and_handed_to_the_workspace(owner, workspace, given, sent):
@@ -312,6 +335,22 @@ def test_a_message_carries_no_file_but_an_image_of_its_own(owner, workspace):
         ({"kind": "say", "session": SESSION, "text": "x", "images": "a"}, "invalid_images"),
         ({"kind": "say", "session": SESSION, "text": "x", "images": ["0" * 64]}, "invalid_images"),
         ({"kind": "say", "session": SESSION, "text": "x", "images": ["x"]}, "invalid_images"),
+        ({"kind": "start", "round": ROUND, "when": {"on": "rain"}}, "invalid_when"),
+        ({"kind": "start", "round": ROUND, "when": {"on": "below", "percent": 0}}, "invalid_when"),
+        ({"kind": "start", "round": ROUND, "when": {"on": "red", "pause": 101}}, "invalid_when"),
+        (
+            {"kind": "start", "round": ROUND, "when": {"on": "time", "at": "2026-11-16T03:30"}},
+            "invalid_when",
+        ),
+        (
+            {
+                "kind": "start",
+                "round": ROUND,
+                "when": {"on": "time", "at": "2026-11-16T03:30:00Z", "every": "day"},
+            },
+            "invalid_when",
+        ),
+        ({"kind": "cancel", "text": "x"}, "invalid_text"),
     ],
 )
 def test_a_command_is_asked_only_what_it_knows(owner, workspace, given, error):
@@ -389,6 +428,21 @@ def test_the_workspace_reports_how_its_commands_went_and_never_takes_one_back(cl
     sent.refresh_from_db()
     taken.refresh_from_db()
     assert (sent.state, sent.error, taken.state) == ("failed", "chat_busy", "done")
+
+
+def test_a_chat_waiting_on_a_condition_names_each_session_it_starts(client, settings):
+    settings.WORKSPACE_TOKEN = "token"
+    waiting = Command.objects.create(kind=Command.Kind.CHAT, state=Command.State.WAITING)
+    started = "0244db82-f45d-4599-bad9-2c61f5d5463c"
+    for state in ("waiting", "done"):
+        client.post(
+            "/api/workspace/changed",
+            {"commands": [{"id": waiting.pk, "state": state, "session": started}]},
+            JSON,
+            HTTP_AUTHORIZATION="Bearer token",
+        )
+    waiting.refresh_from_db()
+    assert (waiting.state, waiting.session) == ("done", started)
 
 
 def _plan(api, title):

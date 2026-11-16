@@ -33,7 +33,7 @@ Clockify za svaki projekt i dan dobiva jedan unos koji počinje s prvim blokom i
 
 S uključenim {t:workspace.sheets.nightly} Ponistra svakih 15 minuta upisuje dane koji su u međuvremenu završili ili se promijenili, pa je prethodni dan upisan nekoliko minuta iza ponoći.
 
-Transkript arhiviranog razgovora, zajedno s mapom koju razgovor drži uz njega, radni prostor briše tek kad Ponistra potvrdi da je vrijeme iz njega pročitala do zadnjeg retka. Nikad ne briše razgovor koji radi ni razgovor u krugu koji nije zatvoren. Razgovor koji nije na popisu arhiviranih smatra se arhiviranim od zadnje promjene svog transkripta, a briše se najranije sat vremena nakon nje. Izmjereno vrijeme ostaje u Ponistri i nakon brisanja, ali se takav razgovor više ne može nastaviti.
+Transkript arhiviranog razgovora, zajedno s mapom koju razgovor drži uz njega, radni prostor briše tek kad Ponistra potvrdi da ga je pročitala do zadnjeg retka. Nikad ne briše razgovor koji radi ni razgovor u krugu koji nije zatvoren. Razgovor koji nije na popisu arhiviranih smatra se arhiviranim od zadnje promjene svog transkripta, a briše se najranije sat vremena nakon nje. Izmjereno vrijeme i [tokeni](help:agents/spend) ostaju u Ponistri i nakon brisanja, ali se takav razgovor više ne može nastaviti.
 
 ## Ograničenja
 

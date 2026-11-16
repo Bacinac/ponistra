@@ -30,15 +30,32 @@ export function passkeyMessage(error: Error, t: (key: MessageKey) => string): st
   return errorMessage(error, t);
 }
 
+/** A refusal sooner than this came from the browser, not the person, who could not have
+ * answered the device's prompt by then. */
+const AT_ONCE = 1000;
+const LET_GO = 300;
+
 async function answered(
   path: string,
   request: CredentialRequestOptions = {},
 ): Promise<PublicKeyCredential> {
   const options = await postJson<PublicKeyCredentialRequestOptionsJSON>(path);
-  return (await navigator.credentials.get({
-    ...request,
-    publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(options),
-  })) as PublicKeyCredential;
+  const asked = { ...request, publicKey: PublicKeyCredential.parseRequestOptionsFromJSON(options) };
+  const began = performance.now();
+  try {
+    return (await navigator.credentials.get(asked)) as PublicKeyCredential;
+  } catch (error) {
+    // The platform lets go of a withdrawn request (the list under the email field) a moment after
+    // the page hears it end, and until then refuses the button's at once (Windows Hello, Android).
+    if (
+      request.mediation === 'conditional' ||
+      !(error instanceof DOMException) ||
+      performance.now() - began > AT_ONCE
+    )
+      throw error;
+    await new Promise((resolve) => setTimeout(resolve, LET_GO));
+    return (await navigator.credentials.get(asked)) as PublicKeyCredential;
+  }
 }
 
 export async function passkeySignIn<T>(): Promise<T> {
@@ -72,6 +89,12 @@ async function signedInBy<T>(answer: PublicKeyCredential): Promise<T> {
     }
     throw error;
   }
+}
+
+/** The second factor of a sign-in with a password, by a passkey of the user's. */
+export async function passkeySecond<T>(): Promise<T> {
+  const answer = await answered('/api/auth/second/options');
+  return postJson<T>('/api/auth/second', { credential: answer.toJSON() });
 }
 
 export async function passkeyConfirm(): Promise<void> {

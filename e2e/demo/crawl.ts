@@ -34,11 +34,15 @@ export const SEEDS = [
   '/health',
   '/journal',
   '/settings',
+  '/workspace',
+  '/workspace?view=hours',
+  '/workspace?view=spend',
+  '/workspace?view=memory',
 ];
 
 /** What a visitor of the demo never reaches: the printer's and a meeting's pages, the doors of
-    outside visitors, the workspace a demo has none of. */
-const AWAY = /^\/(api|print|meet|o|v|workspace|login|logout)(\/|$)/;
+    outside visitors. */
+const AWAY = /^\/(api|print|meet|o|v|login|logout)(\/|$)/;
 
 /** A calendar's day links lead on without end; two weeks either side of today are the demo's. */
 const DAYS = 14;

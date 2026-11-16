@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
+from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
 from apps.blobs.store import IMAGES
 from apps.blobs.views import serve
@@ -18,8 +19,9 @@ from apps.journal import entries
 from apps.journal.entries import Kind
 from apps.workspace.views import workspace_of
 
-from . import sessions
-from .models import CALL, LANGUAGES, PAGE_THEMES, SIGN_INS, THEMES, Policy, User
+from . import factors, sessions
+from .ceremony import answered, asking
+from .models import CALL, LANGUAGES, PAGE_THEMES, SIGN_INS, THEMES, User, policy
 
 # A picture behind the user in a call, which the browser makes small before sending.
 BACKDROPS = {kind: suffix for kind, suffix in IMAGES.items() if kind != "image/svg+xml"}
@@ -52,21 +54,20 @@ def describe_me(user) -> dict | None:
 
 
 def signed(request) -> dict:
-    """The session as the app reads it: who is signed in, whether they must add a passkey before
-    anything else, whether the installation still waits for its first administrator, and the
+    """The session as the app reads it: who is signed in, what they must add before anything
+    else (a passkey or a second factor), whether the installation still waits for its first
+    administrator, whether it offers passkeys, what a password that was right waits for, and the
     address it is reached at from outside, which its own links (a meeting's) carry."""
     user = describe_me(request.user)
     return {
         "user": user,
-        "passkey_due": user is not None and bool(request.session.get(sessions.PASSKEY_DUE)),
+        "due": request.session.get(sessions.DUE) if user is not None else None,
         "setup": user is None and not User.objects.exists(),
         "site": settings.PUBLIC_URL,
+        "passkeys": policy().offers_passkeys(),
+        "second_factor": factors.offered(request) if user is None else None,
         "providers": Provider.offered() if user is None else [],
     }
-
-
-def policy() -> Policy:
-    return Policy.objects.get_or_create(pk=1)[0]
 
 
 def set_password(user, data: dict, field: str) -> None:
@@ -156,11 +157,53 @@ def login(request):
     user = authenticate(request, email=email, password=password)
     if user is None:
         return JsonResponse({"error": "invalid_credentials"}, status=400)
-    held = policy().holds(user)
-    if held and user.passkeys.exists():
+    if policy().holds(user) and user.passkeys.exists():
         return JsonResponse({"error": "passkey_required"}, status=403)
+    if factors.offered_to(user):
+        factors.pend(request, user)
+        return JsonResponse(signed(request))
     start_session(request, user)
-    sessions.started(request, "password", passkey_due=held)
+    sessions.started(request, "password", due=factors.owed(user))
+    return JsonResponse(signed(request))
+
+
+@api("POST", signed_in=False)
+def second_options(request):
+    """The options a passkey of the user's shows the second factor with."""
+    user = factors.pending(request)
+    if user is None:
+        raise Refused(400, "no_pending_sign_in")
+    if not factors.passkey_second(user, policy()):
+        raise Refused(400, "no_passkey")
+    return asking(
+        request,
+        factors.SECOND,
+        [PublicKeyCredentialDescriptor(id=bytes(kept.credential)) for kept in user.passkeys.all()],
+    )
+
+
+@api("POST", signed_in=False)
+def second(request):
+    """The second factor, by the authenticator app's code or a passkey of the user's, which
+    signs in the one whose password waits for it."""
+    user = factors.pending(request)
+    if user is None:
+        raise Refused(400, "no_pending_sign_in")
+    data = body(request)
+    if "credential" in data:
+        if not factors.passkey_second(user, policy()):
+            raise Refused(400, "no_passkey")
+        if answered(request, factors.SECOND).user_id != user.pk:
+            factors.wrong(request, user)
+            raise Refused(400, "invalid_passkey")
+    else:
+        found = factors.confirmed(user)
+        if found is None or not factors.taken(found, data.get("code")):
+            factors.wrong(request, user)
+            raise Refused(400, "invalid_code")
+    request.session.pop(factors.PENDING)
+    start_session(request, user, backend="django.contrib.auth.backends.ModelBackend")
+    sessions.started(request, "password", due=factors.owed(user))
     return JsonResponse(signed(request))
 
 

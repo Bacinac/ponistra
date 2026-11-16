@@ -18,9 +18,9 @@ from apps.journal import entries
 from apps.journal.entries import Kind
 from apps.vault.views import orphaned_by, settle
 
-from . import erasure, sessions
-from .models import Policy, User
-from .views import policy, set_password, signed
+from . import erasure, factors, sessions
+from .models import Authenticator, Policy, User, policy
+from .views import set_password, signed
 
 
 def administrator(request) -> None:
@@ -37,10 +37,13 @@ def without_passkeys(user: User) -> None:
 
 def handed_password(user: User) -> None:
     """A password someone else gives the user is their way back from a lost device, which a passkey
-    the policy holds them to would refuse; they add a new one at their next sign-in."""
-    if policy().holds(user):
+    the policy holds them to, or the authenticator app on a lost phone, would refuse; they add a
+    new one at their next sign-in."""
+    held = policy()
+    if held.holds(user) or held.second_factor:
         user.passkeys.all().delete()
         without_passkeys(user)
+    Authenticator.objects.filter(user=user).delete()
 
 
 def kept_by(user: User) -> str | None:
@@ -217,7 +220,7 @@ def setup(request):
         user.save()
         entries.wrote(Kind.INSTALLED, request=request, actor=user, subject=user)
     start_session(request, user, backend="django.contrib.auth.backends.ModelBackend")
-    sessions.started(request, "password", passkey_due=policy().holds(user))
+    sessions.started(request, "password", due=factors.owed(user))
     return JsonResponse(signed(request), status=201)
 
 
@@ -325,25 +328,35 @@ def group(request, pk):
 
 
 def describe_policy(found: Policy) -> dict:
-    return {"passkeys": found.passkeys, "outside": found.outside}
+    return {
+        "passkeys": found.passkeys,
+        "second_factor": found.second_factor,
+        "outside": found.outside,
+    }
 
 
 @api("GET", "PATCH", confirmed=("PATCH",))
 def sign_in_policy(request):
-    """Whom the installation holds to passkeys, which applies from their next sign-in, and who may
-    make a link for someone outside it."""
+    """Whether the sign-in page offers passkeys and whom the installation holds to them, whether
+    a sign-in with a password asks for a second factor, each from the user's next sign-in, and
+    who may make a link for someone outside it."""
     administrator(request)
     found = policy()
     if request.method == "PATCH":
         data = body(request)
-        passkeys = data.get("passkeys", found.passkeys)
-        outside = data.get("outside", found.outside)
-        if passkeys not in Policy.Passkeys.values or outside not in Policy.Outside.values:
+        was = describe_policy(found)
+        changed = {**was, **{key: data[key] for key in was if key in data}}
+        if (
+            changed["passkeys"] not in Policy.Passkeys.values
+            or changed["outside"] not in Policy.Outside.values
+            or not isinstance(changed["second_factor"], bool)
+        ):
             raise Refused(400, "invalid_policy")
-        if (passkeys, outside) != (found.passkeys, found.outside):
-            entries.wrote(Kind.POLICY_CHANGED, request=request, passkeys=passkeys, outside=outside)
-        found.passkeys = passkeys
-        found.outside = outside
+        if changed != was:
+            entries.wrote(Kind.POLICY_CHANGED, request=request, **changed)
+        found.passkeys = changed["passkeys"]
+        found.second_factor = changed["second_factor"]
+        found.outside = changed["outside"]
         found.changed_by = request.user
         found.changed_at = timezone.now()
         found.save()

@@ -99,6 +99,23 @@ class Passkey(models.Model):
         return self.name
 
 
+class Authenticator(models.Model):
+    """An authenticator app's shared secret (RFC 6238), sealed: once its first code confirmed it,
+    a sign-in with a password asks for its code too. The last time step a code was taken at is
+    kept, so a code seen over someone's shoulder signs no one in again."""
+
+    user = models.OneToOneField(
+        User, primary_key=True, on_delete=models.DB_CASCADE, related_name="authenticator"
+    )
+    secret = models.BinaryField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True)
+    used_step = models.BigIntegerField(default=0)
+
+    def __str__(self) -> str:
+        return self.user.email
+
+
 class AppPassword(models.Model):
     """A password a device's own app signs in with where it cannot use the browser's sign-in, such
     as a phone's contacts over CardDAV: random, shown once, kept only as its digest."""
@@ -134,10 +151,12 @@ class Session(AbstractBaseSession):
 
 
 class Policy(models.Model):
-    """How the installation's users sign in and share, in one row: whom it holds to passkeys and
-    who may make a link for someone outside it (D39)."""
+    """How the installation's users sign in and share, in one row: whether the sign-in page offers
+    passkeys and whom it holds to them, whether a sign-in with a password asks for a second factor,
+    and who may make a link for someone outside it (D39)."""
 
     class Passkeys(models.TextChoices):
+        OFF = "off"
         NOBODY = "nobody"
         ADMINISTRATORS = "administrators"
         EVERYONE = "everyone"
@@ -149,6 +168,7 @@ class Policy(models.Model):
 
     id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
     passkeys = models.CharField(max_length=16, choices=Passkeys, default=Passkeys.EVERYONE)
+    second_factor = models.BooleanField(default=False, db_default=False)
     outside = models.CharField(
         max_length=16, choices=Outside, default=Outside.EVERYONE, db_default=Outside.EVERYONE
     )
@@ -167,8 +187,15 @@ class Policy(models.Model):
             self.passkeys == Policy.Passkeys.ADMINISTRATORS and user.is_staff
         )
 
+    def offers_passkeys(self) -> bool:
+        return self.passkeys != Policy.Passkeys.OFF
+
     def links_outside(self, user: User) -> bool:
         """Whether the user may make a link for someone outside the installation."""
         return self.outside == Policy.Outside.EVERYONE or (
             self.outside == Policy.Outside.ADMINISTRATORS and user.is_staff
         )
+
+
+def policy() -> Policy:
+    return Policy.objects.get_or_create(pk=1)[0]

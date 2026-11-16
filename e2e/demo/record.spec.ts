@@ -19,6 +19,16 @@ const LIMIT = 1500;
     gitleaks as a secret. */
 const THROWAWAY_KEY = 'demo';
 
+/** Sarah's machine as Projects shows it: the workspace measures the one it runs on, here the
+    host busy recording. */
+const SARAHS_MACHINE = {
+  load: 1.4,
+  cpus: 8,
+  memory: { total: 34_359_738_368, available: 19_864_223_744 },
+  swap: null,
+  disk: { total: 512_110_190_592, free: 318_767_104_000 },
+};
+
 type Answer = { status: number; body: unknown } | { status: number; blob: string; type: string };
 
 test('record the demo', async ({ browser, baseURL }) => {
@@ -77,6 +87,8 @@ test('record the demo', async ({ browser, baseURL }) => {
     if (type.includes('json') || bytes.length === 0) {
       const body = bytes.length ? JSON.parse(bytes.toString('utf8')) : null;
       if (key.startsWith('GET /api/push?') && body?.key) body.key = THROWAWAY_KEY;
+      if (key.startsWith('GET /api/workspace/projects') && body?.host)
+        Object.assign(body.host, SARAHS_MACHINE);
       answers[key] = { status, body };
       return body;
     }
@@ -143,6 +155,29 @@ test('record the demo', async ({ browser, baseURL }) => {
     },
   );
   await Promise.all(reading);
+  // What Projects asks as a visitor picks on it: the limits measured again, each chat's
+  // conversation, each month's hours and tokens.
+  const picked = [
+    '/api/workspace/projects?measured',
+    ...chatsIn(answers['GET /api/workspace/projects']).map((id) => `/api/workspace/chats/${id}`),
+    ...monthsIn(answers['GET /api/workspace/hours']).map(
+      (month) => `/api/workspace/hours?month=${encodeURIComponent(month)}`,
+    ),
+    ...monthsIn(answers['GET /api/workspace/spend']).map(
+      (month) => `/api/workspace/spend?month=${encodeURIComponent(month)}`,
+    ),
+  ];
+  for (const path of picked) {
+    if (`GET ${path}` in answers) continue;
+    const response = await context.request.get(path);
+    if (response.status() >= 400) failures.push(`${response.status()} GET ${path}`);
+    stored(
+      `GET ${path}`,
+      response.status(),
+      response.headers()['content-type'] ?? '',
+      await response.body(),
+    );
+  }
   // A visitor may choose another language, and what the app asks in a language (`lang=`, the
   // help) is asked of the same server in each.
   for (const key of Object.keys(answers)) {
@@ -177,6 +212,29 @@ test('record the demo', async ({ browser, baseURL }) => {
   if (writes.size) console.log(`the walk wrote:\n  ${[...writes].join('\n  ')}`);
   expect(failures, 'what went wrong while recording').toEqual([]);
 });
+
+interface Member {
+  id: string | null;
+}
+
+/** The chats Projects lists, with each round's coordinator and its chats that have begun. */
+function chatsIn(answer: Answer | undefined): string[] {
+  if (!answer || !('body' in answer)) throw new Error('the walk did not record the projects');
+  const { projects } = answer.body as {
+    projects: { chats: Member[]; rounds: { coordinator: Member; chats: Member[] }[] }[];
+  };
+  const members = projects.flatMap((project) => [
+    ...project.chats,
+    ...project.rounds.flatMap((round) => [round.coordinator, ...round.chats]),
+  ]);
+  return [...new Set(members.map((member) => member.id).filter((id): id is string => !!id))];
+}
+
+/** The months the time worked or the tokens were counted in. */
+function monthsIn(answer: Answer | undefined): string[] {
+  if (!answer || !('body' in answer)) throw new Error('the walk did not record a month');
+  return (answer.body as { months: { month: string }[] }).months.map((each) => each.month);
+}
 
 declare global {
   interface Window {

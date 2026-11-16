@@ -10,9 +10,9 @@
   "describes": {
     "frontend/src/passkeys.tsx#Passkeys": "400751111f06",
     "frontend/src/passkeys.tsx#makePasskey": "03489ef32741",
-    "frontend/src/passkeys.tsx#passkeyMessage": "83a9f8ed6f25",
-    "frontend/src/auth.tsx#PasskeyDue": "e0c5aa9b601d",
-    "backend/apps/users/passkeys.py#passkeys": "41c58065dc39",
-    "backend/apps/users/passkeys.py#passkey": "e8e0627c51c0"
+    "frontend/src/passkeys.tsx#passkeyMessage": "2765b651f845",
+    "frontend/src/auth.tsx#Due": "2279fe51e317",
+    "backend/apps/users/passkeys.py#passkeys": "7dd2df7c0aa0",
+    "backend/apps/users/passkeys.py#passkey": "d60cb1bf87a7"
   }
 }

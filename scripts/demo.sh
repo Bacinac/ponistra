@@ -33,7 +33,7 @@ RECORDED=frontend/demo/recorded
 CREDITS=backend/apps/help/media/credits.json
 SCREENSHOTS=docs/screenshots
 # The tour's frames, in the order a visitor would go.
-TOUR=(documents text table slides mail calendar)
+TOUR=(documents text table slides mail calendar projects)
 
 GATE=$(git config --get publicgate.command) || {
   echo "no publicgate.command in this clone; the demo is not built unchecked" >&2
@@ -104,6 +104,24 @@ docker compose exec -T backend python manage.py shell -v 0 -c \
 docker compose exec -T backend python -c 'import sys, pycrdt; pycrdt.Doc().apply_update(sys.stdin.buffer.read())' \
   <"$run/recorded/template.bin" || {
   echo "demo: the template for a new document is not a Yjs update" >&2
+  exit 1
+}
+# Sarah's code workspace, over the home help_seed wrote, once it has measured the plan's limits.
+docker compose build -q workspace
+docker compose up -d --wait --quiet-pull workspace
+measured() {
+  docker compose exec -T workspace /usr/lib/code-server/lib/node -e "
+    fetch('http://127.0.0.1:8081/ponistra/projects', { headers: { Authorization: 'Bearer demo' } })
+      .then((answer) => answer.json())
+      .then((listed) => process.exit(listed.usage?.at ? 0 : 1), () => process.exit(1))"
+}
+for _ in $(seq 30); do
+  measured && break
+  sleep 1
+done
+measured || {
+  docker compose logs --no-color --tail=40 workspace >&2
+  echo "demo: the workspace did not measure the plan's limits" >&2
   exit 1
 }
 docker compose build -q e2e

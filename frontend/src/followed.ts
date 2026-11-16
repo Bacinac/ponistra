@@ -17,7 +17,7 @@ const AREAS: Record<string, (key: QueryKey) => boolean> = {
     root === 'away' ||
     (root === 'mail' && part === 'away') ||
     (root === 'calendar' && part === 'free'),
-  account: ([root]) => root === 'app-passwords' || root === 'passkeys',
+  account: ([root]) => root === 'app-passwords' || root === 'passkeys' || root === 'authenticator',
   users: ([root]) =>
     root === 'accounts' || root === 'policy' || root === 'people' || root === 'session',
   applications: ([root]) => root === 'identity',

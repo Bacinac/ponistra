@@ -39,7 +39,8 @@ The installation's administrator sees in its journal when a passkey was added or
 - {t:passkeys.unsupported} Sign in with a password then, or from another device.
 - {t:passkeys.cancelled} It shows when you break off the confirmation on the device or its time runs out.
 - {t:passkeys.kept} That device needs no second passkey.
-- If signing in with a passkey is required of you, you cannot remove the last passkey.
+- If signing in with a passkey is required of you, you cannot remove the last passkey. The same holds when the installation asks for a second step and you have no [authenticator app](help:account/authenticator).
+- When the administrator has turned signing in with a passkey off, the sign-in page does not offer it and a sign-in with one is refused: {t:error.passkeys_off}
 
 ## Related
 

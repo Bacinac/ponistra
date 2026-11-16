@@ -69,7 +69,7 @@ test('a user the policy holds to passkeys adds one before anything else', async 
   await page.route('**/api/auth/session', async (route) => {
     const response = await route.fetch();
     const session = await response.json();
-    await route.fulfill({ response, json: { ...session, passkey_due: !added } });
+    await route.fulfill({ response, json: { ...session, due: added ? null : 'passkey' } });
   });
   await page.route('**/api/passkeys/options', (route) =>
     route.fulfill({

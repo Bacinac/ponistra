@@ -8,10 +8,11 @@
     "auth.signInAt"
   ],
   "describes": {
-    "frontend/src/auth.tsx#LoginForm": "942082ecfe2f",
-    "frontend/src/auth.tsx#SignInChoice": "3a2c4f52b5bf",
+    "frontend/src/auth.tsx#LoginForm": "531015a48148",
+    "frontend/src/auth.tsx#SignInChoice": "9f32d80a49bc",
     "frontend/src/auth.tsx#useLogout": "33f00ffd20d0",
-    "backend/apps/users/views.py#login": "62058829cd1e",
+    "backend/apps/users/views.py#login": "e30eb5044466",
+    "frontend/src/passkeys.tsx#answered": "574176e24396",
     "backend/apps/users/views.py#preferences": "f528964d4c8e",
     "backend/apps/users/accounts.py#without_passkeys": "2e5193d0b336",
     "backend/apps/users/confirmation.py#signed_in": "2aa6f57a9059",

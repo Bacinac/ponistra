@@ -9,18 +9,48 @@ from Clockify for the days before the transcripts begin stands for its project's
 had it."""
 
 from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
 from django.db import transaction
+from django.db.models import F
 from django.utils import timezone
 
-from .models import Stretch, Transcript
+from .models import Spend, Stretch, Transcript
 
 IDLE = timedelta(minutes=15)
 LEAST = timedelta(minutes=2)
 CLOCKIFY = "clockify"
 
 Span = tuple[datetime, datetime]
+TOKENS = ("turns", "input", "output", "cache_read", "cache_write")
+
+
+@dataclass(frozen=True)
+class Spent:
+    """The tokens a transcript's answers took in one hour on one model (PJ3)."""
+
+    hour: datetime
+    model: str
+    turns: int
+    input: int
+    output: int
+    cache_read: int
+    cache_write: int
+
+
+@dataclass(frozen=True)
+class Found:
+    """What a reading of a transcript found besides its time: the chat it belongs to, the round
+    that chat is in, where the reading began, the answer counted last, the chat's title and the
+    tokens of each hour and model."""
+
+    chat: str = ""
+    round: str = ""
+    origin: int = 0
+    last: str = ""
+    title: str = ""
+    spent: list[Spent] = field(default_factory=list)
 
 
 def joined(spans: list[Span], apart: timedelta = IDLE) -> list[Span]:
@@ -35,16 +65,34 @@ def joined(spans: list[Span], apart: timedelta = IDLE) -> list[Span]:
 
 
 @transaction.atomic
-def kept(namespace: str, session: str, project: str, read: int | None, spans: list[Span]) -> None:
+def kept(
+    namespace: str,
+    session: str,
+    project: str,
+    read: int | None,
+    spans: list[Span],
+    found: Found | None = None,
+) -> None:
     """Adds what the workspace found in a transcript to what it found there before, and moves
-    the mark of how far it was read, unless it was read from a copy elsewhere (`read` None)."""
-    transcript, _ = Transcript.objects.select_for_update().get_or_create(
+    the mark of how far it was read, unless it was read from a copy elsewhere (`read` None). The
+    tokens count only where the reading began at the mark, so that a reading told twice counts
+    once; a copy's only for a transcript not known before."""
+    found = found or Found()
+    transcript, created = Transcript.objects.select_for_update().get_or_create(
         namespace=namespace, session=session, defaults={"project": project}
     )
+    counts = created if read is None else found.origin == transcript.read
     transcript.project = project
+    transcript.chat = found.chat or transcript.chat or session
+    if found.title:
+        transcript.title = found.title
     if read is not None:
         transcript.read = read
+        if found.last:
+            transcript.last = found.last
     transcript.save()
+    if counts and found.spent:
+        _spent(transcript, found.round, found.spent)
     held = list(transcript.stretches.values_list("pk", "began", "ended"))
     wanted = set(joined([(began, ended) for _, began, ended in held] + spans))
     had = {(began, ended) for _, began, ended in held}
@@ -59,14 +107,40 @@ def kept(namespace: str, session: str, project: str, read: int | None, spans: li
     )
 
 
-def marks() -> dict[str, int]:
-    """How far the workspace read each of its transcripts, by `namespace/session`."""
-    return {
-        f"{namespace}/{session}": read
-        for namespace, session, read in Transcript.objects.exclude(namespace=CLOCKIFY).values_list(
-            "namespace", "session", "read"
+def _spent(transcript: Transcript, round: str, spent: list[Spent]) -> None:
+    held = {
+        (each.hour, each.model): each
+        for each in Spend.objects.filter(
+            transcript=transcript, round=round, hour__in={each.hour for each in spent}
         )
     }
+    for each in spent:
+        known = held.get((each.hour, each.model))
+        if known is None:
+            Spend.objects.create(
+                transcript=transcript,
+                hour=each.hour,
+                model=each.model,
+                round=round,
+                **{name: getattr(each, name) for name in TOKENS},
+            )
+        else:
+            Spend.objects.filter(pk=known.pk).update(
+                **{name: F(name) + getattr(each, name) for name in TOKENS}
+            )
+
+
+def marks() -> dict[str, dict]:
+    """How far the workspace read each of its transcripts and the answer it counted last, each
+    by `namespace/session`."""
+    read, last = {}, {}
+    for namespace, session, at, answer in Transcript.objects.exclude(
+        namespace=CLOCKIFY
+    ).values_list("namespace", "session", "read", "last"):
+        read[f"{namespace}/{session}"] = at
+        if answer:
+            last[f"{namespace}/{session}"] = answer
+    return {"read": read, "last": last}
 
 
 def day_of(moment: datetime) -> date:

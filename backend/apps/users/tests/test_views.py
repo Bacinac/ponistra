@@ -25,9 +25,11 @@ def test_anonymous_session_has_no_user_and_gets_a_csrf_cookie(client, user):
     response = client.get("/api/auth/session")
     assert response.json() == {
         "user": None,
-        "passkey_due": False,
+        "due": None,
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
     assert "csrftoken" in response.cookies
@@ -164,9 +166,11 @@ def test_login_starts_a_session_that_adds_a_passkey_first(client, user):
     }
     assert response.json() == {
         "user": me,
-        "passkey_due": True,
+        "due": "passkey",
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
     assert client.get("/api/auth/session").json()["user"]["email"] == "ivo@example.com"
@@ -178,9 +182,11 @@ def test_wrong_password_is_refused(client, user):
     assert response.json() == {"error": "invalid_credentials"}
     assert client.get("/api/auth/session").json() == {
         "user": None,
-        "passkey_due": False,
+        "due": None,
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
 
@@ -227,16 +233,20 @@ def test_logout_ends_the_session(client, user):
     login(client, "ivo@example.com", PASSWORD)
     assert client.post("/api/auth/logout").json() == {
         "user": None,
-        "passkey_due": False,
+        "due": None,
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
     assert client.get("/api/auth/session").json() == {
         "user": None,
-        "passkey_due": False,
+        "due": None,
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
 

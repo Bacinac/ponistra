@@ -37,7 +37,7 @@ test('an administrator lays out a company folder for a group and asks administra
   let posted: unknown;
   const collections: object[] = [];
   let collected: unknown;
-  let passkeys = 'nobody';
+  let policy = { passkeys: 'nobody', second_factor: false, outside: 'everyone' };
   let ended = false;
   serve({
     'GET /api/users': () => ({ users: [ana], groups: [{ id: 7, name: 'Financije' }] }),
@@ -67,10 +67,10 @@ test('an administrator lays out a company folder for a group and asks administra
       return collections[0];
     },
     'GET /api/vault/recovery': () => ({ on: false }),
-    'GET /api/policy': () => ({ passkeys }),
+    'GET /api/policy': () => policy,
     'PATCH /api/policy': async (request) => {
-      passkeys = (await request.json()).passkeys;
-      return { passkeys };
+      policy = { ...policy, ...((await request.json()) as object) };
+      return policy;
     },
     'GET /api/users/:id/sessions': () => ({
       sessions: ended ? [] : [device('a1', FIREFOX, false)],
@@ -115,11 +115,14 @@ test('an administrator lays out a company folder for a group and asks administra
   await screen.findByText('Financije: Vlasnik');
   screen.getByText('Oporavak sefova nije uključen.');
 
-  const policy = screen.getByLabelText('Obavezan pristupni ključ');
-  expect(policy).toHaveProperty('value', 'nobody');
-  await user.selectOptions(policy, 'Za administratore');
-  await waitFor(() => expect(policy).toHaveProperty('value', 'administrators'));
-  expect(passkeys).toBe('administrators');
+  const passkeys = screen.getByLabelText('Prijava pristupnim ključem');
+  expect(passkeys).toHaveProperty('value', 'nobody');
+  await user.selectOptions(passkeys, 'Obavezna za administratore');
+  await waitFor(() => expect(passkeys).toHaveProperty('value', 'administrators'));
+  const second = screen.getByLabelText('Drugi korak pri prijavi lozinkom');
+  await user.click(second);
+  await waitFor(() => expect(second).toHaveProperty('checked', true));
+  expect(policy).toEqual({ passkeys: 'administrators', second_factor: true, outside: 'everyone' });
 
   await user.click(
     within(screen.getByRole('row', { name: /Ana Anić/ })).getByRole('button', { name: 'Radnje' }),
@@ -244,7 +247,7 @@ test('an administrator copies a folder of the file server into a company folder 
     },
     'GET /api/vault/company': () => ({ collections: [] }),
     'GET /api/vault/recovery': () => ({ on: false }),
-    'GET /api/policy': () => ({ passkeys: 'nobody' }),
+    'GET /api/policy': () => ({ passkeys: 'nobody', second_factor: false, outside: 'everyone' }),
   });
   const { user } = open('/users', { is_admin: true });
   const row = () => within(screen.getByText('Arhiva').closest('li')!);

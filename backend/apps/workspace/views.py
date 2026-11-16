@@ -31,8 +31,9 @@ from apps.users.sessions import CONFIRMED as CONFIRMED_AT
 from apps.users.sessions import fresh
 
 from . import sheets
+from . import spend as spending
 from . import worked as measured
-from .models import Aside, Command, Removal, Sheet
+from .models import Aside, Command, Limits, Removal, Sheet
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,14 @@ BY_SESSION = {
     Kind.STOP,
     Kind.MOVE,
 }
-BY_ROUND = {Kind.START, Kind.CONSOLIDATE, Kind.PUSH, Kind.AUTO, Kind.MOVE}
+BY_ROUND = {Kind.START, Kind.CONSOLIDATE, Kind.PUSH, Kind.AUTO, Kind.MOVE, Kind.CANCEL}
+# A start's conditions (PJ4), each with what it takes besides `pause`.
+CONDITIONS = {"time", "reset", "below", "round", "red"}
+REPEATS = {"day", "week"}
+WAITING_ID = re.compile(r"\d{1,18}")
+SPENT_SENT = 2_000
+MODEL_NAME = re.compile(r"[A-Za-z0-9._:@-]{1,100}")
+WINDOW_KINDS = {"session", "week", "model"}
 ANSWERS = {"yes", "no"}
 SWITCHES = {"on", "off"}
 # What a chat's model reads as a picture, each small enough to reach it whole.
@@ -87,9 +95,10 @@ PICTURED = 4
 PICTURE_SIZE = 3_750_000
 # A command only moves on: what the workspace reports late never takes it back.
 AFTER = {
+    State.WAITING: [State.SENT],
     State.TAKEN: [State.SENT],
-    State.DONE: [State.SENT, State.TAKEN],
-    State.FAILED: [State.SENT, State.TAKEN],
+    State.DONE: [State.SENT, State.WAITING, State.TAKEN],
+    State.FAILED: [State.SENT, State.WAITING, State.TAKEN],
 }
 
 
@@ -262,6 +271,7 @@ def shown(command: Command) -> dict:
         "text": command.text or None,
         "images": command.images,
         "auto": command.auto,
+        "when": command.when,
         "state": command.state,
         "error": command.error or None,
         "created_at": command.created_at.isoformat(),
@@ -302,6 +312,44 @@ def _pictures(user, given: dict) -> list[dict]:
     ]
 
 
+def _percent(value) -> int:
+    if not isinstance(value, int) or isinstance(value, bool) or not 1 <= value <= 100:
+        raise Refused(400, "invalid_when")
+    return value
+
+
+def _when(given, repeats: bool) -> dict:
+    """A condition to start on (PJ4): a moment, once or, for a chat, every day or week; the weekly
+    window beginning anew; the five-hour window below a percent; another round closed; or the
+    night's run of the project's gate failing; and the weekly percent at which what it started
+    stops working, if any."""
+    if not isinstance(given, dict) or given.get("on") not in CONDITIONS:
+        raise Refused(400, "invalid_when")
+    on = given["on"]
+    when: dict = {"on": on}
+    if given.get("pause") is not None:
+        when["pause"] = _percent(given["pause"])
+    if on == "time":
+        at, every = given.get("at"), given.get("every")
+        try:
+            moment = datetime.fromisoformat(at) if isinstance(at, str) else None
+        except ValueError:
+            moment = None
+        if moment is None or moment.tzinfo is None:
+            raise Refused(400, "invalid_when")
+        if every is not None and (not repeats or every not in REPEATS):
+            raise Refused(400, "invalid_when")
+        when.update(at=moment.astimezone(UTC).isoformat(), every=every)
+    elif on == "below":
+        when["percent"] = _percent(given.get("percent"))
+    elif on == "round":
+        round = given.get("round")
+        if not isinstance(round, str) or not ROUND.fullmatch(round):
+            raise Refused(400, "invalid_when")
+        when["round"] = round
+    return when
+
+
 def _asked_of(user, given: dict) -> tuple[dict, list[dict]]:
     """The fields of a command of its kind, each checked before it reaches the workspace, and the
     images that go with it."""
@@ -312,16 +360,22 @@ def _asked_of(user, given: dict) -> tuple[dict, list[dict]]:
     pictures: list[dict] = []
     # A round consolidated and closed leaves its coordinator, told to push by its session.
     after = kind == Kind.PUSH and "round" not in given
-    if kind in BY_ROUND and not after:
-        round = given.get("round")
-        if not isinstance(round, str) or not ROUND.fullmatch(round):
-            raise Refused(400, "invalid_round")
-        fields["round"] = round
+    if kind in BY_ROUND and kind != Kind.CANCEL and not after:
+        fields["round"] = _round_of(given)
     if kind in BY_SESSION or after:
         session = given.get("session")
         if not isinstance(session, str) or not SESSION.fullmatch(session):
             raise Refused(400, "invalid_session")
         fields["session"] = session
+    if kind == Kind.CANCEL and "round" not in given:
+        waiting = given.get("text")
+        if not isinstance(waiting, str) or not WAITING_ID.fullmatch(waiting):
+            raise Refused(400, "invalid_text")
+        fields["text"] = waiting
+    elif kind == Kind.CANCEL:
+        fields["round"] = _round_of(given)
+    if kind in (Kind.CHAT, Kind.START) and given.get("when") is not None:
+        fields["when"] = _when(given["when"], kind == Kind.CHAT)
     if kind == Kind.CHAT:
         folder = given.get("folder")
         if not isinstance(folder, str) or not folder.startswith("/") or len(folder) > 500:
@@ -349,10 +403,21 @@ def _asked_of(user, given: dict) -> tuple[dict, list[dict]]:
     return fields, pictures
 
 
-def settled(pk: int, state: str, error: str = "") -> None:
-    Command.objects.filter(pk=pk, state__in=AFTER[state]).update(
-        state=state, error=error[:60], changed_at=timezone.now()
-    )
+def _round_of(given: dict) -> str:
+    round = given.get("round")
+    if not isinstance(round, str) or not ROUND.fullmatch(round):
+        raise Refused(400, "invalid_round")
+    return round
+
+
+def settled(pk: int, state: str, error: str = "", session=None) -> None:
+    """What became of a command; a chat that waited on a condition names the session it started."""
+    moved = {"state": state, "error": error[:60], "changed_at": timezone.now()}
+    if isinstance(session, str) and SESSION.fullmatch(session):
+        Command.objects.filter(pk=pk, kind=Kind.CHAT).exclude(session=session).update(
+            session=session, changed_at=timezone.now()
+        )
+    Command.objects.filter(pk=pk, state__in=AFTER[state]).update(**moved)
 
 
 def _begun(pk: int, session) -> None:
@@ -363,7 +428,7 @@ def _begun(pk: int, session) -> None:
 async def sent(command: Command, pictures: list[dict] | None = None) -> Command:
     """Hands the command to the workspace, which takes it at once or says why not."""
     payload = {"id": command.pk, "kind": command.kind, "auto": command.auto}
-    for name in ("folder", "round", "session", "text"):
+    for name in ("folder", "round", "session", "text", "when"):
         if value := getattr(command, name):
             payload[name] = value
     if pictures:
@@ -380,7 +445,10 @@ async def sent(command: Command, pictures: list[dict] | None = None) -> Command:
 
 
 def _recent() -> list[dict]:
-    return [shown(each) for each in Command.objects.order_by("-created_at", "-pk")[:LISTED]]
+    latest = list(Command.objects.order_by("-created_at", "-pk")[:LISTED])
+    seen = {each.pk for each in latest}
+    waiting = Command.objects.filter(state=Command.State.WAITING).exclude(pk__in=seen)
+    return [shown(each) for each in [*latest, *waiting.order_by("-created_at", "-pk")]]
 
 
 @api("GET", "POST")
@@ -408,7 +476,47 @@ def reported(outcomes) -> None:
             continue
         pk, state, error = outcome.get("id"), outcome.get("state"), outcome.get("error")
         if isinstance(pk, int) and state in AFTER:
-            settled(pk, state, error if isinstance(error, str) else "")
+            settled(pk, state, error if isinstance(error, str) else "", outcome.get("session"))
+
+
+def _window(given) -> dict:
+    if not isinstance(given, dict) or given.get("kind") not in WINDOW_KINDS:
+        raise ValueError
+    name, percent, resets = given.get("name"), given.get("percent"), given.get("resets")
+    if name is not None and (not isinstance(name, str) or len(name) > 100):
+        raise ValueError
+    if not isinstance(percent, int | float) or isinstance(percent, bool):
+        raise ValueError
+    if not 0 <= percent <= 1000:
+        raise ValueError
+    datetime.fromisoformat(resets)
+    return {"kind": given["kind"], "name": name, "percent": percent, "resets": resets}
+
+
+def limits_kept(given) -> None:
+    """The plan's limits as the workspace measured them anew (PJ3), kept as they were."""
+    if not isinstance(given, dict):
+        return
+    try:
+        at = datetime.fromisoformat(given.get("at"))
+        listed = given.get("windows")
+        if not isinstance(listed, list) or len(listed) > 20 or at.tzinfo is None:
+            raise ValueError
+        windows = [_window(each) for each in listed]
+        credits = given.get("credits")
+        if credits is not None and not (
+            isinstance(credits, dict)
+            and isinstance(credits.get("used"), int | float)
+            and isinstance(credits.get("currency"), str)
+            and len(credits["currency"]) <= 10
+        ):
+            raise ValueError
+    except TypeError, ValueError:
+        logger.warning("the workspace told limits of a shape not known: %r", given)
+        return
+    Limits.objects.get_or_create(
+        at=at, defaults={"windows": windows, "credits": credits and dict(credits)}
+    )
 
 
 def _from_workspace(request) -> bool:
@@ -431,6 +539,7 @@ def changed(request):
         said = {}
     if isinstance(said, dict):
         reported(said.get("commands"))
+        limits_kept(said.get("limits"))
     # live reaches this module through the users' session, which says where the workspace is.
     from apps.collab.live import CHANGES
 
@@ -450,7 +559,53 @@ def _moment(given) -> datetime:
     return datetime.fromtimestamp(given // 1000, UTC) + timedelta(milliseconds=given % 1000)
 
 
-def _measured(given) -> tuple[str, str, str, int | None, list[tuple[datetime, datetime]]]:
+def _count(given, name: str) -> int:
+    value = given.get(name, 0)
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise Refused(400, "invalid_spent")
+    return value
+
+
+def _spent(listed) -> list[measured.Spent]:
+    if listed is None:
+        return []
+    if not isinstance(listed, list) or len(listed) > SPENT_SENT:
+        raise Refused(400, "invalid_spent")
+    spent = []
+    for each in listed:
+        if not isinstance(each, dict):
+            raise Refused(400, "invalid_spent")
+        model = each.get("model")
+        if not isinstance(model, str) or not MODEL_NAME.fullmatch(model):
+            raise Refused(400, "invalid_spent")
+        hour = _moment(each.get("hour"))
+        if hour.minute or hour.second or hour.microsecond:
+            raise Refused(400, "invalid_spent")
+        spent.append(measured.Spent(hour, model, *(_count(each, name) for name in measured.TOKENS)))
+    if len({(each.hour, each.model) for each in spent}) != len(spent):
+        raise Refused(400, "invalid_spent")
+    return spent
+
+
+def _found(given: dict) -> measured.Found:
+    chat, round, origin = given.get("chat") or "", given.get("round") or "", given.get("from", 0)
+    last, title = given.get("last") or "", given.get("title") or ""
+    if not isinstance(chat, str) or (chat and not TRANSCRIPT.fullmatch(chat)):
+        raise Refused(400, "invalid_chat")
+    if not isinstance(round, str) or (round and not ROUND.fullmatch(round)):
+        raise Refused(400, "invalid_round")
+    if not isinstance(origin, int) or isinstance(origin, bool) or origin < 0:
+        raise Refused(400, "invalid_read")
+    if not isinstance(last, str) or len(last) > 100:
+        raise Refused(400, "invalid_last")
+    if not isinstance(title, str):
+        raise Refused(400, "invalid_title")
+    return measured.Found(chat, round, origin, last, title[:200], _spent(given.get("spent")))
+
+
+def _measured(
+    given,
+) -> tuple[str, str, str, int | None, list[tuple[datetime, datetime]], measured.Found]:
     if not isinstance(given, dict):
         raise Refused(400, "invalid_transcripts")
     namespace, session = given.get("namespace"), given.get("session")
@@ -473,21 +628,20 @@ def _measured(given) -> tuple[str, str, str, int | None, list[tuple[datetime, da
         if ended < began:
             raise Refused(400, "invalid_stretches")
         spans.append((began, ended))
-    return namespace, session, project, read, spans
+    return namespace, session, project, read, spans, _found(given)
 
 
 @csrf_exempt
 def worked(request):
-    """The workspace asking how far it read each transcript and how many days after archiving it
-    removes a chat's transcript (VT3), or saying what stretches of work it found in some since
-    (VT1), with the token it is asked with."""
+    """The workspace asking how far it read each transcript, the answer it counted last in each,
+    and how many days after archiving it removes a chat's transcript (VT3), or saying what
+    stretches of work and tokens it found in some since (VT1, PJ3), with the token it is asked
+    with."""
     if not _from_workspace(request):
         return JsonResponse({"error": "refused"}, status=403)
     if request.method == "GET":
         removal = Removal.objects.filter(pk=1).first()
-        return JsonResponse(
-            {"read": measured.marks(), "removal": removal.after if removal else None}
-        )
+        return JsonResponse({**measured.marks(), "removal": removal.after if removal else None})
     if request.method != "POST":
         return JsonResponse({"error": "method_not_allowed"}, status=405)
     try:
@@ -502,6 +656,18 @@ def worked(request):
     for each in found:
         measured.kept(*each)
     return HttpResponse(status=204)
+
+
+@api("GET")
+def spend(request):
+    """The tokens the workspace's chats took and what PONISTRA's own model runs cost, by month,
+    and in one month by day, project, model, round and chat, with the plan's limits measured."""
+    if not owns(request.user):
+        return JsonResponse({"error": "not_the_owner"}, status=403)
+    month = request.GET.get("month")
+    if month is not None and not MONTH.fullmatch(month):
+        raise Refused(400, "invalid_month")
+    return JsonResponse(spending.summed(month))
 
 
 @api("GET")

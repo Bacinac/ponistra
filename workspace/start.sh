@@ -16,6 +16,12 @@ fi
 agent="$HOME/.claude.json"
 [ -e "$agent" ] || (umask 077 && printf '{"mcpServers": {"ponistra": {"type": "http", "url": "%s/api/mcp"}}}\n' \
 	"${PONISTRA_PUBLIC_URL%/}" > "$agent")
+# The chats run the agent Claude Code's extension brings, which the image does not carry under its
+# own terms; it comes from Open VSX into the owner's home until it is there.
+if ! ls -d "$HOME"/.local/share/code-server/extensions/anthropic.claude-code-* >/dev/null 2>&1; then
+	/usr/lib/code-server/bin/code-server --install-extension anthropic.claude-code \
+		|| echo "start: Claude Code did not install from Open VSX; chats need it, the editor's Extensions view installs it" >&2
+fi
 [ $# -gt 0 ] || set -- "$HOME"
 for root; do :; done
 export PONISTRA_ROOT="$root"

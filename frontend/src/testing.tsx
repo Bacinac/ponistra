@@ -192,9 +192,11 @@ function session(user: Partial<Me> = {}) {
       backdrop: null,
       ...user,
     },
-    passkey_due: false,
+    due: null,
     setup: false,
     site: location.origin,
+    passkeys: true,
+    second_factor: null,
     providers: [],
   };
 }

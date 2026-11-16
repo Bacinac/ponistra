@@ -84,6 +84,7 @@ RUN /usr/lib/code-server/lib/node --input-type=module -e "await import('/etc/pon
 # settings of its own the owner keeps.
 COPY heard.mjs /etc/ponistra/heard.mjs
 COPY managed-settings.json /etc/claude-code/managed-settings.json
+COPY claude /usr/local/bin/claude
 COPY start.sh /usr/local/bin/start
 USER 1000:1000
 WORKDIR /home/owner

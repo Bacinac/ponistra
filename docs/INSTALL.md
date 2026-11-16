@@ -28,6 +28,8 @@ that release; `ghcr.io/bacinac/ponistra:<version>` pins one. `install` asks:
 | Domain Ponistra is opened on | `office.example.com` | `PONISTRA_DOMAIN` |
 | Where TLS ends | `here`: Caddy fetches and renews the certificate on port 443; `front`: a proxy or tunnel in front ends it and reaches Ponistra on port 80 | `PONISTRA_TLS` |
 | Who gets the code workspace | an e-mail, or empty for none (below) | `PONISTRA_WORKSPACE` |
+| Where the code workspace runs | `here`, or the `https://` address of one run elsewhere (below) | `PONISTRA_WORKSPACE_URL` |
+| May its agent run Docker on this host | `no`, or `yes`, which is root on the host | `PONISTRA_WORKSPACE_DOCKER` |
 
 It writes `.env` with every secret generated, prepares `volumes/`, starts the
 stack and waits until the release answers. At the end it prints a one-time code
@@ -75,11 +77,110 @@ user agrees to the AI actions before the first one runs.
 
 ## The code workspace
 
-The installation's owner can have VS Code in the browser, behind Ponistra's
-sign-in, with the agent they install and sign in to themselves. `install` asks
-for it; `./ponistra workspace` adds it later. It runs in the installation, or
-elsewhere at an `https://` address of the owner's. Letting its agent run Docker
-on the host is asked separately and is root on that host.
+One user of the installation, its owner, can have a code workspace: VS Code in
+the browser and the **Projects** page, where Claude Code chats run in the
+workspace and are followed and answered from Ponistra, the phone included.
+`install` asks for it; `./ponistra workspace` adds it later. Without an answer
+ahead it asks who gets it, where it runs and, when it runs here, whether its
+agent may run Docker on the host.
+
+### Here
+
+The workspace is the stack's service `workspace` (`COMPOSE_PROFILES=workspace`
+in `.env`), its home `volumes/workspace`, mounted inside at the same path as on
+the host, so that whatever the agent mounts into a container of its own is found
+there. It is reached only through Ponistra, at `/code/`, after the owner
+confirms who they are, and every snapshot takes its home with it. It holds at
+most 4 GB of memory.
+
+On its first start the workspace installs the Claude Code extension from Open
+VSX into its home: the image does not carry it, as it comes under Anthropic's
+own terms. The owner then signs in once, with a Claude subscription or a
+Console account:
+
+1. Open **Projects** in Ponistra: on a computer in the rail, on a phone from the
+   account menu.
+2. Open the terminal of **General**.
+3. Type `claude auth login`, open the address it prints, sign in and paste the
+   code you are given back into the terminal.
+
+The chats, the editor's Claude panel and the terminal share that sign-in. The
+workspace reaches out to the internet: Open VSX for extensions, Anthropic for
+the agent, and wherever its Git remotes are.
+
+With Docker for the agent (`yes`), `COMPOSE_FILE` in `.env` lays
+`compose.docker.yaml` over `compose.yaml`, which gives the workspace the host's
+Docker socket. That is root on the host, and also what lets **Projects** restart
+the workspace with its button, so without Docker the button is not shown.
+
+### Elsewhere
+
+The workspace can run on a machine of the owner's, for example one with more
+memory or the owner's own files, from the release's image
+`ghcr.io/bacinac/ponistra-workspace:<version>` behind a door of its own at an
+`https://` address. The installation reaches its projects there with a token,
+and the workspace tells the installation of every change with the same one.
+
+1. Make a token, for example `openssl rand -hex 32`.
+2. In Ponistra open **Administration**, **App sign-in** and add a **New
+   application**: the redirect URI `https://code.example.com/oauth2/callback`,
+   for **Administrators** if the owner is one. Keep its client ID and secret.
+3. On the machine, in a directory of its own, put the owner's e-mail in a file
+   `owner`, the token and the door's secrets in `.env` (`openssl rand -hex 16`
+   for the cookie's), and this `compose.yaml`:
+
+```yaml
+services:
+  door:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.6
+    environment:
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: https://office.example.com/api/identity
+      OAUTH2_PROXY_CLIENT_ID: ${DOOR_CLIENT_ID:?set in .env}
+      OAUTH2_PROXY_CLIENT_SECRET: ${DOOR_CLIENT_SECRET:?set in .env}
+      OAUTH2_PROXY_COOKIE_SECRET: ${DOOR_COOKIE_SECRET:?set in .env}
+      OAUTH2_PROXY_REDIRECT_URL: https://code.example.com/oauth2/callback
+      OAUTH2_PROXY_UPSTREAMS: http://workspace:8080,http://workspace:8081/ponistra/
+      # The installation's own requests, which the workspace checks against the token itself.
+      OAUTH2_PROXY_SKIP_AUTH_ROUTES: ^/ponistra/(projects|commands|terminal|memory(/file|/write)?|chats/[0-9a-f-]{36})$
+      OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE: /owner
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: S256
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_EXPIRE: 168h
+      OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST: "true"
+      OAUTH2_PROXY_SESSION_COOKIE_MINIMAL: "true"
+    volumes:
+      - ./owner:/owner:ro
+    ports:
+      - "4180:4180"
+    restart: unless-stopped
+  workspace:
+    image: ghcr.io/bacinac/ponistra-workspace:<version>
+    init: true
+    user: "1000:1000"
+    environment:
+      HOME: /home/owner
+      PONISTRA_PUBLIC_URL: https://office.example.com
+      PONISTRA_WORKSPACE_TOKEN: ${PONISTRA_WORKSPACE_TOKEN:?set in .env}
+    volumes:
+      - ./home:/home/owner
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+```
+
+4. `mkdir home && sudo chown 1000:1000 home`, then `docker compose up -d`, and
+   lead `https://code.example.com` to port 4180 through the proxy or tunnel that
+   ends its TLS.
+5. In the installation's directory, `./ponistra workspace` with the owner's
+   e-mail, the address and the token.
+
+The owner signs in to Claude Code as above. A workspace elsewhere has no
+**Projects** restart button: it is restarted where it runs, and updated by
+changing `<version>` to the installation's.
 
 ## Backup and restore
 

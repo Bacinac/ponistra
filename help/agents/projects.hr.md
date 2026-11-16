@@ -4,13 +4,23 @@ Pult radnog prostora za kod: projekti s krugovima i razgovorima, razgovor s agen
 
 ## Kako se koristi
 
+### Prijava u Claude Code
+
+Razgovore vodi Claude Code u radnom prostoru, koji se prijavljuje jednom, pretplatom na Claude ili računom Console.
+
+1. Otvorite {t:rail.projects}: na računalu na traci modula, na telefonu iz izbornika računa.
+2. Pritisnite ikonu {t:workspace.terminal.open} desno od {t:workspace.general}.
+3. Upišite `claude auth login` i pritisnite Enter.
+4. Otvorite adresu koju terminal ispiše, prijavite se i kopirajte kod koji dobijete.
+5. Zalijepite kod u terminal i pritisnite Enter.
+
 ### Novi razgovor
 
 1. Na traci modula pritisnite {t:rail.projects}.
 2. Pronađite projekt. {t:workspace.general} je radni prostor kao cjelina, za razgovore koji ne pripadaju jednom projektu.
 3. Pritisnite ikonu {t:workspace.newChat} desno od imena projekta (naziv se pokaže kad mišem prijeđete preko nje).
 4. Obrazac se otvara na mjestu razgovora (na telefonu umjesto popisa), s pokazivačem već u polju. U polje {t:workspace.newChatText} upišite prvu poruku ili pritisnite {t:speech.dictate} i izgovorite je. Slike dodajete kao u poruci na stranici.
-5. Pritisnite {t:workspace.startChat} ili Enter, kao u poruci na stranici. Razgovor počinje u radnom prostoru i pokaže se na mjestu obrasca; uređivač se ne otvara.
+5. Pritisnite {t:workspace.startChat} ili Enter, kao u poruci na stranici. Razgovor počinje u radnom prostoru i pokaže se na mjestu obrasca; uređivač se ne otvara. Da počne kasnije, pritisnite {t:workspace.startWhen} (odjeljak Pokretanje na uvjet).
 
 ### Povratak u razgovor
 
@@ -20,7 +30,7 @@ Pult radnog prostora za kod: projekti s krugovima i razgovorima, razgovor s agen
 
 ### Razgovor s agentom na stranici
 
-1. Na stranici {t:rail.projects} pritisnite razgovor. Na telefonu se tada otvara {t:workspace.view.chat} (gumbi na vrhu prebacuju između {t:workspace.view.overview}, {t:workspace.view.chat}, [{t:workspace.view.memory}](help:agents/memory) i {t:workspace.view.hours}); na računalu popis stoji u lijevom stupcu, kao mape uz dokumente, a razgovor desno od njega, dok ga gumb {t:workspace.view.memory}, skroz desno u retku s {t:workspace.view.chat}, ne zamijeni memorijom agenta. Svaki se pomiče zasebno, a širina popisa mijenja se povlačenjem tanke crte između popisa i razgovora. Dok ništa ne odaberete, ondje je koordinator zadnjeg kruga.
+1. Na stranici {t:rail.projects} pritisnite razgovor. Na telefonu se tada otvara {t:workspace.view.chat} (gumbi na vrhu prebacuju između {t:workspace.view.overview}, {t:workspace.view.chat}, [{t:workspace.view.memory}](help:agents/memory), {t:workspace.view.hours} i [{t:workspace.view.spend}](help:agents/spend)); na računalu popis stoji u lijevom stupcu, kao mape uz dokumente, a razgovor desno od njega, dok ga gumb {t:workspace.view.memory}, skroz desno u retku s {t:workspace.view.chat}, ne zamijeni memorijom agenta. Svaki se pomiče zasebno, a širina popisa mijenja se povlačenjem tanke crte između popisa i razgovora. Dok ništa ne odaberete, ondje je koordinator zadnjeg kruga.
 2. U polje {t:workspace.say} upišite poruku ili pritisnite {t:speech.dictate} i izgovorite je.
 3. Za sliku je zalijepite u polje (Ctrl+V), povucite je na polje ili pritisnite {t:workspace.addImage}. Pokaže se umanjena ispod polja; {t:workspace.removeImage} je uklanja prije slanja. Desni klik u polje lijepi tekst iz međuspremnika na mjesto pokazivača, a sliku kad u međuspremniku nema teksta. Ne dopusti li preglednik čitanje međuspremnika, ispod polja piše: {t:error.clipboard_refused}
 4. Pritisnite {t:workspace.send} ili Enter; Shift+Enter počinje novi redak, a na telefonu Enter počinje novi redak, pa se šalje gumbom. Za česte riječi pritisnite {t:workspace.quick.catchup}, {t:workspace.quick.continue} ili {t:workspace.quick.handoff}; svaka se šalje odmah. Poslana poruka odmah stoji na dnu razgovora. Dok je agent ne pročita, uokvirena je i ispod nje piše {t:workspace.unread}; agent je čita kad završi korak na kojem radi, a tada postaje dio razgovora.
@@ -63,6 +73,19 @@ Isti {t:workspace.yes} i {t:workspace.no} stoje i u razgovoru kad je odabran raz
 4. Kad su svi razgovori kruga gotovi, koordinator spaja posao kruga sam čim prestane raditi, ako je u njegovu izborniku uključeno {t:workspace.auto}. Kad je isključeno, napišite mu „objedini” kad želite.
 
 5. Kad je posao spojen, provjera ga je našla zelenim, a push ga još nije odnio, ispod retka koordinatora umjesto toga stoji {t:workspace.push}; ako je koordinator krug već zatvorio, gumb stoji ispod njegova retka u popisu razgovora projekta. Pritisnite ga. Koordinator tada pusha posao; izdanje na produkciju i dalje traži vašu izričitu riječ u razgovoru.
+6. Kad koordinator javi da je sve gotovo (objedinjavanje, plan, memorija i push ako ste ga tražili) i miruje, ispod njegova retka stoji {t:workspace.close}. Pritisnite ga i koordinator se zaustavlja.
+
+### Pokretanje na uvjet
+
+1. Na stranici {t:rail.projects} pritisnite {t:workspace.startWhen} uz {t:workspace.start} ispod koordinatora kruga koji još nije krenuo, ili uz {t:workspace.startChat} u obrascu novog razgovora, nakon što ste upisali prvu poruku.
+2. U polju {t:workspace.when.on} odaberite kada:
+   - {t:workspace.when.time}: dan i sat. Za razgovor u polju {t:workspace.when.repeat} birate {t:workspace.when.once}, {t:workspace.when.daily} ili {t:workspace.when.weekly}.
+   - {t:workspace.when.reset}: kad se obnovi tjedni limit pretplate.
+   - {t:workspace.when.below}: kad je petosatni prozor ispod postotka u polju {t:workspace.when.percent}.
+   - {t:workspace.when.round}: kad se zatvori krug koji odaberete u polju {t:workspace.when.which}; nudi se dok postoji drugi otvoren krug.
+   - {t:workspace.when.red}: kad noćni run svih testova tog projekta ne prođe.
+3. Da posao ne pojede tjedan, uključite {t:workspace.when.pausing} i upišite {t:workspace.when.pause}.
+4. Pritisnite {t:workspace.when.set}. Krug ili razgovor tada čeka ispod svog projekta ili koordinatora, s opisom uvjeta; {t:workspace.cancelWhen} ga otkazuje.
 
 ### Premještanje u drugi krug
 
@@ -105,6 +128,8 @@ Kad ljuska završi (naredba `exit`) ili se veza s njom prekine, terminal se sam 
 
 Popis se slaže iz samog radnog prostora: projekt je svaka mapa s Gitom u korijenu radnog prostora, pa se nova mapa pojavi sama. Projekt nosi ime svog plana („Plan DIDA” → DIDA), a bez njega ime mape s velikim početnim slovom. Projekti stoje abecednim redom i ne mijenjaju mjesto kad se na njima radi, a uz svaki stoje razgovori koji su u radu; razgovor otvorenog kruga stoji samo u svom krugu, a kad je krug zatvoren, uvučen ispod svog koordinatora. Desno od imena projekta, u istom retku, mali su gumbi {t:workspace.newRound}, {t:workspace.newChat} i {t:workspace.terminal.open}. Plan projekta otvara se radnjom {t:workspace.openPlan} iz izbornika projekta (desni klik ili dugi pritisak na ime). Ispod imena, uvučen kao razgovori i ne dalje od tih gumba, stoji zadnji push; ostale provjere (preglednik i noćni run) sklopljene su iza strelice s brojem na kraju tog retka ({t:workspace.gate}) i otvaraju se klikom, svaka u svom retku; kad neka provjera nije prošla, strelica je crvena, kao i ta provjera. Projekt na kojemu se trenutno ne radi premješta se radnjom {t:workspace.others.put} iz izbornika projekta (desni klik ili dugi pritisak na ime): stoji na dnu pod {t:workspace.others}, s brojem takvih projekata, i otvara se klikom. Čim u njemu počne razgovor ili krug, sam se vraća u glavni popis i ondje ostaje; {t:workspace.others.back} ga vraća ručno. Izbor se pamti uz račun, isti na svakom uređaju. {t:workspace.general} je uvijek na vrhu. Klik na ime projekta pokaže i ostale od njegovih 5 zadnjih razgovora, svaki s ostatkom svog kruga, a broj uz ime kaže koliko ih je. Stranica prati radni prostor: kad razgovor počne ili prestane raditi, zastane na pitanju, krug se promijeni ili provjera projekta završi, stranica se osvježi sama, na svakom uređaju na kojemu je otvorena.
 
+Radni prostor sam instalira Claude Code pri prvom pokretanju, iz trgovine ekstenzija Open VSX u svoju početnu mapu. Razgovori, Claudeov panel u uređivaču i terminal pokreću isti program s istom prijavom, spremljenom u radnom prostoru, pa jedna prijava u bilo kojem od njih vrijedi za sva tri.
+
 Razgovore vodi sam radni prostor: za svaki drži jedan proces Claude Codea, pa ni novi razgovor ni krug, ni poruka, odgovor, ime ili zatvaranje ne otvaraju uređivač. {t:workspace.openChat} na telefonu otvara samo razgovor, bez ostatka uređivača, a na računalu cijeli uređivač s tim razgovorom. Svaki projekt ima svoju karticu preglednika, pa razgovor istog projekta dolazi u nju. Razgovor je zapisan u radnom prostoru, pa se u uređivaču otvara isti razgovor; radni prostor tada pušta svoj proces, jer jedan razgovor nikad ne radi u dva procesa. Radi li ipak u dva, primjerice u prozoru uređivača koji je ostao otvoren, radni prostor zaustavlja stariji čim miruje. Poruka razgovoru koji radi u uređivaču čeka da on završi korak, a onda ga radni prostor preuzima. Nakon restarta radni prostor sam nastavlja razgovore koje je vodio.
 
 Oznaka {t:workspace.inUse} stoji uz razgovor koji radi, u radnom prostoru ili u uređivaču, a umjesto nje stanje kad agent radi ili čeka vas.
@@ -141,17 +166,19 @@ Krug je skup razgovora u jednom projektu koje je koordinator otvorio odjednom, s
 
 {t:workspace.push} šalje tu riječ koordinatoru, kao da ste je sami napisali, kao i objedinjavanje sam od sebe. Dok je koordinator nije uzeo, ispod retka kruga piše koja mu je riječ poslana, a {t:workspace.push} se ne nudi. {t:workspace.push}, {t:workspace.restart} i terminal prije slanja traže ponovnu potvrdu identiteta ako zadnja nije iz posljednjih 8 sati.
 
-{t:workspace.auto} je uključeno za svaki novi krug. Kad su svi razgovori kruga gotovi, a koordinator ne radi, koordinator dobije „objedini sam od sebe” i spaja krug bez pitanja; ako je tada još radio, dobije to čim stane. Gotov je razgovor koji je odradio barem jedan korak i stao; tek pokrenut razgovor, koji još nije ništa napisao, nije gotov. Riječ koju koordinator nije uzeo prije nego što je krug zatvoren više se ne predaje. Naiđe li na pitanje, grešku ili razgovor koji još radi, staje i javlja vam se; krug tada čeka vas. Push nikad ne ide sam od sebe. Kad se krug zatvori, njegovi razgovori se zatvaraju i arhiviraju; koordinator ostaje na popisu dok ne završi svoj posao. Arhivirani razgovor koji poslije sami otvorite ostaje na popisu.
+{t:workspace.auto} je uključeno za svaki novi krug. Kad su svi razgovori kruga gotovi, a koordinator ne radi, koordinator dobije „objedini sam od sebe” i spaja krug bez pitanja; ako je tada još radio, dobije to čim stane. Gotov je razgovor koji je odradio barem jedan korak i stao; tek pokrenut razgovor, koji još nije ništa napisao, nije gotov. Riječ koju koordinator nije uzeo prije nego što je krug zatvoren više se ne predaje. Naiđe li na pitanje, grešku ili razgovor koji još radi, staje i javlja vam se; krug tada čeka vas. Push nikad ne ide sam od sebe. Kad se krug zatvori, njegovi razgovori se zatvaraju i arhiviraju; koordinator ostaje na popisu dok ga ne zatvorite s {t:workspace.close}, i kad više ne radi; poruka ga ponovno pokreće. Arhivirani razgovor koji poslije sami otvorite ostaje na popisu.
 
 Naredba poslana razgovoru (poruka, odgovor, novo ime, {t:workspace.openChat}, {t:workspace.close}, objedinjavanje, {t:workspace.push}, {t:workspace.archive} ili {t:workspace.stop}) stoji na dnu tog razgovora sa stanjem dok se ne izvrši: {t:workspace.progress.sent}, {t:workspace.progress.taken} (radni prostor ju je primio) ili {t:workspace.progress.failed} s razlogom; kad je {t:workspace.progress.done}, nestaje. Ako arhiviranje ne uspije, razlog se pokaže i ispod retka razgovora, a ako razgovor ne prijeđe u uređivač, na vrhu stranice. Stanje se mijenja samo, na svakom uređaju.
 
-Dok u krugu ima neposlanih razgovora koji nisu pokrenuti, ispod retka koordinatora stoji gumb {t:workspace.start}. Kad koordinator zatvori krug, krug nestaje sa stranice, a radni prostor zaustavlja njegove razgovore. Koordinatora zaustavlja tek kad miruje, jer on nakon spajanja još pusha, izdaje i restarta, i ne zaustavlja ga ako vodi neki drugi krug koji je još otvoren. Zaustavljeni koordinator nastavlja se porukom sa stranice ili u uređivaču. U uređivaču krug stoji kao grupa u popisu sesija, koju svaki panel složi kad se učita.
+Dok u krugu ima neposlanih razgovora koji nisu pokrenuti, ispod retka koordinatora stoji gumb {t:workspace.start}. Kad koordinator zatvori krug, krug nestaje sa stranice, a radni prostor zaustavlja njegove razgovore. Koordinatora ne zaustavlja sam, jer on nakon spajanja još ažurira plan i memoriju, pusha, izdaje i restarta: kad sve završi, upiše to u datoteku kruga, a stranica mu tada, dok miruje, nudi {t:workspace.close}. Nova riječ koju mu pošaljete sa stranice ({t:workspace.push}, objedinjavanje ili poruka) tu ponudu povlači dok ponovno ne javi da je gotov. Zaustavljeni koordinator nastavlja se porukom sa stranice ili u uređivaču. U uređivaču krug stoji kao grupa u popisu sesija, koju svaki panel složi kad se učita.
 
 Restart ponovno stvara radni prostor iz njegove Docker Compose definicije, s njegovom najnovijom slikom. Prekida sve razgovore; one koje vodi radni prostor nastavlja sam, a ostali se nastavljaju porukom ili u uređivaču. Zato je gumb onemogućen dok neki razgovor radi ili čeka vas, i dok se u radnom prostoru vrti {t:workspace.check} (noćni ili preglednički run) ili {t:workspace.release}; zadržite pokazivač na gumbu da vidite što radi. Run koji se vrti izvan radnog prostora, primjerice noćni na poslužitelju, restart ne prekida.
 
 Terminal je ljuska bash vlasnika radnog prostora, ista kao u terminalu uređivača: vidi iste datoteke, Git, Docker i alate. Svaki terminal na stranici svoja je ljuska u radnom prostoru i živi dok je stranica otvorena; zatvaranje terminala, prelazak na drugu stranicu, novi terminal za drugi projekt ili prekid veze završavaju je, a s njom i ono što je u njoj pokrenuto. Za posao koji mora preživjeti zatvaranje koristite terminal uređivača ili `nohup`. Ono što ljuska ispiše ide kroz Ponistru do preglednika i nigdje se ne sprema. Boje terminala prate temu sučelja. Na računalu je terminal visok koliko i stranica, a na telefonu tri petine zaslona. Istodobno može biti otvoreno najviše osam terminala.
 
 Vrijeme rada radni prostor mjeri sam iz zapisa razgovora koje već čita: svakog razgovora, i onih u uređivaču, svaki trenutak koji je razgovor zapisao, poruku, odgovor ili alat. Trenuci jednog projekta, iz svih njegovih razgovora, čine blok rada dok između dva ne prođe više od 15 minuta; blok traje barem 2 minute i broji se na dan kad je počeo, po hrvatskom vremenu. Projekti na kojima se radilo istodobno broje se svaki puno vrijeme, pa {t:workspace.hours.total} dana smije prijeći 24 sata; {t:workspace.hours.wall} je vrijeme u kojemu se radilo na bilo kojem projektu, bez preklapanja. Projekt je mapa u korijenu radnog prostora u kojoj je razgovor počeo, i kad je počeo u njezinoj podmapi; razgovor u samom korijenu broji se pod {t:workspace.general}. Radni prostor svake minute pročita što je u zapisima novo i javi to Ponistri, koja vrijeme drži u svojoj bazi s oznakom dokle je koji zapis pročitan; ono što je jednom zapisano ostaje i kad se zapis razgovora obriše, a ponovno čitanje istog zapisa ništa ne broji dvaput. Stranica se osvježi sama kad stigne novo vrijeme.
+
+Uvjet provjerava radni prostor, svake minute i pri svakoj promjeni koju javlja stranici. Vrijeme je po hrvatskom satu, pa ponovljeni razgovor kreće u isti sat i nakon prelaska na ljetno vrijeme. Ponovljeni razgovor nakon svakog pokretanja čeka sljedeći put, a svako pokretanje novi je razgovor; svaki drugi uvjet pokreće jednom. Obnova tjednog limita, prag petosatnog prozora i crveni noćni run broje se tek od trenutka kad ste uvjet postavili, pa ga ne ispunjava stanje od prije. Ako ste postavili {t:workspace.when.pause}, radni prostor zaustavlja razgovore koje je uvjet pokrenuo čim tjedni limit dosegne taj postotak, a ispod kruga piše {t:workspace.paused}; kad je tjedni prozor ponovno ispod praga, svaki zaustavljeni razgovor dobije poruku da dovrši posao. Naredba ponovljenog razgovora stoji na dnu njegova zadnjeg razgovora kao {t:workspace.progress.waiting}.
 
 Promjena u radnom prostoru vlasniku šalje i push obavijest: razgovor čeka odluku, krug je spreman, krug je objedinjen, pao je preglednički ili noćni run, a koordinator kruga završio je korak s porukom ili čeka vaš unos. Javlja se i kad tjedni limit pretplate ili limit pojedinog modela prijeđe 80 %, te kad model nakon svog limita počne trošiti kredite, svako jednom po tjednu limita. Obavijest o razgovoru ili koordinatoru koji čeka nosi gumbe {t:workspace.yes} i {t:workspace.no}, koji odgovaraju kao u razgovoru na stranici, bez otvaranja Ponistre; ako odgovor ne prođe, otvara se stranica Projekti. Koje obavijesti stižu, uređuje se u [Obavijesti](help:account/notifications).
 
@@ -160,17 +187,20 @@ Promjena u radnom prostoru vlasniku šalje i push obavijest: razgovor čeka odlu
 Stranica postoji samo za vlasnika radnog prostora za kod.
 
 - {t:error.not_the_owner} Radni prostor vidi samo korisnik kojemu je dodijeljen.
-- {t:error.workspace_not_linked} Instalacija nema token radnog prostora. Upisuje ga administrator instalacije.
+- {t:error.workspace_not_linked} Instalacija nema token radnog prostora. Administrator instalacije povezuje radni prostor na poslužitelju, kako opisuju upute za instalaciju.
 - {t:error.workspace_unreachable} Radni prostor nije pokrenut ili mu je token drukčiji od onoga u instalaciji. Javlja se i nekoliko sekundi tijekom restarta.
 - {t:error.no_round} Krug je u međuvremenu zatvoren i obrisan. Stranica se osvježi sama.
 - {t:error.round_closed} Koordinator je krug već zatvorio, pa se više ne pokreće ni ne spaja.
+- {t:error.round_started} Krug je već krenuo, pa mu se uvjet više ne postavlja.
+- {t:error.no_condition} Krug ili razgovor je u međuvremenu krenuo ili mu je uvjet otkazan.
+- {t:error.invalid_when} Vrijeme je prošlo ili nema vremenske zone, postotak nije između 1 i 100, ili krug na koji se čeka ne postoji.
 - {t:error.no_chat} Razgovor više ne postoji u radnom prostoru.
 - {t:error.no_project} Mapa nije projekt radnog prostora.
 - {t:error.asked} Koordinatoru je već poslana riječ koju još nije uzeo.
 - {t:error.not_waiting} Razgovor je u međuvremenu dobio odgovor.
 - {t:error.chat_working} Razgovor je počeo raditi ili pitati između pritiska i predaje, pa nije otvoren u uređivaču.
 - {t:error.chat_busy} Poruka razgovoru koji radi u uređivaču čeka da završi korak; ako ga ne završi unutar sata, poruka propada.
-- {t:error.no_agent} U radnom prostoru nije instalirana ekstenzija Claude Code, čiji program vodi razgovore.
+- {t:error.no_agent} U radnom prostoru nije instalirana ekstenzija Claude Code, čiji program vodi razgovore. Radni prostor je instalira kad se pokrene i pokušava ponovno pri svakom pokretanju dok nedostaje; dotad Claude Code instalirajte iz prikaza Extensions u uređivaču.
 - {t:error.not_ended} Proces razgovora nije se zaustavio.
 - {t:error.too_many_images} Uz poruku idu najviše četiri slike; višak se ne dodaje.
 - {t:error.image_type} Slika nije PNG, JPEG, GIF ni WebP.
@@ -192,6 +222,7 @@ Razgovor bez naslova, primjerice onaj u kojemu još nije bilo odgovora, ne stoji
 ## Povezano
 
 - [Upis vremena rada](help:agents/hours)
+- [Potrošnja tokena](help:agents/spend)
 - [Memorija agenta](help:agents/memory)
 - [Povezivanje vanjskog agenta](help:agents/connecting)
 - [Glasovne naredbe](help:start/voice)

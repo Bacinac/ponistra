@@ -33,7 +33,7 @@ Clockify gets one entry for each project and day, beginning with the first block
 
 With {t:workspace.sheets.nightly} on, Ponistra writes every 15 minutes the days that have ended or changed since, so the day before is written a few minutes past midnight.
 
-The workspace removes an archived chat's transcript, with the folder the chat keeps beside it, only once Ponistra confirms it read the time from it to its last line. It never removes a chat that is running or one in a round not yet closed. A chat missing from the list of the archived counts as archived since its transcript last changed, and is removed an hour after that at the earliest. The time measured stays in Ponistra after the removal, but such a chat can no longer be resumed.
+The workspace removes an archived chat's transcript, with the folder the chat keeps beside it, only once Ponistra confirms it read it to its last line. It never removes a chat that is running or one in a round not yet closed. A chat missing from the list of the archived counts as archived since its transcript last changed, and is removed an hour after that at the earliest. The time measured and the [tokens](help:agents/spend) stay in Ponistra after the removal, but such a chat can no longer be resumed.
 
 ## Limits
 

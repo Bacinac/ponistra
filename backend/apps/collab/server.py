@@ -80,7 +80,7 @@ def signed_in(scope) -> Signed | None:
     session_key = parse_cookie(header(scope, b"cookie")).get(settings.SESSION_COOKIE_NAME)
     session = import_module(settings.SESSION_ENGINE).SessionStore(session_key)
     user = get_user(SimpleNamespace(session=session))
-    if not user.is_authenticated or session.get(sessions.PASSKEY_DUE):
+    if not user.is_authenticated or session.get(sessions.DUE):
         return None
     return Signed(user.pk, session_key)
 

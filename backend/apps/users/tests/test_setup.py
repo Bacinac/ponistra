@@ -22,9 +22,11 @@ def set_up(client, **data):
 def test_an_installation_without_users_asks_for_its_first_administrator(client):
     assert client.get("/api/auth/session").json() == {
         "user": None,
-        "passkey_due": False,
+        "due": None,
         "setup": True,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
 
@@ -50,17 +52,21 @@ def test_the_code_makes_an_administrator_and_signs_them_in_to_add_a_passkey(clie
     }
     assert response.json() == {
         "user": me,
-        "passkey_due": True,
+        "due": "passkey",
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
     assert user.is_superuser
     assert client.get("/api/auth/session").json() == {
         "user": me,
-        "passkey_due": True,
+        "due": "passkey",
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
 
@@ -89,9 +95,11 @@ def test_once_someone_exists_the_code_opens_nothing(client):
     assert (response.status_code, response.json()) == (409, {"error": "already_set_up"})
     assert client.get("/api/auth/session").json() == {
         "user": None,
-        "passkey_due": False,
+        "due": None,
         "setup": False,
         "site": settings.PUBLIC_URL,
+        "passkeys": True,
+        "second_factor": None,
         "providers": [],
     }
     assert User.objects.count() == 1

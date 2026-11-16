@@ -37,7 +37,7 @@ from apps.retention import views as retention
 from apps.search import views as search
 from apps.shares import views as shares
 from apps.tasks import views as tasks
-from apps.users import accounts, app_passwords, confirmation, devices, passkeys
+from apps.users import accounts, app_passwords, authenticator, confirmation, devices, passkeys
 from apps.users import views as users
 from apps.vault import company as vault_company
 from apps.vault import views as vault
@@ -186,6 +186,7 @@ urlpatterns = [
     path("api/workspace/changed", workspace.changed),
     path("api/workspace/worked", workspace.worked),
     path("api/workspace/hours", workspace.hours),
+    path("api/workspace/spend", workspace.spend),
     path("api/workspace/sheets", workspace.sheets_of),
     path("api/workspace/sheets/<str:kind>", workspace.sheet_kept),
     path("api/workspace/sheets/<str:kind>/compare", workspace.sheet_compared),
@@ -207,6 +208,10 @@ urlpatterns = [
     path("api/auth/password", users.password),
     path("api/auth/passkey/options", passkeys.signing_in),
     path("api/auth/passkey", passkeys.sign_in),
+    path("api/auth/second/options", users.second_options),
+    path("api/auth/second", users.second),
+    path("api/authenticator", authenticator.authenticator),
+    path("api/authenticator/confirm", authenticator.confirmed),
     path("api/auth/confirm", confirmation.confirm),
     path("api/auth/confirm/options", confirmation.confirming),
     path("api/passkeys", passkeys.passkeys),
