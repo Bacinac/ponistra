@@ -6,29 +6,37 @@
   ],
   "quiet": [
     "meeting.blocked",
-    "meeting.presentingHidden",
     "meeting.refused",
     "meeting.screenRefused",
     "meeting.cameraIsOff",
-    "meeting.noCamera",
+    "meeting.noCamera.other",
+    "meeting.noCamera.denied",
+    "meeting.noCamera.busy",
+    "meeting.noCamera.missing",
     "meeting.failed",
     "meeting.left",
-    "meeting.untitled"
+    "meeting.untitled",
+    "meeting.tabAddress",
+    "meeting.tabsBlocked"
   ],
   "describes": {
     "frontend/src/MeetingPage.tsx#MeetingPage": "bf670432da85",
-    "frontend/src/MeetingPage.tsx#useMade": "37c8d421132c",
+    "frontend/src/MeetingPage.tsx#useMade": "122ce1b58e9b",
     "frontend/src/MeetingPage.tsx#Joinable": "157edabf5a58",
     "frontend/src/MeetingPage.tsx#Trouble": "8acb27f2f252",
-    "frontend/src/call.tsx#Before": "48a60a24c3aa",
+    "frontend/src/call.tsx#Before": "f4cb36ac611e",
     "frontend/src/call.tsx#Outside": "7daebb1cf219",
-    "frontend/src/call.tsx#Inside": "48e39ae87168",
+    "frontend/src/call.tsx#Inside": "6017cf386c02",
     "frontend/src/call.tsx#Messages": "ee542b36f7f7",
     "frontend/src/call.tsx#Tiles": "697c09957d42",
     "frontend/src/call.tsx#named": "713c90f1cd04",
     "frontend/src/call.tsx#Devices": "be6c162d35f8",
     "frontend/src/meeting.tsx#MeetingLink": "5871a13882f8",
-    "backend/apps/meetings/models.py#Meeting": "139417fa1f72",
-    "backend/apps/meetings/views.py#join": "91c664b6b4e0"
+    "backend/apps/meetings/models.py#Meeting": "807ce245aaee",
+    "backend/apps/meetings/views.py#join": "91c664b6b4e0",
+    "frontend/src/screenSharing.tsx#SharedTabs": "fd9920612abe",
+    "frontend/src/screenSharing.tsx#OwnShare": "a90f92df4ca4",
+    "frontend/src/screenSharing.tsx#useFloating": "276973fdb928",
+    "backend/apps/meetings/views.py#meeting": "c95eb0313750"
   }
 }

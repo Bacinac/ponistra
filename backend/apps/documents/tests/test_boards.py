@@ -68,7 +68,7 @@ def test_a_board_opens_in_a_frame_that_holds_nothing_but_its_page(api, upload):
     assert f"script-src 'sha256-{boards.BRIDGE_HASH}'" in shown["Content-Security-Policy"]
     assert f"<script>{boards.BRIDGE}</script>" in held
     assert held.count("<script") == 1
-    assert f'<iframe src="{page}" sandbox="allow-scripts"' in held
+    assert f'<iframe src="{page}" sandbox="allow-scripts allow-forms"' in held
     assert shown["Referrer-Policy"] == "no-referrer"
 
 
@@ -80,7 +80,7 @@ def test_a_boards_page_is_sandboxed_whoever_opens_it(api, upload):
     assert shown["Content-Type"] == f"{store.HTML}; charset=UTF-8"
     assert shown["Content-Disposition"].startswith("inline")
     policy = dict(rule.split(" ", 1) for rule in shown["Content-Security-Policy"].split("; "))
-    assert policy["sandbox"] == "allow-scripts"
+    assert policy["sandbox"] == "allow-scripts allow-forms"
     assert policy["default-src"] == "'none'"
     assert policy["connect-src"] == boards.LIBRARIES
     assert policy["form-action"] == "'none'"

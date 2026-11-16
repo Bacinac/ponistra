@@ -19,6 +19,8 @@ export interface Shown extends Meeting {
   present: string[];
   /** Whether an event plans it, asking people through its attendees. */
   planned: boolean;
+  /** The addresses its people mean to share. */
+  tabs: string[];
 }
 
 /** A meeting's own page, the whole window: before joining, in the call, and after leaving. */
@@ -64,7 +66,7 @@ function useMade(): () => Promise<Shown> {
   return () => {
     making.current ??= postJson<Meeting>('/api/meetings').then(
       (made) => {
-        const shown = { ...made, present: [], planned: false };
+        const shown = { ...made, present: [], planned: false, tabs: [] };
         queryClient.setQueryData(['meeting', made.id], shown);
         navigate(`/meet/${made.id}`, { replace: true, state: { made: key } });
         return shown;
@@ -85,6 +87,7 @@ const UNMADE: Shown = {
   conversation: '',
   present: [],
   planned: false,
+  tabs: [],
 };
 
 function Joinable({ id }: { id: string }) {

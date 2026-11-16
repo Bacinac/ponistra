@@ -4445,7 +4445,7 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     file page shows it, and its source on asking (Izvorni kod in the title's menu).
   - *Kept from PONISTRA.* PONISTRA shows a board in a page of its own (`/board`), whose
     policy allows one script, the bridge below, by its hash, and frames nothing but the board's
-    page (`/board/page`, its exact address). That page is served sandboxed (`allow-scripts` alone) by its own headers
+    page (`/board/page`, its exact address). That page is served sandboxed (`allow-scripts`, and `allow-forms` so that its script hears a form submitted, `form-action 'none'` sending it nowhere) by its own headers
     too, so it runs in an origin of its own whoever opens it: no cookies, no storage,
     nothing of PONISTRA or the parent, no forms that send, no windows, and a link or a script
     that takes it elsewhere is refused before any request leaves. Scripts, styles and fonts

@@ -45,7 +45,7 @@ export type Dropped = 'background' | 'all';
 /** Every effect on the picture needs WebGL 2 and frames the page can read. */
 export const SHAPEABLE = supportsBackgroundProcessors();
 
-const BLUR = { soft: 6, strong: 18 };
+const BLUR = { soft: 16, strong: 48 };
 // Over STRAINED frames after the first WARM ones, a frame taking BUDGET ms on average leaves the
 // picture below 25 frames a second and the page's own thread full: the call itself stutters.
 const BUDGET = 40;

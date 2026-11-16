@@ -7,7 +7,8 @@
 // it): {round, folder, coordinator, created, started, closed, chats: [{prompt, sessionId}], named,
 // ended, archived, auto, when, fired, paused, done}. Between the two this service alone writes it,
 // but for `done`, which its coordinator writes: once the round is started it starts each chat
-// (chats.mjs) and names its session, once it is closed it ends them. The chats' panels
+// (chats.mjs) and names its session, and ends them once its owner closes its coordinator (`dismissed`),
+// or once it is closed where it has none. The chats' panels
 // read it from the browser, behind the workspace's door and so without the token, and draw the
 // round as a group of sessions.
 //
@@ -817,10 +818,13 @@ const roundAt = (id) => {
   return { file, round };
 };
 
-// A closed round's chats end once; a round closed while this service was away keeps its chats.
+// A round's chats end with its coordinator, closed by its owner after the round itself.
+const finished = (round) => Boolean(round.closed) && (Boolean(round.dismissed) || !SESSION.test(round.coordinator ?? ''));
+
+// A round finished while this service was away keeps its chats.
 const endedAway = () => {
   for (const { file, round } of roundFiles())
-    if (round.closed && !round.ended) writeJson(file, { ...round, ended: round.closed });
+    if (finished(round) && !round.ended) writeJson(file, { ...round, ended: round.dismissed ?? round.closed });
 };
 
 const COORDINATOR = 'Koordinator';
@@ -845,16 +849,16 @@ const named = (round) => {
 };
 
 // A round's chats start once it is started, each a session named here before it starts, and end
-// once it is closed; its coordinator is named once. A closed round's chats are archived once, so
+// once it is finished; its coordinator is named once. A finished round's chats are archived once, so
 // that one the owner opens again stays on the page.
 const led = () => {
   const now = new Date().toISOString();
   for (const { file, round } of roundFiles()) {
     if (round.closed) {
-      if (round.ended && round.archived) continue;
+      if (!finished(round) || (round.ended && round.archived)) continue;
       const chats = round.chats.map((chat) => chat?.sessionId).filter((id) => SESSION.test(id ?? ''));
       if (!round.ended) {
-        console.log(`the round ${round.round} closed: ending its chats ${chats.join(', ')}`);
+        console.log(`the round ${round.round} finished: ending its chats ${chats.join(', ')}`);
         for (const id of chats)
           ended(id).catch((error) => console.error(`a chat of ${round.round} did not end`, error));
       }

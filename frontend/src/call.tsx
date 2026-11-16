@@ -5,6 +5,7 @@ import {
   createLocalVideoTrack,
   DisconnectReason,
   type LocalAudioTrack,
+  type LocalTrack,
   type LocalVideoTrack,
   type Participant,
   Room,
@@ -14,6 +15,7 @@ import {
   VideoPresets,
 } from 'livekit-client';
 import {
+  AppWindow,
   MessageSquare,
   Mic,
   MicOff,
@@ -53,6 +55,7 @@ import { Menu, MenuChoices, MenuSub } from './menu';
 import { useReachable } from './live';
 import { initials } from './people';
 import { Recordings, useRecording } from './recording';
+import { OwnShare, SHARED, SharedTabs, useFloating } from './screenSharing';
 import { useHeldRelease } from './release';
 import { button, dangerButton, field, primaryButton } from './styles';
 import { errorMessage } from './tree';
@@ -87,6 +90,18 @@ interface Own {
   video?: LocalVideoTrack;
   /** Why the browser gave no camera or microphone, where it gave neither. */
   refused?: boolean;
+  /** Why the browser gave no camera, as far as it says. */
+  camera?: CameraLack;
+}
+
+type CameraLack = 'denied' | 'busy' | 'missing' | 'other';
+
+function lackOf(error: unknown): CameraLack {
+  const name = error instanceof DOMException || error instanceof Error ? error.name : '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') return 'denied';
+  if (name === 'NotReadableError' || name === 'AbortError') return 'busy';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'missing';
+  return 'other';
 }
 
 function signalling(): string {
@@ -107,6 +122,7 @@ async function taken(choices: CallChoices): Promise<Own> {
     audio: audio.status === 'fulfilled' ? audio.value : undefined,
     video: video.status === 'fulfilled' ? video.value : undefined,
     refused: audio.status === 'rejected' && video.status === 'rejected',
+    camera: video.status === 'rejected' ? lackOf(video.reason) : undefined,
   };
 }
 
@@ -337,7 +353,9 @@ function Before({
           <TrackView track={own.video} mirrored />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted">
-            {own ? t(own.video ? 'meeting.cameraIsOff' : 'meeting.noCamera') : t('tree.loading')}
+            {own
+              ? t(own.video ? 'meeting.cameraIsOff' : `meeting.noCamera.${own.camera ?? 'other'}`)
+              : t('tree.loading')}
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 p-3">
@@ -540,6 +558,7 @@ function Inside({
   const wide = useWide();
   const recording = useRecording(room, meeting.id, guest ? (guestKey ?? null) : undefined);
   const [talking, setTalking] = useState(false);
+  const [tabbing, setTabbing] = useState(false);
   const [, redraw] = useReducer((count: number) => count + 1, 0);
   useEffect(() => {
     const redrawn = () => redraw();
@@ -561,6 +580,13 @@ function Inside({
       if (error.name !== 'NotAllowedError') throw error;
     });
   const canShare = !!navigator.mediaDevices?.getDisplayMedia;
+  const floating = useFloating(local.isScreenShareEnabled);
+  const share = () =>
+    switched(
+      local.isScreenShareEnabled
+        ? local.setScreenShareEnabled(false)
+        : local.setScreenShareEnabled(true, SHARED).then(() => floating.open()),
+    );
   const moving = useMutation({ mutationFn: toNextScreen });
 
   return (
@@ -616,17 +642,17 @@ function Inside({
       )}
       <div className="flex min-h-0 flex-1">
         <main
-          className={`${talking && !wide ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-1 gap-2 p-2 ${shared && wide ? 'flex-row' : 'flex-col'}`}
+          className={`${(talking || tabbing) && !wide ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-1 gap-2 p-2 ${shared && wide ? 'flex-row' : 'flex-col'}`}
         >
           {shared?.track && (
             <div className="relative min-h-0 flex-[3] overflow-hidden rounded-lg bg-panel">
-              {/* A screen shown on the screen it shares is shared again inside itself, without end. */}
               {sharing === local ? (
-                <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center">
-                  <MonitorUp size={32} className="text-accent" aria-hidden />
-                  <p>{t('meeting.presenting')}</p>
-                  <p className="text-sm text-muted">{t('meeting.presentingHidden')}</p>
-                </div>
+                <OwnShare
+                  track={shared.track as LocalTrack}
+                  floating={floating}
+                  onFloat={() => void floating.open()}
+                  onStop={share}
+                />
               ) : (
                 <>
                   <TrackView track={shared.track} contained />
@@ -643,6 +669,11 @@ function Inside({
             className="flex min-h-0 w-full flex-col px-3 pb-2 md:w-80 md:border-l md:border-line"
           >
             <Conversation talk={talk} />
+          </aside>
+        )}
+        {tabbing && !talking && (
+          <aside className="flex min-h-0 w-full flex-col px-3 pb-2 md:w-80 md:border-l md:border-line">
+            <SharedTabs meeting={meeting} />
           </aside>
         )}
       </div>
@@ -670,13 +701,7 @@ function Inside({
         {canShare && (
           <button
             type="button"
-            onClick={() =>
-              switched(
-                local.setScreenShareEnabled(!local.isScreenShareEnabled, {
-                  selfBrowserSurface: 'exclude',
-                }),
-              )
-            }
+            onClick={share}
             aria-pressed={local.isScreenShareEnabled}
             className={local.isScreenShareEnabled ? primaryButton : button}
           >
@@ -686,7 +711,28 @@ function Inside({
             </span>
           </button>
         )}
-        <Messages unread={talk.unread} talking={talking} onTalking={() => setTalking(!talking)} />
+        {canShare && !guest && (
+          <button
+            type="button"
+            onClick={() => {
+              setTabbing(!tabbing);
+              setTalking(false);
+            }}
+            aria-pressed={tabbing}
+            className={tabbing ? primaryButton : button}
+          >
+            <AppWindow size={16} aria-hidden />
+            <span className="sr-only sm:not-sr-only">{t('meeting.tabs')}</span>
+          </button>
+        )}
+        <Messages
+          unread={talk.unread}
+          talking={talking}
+          onTalking={() => {
+            setTalking(!talking);
+            setTabbing(false);
+          }}
+        />
         <Devices
           active={(kind) => room.getActiveDevice(kind)}
           onChoose={(kind, device) => {

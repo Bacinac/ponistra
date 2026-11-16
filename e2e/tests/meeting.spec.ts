@@ -114,6 +114,66 @@ test('a meeting made now is joined from two devices that see each other, and lef
   await expect(page).toHaveURL(/\/chat$/);
 });
 
+test('the tabs a meeting means to share are kept beside it for all its devices, and what is shared shows small with what it is', async ({
+  page,
+  browser,
+  baseURL,
+  problems,
+}) => {
+  await module(page, 'Razgovori');
+  const meeting = await meetingNow(page);
+  await meeting.getByRole('button', { name: 'Pridruži se' }).click();
+  await expect(tiles(meeting)).toHaveCount(1);
+  const there = await device(browser, baseURL!, problems);
+  await there.goto(new URL(meeting.url()).pathname);
+  await there.getByRole('button', { name: 'Pridruži se' }).click();
+  await expect(tiles(there)).toHaveCount(2);
+
+  const tabsOf = (each: Page) => each.getByRole('region', { name: 'Kartice za dijeljenje' });
+  await meeting.getByRole('button', { name: 'Kartice' }).click();
+  await tabsOf(meeting).getByRole('textbox', { name: 'Adresa' }).fill('example.com/plan');
+  await tabsOf(meeting).getByRole('button', { name: 'Dodaj' }).click();
+  await expect(tabsOf(meeting).getByRole('button', { name: 'example.com/plan' })).toBeVisible();
+  await expect(tabsOf(meeting).getByRole('textbox', { name: 'Adresa' })).toHaveValue('');
+  await tabsOf(meeting).getByRole('textbox', { name: 'Adresa' }).fill('https://example.org');
+  await tabsOf(meeting).getByRole('button', { name: 'Dodaj' }).click();
+  await expect(tabsOf(meeting).getByRole('button', { name: 'Otvori sve' })).toBeVisible();
+
+  await there.getByRole('button', { name: 'Kartice' }).click();
+  await expect(tabsOf(there).getByRole('button', { name: /^example\./ })).toHaveText([
+    'example.com/plan',
+    'example.org',
+  ]);
+  await tabsOf(there).getByRole('button', { name: 'Ukloni' }).first().click();
+  await expect(tabsOf(meeting).getByRole('button', { name: /^example\./ })).toHaveText([
+    'example.org',
+  ]);
+
+  await meeting.getByRole('button', { name: 'Kartice' }).click();
+  await expect(tabsOf(meeting)).toHaveCount(0);
+  await meeting.getByRole('button', { name: 'Dijeli zaslon' }).click();
+  const own = meeting.getByRole('main');
+  await expect(own.getByText(/^Dijelite (karticu|prozor|cijeli zaslon)$/)).toBeVisible();
+  await expect
+    .poll(() =>
+      own
+        .locator('video')
+        .first()
+        .evaluate((video: HTMLVideoElement) => video.videoWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect(meeting.getByRole('button', { name: 'Prestani dijeliti' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(there.getByRole('main').locator('video')).toHaveCount(3);
+
+  await meeting.getByRole('button', { name: 'Prestani dijeliti' }).click();
+  await expect(own.getByText(/^Dijelite /)).toHaveCount(0);
+  await expect(there.getByRole('main').locator('video')).toHaveCount(2);
+  await there.context().close();
+});
+
 test('a meeting made now is made once it is used, and left before that leaves nothing', async ({
   page,
 }) => {

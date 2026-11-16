@@ -14,7 +14,9 @@ A meeting is a video call inside Ponistra: colleagues join by its link, and peop
 ### In the meeting
 
 - {t:meeting.micOff} and {t:meeting.micOn}, {t:meeting.cameraOff} and {t:meeting.cameraOn} turn the microphone and camera off and on.
-- {t:meeting.share} shares your screen, a window or a tab with everyone; {t:meeting.stopSharing} ends the sharing.
+- {t:meeting.share} shares a browser tab, a window or the whole screen with everyone; the browser offers the tabs first. {t:meeting.stopSharing} ends the sharing.
+- {t:meeting.tabs} opens {t:meeting.tabsTitle}: the addresses you mean to share, the same for everyone in the meeting. {t:meeting.addTab} adds an address, a click on it opens it in a new tab, {t:meeting.openTabs} opens them all at once, and {t:meeting.removeTab} takes it off the list.
+- {t:meeting.float} opens a small window above all others with a red frame, the picture of what you share and the button {t:meeting.stopSharing}.
 - {t:chat.messages} opens the meeting's conversation beside the picture; the number on the button says how many messages you have not read.
 - {t:meeting.nextScreen} moves the meeting's window to another screen, when the computer has one.
 - {t:recording.start} records the meeting, and what is said becomes its minutes ([Recording a meeting](help:meetings/recording)).
@@ -25,7 +27,7 @@ A meeting is a video call inside Ponistra: colleagues join by its link, and peop
 
 A Ponistra meeting opens in a window of its own beside your work. If the browser does not allow a window of its own, the meeting opens in the same tab with a warning above it to allow pop-ups for the site.
 
-A new meeting is made only when you join it or invite someone; if you close it before that, nothing stays. Every meeting has its own conversation, which stays after the call. While you share your screen it is not shown to you, so that it does not repeat inside itself; it says {t:meeting.presenting}
+A new meeting is made only when you join it or invite someone; if you close it before that, nothing stays. Every meeting has its own conversation, which stays after the call. While you share, you see what the others see and what you share ({t:meeting.sharingTab}, {t:meeting.sharingWindow} or {t:meeting.sharingScreen}); a whole screen shows small, so that it does not repeat inside itself. The meeting's own tab is not offered for sharing. While you share a tab, the browser offers on the tab you are on to share it instead, so the tabs change with one click, without the sharing ending.
 
 Guests, those invited from outside included, carry the mark {t:meeting.guest}, and you {t:meeting.you}. A muted microphone is marked beside the name ({t:meeting.muted}). If the connection breaks, it says {t:meeting.reconnecting} and Ponistra reconnects by itself; if that fails, it says {t:meeting.dropped}
 

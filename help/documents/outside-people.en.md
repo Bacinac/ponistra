@@ -8,7 +8,7 @@ The owner shares an item with someone without an account in the installation by 
 
 1. In the item's menu or the header of the open item press {t:access.share}.
 2. In the {t:outside.title} section press {t:outside.person}.
-3. Type the person's {t:outside.name} and {t:outside.address}.
+3. Under {t:outside.people} type a name or an address: Ponistra offers your contacts and the people of your mail, and an address not among them you type in full. You can add several people at once.
 4. Under {t:access.role} choose {t:access.role.read} or {t:access.role.edit}.
 5. Clear {t:outside.download} if the item may stay only in the browser.
 6. Press {t:outside.share} or {t:tree.cancel}.

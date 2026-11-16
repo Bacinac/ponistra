@@ -3,6 +3,7 @@ import secrets
 import uuid
 from datetime import timedelta
 from logging import getLogger
+from urllib.parse import urlsplit
 
 from django.db import transaction
 from django.db.models import Q
@@ -27,6 +28,9 @@ from .models import Guest, Meeting, Recording, Ring
 log = getLogger(__name__)
 
 TITLE = 1000
+TABS = 20
+TAB = 2000
+WEB = {"http", "https"}
 # What the people asked into a meeting from outside the installation read, in the language the
 # user reads PONISTRA in.
 ASKED = {
@@ -100,11 +104,34 @@ def meetings(request):
 def _shown(user, pk: uuid.UUID) -> dict:
     found = _found(pk)
     planned = Event.objects.filter(conference=found.link).exists()
-    return {**describe(found, _titled(user, found)), "planned": planned}
+    return {**describe(found, _titled(user, found)), "planned": planned, "tabs": found.tabs}
 
 
-@api("GET")
+def _tabs(given) -> list[str]:
+    if not isinstance(given, list) or len(given) > TABS:
+        raise Refused(400, "invalid_tabs")
+    tabs = []
+    for each in given:
+        if not isinstance(each, str) or len(each) > TAB:
+            raise Refused(400, "invalid_tabs")
+        address = urlsplit(each)
+        if address.scheme not in WEB or not address.netloc:
+            raise Refused(400, "invalid_tabs")
+        if each not in tabs:
+            tabs.append(each)
+    return tabs
+
+
+def _tabbed(user, pk: uuid.UUID, given) -> None:
+    found = _member(user, pk)
+    found.tabs = _tabs(given)
+    found.save(update_fields=["tabs"])
+
+
+@api("GET", "PATCH")
 async def meeting(request, pk):
+    if request.method == "PATCH":
+        await database(_tabbed)(request.user, pk, body(request).get("tabs"))
     shown = await database(_shown)(request.user, pk)
     try:
         shown["present"] = await livekit.present(shown["id"])

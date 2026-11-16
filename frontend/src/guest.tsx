@@ -239,6 +239,7 @@ function GuestCall({
     conversation: '',
     present: [],
     planned: true,
+    tabs: [],
   };
   return <Call meeting={meeting} guest={guest} onInside={() => {}} />;
 }

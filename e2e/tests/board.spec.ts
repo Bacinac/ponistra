@@ -126,7 +126,7 @@ test('the page of boards shows theirs under their groups, and nothing of them in
 const KEEPING = `<!doctype html><html><body>
 <script src="/api/boards/runtime.js"></script>
 <ul id="rows"></ul><p id="failed"></p><p id="can"></p>
-<button id="add">Dodaj</button>
+<form id="adding"><button id="add">Dodaj</button></form>
 <script>
 window.ponistra.db.canWrite().then((can) => {
   document.getElementById('can').textContent = can;
@@ -137,10 +137,12 @@ steps.onSnapshot((rows) => {
     .map((row) => row.id + '=' + row.data().n)
     .join(',');
 });
-document.getElementById('add').onclick = () =>
+document.getElementById('adding').onsubmit = (event) => {
+  event.preventDefault();
   steps.doc('a').set({ n: 1 }).catch((error) => {
     document.getElementById('failed').textContent = error.code;
   });
+};
 </script></body></html>`;
 
 test('a board keeps its data, hears it change and reads it through a link without an account', async ({

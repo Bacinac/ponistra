@@ -115,3 +115,29 @@ def test_a_meeting_is_only_for_those_signed_in(client):
     meeting = Meeting.objects.made("Kolegij")
     assert client.get(f"/api/meetings/{meeting.id}").status_code == 401
     assert client.post(f"/api/meetings/{meeting.id}/join").status_code == 401
+
+
+def test_its_people_prepare_the_tabs_they_will_share(signed_in, owner, client):
+    meeting = Meeting.objects.made("Prezentacija", owner)
+    at = f"/api/meetings/{meeting.id}"
+    tabs = ["https://example.com/a", "http://intranet.local/b?x=1", "https://example.com/a"]
+    shown = sent(signed_in, "patch", at, tabs=tabs)
+    assert (shown.status_code, shown.json()["tabs"]) == (200, tabs[:2])
+    assert signed_in.get(at).json()["tabs"] == tabs[:2]
+    for wrong in ("https://x", ["javascript:alert(1)"], ["mailto:"], ["/relative"], [7]):
+        refused = sent(signed_in, "patch", at, tabs=wrong if isinstance(wrong, list) else wrong)
+        assert (refused.status_code, refused.json()) == (400, {"error": "invalid_tabs"})
+    assert (
+        sent(
+            signed_in,
+            "patch",
+            at,
+            tabs=["https://e.hr/"] * 2 + [f"https://e.hr/{n}" for n in range(20)],
+        ).status_code
+        == 400
+    )
+    stranger = User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-72")
+    client.force_login(stranger)
+    refused = sent(client, "patch", at, tabs=[])
+    assert (refused.status_code, refused.json()) == (404, {"error": "no_meeting"})
+    assert Meeting.objects.get().tabs == tabs[:2]

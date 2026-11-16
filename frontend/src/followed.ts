@@ -33,7 +33,7 @@ const AREAS: Record<string, (key: QueryKey) => boolean> = {
   worked: ([root]) => root === 'worked',
   memory: ([root]) => root === 'memory',
   drive: ([root]) => root === 'drive',
-  meetings: ([root]) => root === 'meeting-recordings',
+  meetings: ([root]) => root === 'meeting-recordings' || root === 'meeting',
   network: ([root]) => root === 'network',
   // A board's page reads what it keeps by itself, once `BoardView` tells it this area changed.
   boards: () => false,

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Languages, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, getJson, postJson, putJson } from './api';
+import { useVisitor } from './auth';
 import { Cancel, Modal } from './dialogs';
 import { languageName, useI18n } from './i18n';
 import { button, field, iconButton, primaryButton } from './styles';
@@ -20,10 +21,12 @@ interface Reading {
 }
 
 function useReading() {
+  const visitor = useVisitor();
   return useQuery({
     queryKey: READING,
     queryFn: () => getJson<Reading>('/api/translation'),
     staleTime: Infinity,
+    enabled: !visitor,
   });
 }
 

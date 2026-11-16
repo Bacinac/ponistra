@@ -4,10 +4,12 @@ import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { deleteJson, getJson, patchJson, postJson } from './api';
 import { useSession } from './auth';
-import { Close, Modal } from './dialogs';
+import { Close, Labelled, Modal } from './dialogs';
 import { Panel } from './frame';
 import { useI18n } from './i18n';
+import type { Person } from './mailData';
 import { Badge, granteeName, reaches, usePeople } from './people';
+import { Recipients } from './recipients';
 import { button, field, iconButton, primaryButton } from './styles';
 import {
   errorMessage,
@@ -234,42 +236,34 @@ const OUTSIDE_ROLES = ['read', 'edit'] as const;
 function ShareOutside({ node, onDone }: { node: TreeNode; onDone: () => void }) {
   const { t, language } = useI18n();
   const queryClient = useQueryClient();
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
+  const [people, setPeople] = useState<Person[]>([]);
   const [role, setRole] = useState<(typeof OUTSIDE_ROLES)[number]>('read');
   const [download, setDownload] = useState(true);
   const share = useMutation({
-    mutationFn: () =>
-      postJson(`/api/nodes/${node.id}/visitors`, { name, address, role, download, language }),
+    mutationFn: async (chosen: Person[]) => {
+      for (const [index, { name, address }] of chosen.entries()) {
+        await postJson(`/api/nodes/${node.id}/visitors`, {
+          name,
+          address,
+          role,
+          download,
+          language,
+        });
+        setPeople(chosen.slice(index + 1));
+      }
+    },
     onSuccess: onDone,
     onSettled: () => queryClient.invalidateQueries({ queryKey: ['access'] }),
   });
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    share.mutate();
+    share.mutate(people);
   };
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
-      <input
-        required
-        autoFocus
-        autoComplete="off"
-        placeholder={t('outside.name')}
-        aria-label={t('outside.name')}
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        className={field}
-      />
-      <input
-        type="email"
-        required
-        autoComplete="off"
-        placeholder={t('outside.address')}
-        aria-label={t('outside.address')}
-        value={address}
-        onChange={(event) => setAddress(event.target.value)}
-        className={field}
-      />
+      <Labelled label={t('outside.people')}>
+        {(id) => <Recipients id={id} people={people} onChange={setPeople} autoFocus />}
+      </Labelled>
       <select
         value={role}
         onChange={(event) => setRole(event.target.value as typeof role)}
@@ -292,7 +286,11 @@ function ShareOutside({ node, onDone }: { node: TreeNode; onDone: () => void }) 
       </label>
       {share.isError && <p className="text-sm text-danger">{errorMessage(share.error, t)}</p>}
       <div className="flex gap-2">
-        <button type="submit" disabled={share.isPending} className={primaryButton}>
+        <button
+          type="submit"
+          disabled={people.length === 0 || share.isPending}
+          className={primaryButton}
+        >
           {t('outside.share')}
         </button>
         <button type="button" onClick={onDone} className={button}>

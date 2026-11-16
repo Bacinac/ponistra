@@ -36,7 +36,8 @@ LIBRARIES = " ".join(
 )
 # Without allow-popups and with a frame that admits only the board's own address, what it shows
 # leaves by no window or link; what a library fetches comes from where the library came from.
-SANDBOX = "allow-scripts"
+# A form is let submit only so that its page hears it: form-action 'none' sends it nowhere.
+SANDBOX = "allow-scripts allow-forms"
 RUNTIME_PATH = "/api/boards/runtime.js"
 RUNTIME = (Path(__file__).parent / "board" / "runtime.js").read_text()
 BRIDGE = (Path(__file__).parent / "board" / "bridge.js").read_text()

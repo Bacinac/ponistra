@@ -1,0 +1,504 @@
+diff --git a/node_modules/@livekit/track-processors/dist/index.mjs b/node_modules/@livekit/track-processors/dist/index.mjs
+index d5cbcff..eee1aa0 100644
+--- a/node_modules/@livekit/track-processors/dist/index.mjs
++++ b/node_modules/@livekit/track-processors/dist/index.mjs
+@@ -541,19 +541,19 @@ var blurFragmentShader = glsl`#version 300 es
+   out vec4 fragColor;
+ 
+   void main() {
+-    vec3 result = texture(u_texture, texCoords).rgb * u_weights[0];
++    vec4 result = texture(u_texture, texCoords) * u_weights[0];
+ 
+     for (int i = 1; i < MAX_TAPS; ++i) {
+       if (i >= u_tapCount) break;
+       vec2 offset = u_direction * u_texelSize * u_offsets[i];
+-      result += (texture(u_texture, texCoords + offset).rgb + texture(u_texture, texCoords - offset).rgb) * u_weights[i];
++      result += (texture(u_texture, texCoords + offset) + texture(u_texture, texCoords - offset)) * u_weights[i];
+     }
+ 
+-    fragColor = vec4(result, 1.0);
++    fragColor = result;
+   }
+ `;
+ function computeGaussianKernel(blurRadius) {
+-  const sigma = blurRadius;
++  const sigma = blurRadius / 2;
+   const radius = Math.min(GAUSSIAN_MAX_RADIUS, Math.ceil(blurRadius));
+   const weightAt = (offset) => Math.exp(-(offset * offset) / (2 * sigma * sigma));
+   const weights = new Float32Array(GAUSSIAN_MAX_TAPS);
+@@ -634,90 +634,41 @@ function applyBlur(gl, sourceTexture, width, height, blurRadius, blurProgram, bl
+   return processTextures[1];
+ }
+ 
+-// src/webgl/shader-programs/boxBlurShader.ts
+-var boxBlurFragmentShader = glsl`#version 300 es
+-precision mediump float;
+-
+-in vec2 texCoords;
+-
+-uniform sampler2D u_texture;
+-uniform vec2 u_texelSize;    // 1.0 / texture size
+-uniform vec2 u_direction;    // (1.0, 0.0) for horizontal, (0.0, 1.0) for vertical
+-uniform float u_radius;      // blur radius in texels
+-
+-out vec4 fragColor;
+-
+-void main() {
+-    vec3 sum = vec3(0.0);
+-    float count = 0.0;
+-
+-    // Limit radius to avoid excessive loop cost
+-    const int MAX_RADIUS = 16;
+-    int radius = int(min(float(MAX_RADIUS), u_radius));
+-
+-    for (int i = -MAX_RADIUS; i <= MAX_RADIUS; ++i) {
+-        if (abs(i) > radius) continue;
+-
+-        vec2 offset = u_direction * u_texelSize * float(i);
+-        sum += texture(u_texture, texCoords + offset).rgb;
+-        count += 1.0;
+-  }
+-
+-  fragColor = vec4(sum / count, 1.0);
+-}
+-`;
+-function createBoxBlurProgram(gl) {
+-  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource());
+-  const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, boxBlurFragmentShader);
+-  const program = createProgram(gl, vertexShader, fragmentShader);
+-  const uniforms = {
+-    position: gl.getAttribLocation(program, "position"),
+-    texture: gl.getUniformLocation(program, "u_texture"),
+-    texelSize: gl.getUniformLocation(program, "u_texelSize"),
+-    direction: gl.getUniformLocation(program, "u_direction"),
+-    radius: gl.getUniformLocation(program, "u_radius")
+-  };
+-  return {
+-    program,
+-    vertexShader,
+-    fragmentShader,
+-    uniforms
+-  };
+-}
+-
+ // src/webgl/shader-programs/compositeShader.ts
+ var compositeFragmentShader = glsl`#version 300 es
+-  precision mediump float;
++  precision highp float;
+   in vec2 texCoords;
+   uniform sampler2D background;
+   uniform bool disableBackground;
+   uniform sampler2D frame;
+   uniform sampler2D mask;
++  uniform bool weighted;
++  uniform vec2 maskTexel;
+   out vec4 fragColor;
+-  
++
+   void main() {
+     vec4 frameTex = texture(frame, texCoords);
+-
+     if (disableBackground) {
+       fragColor = frameTex;
+-    } else {
+-      vec4 bgTex = texture(background, texCoords);
+-
+-      float maskVal = texture(mask, texCoords).r;
+-
+-      // Compute screen-space gradient to detect edge sharpness
+-      float grad = length(vec2(dFdx(maskVal), dFdy(maskVal)));
+-
+-      float edgeSoftness = 2.0; // higher = softer
+-
+-      // Create a smooth edge around binary transition
+-      float smoothAlpha = smoothstep(0.5 - grad * edgeSoftness, 0.5 + grad * edgeSoftness, maskVal);
+-
+-      // Optional: preserve frame alpha, or override as fully opaque
+-      vec4 blended = mix(bgTex, vec4(frameTex.rgb, 1.0), 1.0 - smoothAlpha);
+-      fragColor = blended;
++      return;
+     }
+-  
++    // A joint bilateral filter: the low-resolution mask follows the edges of the frame itself.
++    vec3 centre = frameTex.rgb;
++    float sum = 0.0;
++    float weights = 0.0;
++    for (int y = -2; y <= 2; ++y) {
++      for (int x = -2; x <= 2; ++x) {
++        vec2 at = texCoords + vec2(float(x), float(y)) * maskTexel * 1.5;
++        vec3 difference = texture(frame, at).rgb - centre;
++        float w = exp(-float(x * x + y * y) / 6.0 - dot(difference, difference) * 20.0);
++        sum += texture(mask, at).r * w;
++        weights += w;
++      }
++    }
++    float behind = smoothstep(0.3, 0.7, sum / weights);
++    vec4 bgTex = texture(background, texCoords);
++    vec3 scene = weighted ? (bgTex.a > 0.02 ? bgTex.rgb / bgTex.a : centre) : bgTex.rgb;
++    fragColor = vec4(mix(centre, scene, behind), 1.0);
+   }
+ `;
+ function createCompositeProgram(gl) {
+@@ -732,7 +683,8 @@ function createCompositeProgram(gl) {
+     frame: gl.getUniformLocation(compositeProgram, "frame"),
+     background: gl.getUniformLocation(compositeProgram, "background"),
+     disableBackground: gl.getUniformLocation(compositeProgram, "disableBackground"),
+-    stepWidth: gl.getUniformLocation(compositeProgram, "u_stepWidth")
++    weighted: gl.getUniformLocation(compositeProgram, "weighted"),
++    maskTexel: gl.getUniformLocation(compositeProgram, "maskTexel")
+   };
+   return {
+     program: compositeProgram,
+@@ -743,6 +695,105 @@ function createCompositeProgram(gl) {
+   };
+ }
+ 
++// src/webgl/shader-programs/maskShader.ts
++var maskFragmentShader = glsl`#version 300 es
++  precision highp float;
++  in vec2 texCoords;
++  uniform sampler2D u_mask;
++  uniform sampler2D u_previous;
++  uniform bool u_person;
++  uniform bool u_first;
++  out vec4 fragColor;
++
++  // By hand: a float mask is not filterable everywhere.
++  float confidence(vec2 uv) {
++    ivec2 size = textureSize(u_mask, 0);
++    ivec2 top = size - 1;
++    vec2 at = uv * vec2(size) - 0.5;
++    ivec2 base = ivec2(floor(at));
++    vec2 f = fract(at);
++    float a = texelFetch(u_mask, clamp(base, ivec2(0), top), 0).r;
++    float b = texelFetch(u_mask, clamp(base + ivec2(1, 0), ivec2(0), top), 0).r;
++    float c = texelFetch(u_mask, clamp(base + ivec2(0, 1), ivec2(0), top), 0).r;
++    float d = texelFetch(u_mask, clamp(base + ivec2(1, 1), ivec2(0), top), 0).r;
++    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
++  }
++
++  void main() {
++    float now = confidence(texCoords);
++    if (u_person) now = 1.0 - now;
++    // The first mask reads nothing before it: a fresh texture may hold NaN, which no weight cancels.
++    if (u_first) {
++      fragColor = vec4(vec3(now), 1.0);
++      return;
++    }
++    float before = texture(u_previous, texCoords).r;
++    // Still flicker is averaged away; a real change, a movement, is followed at once.
++    float follow = clamp(0.5 + abs(now - before) * 4.0, 0.0, 1.0);
++    fragColor = vec4(vec3(mix(before, now, follow)), 1.0);
++  }
++`;
++var weightedDownFragmentShader = glsl`#version 300 es
++  precision mediump float;
++  in vec2 texCoords;
++  uniform sampler2D u_frame;
++  uniform sampler2D u_mask;
++  out vec4 fragColor;
++
++  void main() {
++    float behind = smoothstep(0.25, 0.75, texture(u_mask, texCoords).r);
++    fragColor = vec4(texture(u_frame, texCoords).rgb * behind, behind);
++  }
++`;
++function createMaskPrograms(gl) {
++  const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource(false));
++  const maskShader = createShader(gl, gl.FRAGMENT_SHADER, maskFragmentShader);
++  const downShader = createShader(gl, gl.FRAGMENT_SHADER, weightedDownFragmentShader);
++  const mask = createProgram(gl, vertexShader, maskShader);
++  const down = createProgram(gl, vertexShader, downShader);
++  return {
++    mask,
++    down,
++    shaders: [vertexShader, maskShader, downShader],
++    maskUniforms: {
++      position: gl.getAttribLocation(mask, "position"),
++      mask: gl.getUniformLocation(mask, "u_mask"),
++      previous: gl.getUniformLocation(mask, "u_previous"),
++      person: gl.getUniformLocation(mask, "u_person"),
++      first: gl.getUniformLocation(mask, "u_first")
++    },
++    downUniforms: {
++      position: gl.getAttribLocation(down, "position"),
++      frame: gl.getUniformLocation(down, "u_frame"),
++      mask: gl.getUniformLocation(down, "u_mask")
++    }
++  };
++}
++// MediaPipe draws in the same context and leaves its state behind it, the more so for a model of several classes.
++function ownState(gl) {
++  gl.bindVertexArray(null);
++  gl.bindBuffer(gl.PIXEL_UNPACK_BUFFER, null);
++  gl.disable(gl.BLEND);
++  gl.disable(gl.SCISSOR_TEST);
++  gl.disable(gl.DEPTH_TEST);
++  gl.disable(gl.STENCIL_TEST);
++  gl.disable(gl.CULL_FACE);
++  gl.colorMask(true, true, true, true);
++  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
++  gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
++  gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
++}
++function drawQuad(gl, program, position, vertexBuffer, framebuffer, width, height) {
++  gl.useProgram(program);
++  gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
++  gl.viewport(0, 0, width, height);
++  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
++  gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
++  gl.enableVertexAttribArray(position);
++  gl.drawArrays(gl.TRIANGLES, 0, 6);
++  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
++}
++
+ // src/webgl/shader-programs/downSampler.ts
+ function createDownSampler(gl, width, height) {
+   const texture = gl.createTexture();
+@@ -755,50 +806,11 @@ function createDownSampler(gl, width, height) {
+   const framebuffer = gl.createFramebuffer();
+   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+   gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+-  const vertexSource = `
+-      attribute vec2 position;
+-      varying vec2 v_uv;
+-      void main() {
+-        v_uv = (position + 1.0) * 0.5;
+-        gl_Position = vec4(position, 0.0, 1.0);
+-      }
+-    `;
+-  const fragmentSource = `
+-      precision mediump float;
+-      varying vec2 v_uv;
+-      uniform sampler2D u_texture;
+-      void main() {
+-        gl_FragColor = texture2D(u_texture, v_uv);
+-      }
+-    `;
+-  const vertShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
+-  const fragShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
+-  const program = createProgram(gl, vertShader, fragShader);
+-  const uniforms = {
+-    texture: gl.getUniformLocation(program, "u_texture"),
+-    position: gl.getAttribLocation(program, "position")
+-  };
+   return {
+     framebuffer,
+-    texture,
+-    program,
+-    uniforms
++    texture
+   };
+ }
+-function applyDownsampling(gl, inputTexture, downSampler, vertexBuffer, width, height) {
+-  gl.useProgram(downSampler.program);
+-  gl.bindFramebuffer(gl.FRAMEBUFFER, downSampler.framebuffer);
+-  gl.viewport(0, 0, width, height);
+-  gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+-  gl.enableVertexAttribArray(downSampler.uniforms.position);
+-  gl.vertexAttribPointer(downSampler.uniforms.position, 2, gl.FLOAT, false, 0, 0);
+-  gl.activeTexture(gl.TEXTURE0);
+-  gl.bindTexture(gl.TEXTURE_2D, inputTexture);
+-  gl.uniform1i(downSampler.uniforms.texture, 0);
+-  gl.drawArrays(gl.TRIANGLES, 0, 6);
+-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+-  return downSampler.texture;
+-}
+ 
+ // src/webgl/index.ts
+ var log3 = getLogger("livekit-track-processor-web-gl" /* WebGl */);
+@@ -809,7 +821,7 @@ var setupWebGL = (canvas) => {
+     premultipliedAlpha: true
+   });
+   let blurRadius = null;
+-  let maskBlurRadius = 8;
++  let maskFollowed = false;
+   const downsampleFactor = 4;
+   const maskBufferTargetEdge = 640;
+   const getMaskDownsampleFactor = (width, height) => Math.max(1, Math.round(Math.max(width, height) / maskBufferTargetEdge));
+@@ -831,9 +843,7 @@ var setupWebGL = (canvas) => {
+   const blur = createBlurProgram(gl);
+   const blurProgram = blur.program;
+   const blurUniforms = blur.uniforms;
+-  const boxBlur = createBoxBlurProgram(gl);
+-  const boxBlurProgram = boxBlur.program;
+-  const boxBlurUniforms = boxBlur.uniforms;
++  const masking = createMaskPrograms(gl);
+   const bgTexture = initTexture(gl, 0);
+   const frameTexture = initTexture(gl, 1);
+   const vertexBuffer = createVertexBuffer(gl);
+@@ -860,13 +870,6 @@ var setupWebGL = (canvas) => {
+   let maskDownsampleFactor = getMaskDownsampleFactor(canvas.width, canvas.height);
+   let maskBufferWidth = Math.max(1, Math.round(canvas.width / maskDownsampleFactor));
+   let maskBufferHeight = Math.max(1, Math.round(canvas.height / maskDownsampleFactor));
+-  const tempMaskTexture = initTexture(gl, 5);
+-  const tempMaskFrameBuffer = createFramebuffer(
+-    gl,
+-    tempMaskTexture,
+-    maskBufferWidth,
+-    maskBufferHeight
+-  );
+   finalMaskTextures.push(initTexture(gl, 6));
+   finalMaskTextures.push(initTexture(gl, 7));
+   const finalMaskFrameBuffers = [
+@@ -891,9 +894,10 @@ var setupWebGL = (canvas) => {
+     maskDownsampleFactor = getMaskDownsampleFactor(bufferWidth, bufferHeight);
+     maskBufferWidth = Math.max(1, Math.round(bufferWidth / maskDownsampleFactor));
+     maskBufferHeight = Math.max(1, Math.round(bufferHeight / maskDownsampleFactor));
+-    for (const texture of [tempMaskTexture, ...finalMaskTextures]) {
++    for (const texture of finalMaskTextures) {
+       resizeTexture(gl, texture, maskBufferWidth, maskBufferHeight);
+     }
++    maskFollowed = false;
+     if (backgroundSourceImage) {
+       setBackgroundImage(backgroundSourceImage);
+     }
+@@ -911,19 +915,29 @@ var setupWebGL = (canvas) => {
+     const width = frame.displayWidth;
+     const height = frame.displayHeight;
+     ensureBuffersMatchCanvas();
++    ownState(gl);
+     gl.activeTexture(gl.TEXTURE1);
+     gl.bindTexture(gl.TEXTURE_2D, frameTexture);
+     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, frame);
+     let backgroundTexture = frameTexture;
+     if (blurRadius) {
+-      const downSampledFrameTexture = applyDownsampling(
++      gl.useProgram(masking.down);
++      gl.activeTexture(gl.TEXTURE1);
++      gl.bindTexture(gl.TEXTURE_2D, frameTexture);
++      gl.uniform1i(masking.downUniforms.frame, 1);
++      gl.activeTexture(gl.TEXTURE2);
++      gl.bindTexture(gl.TEXTURE_2D, finalMaskTextures[readMaskIndex]);
++      gl.uniform1i(masking.downUniforms.mask, 2);
++      drawQuad(
+         gl,
+-        frameTexture,
+-        downSampler,
++        masking.down,
++        masking.downUniforms.position,
+         vertexBuffer,
++        downSampler.framebuffer,
+         bgBlurTextureWidth,
+         bgBlurTextureHeight
+       );
++      const downSampledFrameTexture = downSampler.texture;
+       backgroundTexture = applyBlur(
+         gl,
+         downSampledFrameTexture,
+@@ -950,6 +964,8 @@ var setupWebGL = (canvas) => {
+     gl.bindTexture(gl.TEXTURE_2D, backgroundTexture);
+     gl.uniform1i(bgTextureLocation, 0);
+     gl.uniform1i(disableBackgroundLocation, backgroundImageDisabled ? 1 : 0);
++    gl.uniform1i(composite.uniformLocations.weighted, blurRadius ? 1 : 0);
++    gl.uniform2f(composite.uniformLocations.maskTexel, 1 / maskBufferWidth, 1 / maskBufferHeight);
+     gl.activeTexture(gl.TEXTURE1);
+     gl.bindTexture(gl.TEXTURE_2D, frameTexture);
+     gl.uniform1i(frameTextureLocation, 1);
+@@ -989,37 +1005,46 @@ var setupWebGL = (canvas) => {
+   function setBackgroundDisabled(disabled) {
+     backgroundImageDisabled = disabled;
+   }
+-  function updateMask(mask) {
++  function updateMask(mask, person = false) {
+     if (finalMaskTextures.length === 0) {
+       return;
+     }
+     ensureBuffersMatchCanvas();
+-    const tempFramebuffers = [tempMaskFrameBuffer, finalMaskFrameBuffers[writeMaskIndex]];
+-    const tempTextures = [tempMaskTexture, finalMaskTextures[writeMaskIndex]];
+-    applyBlur(
++    ownState(gl);
++    gl.useProgram(masking.mask);
++    gl.activeTexture(gl.TEXTURE5);
++    gl.bindTexture(gl.TEXTURE_2D, mask);
++    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
++    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
++    gl.uniform1i(masking.maskUniforms.mask, 5);
++    gl.activeTexture(gl.TEXTURE6);
++    gl.bindTexture(gl.TEXTURE_2D, finalMaskTextures[readMaskIndex]);
++    gl.uniform1i(masking.maskUniforms.previous, 6);
++    gl.uniform1i(masking.maskUniforms.person, person ? 1 : 0);
++    gl.uniform1i(masking.maskUniforms.first, maskFollowed ? 0 : 1);
++    drawQuad(
+       gl,
+-      mask,
+-      maskBufferWidth,
+-      maskBufferHeight,
+-      // The radius is in mask-buffer texels, so scale it down with the buffer.
+-      Math.max(1, Math.round((maskBlurRadius || 1) / maskDownsampleFactor)),
+-      boxBlurProgram,
+-      boxBlurUniforms,
++      masking.mask,
++      masking.maskUniforms.position,
+       vertexBuffer,
+-      tempFramebuffers,
+-      tempTextures
++      finalMaskFrameBuffers[writeMaskIndex],
++      maskBufferWidth,
++      maskBufferHeight
+     );
++    maskFollowed = true;
+     readMaskIndex = writeMaskIndex;
+     writeMaskIndex = 1 - writeMaskIndex;
+   }
+   function cleanup() {
+     gl.deleteProgram(compositeProgram);
+     gl.deleteProgram(blurProgram);
+-    gl.deleteProgram(boxBlurProgram);
++    gl.deleteProgram(masking.mask);
++    gl.deleteProgram(masking.down);
++    for (const shader of masking.shaders) {
++      gl.deleteShader(shader);
++    }
+     gl.deleteTexture(bgTexture);
+     gl.deleteTexture(frameTexture);
+-    gl.deleteTexture(tempMaskTexture);
+-    gl.deleteFramebuffer(tempMaskFrameBuffer);
+     for (const texture of bgBlurTextures) {
+       gl.deleteTexture(texture);
+     }
+@@ -1039,7 +1064,6 @@ var setupWebGL = (canvas) => {
+     if (downSampler) {
+       gl.deleteTexture(downSampler.texture);
+       gl.deleteFramebuffer(downSampler.framebuffer);
+-      gl.deleteProgram(downSampler.program);
+     }
+     if (customBackgroundImage) {
+       if (customBackgroundImage instanceof ImageBitmap) {
+@@ -1144,8 +1168,8 @@ var BackgroundProcessor = class extends VideoTransformer {
+       },
+       canvas: this.canvas,
+       runningMode: "VIDEO",
+-      outputCategoryMask: true,
+-      outputConfidenceMasks: false
++      outputCategoryMask: false,
++      outputConfidenceMasks: true
+     }).catch((err) => {
+       if (err instanceof Event) {
+         const src = err.target instanceof HTMLScriptElement ? err.target.src : "unknown URL";
+@@ -1238,7 +1262,7 @@ var BackgroundProcessor = class extends VideoTransformer {
+           (_a2 = this.imageSegmenter) == null ? void 0 : _a2.segmentForVideo(frame, segmentationStartTimeMs, (result) => {
+             this.segmentationTimeMs = performance.now() - segmentationStartTimeMs;
+             this.segmentationResults = result;
+-            this.updateMask(result.categoryMask);
++            this.updateMask(result.confidenceMasks);
+             result.close();
+             resolve();
+           });
+@@ -1291,11 +1315,12 @@ var BackgroundProcessor = class extends VideoTransformer {
+       return;
+     (_a = this.gl) == null ? void 0 : _a.renderFrame(frame);
+   }
+-  async updateMask(mask) {
++  async updateMask(masks) {
+     var _a;
+-    if (!mask)
++    if (!(masks == null ? void 0 : masks.length))
+       return;
+-    (_a = this.gl) == null ? void 0 : _a.updateMask(mask.getAsWebGLTexture());
++    // A model of one class gives the person; one of several gives the background first.
++    (_a = this.gl) == null ? void 0 : _a.updateMask(masks[0].getAsWebGLTexture(), masks.length === 1);
+   }
+ };
+ 

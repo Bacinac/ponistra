@@ -8,7 +8,7 @@ Vlasnik dijeli stavku s osobom bez računa u instalaciji po njezinoj adresi e-po
 
 1. U izborniku stavke ili u zaglavlju otvorene stavke pritisnite {t:access.share}.
 2. U odjeljku {t:outside.title} pritisnite {t:outside.person}.
-3. Upišite {t:outside.name} i {t:outside.address} osobe.
+3. Pod {t:outside.people} upišite ime ili adresu: Ponistra nudi vaše kontakte i osobe iz pošte, a adresu koje nema među njima upišite cijelu. Možete dodati više osoba odjednom.
 4. Pod {t:access.role} odaberite {t:access.role.read} ili {t:access.role.edit}.
 5. Isključite {t:outside.download} ako stavka smije ostati samo u pregledniku.
 6. Pritisnite {t:outside.share} ili {t:tree.cancel}.
