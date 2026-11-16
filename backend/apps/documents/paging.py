@@ -1,7 +1,9 @@
 """Each tab's count of pages in its document's own state, as the print lays them out, so the
 tabs after it number on without being opened: the printer counts a document's tabs at once if
 they were never counted, else once it has been quiet for PAGES_QUIET or its earliest uncounted
-change is PAGES_INTERVAL old, in a session opened for the count as a reader of it."""
+change is PAGES_INTERVAL old, in a session opened for the count as a reader of it. The printer
+counts one document at a time, so a document someone has open goes first and the rest by their
+oldest change."""
 
 from datetime import datetime
 from logging import getLogger
@@ -71,9 +73,11 @@ def _opened(document: Node) -> tuple[datetime | None, str]:
     return seen, sessions.opened(reader, printing.TIMEOUT)
 
 
-def _live(document: Node) -> bool:
+def _current(document: Node) -> bool:
+    """The document is still there, live and in the room it was counted for: a reimport or a
+    version restored moves it to a fresh room, whose changes are counted again."""
     node = Node.objects.filter(pk=document.pk).first()
-    return node is not None and node.is_live()
+    return node is not None and node.room == document.room and node.is_live()
 
 
 def _counted(document: Node, at: datetime | None) -> None:
@@ -100,12 +104,23 @@ async def count(document: Node) -> None:
     await database(_counted)(document, seen)
 
 
+def _next(now: datetime, tried: set, open_rooms: set[str]) -> Node | None:
+    waiting = [document for document in due(now) if document.pk not in tried]
+    return min(
+        waiting,
+        key=lambda document: (str(document.room) not in open_rooms, document.changed_at),
+        default=None,
+    )
+
+
 async def tend(now: datetime | None = None) -> None:
-    for document in await database(due)(now or timezone.now()):
+    tried = set()
+    while document := await database(_next)(now or timezone.now(), tried, set(server.collab.rooms)):
+        tried.add(document.pk)
         try:
             await count(document)
         except Exception:
-            if not await database(_live)(document):
+            if not await database(_current)(document):
                 continue
             log.exception("pages: document %s could not be counted", document.pk)
             await database(_counted)(document, document.changed_at)

@@ -1,4 +1,5 @@
 import json
+import uuid
 from datetime import timedelta
 
 import pytest
@@ -186,6 +187,47 @@ def test_a_document_put_in_the_trash_while_it_is_counted_is_passed_over(
         return {tab: 7}
 
     monkeypatch.setattr(printing, "counted", trashed_then_counted)
+    counted = made.paged_at
+    tend(last + QUIET)
+    assert "could not be counted" not in caplog.text
+    made.refresh_from_db()
+    assert made.paged_at == counted
+
+
+def test_a_document_someone_has_open_is_counted_before_those_changed_earlier(
+    api, made, monkeypatch
+):
+    other = Node.objects.get(pk=document(api, "Ponuda"))
+    Node.objects.filter(pk=other.pk).update(paged_at=timezone.now() - timedelta(hours=1))
+    now = timezone.now()
+    written(made, now - timedelta(minutes=5))
+    written(other, now - timedelta(minutes=4))
+    order = []
+
+    async def counted(document):
+        order.append(document.pk)
+
+    monkeypatch.setattr(paging, "count", counted)
+    monkeypatch.setitem(server.collab.rooms, str(other.room), None)
+    tend(now)
+    assert order == [other.pk, made.pk]
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_document_moved_to_a_fresh_room_while_it_is_counted_is_passed_over(
+    api, made, monkeypatch, caplog
+):
+    tab = str(made.tabs_in_order()[0].pk)
+    last = written(made, timezone.now() - timedelta(minutes=5)).created_at
+
+    def moved_then_counted(document, session):
+        try:
+            Node.objects.filter(pk=document).update(room=uuid.uuid4())
+        finally:
+            connection.close()
+        return {tab: 7}
+
+    monkeypatch.setattr(printing, "counted", moved_then_counted)
     counted = made.paged_at
     tend(last + QUIET)
     assert "could not be counted" not in caplog.text

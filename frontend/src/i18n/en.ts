@@ -36,7 +36,7 @@ export const en: Record<MessageKey, string> = {
   'workspace.inUse': 'In use',
   'workspace.round': 'Round {name}',
   'workspace.coordinator': 'Coordinator',
-  'workspace.start': 'Start round',
+  'workspace.start': 'Start chats',
   'workspace.state.new': 'Not sent',
   'workspace.state.working': 'Working',
   'workspace.copy': 'Copy',

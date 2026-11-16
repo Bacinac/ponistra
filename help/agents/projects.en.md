@@ -77,7 +77,7 @@ The same {t:workspace.yes} and {t:workspace.no} also stand in the conversation w
 
 ### Starting on a condition
 
-1. On the {t:rail.projects} page press {t:workspace.startWhen} beside {t:workspace.start} below the coordinator of a round not yet started, or beside {t:workspace.startChat} in the new chat form, once you have written the first message.
+1. On the {t:rail.projects} page press the clock ({t:workspace.startWhen}) beside {t:workspace.start} below the coordinator of a round not yet started, or {t:workspace.startWhen} beside {t:workspace.startChat} in the new chat form, once you have written the first message.
 2. In the {t:workspace.when.on} field choose when:
    - {t:workspace.when.time}: a day and an hour. For a chat, the {t:workspace.when.repeat} field offers {t:workspace.when.once}, {t:workspace.when.daily} or {t:workspace.when.weekly}.
    - {t:workspace.when.reset}: when the plan's weekly limit resets.

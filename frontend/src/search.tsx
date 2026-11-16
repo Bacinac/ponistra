@@ -1066,7 +1066,7 @@ export function SearchBox({ here }: { here?: Pick<TreeNode, 'id' | 'title'> }) {
   }
 
   return (
-    <div className="relative w-9 shrink-0 max-sm:focus-within:absolute max-sm:focus-within:inset-x-2 max-sm:focus-within:top-2 max-sm:focus-within:z-40 max-sm:focus-within:w-auto sm:w-72 sm:shrink">
+    <div className="relative w-9 shrink-0 max-sm:focus-within:absolute max-sm:focus-within:inset-x-2 max-sm:focus-within:top-2 max-sm:focus-within:z-40 max-sm:focus-within:w-auto sm:w-72 sm:shrink xl:shrink-0">
       <Search
         size={16}
         aria-hidden

@@ -476,9 +476,17 @@ const RED = Buffer.from(
 const VISION_NOTES =
   / (warning|error): (W\d{4} [\d:.]+ +\d+ \S+\] |INFO: Created TensorFlow Lite )|GL Driver Message \(OpenGL, Performance/;
 
+// The SFU's quality update for a track it has not yet heard was unpublished, as when the tab shared
+// is switched; livekit-client warns and drops it.
+const UNPUBLISHED_NOTE = / warning: received subscribed quality update for unknown track /;
+
 // Before the problems are checked, and when a test failed too, so that its failure is its own.
 test.afterEach(({ problems }) => {
-  problems.splice(0, problems.length, ...problems.filter((each) => !VISION_NOTES.test(each)));
+  problems.splice(
+    0,
+    problems.length,
+    ...problems.filter((each) => !VISION_NOTES.test(each) && !UNPUBLISHED_NOTE.test(each)),
+  );
 });
 
 async function chosen(meeting: Page, sub: string, item: string) {

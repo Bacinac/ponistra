@@ -726,28 +726,41 @@ const OFFERS = {
  * a round's start may instead wait on a condition. */
 function Offer({
   kind,
+  count,
   disabled,
   onPress,
   onWhen,
 }: {
   kind: keyof typeof OFFERS;
+  count?: number;
   disabled: boolean;
   onPress: () => void;
   onWhen?: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, formatNumber } = useI18n();
   const { icon: Icon, label } = OFFERS[kind];
   return (
-    <div className="flex justify-end gap-2 px-2 pb-1">
+    <div className="flex items-center justify-end gap-1 px-2 pb-1">
       {onWhen && (
-        <button type="button" disabled={disabled} onClick={onWhen} className={button}>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onWhen}
+          title={t('workspace.startWhen')}
+          aria-label={t('workspace.startWhen')}
+          className={`${button} px-2`}
+        >
           <CalendarClock size={16} aria-hidden />
-          {t('workspace.startWhen')}
         </button>
       )}
-      <button type="button" disabled={disabled} onClick={onPress} className={primaryButton}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onPress}
+        className={`${primaryButton} whitespace-nowrap`}
+      >
         <Icon size={16} aria-hidden />
-        {t(label)}
+        {count === undefined ? t(label) : `${t(label)} (${formatNumber(count)})`}
       </button>
     </div>
   );
@@ -1031,6 +1044,7 @@ function RoundCard({
         ) : (
           <Offer
             kind="start"
+            count={round.chats.filter((chat) => !chat.id).length}
             disabled={command.isPending}
             onPress={() => asked('start')}
             onWhen={() => setTiming(true)}

@@ -34,7 +34,7 @@ export const hr = {
   'workspace.inUse': 'U radu',
   'workspace.round': 'Krug {name}',
   'workspace.coordinator': 'Koordinator',
-  'workspace.start': 'Pokreni krug',
+  'workspace.start': 'Pokreni chatove',
   'workspace.state.new': 'Nije poslan',
   'workspace.state.working': 'Radi',
   'workspace.copy': 'Kopiraj',

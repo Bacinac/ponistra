@@ -375,7 +375,7 @@ test('a round shows what each of its chats is doing and is started from here', a
   within(round).getByText(/Područje: e2e\/tests\/helpers/);
   expect(within(round).queryByRole('button', { name: 'Objedini' })).toBeNull();
   expect(within(round).queryByRole('button', { name: 'Pushaj' })).toBeNull();
-  await user.click(within(round).getByRole('button', { name: 'Pokreni krug' }));
+  await user.click(within(round).getByRole('button', { name: /^Pokreni chatove \(\d+\)$/ }));
   expect(within(round).queryByRole('checkbox')).toBeNull();
   fireEvent.contextMenu(row(/Plan kruga/));
   const auto = await screen.findByRole('menuitemcheckbox', { name: 'Objedini sam' });
@@ -886,7 +886,7 @@ test('a started round is offered neither to start again nor to consolidate while
   const round = await screen.findByRole('region', { name: /^Krug / });
   within(round).getByRole('button', { name: /Kod → Krugovi/ });
   expect(within(round).queryByRole('button', { name: 'Objedini' })).toBeNull();
-  expect(within(round).queryByRole('button', { name: 'Pokreni krug' })).toBeNull();
+  expect(within(round).queryByRole('button', { name: /^Pokreni chatove/ })).toBeNull();
 });
 
 test('a code block and a whole answer are copied from the conversation', async () => {
@@ -1441,7 +1441,7 @@ test('a round waiting on a condition says on what, and the wait is taken back', 
   const { user } = open('/workspace', OWNER);
   const round = await screen.findByRole('region', { name: /^Krug / });
   within(round).getByText('Kreće kad se tjedni limit obnovi · staje na 80 % tjedna');
-  expect(within(round).queryByRole('button', { name: 'Pokreni krug' })).toBeNull();
+  expect(within(round).queryByRole('button', { name: /^Pokreni chatove/ })).toBeNull();
   await user.click(within(round).getByRole('button', { name: 'Otkaži' }));
   await waitFor(() => expect(asked).toEqual([{ kind: 'cancel', round: ROUND.id }]));
 });

@@ -77,7 +77,7 @@ Isti {t:workspace.yes} i {t:workspace.no} stoje i u razgovoru kad je odabran raz
 
 ### Pokretanje na uvjet
 
-1. Na stranici {t:rail.projects} pritisnite {t:workspace.startWhen} uz {t:workspace.start} ispod koordinatora kruga koji još nije krenuo, ili uz {t:workspace.startChat} u obrascu novog razgovora, nakon što ste upisali prvu poruku.
+1. Na stranici {t:rail.projects} pritisnite sat ({t:workspace.startWhen}) uz {t:workspace.start} ispod koordinatora kruga koji još nije krenuo ili {t:workspace.startWhen} uz {t:workspace.startChat} u obrascu novog razgovora, nakon što ste upisali prvu poruku.
 2. U polju {t:workspace.when.on} odaberite kada:
    - {t:workspace.when.time}: dan i sat. Za razgovor u polju {t:workspace.when.repeat} birate {t:workspace.when.once}, {t:workspace.when.daily} ili {t:workspace.when.weekly}.
    - {t:workspace.when.reset}: kad se obnovi tjedni limit pretplate.

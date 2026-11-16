@@ -292,19 +292,16 @@ test('the search box and the microphone stand in one place on every page, the pa
   const address = await newDocument(page, 'Raspored stolova');
   const microphone = page.getByRole('button', { name: 'Izgovorite naredbu ili bilješku' });
   const search = page.getByRole('combobox', { name: 'Pretraži' });
-  const places: { mic: number; box: number }[] = [];
-  for (const to of ['/', address, '/chat', '/documents']) {
+  const x = async (element: typeof search) => (await element.boundingBox())?.x;
+  await page.goto('/');
+  await expect(microphone).toBeVisible();
+  const mic = await x(microphone);
+  const box = await x(search);
+  for (const to of [address, '/chat', '/documents', '/search']) {
     await page.goto(to);
-    await expect(microphone).toBeVisible();
-    places.push({
-      mic: (await microphone.boundingBox())!.x,
-      box: (await search.boundingBox())!.x,
-    });
+    await expect.poll(() => x(microphone)).toBe(mic);
+    if (to !== '/search') await expect.poll(() => x(search)).toBe(box);
   }
-  expect(new Set(places.map((each) => each.mic)).size).toBe(1);
-  expect(new Set(places.map((each) => each.box)).size).toBe(1);
-  await page.goto('/search');
-  await expect.poll(async () => (await microphone.boundingBox())!.x).toBe(places[0].mic);
 });
 
 test('the signature stands on one line at the foot of the side column and opens About, which writes to the author', async ({

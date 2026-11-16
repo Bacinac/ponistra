@@ -619,6 +619,7 @@ test('the name box shows the cells chosen and leads to an address, another sheet
     await page.keyboard.type(written);
     await page.keyboard.press('Enter');
   };
+  await expect(cellAt(tables.first(), 'A2')).toHaveText('Olovka');
   await cellAt(tables.first(), 'A2').click();
   await expect(box).toHaveValue('Cijene!A2');
   const home = page.url();
