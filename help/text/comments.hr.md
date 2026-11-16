@@ -1,19 +1,19 @@
 # Komentari
 
-Komentar se veže uz označeni tekst, a razgovor o njemu teče u bočnom panelu dok ga netko ne riješi.
+Komentar se veže uz označeni tekst ili ćeliju tablice, a razgovor o njemu teče u bočnom panelu dok ga netko ne riješi.
 
 ## Kako se koristi
 
 ### Novi komentar
 
-1. Označite tekst.
+1. Označite tekst ili stanite u ćeliju tablice.
 2. Na traci alata ili desnom tipkom miša odaberite {t:command.comment} ({k:Mod-Alt-m}).
 3. U panelu {t:comment.list}, pod {t:comment.new}, napišite komentar i pošaljite ga.
 
 ### Odgovor i rješavanje
 
 1. U zaglavlju dokumenta pritisnite {t:comment.list}. Uz gumb stoji broj neriješenih komentara otvorene kartice.
-2. Pritisnite komentar da biste skočili na tekst uz koji je vezan.
+2. Pritisnite komentar da biste skočili na tekst ili ćeliju uz koju je vezan.
 3. Napišite odgovor i pritisnite {t:comment.reply}.
 4. Pritisnite {t:comment.resolve} kad je pitanje riješeno, a {t:comment.reopen} da ga ponovno otvorite.
 
@@ -30,6 +30,8 @@ Komentar se veže uz označeni tekst, a razgovor o njemu teče u bočnom panelu 
 ## Kako radi
 
 Panel prikazuje komentare otvorene kartice redom kojim stoje u tekstu. Riješeni komentari su skriveni, a {t:comment.showResolved} ih prikazuje s brojem; uz svaki piše {t:comment.resolved}, tko ga je riješio i kada. Komentar izmijenjen nakon slanja nosi oznaku {t:comment.edited}, a komentar iz uvezene datoteke oznaku {t:comment.imported} s imenom autora iz datoteke. Autor čiji je račun obrisan prikazuje se kao {t:comment.formerUser}. Kad je obrisan tekst uz koji je komentar vezan, komentar ostaje i to navodi.
+
+Komentar na ćeliji ostaje uz nju i kad se retci i stupci tablice dodaju, premještaju ili sortiraju; ćelija s komentarom nosi oznaku u kutu, a pritisak na nju prikazuje komentar u panelu. Izvoz u Word stavlja ga na tekst ćelije, a uvoz iz Worda vraća ga na ćeliju.
 
 Na PDF-u se komentar veže uz označeni tekst ili točku na stranici, pa se uz njega navodi {t:pdf.page} s brojem.
 

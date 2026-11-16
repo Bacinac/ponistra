@@ -227,6 +227,8 @@ async def test_a_file_of_our_own_goes_after_a_documents_tabs(api, live):
     def checked():
         ana = User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-72", first_name="Ana")
         document, tab, child = offer(api, ana)
+        celled = Thread.objects.create(tab=tab, anchor={"table": "t", "row": "r2", "col": "a"})
+        Comment.objects.create(thread=celled, author=ana, body="Dodati redak.")
         styled(document, istaknuto={"size": 20}, napomena={"size": 9})
         data = exported(api, document, versions=True)
         target, before, _ = made(
@@ -251,7 +253,9 @@ async def test_a_file_of_our_own_goes_after_a_documents_tabs(api, live):
         assert ours[:2] == theirs[:2]
         assert (ours[2].id, ours[2].cells) == (moved, theirs[2].cells)
         assert users_in(first.room) == {ana.pk}
-        assert Thread.objects.get(tab=first).comments.count() == 2
+        text, cell = Thread.objects.filter(tab=first).order_by("created_at")
+        assert text.comments.count() == 2
+        assert cell.anchor == {"table": moved, "row": "r2", "col": "a"}
         assert not target.versions.exists()
 
         own, headed = state(target.room), grids.of_own(target)

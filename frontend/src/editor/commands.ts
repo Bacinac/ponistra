@@ -134,7 +134,7 @@ import { selectedPdf } from './pdfs';
 import { canLink } from './links';
 import { FORMS, sameLevel, sample, type ListLevel, type Marked } from './forms';
 import { continuable, continuedFormat, formAt, inList, listAt, reform, toggleList } from './lists';
-import { commentable, draftOf } from './comments';
+import { cellDraftOf, commentable, draftOf } from './comments';
 import { insertNote, noteOf, openSelected } from './notes';
 import { numberedBy } from './numbering';
 import { formats } from './proposals';
@@ -1075,11 +1075,12 @@ export const COMMANDS: readonly EditorCommand[] = [
     label: 'command.comment',
     icon: MessageSquarePlus,
     group: 'comment',
-    where: TEXT,
+    where: PROSE,
     keys: ['Mod-Alt-m'],
-    enabled: ({ view, desk, place }) => Boolean(desk && place.tab && commentable(view.state)),
+    enabled: ({ view, desk, place }) =>
+      Boolean(desk && place.tab && (commentable(view.state) || cellDraftOf(view))),
     run: ({ view, desk, place }) => {
-      const draft = draftOf(view.state);
+      const draft = draftOf(view.state) ?? cellDraftOf(view);
       if (draft && desk && place.tab) desk.start({ tab: place.tab, ...draft });
     },
   },

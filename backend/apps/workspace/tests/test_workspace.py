@@ -6,6 +6,7 @@ from uuid import UUID
 import httpx2
 import pytest
 from anyio import create_task_group, move_on_after
+from asgiref.sync import async_to_sync
 from django.test import Client
 from django.utils import timezone
 
@@ -611,3 +612,102 @@ async def test_a_project_put_under_others_reaches_its_owners_tabs():
                 heard.update((await tab.state()).get("areas", []))
         assert "workspace" in heard
         tg.cancel_scope.cancel()
+
+
+FILE = {"folder": "/work/ponistra", "path": "backend/app.py"}
+HASHED = "a" * 64
+
+
+def test_the_owner_lists_a_folder_of_a_project_through_the_workspace(owner, workspace):
+    listed = {"path": "backend", "entries": [{"name": "app.py", "kind": "file", "size": 4}]}
+    workspace.answer = (200, listed)
+    response = owner.get("/api/workspace/files", {"folder": "/work/ponistra", "path": "backend"})
+    assert response.json() == listed
+    [asked] = workspace.asked
+    assert asked.url.path == "/ponistra/files"
+    assert dict(asked.url.params) == {"folder": "/work/ponistra", "path": "backend"}
+    assert asked.headers["Authorization"] == "Bearer token"
+
+
+def test_the_owner_reads_a_file_and_writes_it_while_it_is_unchanged(owner, workspace):
+    workspace.answer = (200, {"kind": "text", "text": "x = 1\n", "hash": HASHED})
+    assert owner.get("/api/workspace/file", FILE).json()["text"] == "x = 1\n"
+    workspace.answer = (200, {"hash": "b" * 64})
+    given = {**FILE, "text": "x = 2\n", "hash": HASHED}
+    assert owner.post("/api/workspace/file", given, JSON).json() == {"hash": "b" * 64}
+    read, written = workspace.asked
+    assert read.url.path == "/ponistra/files/read"
+    assert (written.method, written.url.path) == ("POST", "/ponistra/files/write")
+    assert json.loads(written.content) == given
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [(409, {"error": "changed"}), (403, {"error": "outside"}), (413, {"error": "too_large"})],
+)
+def test_the_workspace_refusing_a_file_says_why(owner, workspace, answer):
+    workspace.answer = answer
+    response = owner.post("/api/workspace/file", {**FILE, "text": "", "hash": HASHED}, JSON)
+    assert (response.status_code, response.json()) == answer
+
+
+def test_a_refused_token_is_a_fault_of_the_link_not_of_the_file(owner, workspace):
+    workspace.answer = (403, {"error": "refused"})
+    response = owner.get("/api/workspace/file", FILE)
+    assert (response.status_code, response.json()) == (502, {"error": "workspace_unreachable"})
+
+
+@pytest.mark.parametrize(
+    "given, error",
+    [
+        ({"path": "a"}, "invalid_folder"),
+        ({"folder": "work", "path": "a"}, "invalid_folder"),
+        ({**FILE, "hash": HASHED}, "invalid_text"),
+        ({**FILE, "text": "", "hash": "abc"}, "invalid_hash"),
+        ({**FILE, "path": "a\0b", "text": "", "hash": HASHED}, "invalid_path"),
+    ],
+)
+def test_a_file_is_asked_only_what_it_knows(owner, workspace, given, error):
+    response = owner.post("/api/workspace/file", given, JSON)
+    assert (response.status_code, response.json()) == (400, {"error": error})
+    assert workspace.asked == []
+
+
+def test_a_file_is_written_only_by_an_owner_who_confirmed_within_a_working_day(owner, workspace):
+    session = owner.session
+    session[CONFIRMED] = (timezone.now() - CONFIRMED_FOR).isoformat()
+    session.save()
+    response = owner.post("/api/workspace/file", {**FILE, "text": "", "hash": HASHED}, JSON)
+    assert (response.status_code, response.json()) == (403, {"error": "confirm_required"})
+    assert workspace.asked == []
+
+
+def test_nobody_but_the_owner_reaches_the_files(api, settings, workspace):
+    settings.WORKSPACE = "owner@example.com"
+    assert api.get("/api/workspace/files", {"folder": "/work"}).status_code == 403
+    assert api.get("/api/workspace/file", FILE).status_code == 403
+    assert api.get("/api/workspace/file/raw", FILE).status_code == 403
+    assert workspace.asked == []
+
+
+async def collected(response) -> bytes:
+    return b"".join([part async for part in response.streaming_content])
+
+
+def test_the_owner_downloads_a_file_as_the_workspace_sends_it(owner, settings, monkeypatch):
+    settings.WORKSPACE_TOKEN = "token"
+    sent = bytes(range(256)) * 10
+
+    def answered(request):
+        assert request.url.path == "/ponistra/files/raw"
+        return httpx2.Response(200, content=sent, headers={"content-length": str(len(sent))})
+
+    monkeypatch.setattr(
+        "apps.workspace.views.httpx2.AsyncClient",
+        partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
+    )
+    response = owner.get("/api/workspace/file/raw", FILE)
+    assert response.status_code == 200
+    assert async_to_sync(collected)(response) == sent
+    assert response["Content-Disposition"] == 'attachment; filename="app.py"'
+    assert response["Content-Length"] == str(len(sent))

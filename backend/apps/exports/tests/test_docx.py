@@ -19,7 +19,7 @@ from apps.blobs.tests.test_blobs import content
 from apps.collab import server
 from apps.collab.models import Update
 from apps.comments.models import Comment, Thread
-from apps.content import blocks, styles
+from apps.content import blocks, grids, styles
 from apps.content.blocks import Block, Cell, Field, Grid, Note, Run
 from apps.content.tests.helpers import fill
 from apps.documents import printing
@@ -613,6 +613,36 @@ def test_comments_go_with_their_stretches_replies_and_resolution(api, tmp_path):
         ),
         ([("ivo@example.com", "Što je bilo ovdje?")], False, (a.id, 0), (a.id, 0)),
     ]
+
+
+def test_comments_on_cells_go_around_their_text_and_come_back_on_their_cells(api, tmp_path):
+    grid = Grid(["r1", "r2"], ["c1", "c2"])
+    cells = [
+        Cell("r1", "c1", [Block("paragraph", runs=[Run("Stavka")])]),
+        Cell("r1", "c2", [Block("paragraph", runs=[Run("Montaža")])], to="r2:c2"),
+        Cell("r2", "c1", [Block("paragraph", runs=[Run("Prijevoz")])]),
+    ]
+    table = Block("table", "t", grid=grid, cells=cells)
+    document, tab, _ = made(api, [Block("paragraph", "a", runs=[Run("Ponuda")]), table])
+    for row, col, body in (("r1", "c2", "Uključuje dizalicu."), ("r2", "c2", "Pod spojem.")):
+        thread = Thread.objects.create(
+            tab=tab, anchor={"table": "t", "row": row, "col": col}, quote="Montaža"
+        )
+        Comment.objects.create(thread=thread, author=api.user, body=body)
+    data = saved(api, str(document.pk))
+    again = read(tmp_path, data)
+    table = next(block for block in again.tabs[0].blocks if block.type == "table")
+    montage = next(cell for cell in table.cells if cell.text == "Montaža").blocks[0].id
+    assert [(thread.start, thread.end) for thread in again.threads] == [
+        ((montage, 0), (montage, 6)),
+        ((montage, 0), (montage, 6)),
+    ]
+    brought = Node.objects.get(pk=bring(api, data)["id"])
+    assert brought.imported["lost"] == {}
+    [laid] = grids.of_tab(brought.tabs_in_order()[0]).values()
+    anchors = [thread.anchor for thread in Thread.objects.filter(tab__document=brought)]
+    first, _ = laid.row_ids()
+    assert anchors == [{"table": laid.table, "row": first, "col": laid.col_ids()[1]}] * 2
 
 
 def test_a_tab_without_text_keeps_its_comments_in_a_paragraph_of_their_own(api):

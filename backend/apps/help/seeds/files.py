@@ -68,7 +68,7 @@ PROPOSAL = {
     ),
 }
 
-# Who remarks on which words of the proposal, and what.
+# Who remarks on which words or cell of the proposal, and what.
 REMARKS = (
     (
         "concept_text",
@@ -79,7 +79,7 @@ REMARKS = (
         ),
     ),
     (
-        "price",
+        "fitting",
         "Marta Jurić",
         (
             "Montaža je 300 EUR niža ako dostava ide istim kamionom.",
@@ -99,7 +99,7 @@ def proposal(say) -> bytes:
     made.add_heading(say(*PROPOSAL["concept"]), level=1)
     concept = made.add_paragraph(say(*PROPOSAL["concept_text"]))
     made.add_picture(io.BytesIO(picture("meeting-room.jpg")), width=Cm(15))
-    price = made.add_heading(say(*PROPOSAL["price"]), level=1)
+    made.add_heading(say(*PROPOSAL["price"]), level=1)
     rows = PROPOSAL["rows"]
     table = made.add_table(rows=len(rows), cols=2)
     table.style = "Light Grid Accent 1"
@@ -109,7 +109,8 @@ def proposal(say) -> bytes:
     made.add_heading(say(*PROPOSAL["schedule"]), level=1)
     for step in PROPOSAL["steps"]:
         made.add_paragraph(say(*step), style="List Number")
-    remarked = {"concept_text": concept.runs, "price": price.runs}
+    fitting = next(at for at, (label, _) in enumerate(rows) if label[0] == "Montaža")
+    remarked = {"concept_text": concept.runs, "fitting": table.cell(fitting, 1).paragraphs[0].runs}
     for key, author, words in REMARKS:
         initials = "".join(part[0] for part in author.split())
         made.add_comment(remarked[key], text=say(*words), author=author, initials=initials)

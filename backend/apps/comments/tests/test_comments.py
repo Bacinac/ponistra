@@ -3,6 +3,8 @@ import pytest
 from apps.access.tests.test_access import JSON, create, person, share
 from apps.comments import views
 from apps.comments.models import Comment, Thread
+from apps.content.blocks import Block, Cell, Grid, Run
+from apps.content.tests.helpers import fill
 from apps.documents.models import Node
 from apps.search.tests.test_search import pdf_bytes, upload_file
 
@@ -90,6 +92,21 @@ def test_a_thread_needs_a_tab_of_the_document_an_anchor_a_quote_and_words(api, f
     response = start(api, document, **fields)
     assert (response.status_code, response.json()["error"]) == (400, error)
     assert not Thread.objects.exists()
+
+
+def test_a_thread_on_a_cell_names_its_table_row_and_column_and_may_quote_nothing(api):
+    document = create(api, "document", "Ponuda")
+    tab = Node.objects.get(pk=document).tabs.get()
+    cells = [Cell("r1", "c1", [Block("paragraph", runs=[Run("Montaža")])])]
+    fill(tab, [Block("table", "t", grid=Grid(["r1", "r2"], ["c1", "c2"]), cells=cells)])
+    cell = {"table": "t", "row": "r2", "col": "c2"}
+    response = start(api, document, anchor=cell, quote="")
+    assert response.status_code == 201, response.json()
+    assert (response.json()["anchor"], response.json()["quote"]) == (cell, "")
+    assert start(api, document, anchor={**cell, "row": "r1"}).status_code == 201
+    for wrong in ({"row": "r3"}, {"col": "c3"}, {"table": "u"}, {"row": ""}, {"extra": "x"}):
+        refused = start(api, document, anchor={**cell, **wrong})
+        assert (refused.status_code, refused.json()["error"]) == (400, "invalid_anchor")
 
 
 def test_a_tab_of_another_document_is_refused(api):

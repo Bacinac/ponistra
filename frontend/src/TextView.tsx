@@ -25,7 +25,7 @@ interface Shown {
   truncated: boolean;
 }
 
-const style = HighlightStyle.define([
+export const style = HighlightStyle.define([
   {
     tag: [tags.keyword, tags.controlKeyword, tags.operatorKeyword, tags.modifier],
     color: 'var(--code-keyword)',
@@ -50,7 +50,7 @@ const style = HighlightStyle.define([
   { tag: tags.invalid, color: 'var(--danger)' },
 ]);
 
-const look = EditorView.theme({
+export const look = EditorView.theme({
   '&': { height: '100%', backgroundColor: 'var(--surface)', color: 'var(--ink)' },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { fontFamily: 'var(--font-mono)', fontSize: '13px' },
@@ -84,7 +84,7 @@ const look = EditorView.theme({
 });
 
 /** CodeMirror's words a read-only search panel shows, by the key it asks with. */
-const PHRASES: Record<string, MessageKey> = {
+export const PHRASES: Record<string, MessageKey> = {
   Find: 'text.find',
   next: 'text.next',
   previous: 'text.previous',

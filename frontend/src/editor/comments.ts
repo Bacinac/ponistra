@@ -7,22 +7,40 @@ import {
   type ProsemirrorBinding,
 } from 'y-prosemirror';
 import * as Y from 'yjs';
-import type { Anchor, InText } from '../comments';
+import { inCell, type Anchor, type CellAnchor, type InText } from '../anchors';
 import { schema } from './schema';
+import { CellRange, cellOf, specOf, table as tableType, tableViewAt } from './tableBase';
 
 const QUOTE = 500;
+/** Where a row the browser does not know stands, after those it knows. */
+const UNKNOWN = Number.MAX_SAFE_INTEGER;
 const { footnote } = schema.nodes;
 
 export interface Anchored {
   id: string;
-  anchor: Anchor;
+  anchor: Anchor | CellAnchor;
 }
 
 /** What the text shows of the tab's comments. */
 export interface Commented {
   threads: readonly Anchored[];
   active: string | null;
-  draft: Anchor | null;
+  draft: Anchor | CellAnchor | null;
+}
+
+/** A cell a comment is on, as its table's decoration tells the table: none for the thread of a
+ * draft. */
+export interface CellComment {
+  thread: string | null;
+  row: string;
+  col: string;
+  active: boolean;
+}
+
+/** What a table's decoration carries of the comments on its cells, and what picks one. */
+export interface CellsCommented {
+  comments: readonly CellComment[];
+  pick: (thread: string | null) => void;
 }
 
 interface Shown extends Commented {
@@ -61,21 +79,50 @@ function rangeOf(binding: ProsemirrorBinding, anchor: Anchor): { from: number; t
   return from !== null && to !== null && from < to ? { from, to } : null;
 }
 
-function shown(commented: Commented, state: EditorState): Shown {
+function shown(
+  commented: Commented,
+  state: EditorState,
+  pick: (thread: string | null) => void,
+): Shown {
   const binding = bindingOf(state);
   const decorations: Decoration[] = [];
-  const mark = (anchor: Anchor, attrs: Record<string, string>, spec: object) => {
+  const cells = new Map<string, CellComment[]>();
+  const mark = (thread: string | null, anchor: Anchor | CellAnchor, active: boolean) => {
+    if (inCell(anchor)) {
+      const { table, row, col } = anchor;
+      cells.set(table, [...(cells.get(table) ?? []), { thread, row, col, active }]);
+      return;
+    }
     const range = binding && rangeOf(binding, anchor);
-    if (range) decorations.push(Decoration.inline(range.from, range.to, attrs, spec));
+    if (!range) return;
+    const attrs: Record<string, string> = {
+      class: `ponistra-comment${active ? ' ponistra-comment-active' : ''}`,
+    };
+    if (thread) attrs['data-thread'] = thread;
+    decorations.push(Decoration.inline(range.from, range.to, attrs, thread ? { thread } : {}));
   };
-  for (const { id, anchor } of commented.threads) {
-    const active = id === commented.active ? ' ponistra-comment-active' : '';
-    mark(anchor, { class: `ponistra-comment${active}`, 'data-thread': id }, { thread: id });
-  }
-  if (commented.draft) {
-    mark(commented.draft, { class: 'ponistra-comment ponistra-comment-active' }, {});
+  for (const { id, anchor } of commented.threads) mark(id, anchor, id === commented.active);
+  if (commented.draft) mark(null, commented.draft, true);
+  if (cells.size) {
+    state.doc.forEach((node, at) => {
+      const comments = node.type === tableType ? cells.get(node.attrs.id) : undefined;
+      if (!comments) return;
+      // A node decoration is told apart by its attributes alone, so they name what it carries.
+      const attrs = { 'data-comments': JSON.stringify(comments) };
+      const spec: CellsCommented = { comments, pick };
+      decorations.push(Decoration.node(at, at + node.nodeSize, attrs, spec));
+    });
   }
   return { ...commented, decorations: DecorationSet.create(state.doc, decorations) };
+}
+
+/** The comments on a table's cells its decorations carry, and what picks one. */
+export function cellComments(decorations: readonly Decoration[]): CellsCommented | null {
+  for (const decoration of decorations) {
+    const spec = decoration.spec as Partial<CellsCommented>;
+    if (spec.comments) return spec as CellsCommented;
+  }
+  return null;
 }
 
 /** Marks the stretches of the tab's threads. A change from the room rebuilds the whole text, so
@@ -84,10 +131,11 @@ export function commentsPlugin(pick: (thread: string | null) => void): Plugin<Sh
   return new Plugin<Shown>({
     key,
     state: {
-      init: (_, state) => shown(NONE, state),
+      init: (_, state) => shown(NONE, state, pick),
       apply: (tr, value, _before, state) => {
         const next: Commented | undefined = tr.getMeta(key);
-        if (next || tr.getMeta(ySyncPluginKey)?.isChangeOrigin) return shown(next ?? value, state);
+        if (next || tr.getMeta(ySyncPluginKey)?.isChangeOrigin)
+          return shown(next ?? value, state, pick);
         if (!tr.docChanged) return value;
         return { ...value, decorations: value.decorations.map(tr.mapping, tr.doc) };
       },
@@ -122,18 +170,35 @@ function summaryOf({ threads, active, draft }: Commented): string {
   return JSON.stringify([threads.map(({ id, anchor }) => [id, anchor]), active, draft]);
 }
 
-/** The threads the text shows, in its order, and those whose text is gone. */
+/** The threads the text shows, in its order, a table's by where their cells stand in it, and
+ * those whose text or cell is gone. */
 export function placedOf(state: EditorState): InText {
   const shown = key.getState(state);
-  const starts = new Map<string, number>();
+  const starts = new Map<string, [number, number, number]>();
   for (const decoration of shown?.decorations.find() ?? []) {
-    const { thread } = decoration.spec;
-    if (thread) starts.set(thread, Math.min(starts.get(thread) ?? Infinity, decoration.from));
+    const { thread, comments } = decoration.spec as { thread?: string } & Partial<CellsCommented>;
+    if (thread) {
+      const was = starts.get(thread)?.[0] ?? Infinity;
+      starts.set(thread, [Math.min(was, decoration.from), 0, 0]);
+    }
+    if (!comments) continue;
+    const grid = specOf(state).grids.grid(state.doc.nodeAt(decoration.from)!.attrs.id);
+    for (const { thread, row, col } of comments) {
+      if (!thread || (grid && (grid.colIndex(col) < 0 || grid.lacks(row)))) continue;
+      const y = grid?.rowIndex(row) ?? -1;
+      starts.set(thread, [decoration.from, y < 0 ? UNKNOWN : y, grid?.colIndex(col) ?? 0]);
+    }
   }
+  const order = [...starts].sort(([, a], [, b]) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
   return {
-    order: [...starts].sort((a, b) => a[1] - b[1]).map(([thread]) => thread),
+    order: order.map(([thread]) => thread),
     lost: (shown?.threads ?? []).map(({ id }) => id).filter((id) => !starts.has(id)),
   };
+}
+
+export function quoted(text: string): string {
+  const quote = text.replace(/\s+/g, ' ').trim();
+  return quote.length > QUOTE ? `${quote.slice(0, QUOTE - 1)}…` : quote;
 }
 
 /** The selected text as a comment takes it: its stretch and its words, without its notes. */
@@ -156,9 +221,8 @@ function selectedText(state: EditorState): { from: number; to: number; quote: st
     }
     return false;
   });
-  const quote = words.join('').replace(/\s+/g, ' ').trim();
-  if (!quote) return null;
-  return { from, to, quote: quote.length > QUOTE ? `${quote.slice(0, QUOTE - 1)}…` : quote };
+  const quote = quoted(words.join(''));
+  return quote ? { from, to, quote } : null;
 }
 
 export function commentable(state: EditorState): boolean {
@@ -172,4 +236,14 @@ export function draftOf(state: EditorState): { anchor: Anchor; quote: string } |
   return binding && text
     ? { anchor: anchorOf(binding, text.from, text.to), quote: text.quote }
     : null;
+}
+
+/** A thread on the cell the cursor is in, or the cell the selected cells start from, as far as
+ * its table decides it. */
+export function cellDraftOf(view: EditorView): { anchor: CellAnchor; quote: string } | null {
+  const cell = cellOf(view);
+  if (cell) return cell.table.commentOn(cell.key);
+  const { selection } = view.state;
+  if (!(selection instanceof CellRange)) return null;
+  return tableViewAt(view, selection.$table.pos)?.commentOn(selection.anchorKey) ?? null;
 }

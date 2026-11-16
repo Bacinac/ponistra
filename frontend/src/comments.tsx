@@ -17,13 +17,7 @@ import { useI18n } from './i18n';
 import { ActionsMenu, MenuItem, MenuSeparator } from './menu';
 import { button, field, primaryButton } from './styles';
 import { covers, errorMessage, type Role, type TreeNode } from './tree';
-
-/** A stretch of a tab's text: the JSON of the Yjs relative positions of its first character
- * and of its end, after its last one. */
-export interface Anchor {
-  from: object;
-  to: object;
-}
+import { inCell, type Anchor, type CellAnchor, type InText } from './anchors';
 
 /** Left, bottom, right and top in the page's own coordinates, as the file draws it. */
 export type PageRect = [number, number, number, number];
@@ -44,7 +38,7 @@ export interface ThreadComment {
 export interface Thread {
   id: string;
   tab: string | null;
-  anchor: Anchor | PageAnchor;
+  anchor: Anchor | CellAnchor | PageAnchor;
   quote: string;
   created_at: string;
   resolved_at: string | null;
@@ -55,7 +49,7 @@ export interface Thread {
 /** A thread being written, on the text selected when it was started. */
 export interface Draft {
   tab: string | null;
-  anchor: Anchor | PageAnchor;
+  anchor: Anchor | CellAnchor | PageAnchor;
   quote: string;
 }
 
@@ -69,12 +63,6 @@ export function useThreads(document: string) {
     queryFn: () => getJson<{ threads: Thread[] }>(`/api/nodes/${document}/threads`),
     select: (data) => data.threads,
   });
-}
-
-/** The tab's threads as its text has them. */
-export interface InText {
-  order: readonly string[];
-  lost: readonly string[];
 }
 
 /** What a document's page and its editor share about comments. */
@@ -123,11 +111,17 @@ export function useDeskState(
   };
 }
 
-/** What a thread is about as its card names it: the text it quotes, or the page of its point. */
+/** What a thread is about as its card names it: the text it quotes, the page of its point or,
+ * empty, its cell. */
 function useAbout(): (about: Pick<Draft, 'anchor' | 'quote'>) => string {
   const { t, formatNumber } = useI18n();
   return ({ anchor, quote }) =>
-    quote || ('page' in anchor ? `${t('pdf.page')} ${formatNumber(anchor.page)}` : '');
+    quote ||
+    ('page' in anchor
+      ? `${t('pdf.page')} ${formatNumber(anchor.page)}`
+      : inCell(anchor)
+        ? t('table.cell')
+        : '');
 }
 
 function Composer({

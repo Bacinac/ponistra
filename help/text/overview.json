@@ -18,7 +18,7 @@
   ],
   "describes": {
     "frontend/src/DocumentPage.tsx#OpenDocument": "5d89ac6f2556",
-    "frontend/src/editor/Editor.tsx#LiveEditor": "cd2f48897575",
+    "frontend/src/editor/Editor.tsx#LiveEditor": "6087a0005505",
     "frontend/src/editor/Editor.tsx#EditorMenu": "058536564d67",
     "frontend/src/editor/Toolbar.tsx#Toolbar": "94894b127087",
     "frontend/src/editor/slash.tsx#slashMenu": "a088be571d1b",

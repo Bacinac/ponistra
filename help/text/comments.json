@@ -13,7 +13,7 @@
     "frontend/src/comments.tsx#CommentsPanel": "b9d619e6c003",
     "frontend/src/comments.tsx#ThreadCard": "d6e7a24105e1",
     "frontend/src/comments.tsx#Composer": "43fe02f18b1a",
-    "frontend/src/comments.tsx#useAbout": "e055d0651c28",
+    "frontend/src/comments.tsx#useAbout": "1c31792c5406",
     "frontend/src/editor/Editor.tsx#lineTask": "340c3889f9a4"
   }
 }

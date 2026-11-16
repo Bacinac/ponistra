@@ -310,6 +310,11 @@ export class Grid {
     return this.held.has(row);
   }
 
+  /** Whether the row is known to be gone: the browser knows where each of the rows stands. */
+  lacks(row: string): boolean {
+    return this.plain && this.places.size >= this.rowCount && !this.places.has(row);
+  }
+
   /** Whether the browser holds every row from the first place to the last. */
   holdsSpan(first: number, last: number): boolean {
     for (let index = first; index <= last; index++) {

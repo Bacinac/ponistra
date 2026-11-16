@@ -204,18 +204,26 @@ def _completed(node: Node, imported: reading.Imported) -> None:
 
 
 def _written(imported: reading.Imported) -> tuple[Written, Anchored]:
-    """Each tab's content as its own state, and each comment's place in it; a comment with no
-    place left is counted as lost."""
+    """Each tab's content as its own state, and each comment's place in it, the cell it starts
+    in where that is in a table; a comment with no place left is counted as lost."""
     contents = []
     for each in imported.tabs:
         content, held = Doc(), Sheets({})
         written = operations.write(content, held, each.blocks)
         content.apply_update(written.update)
         contents.append((content, written.written, held))
+    cells = {
+        block.id: (at, {"table": table.id, "row": cell.row, "col": cell.col})
+        for at, each in enumerate(imported.tabs)
+        for table in each.blocks
+        if table.type == "table"
+        for cell in table.cells
+        for block in cell.blocks
+    }
     anchored = []
     for thread in imported.threads:
-        anchor = None
-        for at, (_, written, _) in enumerate(contents):
+        anchor = cells.get(thread.start[0]) if thread.start else None
+        for at, (_, written, _) in enumerate(contents if anchor is None else ()):
             start = written.position(*thread.start)
             end = written.position(*thread.end, assoc=-1)
             if start is not None and end is not None:

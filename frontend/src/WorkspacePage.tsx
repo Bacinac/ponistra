@@ -14,6 +14,7 @@ import {
   Pencil,
   FileDiff,
   FolderInput,
+  FolderTree,
   GitMerge,
   MessageSquarePlus,
   Monitor,
@@ -135,9 +136,11 @@ interface Round {
   id: string;
   created: string | null;
   started: string | null;
-  when: When | null;
-  paused: string[];
-  done: string | null;
+  // The workspace takes a new release only on its Restart, which this page offers, so a service a
+  // release behind leaves these out until then.
+  when?: When | null;
+  paused?: string[];
+  done?: string | null;
   auto: boolean;
   asked: string | null;
   coordinator: Member;
@@ -1071,7 +1074,7 @@ function RoundCard({
           {t('workspace.asked').replace('{word}', round.asked)}
         </p>
       )}
-      {round.paused.length > 0 && (
+      {Boolean(round.paused?.length) && (
         <p className="mt-1 px-2 text-sm text-danger" role="status">
           {t('workspace.paused')}
         </p>
@@ -1303,6 +1306,7 @@ function ProjectSection({
   chosen,
   onChoose,
   onTerminal,
+  onFiles,
   starting: begun,
   onStart,
 }: {
@@ -1310,6 +1314,7 @@ function ProjectSection({
   chosen: string | null;
   onChoose: Choose;
   onTerminal: (folder: string, name: string) => void;
+  onFiles: (folder: string, name: string) => void;
   starting: Starting | null;
   onStart: (starting: Starting) => void;
 }) {
@@ -1410,6 +1415,15 @@ function ProjectSection({
               className={`${small} shrink-0`}
             >
               <SquareTerminal size={16} aria-hidden />
+            </button>
+            <button
+              type="button"
+              aria-label={t('workspace.files.open')}
+              title={t('workspace.files.open')}
+              onClick={() => onFiles(project.path, name)}
+              className={`${small} shrink-0`}
+            >
+              <FolderTree size={16} aria-hidden />
             </button>
           </div>
         </div>
@@ -2060,6 +2074,7 @@ function Others({
   chosen,
   onChoose,
   onTerminal,
+  onFiles,
   starting,
   onStart,
 }: {
@@ -2067,6 +2082,7 @@ function Others({
   chosen: string | null;
   onChoose: Choose;
   onTerminal: (folder: string, name: string) => void;
+  onFiles: (folder: string, name: string) => void;
   starting: Starting | null;
   onStart: (starting: Starting) => void;
 }) {
@@ -2094,6 +2110,7 @@ function Others({
             chosen={chosen}
             onChoose={onChoose}
             onTerminal={onTerminal}
+            onFiles={onFiles}
             starting={starting}
             onStart={onStart}
           />
@@ -2111,7 +2128,7 @@ function latest(projects: Project[]): string | null {
   return rounds[0]?.coordinator.id ?? null;
 }
 
-type Tab = 'overview' | 'chat' | 'memory' | 'hours' | 'spend' | 'terminal';
+type Tab = 'overview' | 'chat' | 'memory' | 'hours' | 'spend' | 'terminal' | 'files';
 
 type View = Tab | 'start';
 
@@ -2128,12 +2145,14 @@ const VIEWS: Record<Tab, MessageKey> = {
   overview: 'workspace.view.overview',
   chat: 'workspace.view.chat',
   terminal: 'workspace.view.terminal',
+  files: 'workspace.view.files',
   memory: 'workspace.view.memory',
   hours: 'workspace.view.hours',
   spend: 'workspace.view.spend',
 };
 
 const TerminalPanel = lazily(() => import('./Terminal'), 'TerminalPanel');
+const FilesPanel = lazily(() => import('./workspaceFiles'), 'FilesPanel');
 
 /** Opens a chat in the editor by its session, for the menu of every chat's line. */
 const Opening = createContext<((session: string) => void) | null>(null);
@@ -2195,6 +2214,9 @@ function Pult({
   }, [askedView]);
   const [picked, setPicked] = useState<string | null>(null);
   const [terminal, setTerminal] = useState<{ folder: string; name: string } | null>(null);
+  const [files, setFiles] = useState<{ folder: string; name: string } | null>(null);
+  const [filesDirty, setFilesDirty] = useState(false);
+  const [nextFiles, setNextFiles] = useState<{ folder: string; name: string } | null>(null);
   const [starting, setStarting] = useState<Starting | null>(null);
   // Wide, the list stands beside the page, which shows the chat in its place.
   const shown = wide && view === 'overview' ? 'chat' : view;
@@ -2223,6 +2245,15 @@ function Pult({
   const closeTerminal = () => {
     setTerminal(null);
     setView((now) => (now === 'terminal' ? (wide ? 'chat' : 'overview') : now));
+  };
+  const openFiles = (folder: string, name: string) => {
+    if (filesDirty && files && files.folder !== folder) return setNextFiles({ folder, name });
+    setFiles({ folder, name });
+    setView('files');
+  };
+  const closeFiles = () => {
+    setFiles(null);
+    setView((now) => (now === 'files' ? (wide ? 'chat' : 'overview') : now));
   };
   // The workspace lets the chat's process go first, as a session never runs in two.
   const open = (chat: Known) =>
@@ -2269,6 +2300,7 @@ function Pult({
               chosen={chosen?.id ?? null}
               onChoose={choose}
               onTerminal={openTerminal}
+              onFiles={openFiles}
               starting={begun}
               onStart={start}
             />
@@ -2278,6 +2310,7 @@ function Pult({
           chosen={chosen?.id ?? null}
           onChoose={choose}
           onTerminal={openTerminal}
+          onFiles={openFiles}
           starting={begun}
           onStart={start}
         />
@@ -2288,7 +2321,12 @@ function Pult({
     <div className={`flex flex-col ${wide ? 'h-full' : ''}`}>
       <div role="group" aria-label={t('rail.projects')} className="mb-4 flex gap-2">
         {(Object.keys(VIEWS) as Tab[])
-          .filter((each) => (!wide || each !== 'overview') && (terminal || each !== 'terminal'))
+          .filter(
+            (each) =>
+              (!wide || each !== 'overview') &&
+              (terminal || each !== 'terminal') &&
+              (files || each !== 'files'),
+          )
           .map((each) => (
             <button
               key={each}
@@ -2332,7 +2370,34 @@ function Pult({
           </Suspense>
         </div>
       )}
-      {shown === 'terminal' ? null : shown === 'memory' ? (
+      {files && (
+        <div className={shown === 'files' ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'hidden'}>
+          <Suspense fallback={<Loading />}>
+            <FilesPanel
+              key={files.folder}
+              folder={files.folder}
+              name={files.name}
+              onDirty={setFilesDirty}
+              onClose={closeFiles}
+            />
+          </Suspense>
+        </div>
+      )}
+      {nextFiles && (
+        <ConfirmDialog
+          heading={t('workspace.files.discard')}
+          confirmLabel={t('workspace.files.discardConfirm')}
+          onConfirm={() => {
+            setFiles(nextFiles);
+            setView('files');
+            setNextFiles(null);
+          }}
+          onClose={() => setNextFiles(null)}
+        >
+          {t('workspace.files.discardBody')}
+        </ConfirmDialog>
+      )}
+      {shown === 'terminal' || shown === 'files' ? null : shown === 'memory' ? (
         <Memory names={names} />
       ) : shown === 'hours' ? (
         <Hours named={named} />

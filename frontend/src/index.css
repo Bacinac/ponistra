@@ -677,6 +677,26 @@
   background: var(--comment-active);
 }
 
+.ponistra-document .ponistra-cell-comment {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
+.ponistra-document .ponistra-cell-comment::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  border-top: 0.5rem solid var(--comment-active);
+  border-left: 0.5rem solid transparent;
+}
+
+.ponistra-document .ponistra-cell-comment-active {
+  box-shadow: inset 0 0 0 2px var(--comment-active);
+}
+
 .ponistra-document .ponistra-notes {
   margin-top: 2rem;
   font-size: 0.875em;

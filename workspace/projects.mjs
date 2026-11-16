@@ -80,6 +80,7 @@ import {
   usageOf,
 } from './chats.mjs';
 import { hostOf } from './host.mjs';
+import { FILES, filesAnswered } from './files.mjs';
 import { followMemory, MEMORY, memoryAnswered } from './memory.mjs';
 import { TERMINAL, upgraded } from './terminal.mjs';
 import { followWork } from './worked.mjs';
@@ -1680,6 +1681,11 @@ createServer(async (request, response) => {
     if (chat) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
       return answer(200, chatAt(chat[1], placeOf(address)));
+    }
+    if (FILES.test(path)) {
+      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
+      const found = await filesAnswered(request, path, address, bodyOf, projectFolders, response);
+      return found === null ? undefined : answer(200, found);
     }
     if (MEMORY.test(path)) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });

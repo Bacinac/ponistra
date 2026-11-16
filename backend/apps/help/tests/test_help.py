@@ -5,6 +5,7 @@ import pytest
 from django.core.management import call_command
 
 from apps.access.tests.test_access import person
+from apps.comments.models import Thread
 from apps.help import library, source
 from apps.mail.models import Message
 from apps.users.models import User
@@ -200,6 +201,9 @@ def test_the_company_and_its_accounts_are_seeded_once_in_each_language():
     assert Message.objects.filter(
         owner=en, subject="October invoice", folder__role="inbox"
     ).exists()
+    fitting = Thread.objects.get(comments__body__startswith="Montaža je 300 EUR")
+    assert fitting.anchor.keys() == {"table", "row", "col"}
+    assert fitting.quote == "5.300"
     people = User.objects.count()
     again = io.StringIO()
     call_command("help_seed", stdout=again)

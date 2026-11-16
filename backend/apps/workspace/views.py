@@ -2,8 +2,9 @@
 Vite ask before every request and WebSocket that reaches it. One elsewhere has a door of its own.
 The workspace lists its projects, chats and rounds of chats when asked, shows a chat's transcript,
 carries out what the owner asks of it from the page of code (each a `Command` it reports on as it
-goes, D52), and says when what it lists changed, which reaches the owner's tabs as the area
-`workspace`. Each project it lists is matched here with the board of its plan, `Plan <name>`."""
+goes, D52), shows and writes the files of its projects (PJ6), and says when what it lists changed,
+which reaches the owner's tabs as the area `workspace`. Each project it lists is matched here with
+the board of its plan, `Plan <name>`."""
 
 import base64
 import hmac
@@ -18,8 +19,9 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import connection
 from django.db.models.expressions import RawSQL
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.utils import timezone
+from django.utils.http import content_disposition_header
 from django.views.decorators.csrf import csrf_exempt
 
 from apps.blobs import store
@@ -44,6 +46,8 @@ ASKED_WITHIN = 10
 AREA = "workspace"
 # What the workspace says of a command its owner should hear: gone, closed or busy meanwhile.
 PASSED = {404, 409}
+FILES_PASSED = {400, 403, 404, 409, 413}
+FILE_PATH = 4096
 ROUND = re.compile(r"[A-Za-z0-9._-]{1,100}")
 SESSION = re.compile(r"[0-9a-f-]{36}")
 PLACE = re.compile(r"\d{1,15}")
@@ -135,29 +139,39 @@ def terminal(request):
     return JsonResponse({"ok": True})
 
 
-async def _asked(
-    method: str, path: str, payload: dict | None = None, params: dict | None = None
-) -> dict:
+def _address(path: str) -> tuple[str, dict]:
     if not settings.WORKSPACE_TOKEN:
         raise Refused(503, "workspace_not_linked")
     base = "http://workspace:8081" if kept_here() else settings.WORKSPACE_URL.rstrip("/")
+    return f"{base}/ponistra/{path}", {"Authorization": f"Bearer {settings.WORKSPACE_TOKEN}"}
+
+
+def _refused(method: str, path: str, answer, passed: set[int]) -> Refused:
+    """The workspace's refusal as the owner's, where it is about what they asked; its token
+    refused is a fault of the link instead."""
+    error = answer.json().get("error", "refused") if answer.status_code in passed else None
+    if error and error != "refused":
+        return Refused(answer.status_code, error)
+    logger.warning("the code workspace refused %s %s: %s", method, path, answer.status_code)
+    return Refused(502, "workspace_unreachable")
+
+
+async def _asked(
+    method: str,
+    path: str,
+    payload: dict | None = None,
+    params: dict | None = None,
+    passed: set[int] = PASSED,
+) -> dict:
+    url, headers = _address(path)
     try:
         async with httpx2.AsyncClient(timeout=ASKED_WITHIN, trust_env=False) as client:
-            answer = await client.request(
-                method,
-                f"{base}/ponistra/{path}",
-                headers={"Authorization": f"Bearer {settings.WORKSPACE_TOKEN}"},
-                json=payload,
-                params=params,
-            )
+            answer = await client.request(method, url, headers=headers, json=payload, params=params)
     except httpx2.HTTPError as error:
         logger.warning("the code workspace did not answer %s %s: %s", method, path, error)
         raise Refused(502, "workspace_unreachable") from error
-    if answer.status_code in PASSED and path != "projects":
-        raise Refused(answer.status_code, answer.json().get("error", "refused"))
     if answer.status_code != 200:
-        logger.warning("the code workspace refused %s %s: %s", method, path, answer.status_code)
-        raise Refused(502, "workspace_unreachable")
+        raise _refused(method, path, answer, set() if path == "projects" else passed)
     return answer.json()
 
 
@@ -259,6 +273,93 @@ async def chat(request, session):
             raise Refused(400, f"invalid_{name}")
         place[name] = value
     return JsonResponse(await _asked("GET", f"chats/{session}", params=place or None))
+
+
+def _placed(given) -> dict:
+    """A path within one of the workspace's projects, as the workspace checks it again."""
+    folder, path = given.get("folder"), given.get("path", "")
+    if not isinstance(folder, str) or not folder.startswith("/") or len(folder) > FILE_PATH:
+        raise Refused(400, "invalid_folder")
+    if not isinstance(path, str) or len(path) > FILE_PATH or "\0" in path:
+        raise Refused(400, "invalid_path")
+    return {"folder": folder, "path": path}
+
+
+@api("GET")
+async def files(request):
+    """A folder's entries within a project of the workspace, folders first."""
+    if not owns(request.user):
+        return JsonResponse({"error": "not_the_owner"}, status=403)
+    return JsonResponse(
+        await _asked("GET", "files", params=_placed(request.GET), passed=FILES_PASSED)
+    )
+
+
+@api("GET", "POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
+async def file(request):
+    """A file of a project with its text and its hash where it is text small enough to edit, or
+    its text written anew while the file is still what that hash says (PJ6)."""
+    if not owns(request.user):
+        return JsonResponse({"error": "not_the_owner"}, status=403)
+    if request.method == "GET":
+        placed = _placed(request.GET)
+        return JsonResponse(await _asked("GET", "files/read", params=placed, passed=FILES_PASSED))
+    given = body(request)
+    placed = _placed(given)
+    text, hash = given.get("text"), given.get("hash")
+    if not isinstance(text, str):
+        raise Refused(400, "invalid_text")
+    if not isinstance(hash, str) or not HASH.fullmatch(hash):
+        raise Refused(400, "invalid_hash")
+    payload = {**placed, "text": text, "hash": hash}
+    return JsonResponse(await _asked("POST", "files/write", payload, passed=FILES_PASSED))
+
+
+@api("GET")
+async def file_raw(request):
+    """A file of a project as it is, downloaded."""
+    if not owns(request.user):
+        return JsonResponse({"error": "not_the_owner"}, status=403)
+    placed = _placed(request.GET)
+    url, headers = _address("files/raw")
+    client = httpx2.AsyncClient(timeout=httpx2.Timeout(ASKED_WITHIN, read=None), trust_env=False)
+    try:
+        answer = await client.send(
+            client.build_request("GET", url, headers=headers, params=placed), stream=True
+        )
+    except httpx2.HTTPError as error:
+        await client.aclose()
+        logger.warning("the code workspace did not send %s: %s", placed["path"], error)
+        raise Refused(502, "workspace_unreachable") from error
+    if answer.status_code != 200:
+        await answer.aread()
+        await answer.aclose()
+        await client.aclose()
+        raise _refused("GET", "files/raw", answer, FILES_PASSED)
+
+    async def sent():
+        try:
+            async for part in answer.aiter_bytes():
+                yield part
+        finally:
+            await answer.aclose()
+            await client.aclose()
+
+    name = placed["path"].rstrip("/").rsplit("/", 1)[-1] or "file"
+    sized = (
+        {"Content-Length": answer.headers["content-length"]}
+        if "content-length" in answer.headers
+        else {}
+    )
+    return StreamingHttpResponse(
+        sent(),
+        content_type="application/octet-stream",
+        headers={
+            "Content-Disposition": content_disposition_header(True, name),
+            "Cache-Control": "private, no-store",
+            **sized,
+        },
+    )
 
 
 def shown(command: Command) -> dict:

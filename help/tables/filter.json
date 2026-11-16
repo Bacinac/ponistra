@@ -12,6 +12,6 @@
     "backend/apps/content/filtering.py": "95f96ab101f4",
     "backend/apps/collab/books.py#Book": "c374ca06726d",
     "frontend/src/editor/FilterDialog.tsx#FilterDialog": "46e916701283",
-    "frontend/src/editor/tableView.ts#TableView": "704733895dca"
+    "frontend/src/editor/tableView.ts#TableView": "592cd58f905c"
   }
 }

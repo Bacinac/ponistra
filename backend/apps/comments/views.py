@@ -8,9 +8,10 @@ from django.utils import timezone
 
 from apps.access.models import Role
 from apps.collab.server import announce
+from apps.content.models import Grid
 from apps.core.api import Refused, api, body, optional_id
 from apps.documents import views as documents
-from apps.documents.models import Node
+from apps.documents.models import Node, Tab
 from apps.users.views import describe as describe_user
 
 from .models import Comment, Thread
@@ -18,6 +19,7 @@ from .models import Comment, Thread
 LONGEST_BODY = 10_000
 LONGEST_QUOTE = 500
 LONGEST_ANCHOR = 10_000
+CELL = {"table", "row", "col"}
 
 
 def describe_comment(comment: Comment) -> dict:
@@ -66,16 +68,23 @@ def text_of(data: dict) -> str:
     return text.strip()
 
 
-def anchor_of(data: dict) -> dict:
+def anchor_of(data: dict, tab: Tab) -> dict:
+    """A stretch of the tab's text, or a cell of one of its tables by the ids of its table, row
+    and column, which stay as the table's other rows and columns come and go."""
     anchor = data.get("anchor")
-    if (
-        not isinstance(anchor, dict)
-        or anchor.keys() != {"from", "to"}
-        or not all(isinstance(end, dict) for end in anchor.values())
-        or len(json.dumps(anchor)) > LONGEST_ANCHOR
-    ):
+    if not isinstance(anchor, dict) or len(json.dumps(anchor)) > LONGEST_ANCHOR:
         raise Refused(400, "invalid_anchor")
-    return anchor
+    if anchor.keys() == {"from", "to"} and all(isinstance(end, dict) for end in anchor.values()):
+        return anchor
+    if anchor.keys() == CELL and all(isinstance(id, str) and id for id in anchor.values()):
+        grid = Grid.objects.filter(tab=tab, table=anchor["table"]).first()
+        if (
+            grid is not None
+            and any(col.get("id") == anchor["col"] for col in grid.cols)
+            and grid.rows.filter(row=anchor["row"]).exists()
+        ):
+            return anchor
+    raise Refused(400, "invalid_anchor")
 
 
 def _coordinates(value, count: int) -> bool:
@@ -113,9 +122,15 @@ def page_anchor_of(data: dict) -> dict:
     return anchor
 
 
-def quote_of(data: dict, required: bool = True) -> str:
+def quote_of(data: dict, required: bool | None = True) -> str:
+    """What the thread is about in words: required, or, as a point's, absent, or, as an empty
+    cell's, either."""
     quote = data.get("quote")
-    if not isinstance(quote, str) or bool(quote.strip()) != required or len(quote) > LONGEST_QUOTE:
+    if (
+        not isinstance(quote, str)
+        or len(quote) > LONGEST_QUOTE
+        or (required is not None and bool(quote.strip()) != required)
+    ):
         raise Refused(400, "invalid_quote")
     return quote
 
@@ -140,7 +155,10 @@ def _started(node: Node, data: dict) -> Thread:
     tab = node.tabs.filter(pk=optional_id(data.get("tab"))).first()
     if tab is None:
         raise Refused(400, "invalid_tab")
-    return Thread(tab=tab, anchor=anchor_of(data), quote=quote_of(data))
+    anchor = anchor_of(data, tab)
+    return Thread(
+        tab=tab, anchor=anchor, quote=quote_of(data, required=True if "from" in anchor else None)
+    )
 
 
 @api("GET", "POST", visitors=True)

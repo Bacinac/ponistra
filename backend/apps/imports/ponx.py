@@ -521,11 +521,14 @@ def _joined(
 def _discussed(reader: _Reader, tabs: dict[str, Tab], found) -> None:
     if not isinstance(found, dict) or _id(found.get("tab")) not in tabs:
         raise Unreadable("a comment is on no tab")
-    if not isinstance(found.get("anchor"), dict):
+    anchor = found.get("anchor")
+    if not isinstance(anchor, dict):
         raise Unreadable("a comment has no place")
+    if isinstance(table := anchor.get("table"), str):
+        anchor = {**anchor, "table": reader.tables.get(table, table)}
     thread = Thread.objects.create(
         tab=tabs[_id(found["tab"])],
-        anchor=found["anchor"],
+        anchor=anchor,
         quote=str(found.get("quote") or ""),
         resolved_at=_moment(found.get("resolved_at")),
         resolved_by_id=reader.user(found.get("resolved_by")),

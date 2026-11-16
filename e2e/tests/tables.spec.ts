@@ -1290,3 +1290,50 @@ test('a filter shows the rows of the values chosen or of a condition met, number
   await expect(number('2')).toBeVisible();
   await expect(filters).toBeHidden();
 });
+
+test('a comment on a cell marks the cell, leads back to it from the panel and is there again when the document is opened again', async ({
+  page,
+}) => {
+  await page.goto(await newDocument(page, 'Ponuda s komentarom'));
+  const editor = page.locator('.ProseMirror').first();
+  await editor.click();
+  await page.keyboard.type('Ponuda');
+  for (let line = 0; line < 40; line++) await page.keyboard.press('Enter');
+  await insertTable(page, '2 × 2');
+  const table = page.locator('.ponistra-table');
+  await page.keyboard.type('Montaža');
+  await tab(page, 'B1');
+  await page.keyboard.type('5.300');
+
+  await page.keyboard.press('Control+Alt+m');
+  const panel = page.getByRole('complementary', { name: 'Komentari' });
+  await expect(panel.getByRole('textbox', { name: 'Napišite komentar' })).toBeFocused();
+  await expect(panel.getByRole('region', { name: 'Novi komentar' })).toContainText('5.300');
+  await page.keyboard.type('Montaža je 300 EUR.');
+  await page.keyboard.press('Control+Enter');
+  const thread = panel.getByRole('article', { name: '5.300' });
+  await expect(thread).toContainText('Montaža je 300 EUR.');
+  const mark = table.locator('.ponistra-cell-comment');
+  await expect(mark).toHaveCount(1);
+  await expect(mark).toHaveClass(/ponistra-cell-comment-active/);
+  await expect(cellAt(table, 'B1')).toHaveText('5.300');
+
+  await cellAt(table, 'A1').click();
+  await expect(thread).not.toHaveAttribute('aria-current', 'true');
+  await expect(mark).not.toHaveClass(/ponistra-cell-comment-active/);
+  await editor.getByText('Ponuda', { exact: true }).scrollIntoViewIfNeeded();
+  await expect(mark).not.toBeInViewport();
+  await thread.click();
+  await expect(thread).toHaveAttribute('aria-current', 'true');
+  await expect(mark).toBeInViewport();
+
+  await page.reload();
+  await expect(thread).toContainText('Montaža je 300 EUR.');
+  await expect(mark).toHaveCount(1);
+  await cellAt(table, 'A1').click();
+  await expect(thread).not.toHaveAttribute('aria-current', 'true');
+  await expect(mark).not.toHaveClass(/ponistra-cell-comment-active/);
+  await cellAt(table, 'B1').click();
+  await expect(thread).toHaveAttribute('aria-current', 'true');
+  await expect(mark).toHaveClass(/ponistra-cell-comment-active/);
+});

@@ -46,7 +46,8 @@ import { useSession } from '../auth';
 import { useReachable } from '../live';
 import { joinRoom, useKept, useRecheck } from '../room';
 import { Choices, ZoomChoices } from '../choices';
-import { useDesk, useThreads, type Desk, type InText } from '../comments';
+import { inCell, type InText } from '../anchors';
+import { useDesk, useThreads, type Desk } from '../comments';
 import { Close, Modal } from '../dialogs';
 import { type Language, useI18n } from '../i18n';
 import type { MessageKey } from '../i18n/hr';
@@ -215,7 +216,7 @@ import { GoToDialog } from './NameBox';
 import { TableNameDialog } from './TableNameDialog';
 import { TabStopsDialog } from './TabStopsDialog';
 import { cellOf, cellViewAt, tableIn, type Write } from './tableBase';
-import { cellKeys, showCell, tablesPlugin } from './tablesPlugin';
+import { cellKeys, revealCell, showCell, tablesPlugin } from './tablesPlugin';
 import { CommandItem, Toolbar } from './Toolbar';
 
 type Status = 'connecting' | 'connected' | 'disconnected';
@@ -1197,14 +1198,12 @@ export function LiveEditor({
 
   const active = desk?.active ?? null;
   const drafted = desk?.draft?.tab === tab ? desk.draft.anchor : null;
-  const draft = drafted && 'from' in drafted ? drafted : null;
+  const draft = drafted && !('page' in drafted) ? drafted : null;
   const anchored = useMemo(
     () =>
-      (threads.data ?? []).flatMap((thread) =>
-        thread.tab === tab &&
-        'from' in thread.anchor &&
-        (!thread.resolved_at || thread.id === active)
-          ? [{ id: thread.id, anchor: thread.anchor }]
+      (threads.data ?? []).flatMap(({ id, tab: on, anchor, resolved_at }) =>
+        on === tab && !('page' in anchor) && (!resolved_at || id === active)
+          ? [{ id, anchor }]
           : [],
       ),
     [threads.data, tab, active],
@@ -1226,12 +1225,19 @@ export function LiveEditor({
   useEffect(() => {
     if (!editor || !active || scrolledTo.current === `${active} ${asked}`) return;
     const marked = editor.view.dom.querySelector(`[data-thread="${active}"]`);
-    if (!marked) return;
+    const anchor = anchored.find(({ id }) => id === active)?.anchor;
+    if (!marked) {
+      // A cell's mark is drawn only once its row is, which revealing the cell brings.
+      if (!anchor || !inCell(anchor) || !inText.current?.order.includes(active)) return;
+      scrolledTo.current = `${active} ${asked}`;
+      revealCell(editor.view, anchor.table, anchor.row, anchor.col);
+      return;
+    }
     scrolledTo.current = `${active} ${asked}`;
     const { top, bottom } = marked.getBoundingClientRect();
     if (top < bar.current!.getBoundingClientRect().bottom || bottom > window.innerHeight)
       marked.scrollIntoView({ block: 'center' });
-  }, [editor, active, asked, inTextKey]);
+  }, [editor, active, asked, inTextKey, anchored]);
 
   const shown = useRef<string | null>(null);
   useEffect(() => {

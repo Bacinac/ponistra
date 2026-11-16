@@ -9,11 +9,12 @@ from apps.search.text import Words
 
 
 class Thread(models.Model):
-    """A conversation about a stretch of a tab's text, or about a place on a file's page. In a
-    tab the anchor holds the stretch's ends as Yjs relative positions, so it follows the text's
-    edits without a mark in it; on a page it holds the rectangles of the chosen text, or the
-    point, in the page's own coordinates. The quote is what the stretch said, kept for when it
-    is gone."""
+    """A conversation about a stretch of a tab's text, a cell of one of its tables or a place on
+    a file's page. In a tab the anchor holds the stretch's ends as Yjs relative positions, so it
+    follows the text's edits without a mark in it, or the ids of the cell's table, row and
+    column, which a table keeps as its rows and columns move; on a page it holds the rectangles
+    of the chosen text, or the point, in the page's own coordinates. The quote is what the
+    stretch or the cell said, kept for when it is gone."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tab = models.ForeignKey(

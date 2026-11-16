@@ -319,6 +319,38 @@ def located(doc: Doc, ends: list) -> list[tuple[str, int] | None]:
     return found
 
 
+def _in_cell(content: list[Block], anchor) -> tuple[tuple[str, float], tuple[str, float]] | None:
+    """Where a comment on a cell starts and ends: from the start of its first paragraph to the
+    end of its last, whatever a formula makes it show, the cell that a merge stretches over it
+    taking it, an empty one given a paragraph; None where the anchor is no cell of a table the
+    tab still has."""
+    if not isinstance(anchor, dict) or anchor.keys() != {"table", "row", "col"}:
+        return None
+    table = next(
+        (block for block in content if block.type == "table" and block.id == anchor["table"]),
+        None,
+    )
+    grid = table and table.grid
+    if grid is None or anchor["row"] not in grid.rows or anchor["col"] not in grid.cols:
+        return None
+    y, x = grid.rows.index(anchor["row"]), grid.cols.index(anchor["col"])
+    cell = next(
+        (
+            each.cell
+            for each in blocks.placed(table)
+            if each.y <= y < each.y + each.rows and each.x <= x < each.x + each.cols
+        ),
+        None,
+    )
+    if cell is None:
+        cell = blocks.light_cell(blocks.key_of(anchor["row"], anchor["col"]), "")
+        table.cells.append(cell)
+    texts = [block for block in cell.blocks if block.type in office.TEXTUAL]
+    if not texts:
+        return None
+    return (texts[0].id, 0), (texts[-1].id, float("inf"))
+
+
 class Writer:
     def __init__(self, document: Node, site: str):
         self.document, self.site = document, site
@@ -1330,15 +1362,16 @@ class Writer:
     # Comments
 
     def _threads(self, tab, doc: Doc, content: list[Block]) -> dict:
-        """Where the tab's comments start and end, by block and offset; a thread whose text is
-        gone, or hidden under a merged cell, stands at the start of the tab's text, in an empty
-        paragraph put first where the tab has no text."""
+        """Where the tab's comments start and end, by block and offset, a cell's around all its
+        text; a thread whose text or cell is gone, or hidden under a merged cell, stands at the
+        start of the tab's text, in an empty paragraph put first where the tab has no text."""
         comments = Prefetch(
             "comments", Comment.objects.select_related("author").order_by("created_at")
         )
         threads = list(tab.threads.order_by("created_at").prefetch_related(comments))
         if not threads:
             return {}
+        celled = [_in_cell(content, thread.anchor) for thread in threads]
         read = blocks.in_order(content)
         order = {block.id: at for at, block in enumerate(read)}
         ends = []
@@ -1353,7 +1386,7 @@ class Writer:
         fallback = (first.id, 0)
         points: dict = {}
         for index, thread in enumerate(threads):
-            start, end = found[2 * index], found[2 * index + 1]
+            start, end = celled[index] or (found[2 * index], found[2 * index + 1])
             if start is None or end is None or start[0] not in order or end[0] not in order:
                 start = end = fallback
             elif (order.get(end[0], 0), end[1]) < (order.get(start[0], 0), start[1]):

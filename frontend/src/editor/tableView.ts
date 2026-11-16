@@ -121,6 +121,8 @@ import {
   whole,
 } from './tableBase';
 import { blocksJSON, CellView, writing } from './cellView';
+import { cellComments, type CellComment, type CellsCommented, quoted } from './comments';
+import type { CellAnchor } from '../anchors';
 
 let names = 0;
 const BLOCK_ROWS = 50;
@@ -185,6 +187,9 @@ export class TableView implements NodeView {
   private mirror = new Mirror(this.grid);
   /** Dragged from the corner of the selected cells, fills the cells it is dragged over. */
   private handle = document.createElement('div');
+  /** The comments on the table's cells, as its decoration carries them, each cell's marked. */
+  private commented: CellsCommented | null = null;
+  private marks = new Map<string, HTMLElement>();
   private inks: Inks;
   /** The rows each page of the Pages view starts with inside the table, and the gaps before them. */
   private gaps: TableGaps['rows'] = [];
@@ -278,6 +283,7 @@ export class TableView implements NodeView {
     document.fonts.addEventListener('loadingdone', this.themed);
     tableRows.set(this.dom, () => (this.paper ? this.paper.rows() : this.rowBoxes()));
     this.gaps = tableGaps(decorations);
+    this.commented = cellComments(decorations);
     this.range_ = this.range();
     this.arrived();
     this.refresh(null);
@@ -814,6 +820,7 @@ export class TableView implements NodeView {
       if (out && placed.row >= this.above) continue;
       kept.add(placed.key);
       let view = this.cells.get(placed.key);
+      const focused = view?.light && view.inner?.hasFocus();
       if (view?.light) {
         view.destroy();
         view = undefined;
@@ -825,6 +832,7 @@ export class TableView implements NodeView {
         this.measured.observe(view.holder);
       }
       sync(view, placed, this.inside.forChild(placed.offset!, placed.node!));
+      if (focused) view.focus(whole);
     }
     for (const [key, view] of this.cells) {
       if (kept.has(key)) continue;
@@ -979,6 +987,7 @@ export class TableView implements NodeView {
       frozen: frame.frozen,
     });
     this.showHandle(view);
+    this.showComments(view);
   }
 
   private repeats(geometry: Geometry): Frame['repeats'] {
@@ -1114,6 +1123,7 @@ export class TableView implements NodeView {
     this.node = node;
     shownBy.set(node, this);
     this.inside = inside;
+    this.commented = cellComments(decorations);
     const gaps = tableGaps(decorations);
     const regapped =
       gaps.length !== this.gaps.length ||
@@ -1134,6 +1144,76 @@ export class TableView implements NodeView {
     else if (reshaped || regapped) this.refresh(null);
     else this.schedule();
     return true;
+  }
+
+  /** A comment on the cell: its table, row and column, and the words it shows. */
+  commentOn(key: string): { anchor: CellAnchor; quote: string } | null {
+    const placed = this.layout.placed(key);
+    if (!placed) return null;
+    const [row, col] = key.split(':');
+    const doc = this.cells.get(key)?.inner?.state.doc ?? placed.node;
+    const text = doc
+      ? doc.textBetween(0, doc.content.size, ' ')
+      : (this.paintedCell(placed.row, placed.col, key, true)?.text ?? '');
+    return { anchor: { table: this.id, row, col }, quote: quoted(text) };
+  }
+
+  /** The cell a comment is on, or the one a merge stretches over it. */
+  private commentedCell({ row, col }: CellComment): Placed | null {
+    const lines = this.lines;
+    const y = lines ? lines.rowIndex(row) : -1;
+    const x = lines ? lines.colIndex(col) : -1;
+    return y < 0 || x < 0 ? null : this.layout.at(y, x);
+  }
+
+  /** A press on a cell shows the comment on it; on another, it leaves the one shown here. */
+  private pickComment(key: string): void {
+    const commented = this.commented;
+    if (!commented) return;
+    const here = commented.comments.find(
+      (comment) => comment.thread && this.commentedCell(comment)?.key === key,
+    );
+    if (here) commented.pick(here.thread);
+    else if (commented.comments.some((comment) => comment.thread && comment.active))
+      commented.pick(null);
+  }
+
+  /** Each commented cell framed, with a mark in its corner, the one shown or being written on
+   * stressed; one under the frozen rows as they scroll over it is not. */
+  private showComments(view: Box): void {
+    const geometry = this.geometry!;
+    const { shift, bottom } = this.band(view);
+    const frozen = this.frozen();
+    const shown = new Set<string>();
+    for (const comment of this.commented?.comments ?? []) {
+      const placed = this.commentedCell(comment);
+      if (!placed) continue;
+      const box = geometry.box(rectOfCell(placed));
+      const above = placed.row + placed.rows - 1 < frozen;
+      const top = box.y + (above ? shift : 0);
+      if (!box.width || !box.height || (!above && shift > 0 && top < bottom)) continue;
+      const id = comment.thread ?? '';
+      let mark = this.marks.get(id);
+      if (!mark) {
+        mark = this.grid.appendChild(document.createElement('div'));
+        mark.className = 'ponistra-cell-comment';
+        mark.ariaHidden = 'true';
+        if (comment.thread) mark.dataset.thread = comment.thread;
+        this.marks.set(id, mark);
+      }
+      mark.classList.toggle('ponistra-cell-comment-active', comment.active);
+      const { style } = mark;
+      style.left = `${box.x}px`;
+      style.top = `${top}px`;
+      style.width = `${box.width}px`;
+      style.height = `${box.height}px`;
+      shown.add(id);
+    }
+    for (const [id, mark] of this.marks) {
+      if (shown.has(id)) continue;
+      mark.remove();
+      this.marks.delete(id);
+    }
   }
 
   /** Asks where the rows of the cells with a node in the text stand that the browser does not
@@ -1459,6 +1539,7 @@ export class TableView implements NodeView {
       }
       return;
     }
+    this.pickComment(key);
     const known = this.cells.get(key);
     const inside = known?.inner?.dom.contains(event.target as globalThis.Node);
     if (!inside) {
