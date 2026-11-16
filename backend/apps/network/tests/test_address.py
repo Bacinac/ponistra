@@ -7,7 +7,9 @@ from urllib.parse import parse_qs, urlparse
 
 import pytest
 
-from apps.core import address
+from apps.core import sealed
+from apps.network import address
+from apps.network.models import Dns
 
 
 @pytest.fixture
@@ -35,7 +37,7 @@ def test_stun_names_the_address_the_internet_sees(stun):
 
 
 @pytest.fixture
-def cloudflare(monkeypatch, settings):
+def cloudflare(monkeypatch):
     """Cloudflare keeping example.org, with what it has been asked."""
     records: dict[str, dict] = {}
     asked: list[tuple[str, str, dict | None]] = []
@@ -56,6 +58,8 @@ def cloudflare(monkeypatch, settings):
             asked.append((method, url.path, body))
             if self.headers["Authorization"] != "Bearer token":
                 return self.answer({"errors": [{"code": 9109}]}, 403)
+            if url.path == "/user/tokens/verify":
+                return self.answer({"id": "t1", "status": "active"})
             if url.path == "/zones":
                 return self.answer([{"id": "z1"}] if query["name"] == "example.org" else [])
             if url.path == "/zones/z1/dns_records" and method == "GET":
@@ -85,15 +89,14 @@ def cloudflare(monkeypatch, settings):
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     monkeypatch.setattr(address, "API", f"http://127.0.0.1:{httpd.server_port}")
-    settings.CLOUDFLARE_TOKEN = "token"
     yield records, asked
     httpd.shutdown()
     httpd.server_close()
 
 
-def test_a_direct_name_follows_the_address(cloudflare, settings):
+def test_a_direct_name_follows_the_address(cloudflare):
     records, asked = cloudflare
-    assert address.point("turn.example.org", "203.0.113.81") is True
+    assert address.point("token", "turn.example.org", "203.0.113.81") is True
     assert records["turn.example.org"] == {
         "type": "A",
         "name": "turn.example.org",
@@ -102,18 +105,21 @@ def test_a_direct_name_follows_the_address(cloudflare, settings):
         "proxied": False,
         "id": "r1",
     }
-    assert address.point("turn.example.org", "203.0.113.81") is False
+    assert address.point("token", "turn.example.org", "203.0.113.81") is False
     asked.clear()
-    assert address.point("turn.example.org", "203.0.113.139") is True
+    assert address.point("token", "turn.example.org", "203.0.113.139") is True
     assert asked[-1] == ("PATCH", "/zones/z1/dns_records/r1", {"content": "203.0.113.139"})
     assert records["turn.example.org"]["content"] == "203.0.113.139"
 
-    settings.CLOUDFLARE_TOKEN = "revoked"
     with pytest.raises(OSError, match="Cloudflare 403"):
-        address.point("turn.example.org", "203.0.113.139")
-    settings.CLOUDFLARE_TOKEN = "token"
+        address.point("revoked", "turn.example.org", "203.0.113.139")
     with pytest.raises(OSError, match="no zone of turn.example.com"):
-        address.point("turn.example.com", "203.0.113.139")
+        address.point("token", "turn.example.com", "203.0.113.139")
+
+
+def test_a_token_is_tried_at_cloudflare(cloudflare):
+    assert address.verified("token") is True
+    assert address.verified("revoked") is False
 
 
 class _Stopped(Exception):
@@ -121,11 +127,13 @@ class _Stopped(Exception):
 
 
 @pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
 async def test_a_broken_answer_leaves_the_names_to_be_followed_at_the_next_look(
     settings, monkeypatch, caplog
 ):
-    settings.CLOUDFLARE_TOKEN = "token"
     settings.DIRECT_NAMES = ["turn.example.org"]
+    await Dns.objects.acreate(token=sealed.seal(address.SEALED, "token"), hint="oken")
+    errors = []
     looks = []
 
     def public():
@@ -135,14 +143,41 @@ async def test_a_broken_answer_leaves_the_names_to_be_followed_at_the_next_look(
         return "203.0.113.139"
 
     async def slept(seconds):
+        errors.append((await Dns.objects.aget()).error)
         if len(looks) == 2:
             raise _Stopped
 
     monkeypatch.setattr(address, "public", public)
-    monkeypatch.setattr(address, "point", lambda name, at: True)
+    monkeypatch.setattr(address, "point", lambda token, name, at: token == "token")
     monkeypatch.setattr(address, "sleep", slept)
     with pytest.raises(_Stopped):
         await address.follow()
     assert looks == [0, 1]
+    assert errors == ["unpack requires a buffer of 8 bytes", ""]
     assert "could not follow the public address" in caplog.text
     assert "turn.example.org now points at 203.0.113.139" in caplog.text
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_without_a_token_the_names_wait_for_one(settings, monkeypatch):
+    settings.DIRECT_NAMES = ["turn.example.org"]
+    looks = []
+    monkeypatch.setattr(address, "public", lambda: looks.append(1) or "203.0.113.139")
+
+    async def slept(seconds):
+        raise _Stopped
+
+    monkeypatch.setattr(address, "sleep", slept)
+    with pytest.raises(_Stopped):
+        await address.follow()
+    assert looks == []
+
+
+def test_livekit_is_reached_at_the_public_address(settings, monkeypatch):
+    listening = socket.create_server(("127.0.0.1", 0))
+    monkeypatch.setattr(address, "public", lambda timeout: "127.0.0.1")
+    settings.LIVEKIT_TCP_PORT = listening.getsockname()[1]
+    assert address.reached() is True
+    listening.close()
+    assert address.reached() is False

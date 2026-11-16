@@ -34,7 +34,6 @@ Gosti, i oni pozvani izvana, nose oznaku {t:meeting.guest}, a vi {t:meeting.you}
 - Ako preglednik ne dopusti ni kameru ni mikrofon, ući se može tek kad ih dopustite u postavkama stranice.
 - Bez mreže se u sastanak ne ulazi: {t:meeting.join} i {t:meeting.rejoin} tada su onemogućeni ({t:offline.needed}). Sastanak u kojem već jeste ne prekida se zbog toga.
 - Ako preglednik ne pusti zvuk sam od sebe, pritisnite {t:meeting.playAudio}.
-- Kad instalacija ima vanjski relej sastanaka, a on trenutno nije dostupan, ulazak se odbija porukom {t:error.relay_unreachable} Javite se administratoru instalacije.
 - Premještanje na drugi zaslon traži dopuštenje za upravljanje prozorima u postavkama stranice.
 
 ## Povezano

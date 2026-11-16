@@ -1098,6 +1098,50 @@ test('words sent to a working chat stay in the conversation until it reads them'
   expect(within(chat).getAllByText('Čeka da je agent pročita')).toHaveLength(1);
 });
 
+test('words the chat has not read are withdrawn into the field, or say it read them', async () => {
+  const asked: Asked[] = [];
+  let commands: Asked[] = [
+    { ...COMMAND, id: 6, kind: 'say', session: 'lead', text: 'prvi dio', state: 'done' },
+    { ...COMMAND, id: 5, kind: 'say', session: 'lead', text: 'već pročitano', state: 'done' },
+  ];
+  served({
+    'GET /api/workspace/commands': () => ({ commands }),
+    'POST /api/workspace/commands': async (request) => {
+      const given = (await request.json()) as Asked;
+      asked.push(given);
+      const withdrawn = given.text === '6';
+      if (withdrawn)
+        commands = commands.map((each) =>
+          each.id === 6 ? { ...each, state: 'failed', error: 'cancelled' } : each,
+        );
+      return {
+        ...COMMAND,
+        ...given,
+        id: 9,
+        state: withdrawn ? 'done' : 'failed',
+        error: withdrawn ? null : 'already_read',
+      };
+    },
+  });
+  const { user } = open('/workspace', OWNER);
+  const chat = await screen.findByRole('region', { name: 'Razgovor' });
+  const field = within(chat).getByRole<HTMLTextAreaElement>('textbox');
+  await user.type(field, 'i ovo');
+  const first = (await within(chat).findByText(/^prvi dio/)).closest('li')!;
+  await user.click(within(first).getByRole('button', { name: 'Povuci poruku' }));
+  await waitFor(() => expect(field.value).toBe('prvi dio\n\ni ovo'));
+  expect(asked).toEqual([{ kind: 'cancel', text: '6' }]);
+  await waitFor(() =>
+    expect(within(chat).getAllByRole('button', { name: 'Povuci poruku' })).toHaveLength(1),
+  );
+  const read = within(chat)
+    .getByText(/^već pročitano/)
+    .closest('li')!;
+  await user.click(within(read).getByRole('button', { name: 'Povuci poruku' }));
+  await within(read).findByText('Agent je poruku već pročitao.');
+  expect(field.value).toBe('prvi dio\n\ni ovo');
+});
+
 test('an archive that fails says why under its chat', async () => {
   const asked: Asked[] = [];
   served({

@@ -1725,6 +1725,7 @@ function Conversation({
   const [text, setText] = useState('');
   const pictures = usePictures();
   const sent = useCommand();
+  const withdrawing = useCommand();
   const id = chat?.id;
   const [loaded, setLoaded] = useState<Older | null>(null);
   const older = loaded?.id === id ? loaded : null;
@@ -1796,9 +1797,24 @@ function Conversation({
       (command) =>
         command.session === chat.id &&
         SENDING.includes(command.kind) &&
+        command.error !== 'cancelled' &&
         (command.state !== 'done' || (command.kind === 'say' && !readIn(command, said))),
     )
     .reverse();
+  const withdraw = (command: Command) =>
+    withdrawing.mutate(
+      { kind: 'cancel', text: String(command.id) },
+      {
+        onSuccess: (answer) => {
+          if (answer.state === 'done')
+            setText((now) => [command.text ?? '', now.trim()].filter(Boolean).join('\n\n'));
+        },
+      },
+    );
+  const refused = (command: Command) =>
+    withdrawing.variables?.text === String(command.id) && withdrawing.data?.state === 'failed'
+      ? withdrawing.data.error
+      : null;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex min-w-0 items-center gap-1">
@@ -1859,8 +1875,20 @@ function Conversation({
           command.kind === 'say' ? (
             <li
               key={command.id}
-              className="max-w-[85%] self-end rounded-lg border border-dashed border-accent px-3 py-2 text-sm break-words whitespace-pre-wrap"
+              className="relative max-w-[85%] self-end rounded-lg border border-dashed border-accent px-3 py-2 pr-8 text-sm break-words whitespace-pre-wrap"
             >
+              {command.state !== 'failed' && (
+                <button
+                  type="button"
+                  className={`${iconButton} absolute top-1 right-1`}
+                  aria-label={t('workspace.withdraw')}
+                  title={t('workspace.withdraw')}
+                  disabled={withdrawing.isPending}
+                  onClick={() => withdraw(command)}
+                >
+                  <X size={14} aria-hidden />
+                </button>
+              )}
               {command.images > 0 && (
                 <span className="flex items-center gap-1 text-xs text-muted">
                   <ImagePlus size={12} aria-hidden />
@@ -1868,12 +1896,18 @@ function Conversation({
                 </span>
               )}
               {command.text}
-              <span className={`mt-1 block text-xs ${PROGRESS[command.state].look}`}>
+              <span
+                className={`mt-1 block text-xs ${refused(command) ? PROGRESS.failed.look : PROGRESS[command.state].look}`}
+              >
                 {command.state === 'failed' && command.error
                   ? codeText(command.error, t)
-                  : t(
-                      command.state === 'done' ? 'workspace.unread' : PROGRESS[command.state].label,
-                    )}
+                  : refused(command)
+                    ? codeText(refused(command)!, t)
+                    : t(
+                        command.state === 'done'
+                          ? 'workspace.unread'
+                          : PROGRESS[command.state].label,
+                      )}
               </span>
             </li>
           ) : (

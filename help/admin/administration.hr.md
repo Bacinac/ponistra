@@ -5,7 +5,7 @@ Administracija skuplja stranice koje vrijede za cijelu instalaciju i koje otvara
 ## Kako se koristi
 
 1. Pritisnite svoje inicijale u gornjem desnom kutu, {t:frame.account}, i odaberite {t:admin.title}. Otvara se prva stranica, {t:users.title}.
-2. U lijevom stupcu odaberite stranicu: {t:users.title}, {t:resources.title}, {t:workdays.title}, {t:relay.title}, {t:providers.title}, {t:identity.title}, {t:ai.title}, {t:retention.title}, {t:journal.title} ili {t:health.title}.
+2. U lijevom stupcu odaberite stranicu: {t:users.title}, {t:resources.title}, {t:workdays.title}, {t:network.title}, {t:providers.title}, {t:identity.title}, {t:ai.title}, {t:retention.title}, {t:journal.title} ili {t:health.title}.
 3. Na mobitelu popis stranica je zasebna stranica. Otvorena stranica vraća se na popis pomoću {t:frame.close}.
 
 ## Kako radi

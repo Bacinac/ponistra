@@ -17,15 +17,12 @@ from apps.chat import conversations
 from apps.chat.models import Conversation, Member
 from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database, waited
-from apps.journal import entries
-from apps.journal.entries import Kind
 from apps.mail import sending
 from apps.mail.imap import Failed
-from apps.users.accounts import administrator
 from apps.users.models import User
 
-from . import livekit, lobby, recordings, relay, rings
-from .models import Guest, Meeting, Recording, Relay, Ring
+from . import livekit, lobby, recordings, rings
+from .models import Guest, Meeting, Recording, Ring
 
 log = getLogger(__name__)
 
@@ -127,48 +124,7 @@ def join(request, pk):
     conversations.added(found.conversation, [user])
     identity = f"{user.pk}.{secrets.token_hex(4)}"
     name = user.get_full_name() or user.email
-    return JsonResponse({"token": livekit.joining(str(found.id), identity, name), "ice": _ice()})
-
-
-def _ice() -> list[dict] | None:
-    try:
-        return relay.servers()
-    except relay.Unavailable as unavailable:
-        log.warning("meetings: the relay is unavailable: %s", unavailable.code)
-        raise Refused(503, unavailable.code) from None
-
-
-@api("GET", "PATCH")
-def relay_setting(request):
-    administrator(request)
-    if request.method == "PATCH":
-        provider, addresses, name, secret = _relay(body(request))
-        try:
-            found = relay.change(request.user, provider, addresses, name, secret)
-        except relay.Unavailable as unavailable:
-            raise Refused(422, unavailable.code) from None
-        entries.wrote(
-            Kind.SETTING_CHANGED,
-            request=request,
-            setting="meetings_relay",
-            provider=provider,
-            secret=secret is not None,
-        )
-        return JsonResponse(relay.describe(found))
-    return JsonResponse(relay.describe(relay.setting()))
-
-
-def _relay(data: dict) -> tuple[str, list[str], str, str | None]:
-    provider, addresses = data.get("provider"), data.get("addresses", [])
-    name, secret = data.get("name", ""), data.get("secret")
-    if provider not in Relay.Provider.values:
-        raise Refused(400, "invalid_provider")
-    if not isinstance(addresses, list) or not all(isinstance(each, str) for each in addresses):
-        raise Refused(400, "invalid_relay_address")
-    if not isinstance(name, str) or (secret is not None and not isinstance(secret, str)):
-        raise Refused(400, "invalid_relay")
-    given = [each.strip() for each in addresses if each.strip()]
-    return provider, given, name.strip(), (secret and secret.strip()) or None
+    return JsonResponse({"token": livekit.joining(str(found.id), identity, name)})
 
 
 @api("POST")
@@ -342,7 +298,7 @@ def guest_join(request, pk):
         raise Refused(403, "not_admitted")
     identity = f"{livekit.guest_identity(found.pk)}.{secrets.token_hex(4)}"
     token = livekit.joining(str(found.meeting_id), identity, found.name, guest=True)
-    return JsonResponse({"token": token, "ice": _ice()})
+    return JsonResponse({"token": token})
 
 
 @api("PATCH")

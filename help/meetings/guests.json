@@ -13,7 +13,7 @@
     "frontend/src/guest.tsx#AtDoor": "a54e82aa0e67",
     "backend/apps/meetings/views.py#door": "cffa8aafbbdb",
     "backend/apps/meetings/views.py#guests": "c9edf31b3627",
-    "backend/apps/meetings/views.py#guest_join": "1f14cf205b8a",
+    "backend/apps/meetings/views.py#guest_join": "061716a13708",
     "backend/apps/meetings/views.py#guest": "553e0ef3c380",
     "backend/apps/meetings/lobby.py#answered": "5c2d7dfe54af"
   }

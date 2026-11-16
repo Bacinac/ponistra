@@ -165,35 +165,3 @@ class Recording(models.Model):
 
     def __str__(self) -> str:
         return f"{self.meeting} {self.started_at:%Y-%m-%d %H:%M}"
-
-
-class Relay(models.Model):
-    """The installation's relay for meetings (S2-7), in one row: a TURN service outside that
-    those joining go through where nothing reaches LiveKit inward. Cloudflare's is named by its
-    key's id and its API token, from which each joining gets credentials of a day; another
-    provider's by its addresses, user name and password. The token or password is sealed with
-    the installation's secret, of which only the last four characters are shown again."""
-
-    class Provider(models.TextChoices):
-        NONE = ""
-        CLOUDFLARE = "cloudflare"
-        TURN = "turn"
-
-    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
-    provider = models.CharField(max_length=10, choices=Provider, blank=True)
-    # A TURN provider's addresses, turn: or turns: URLs, one per line.
-    addresses = models.TextField(blank=True)
-    # Cloudflare's key id or the TURN provider's user name.
-    name = models.CharField(max_length=200, blank=True)
-    secret = models.BinaryField(default=bytes)
-    hint = models.CharField(max_length=4, blank=True)
-    changed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, on_delete=models.DB_SET_NULL, related_name="+"
-    )
-    changed_at = models.DateTimeField(null=True)
-
-    class Meta:
-        constraints = [models.CheckConstraint(condition=models.Q(id=1), name="one_meetings_relay")]
-
-    def __str__(self) -> str:
-        return self.provider or "none"

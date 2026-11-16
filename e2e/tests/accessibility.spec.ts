@@ -50,7 +50,7 @@ const ADMINISTRATORS = [
   '/users',
   '/resources',
   '/workdays',
-  '/meetings',
+  '/network',
   '/ai',
   '/providers',
   '/applications',

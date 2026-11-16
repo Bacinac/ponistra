@@ -5,6 +5,7 @@
 // processes: one started elsewhere is ended once it is idle, before a chat is taken over here, and
 // of two of the same session found running the older goes once it is idle.
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -20,6 +21,7 @@ const ENDED_WITHIN = 10 * 1000;
 // What Claude Code exits with when ended by SIGTERM, as this service ends it.
 const ENDED_BY_US = 143;
 const TOOL = 120;
+const WITHDRAW_WAIT = 5000;
 // The panel's own start (Claude Code's extension), without its debugging.
 const ARGS = [
   '--output-format', 'stream-json',
@@ -148,6 +150,9 @@ class Chat {
     // The model the owner chose for it here, which a start after a restart keeps.
     this.model = model;
     this.choosing = new Map();
+    this.withdrawing = new Map();
+    // Each message written to it by the command that carried it, which it may still withdraw.
+    this.queued = new Map();
     this.asked = null;
     // From a message written to it until it ends the turn that message began.
     this.answering = false;
@@ -163,8 +168,26 @@ class Chat {
       ...(text ? [{ type: 'text', text }] : []),
       ...images.map(({ media_type, data }) => ({ type: 'image', source: { type: 'base64', media_type, data } })),
     ];
+    const uuid = randomUUID();
     this.answering = true;
-    this.write({ type: 'user', message: { role: 'user', content }, parent_tool_use_id: null, session_id: this.session });
+    this.write({ type: 'user', uuid, message: { role: 'user', content }, parent_tool_use_id: null, session_id: this.session });
+    return uuid;
+  }
+
+  // Whether Claude Code dropped the message from its queue before it took it in.
+  withdrawn(uuid) {
+    const request_id = `ponistra-withdraw-${randomUUID()}`;
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        this.withdrawing.delete(request_id);
+        resolve(false);
+      }, WITHDRAW_WAIT);
+      this.withdrawing.set(request_id, (cancelled) => {
+        clearTimeout(timer);
+        resolve(cancelled);
+      });
+      this.write({ type: 'control_request', request_id, request: { subtype: 'cancel_async_message', message_uuid: uuid } });
+    });
   }
 
   answered(response) {
@@ -233,6 +256,10 @@ const heard = (chat, line) => {
       kept();
       changed();
     }
+  } else if (message.type === 'control_response' && chat.withdrawing.has(message.response?.request_id)) {
+    const { request_id, subtype, response } = message.response;
+    chat.withdrawing.get(request_id)(subtype === 'success' && response?.cancelled === true);
+    chat.withdrawing.delete(request_id);
   } else if (message.type === 'control_request') {
     chat.write({
       type: 'control_response',
@@ -329,14 +356,24 @@ export const begun = (session, folder, text, images = []) => {
   return chat;
 };
 
-/** What the owner says to the chat: an answer to what it waits on, or a message it reads next. */
-export const say = (chat, text, images = []) => {
+/** What the owner says to the chat: an answer to what it waits on, or a message it reads next,
+    which the command that carried it may withdraw until the chat takes it in. */
+export const say = (chat, text, images = [], command = null) => {
   if (chat.asked && text) {
     chat.answer(false, text);
     if (images.length) chat.said(null, images);
     return;
   }
-  chat.said(text, images);
+  const uuid = chat.said(text, images);
+  if (command !== null) chat.queued.set(command, uuid);
+};
+
+/** Takes back a message the chat has not taken in yet; refused once it has. */
+export const withdraw = async (session, command) => {
+  const chat = hosted.get(session);
+  const uuid = chat?.queued.get(command);
+  if (!uuid || !(await chat.withdrawn(uuid))) throw new Refusal(409, 'already_read');
+  chat.queued.delete(command);
 };
 
 export const answer = (session, yes) => {

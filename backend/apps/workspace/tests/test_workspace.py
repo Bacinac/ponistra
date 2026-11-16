@@ -292,6 +292,30 @@ def test_a_new_chat_keeps_the_session_the_workspace_gave_it(owner, workspace):
     assert (answer["session"], answer["state"]) == (SESSION, "done")
 
 
+def test_a_message_the_workspace_took_back_is_cancelled_at_once(owner, workspace):
+    workspace.answer = (200, {"state": "done"})
+    said = owner.post(
+        "/api/workspace/commands", {"kind": "say", "session": SESSION, "text": "x"}, JSON
+    ).json()
+    cancel = {"kind": "cancel", "text": str(said["id"])}
+    assert owner.post("/api/workspace/commands", cancel, JSON).json()["state"] == "done"
+    assert (Command.objects.get(pk=said["id"]).state, Command.objects.get(pk=said["id"]).error) == (
+        "failed",
+        "cancelled",
+    )
+
+
+def test_a_message_already_read_stays_as_it_was(owner, workspace):
+    workspace.answer = (200, {"state": "done"})
+    said = owner.post(
+        "/api/workspace/commands", {"kind": "say", "session": SESSION, "text": "x"}, JSON
+    ).json()
+    workspace.answer = (409, {"error": "already_read"})
+    cancel = {"kind": "cancel", "text": str(said["id"])}
+    assert owner.post("/api/workspace/commands", cancel, JSON).json()["error"] == "already_read"
+    assert Command.objects.get(pk=said["id"]).state == "done"
+
+
 def test_a_message_carries_the_images_the_owner_uploaded(owner, workspace):
     workspace.answer = (200, {"state": "sent"})
     png = uploaded(owner, PNG)["sha256"]

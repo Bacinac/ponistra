@@ -22,8 +22,6 @@ Anyone of the installation who is in the meeting's conversation can let a guest 
 
 A guest in the meeting sees and hears everything, shares the screen and writes in the meeting's conversation, and carries the mark {t:meeting.guest} beside the name. They cannot invite others or let guests in. If they reload the page in the same tab, they do not wait at the door again.
 
-A guest joins the same way as members: when the installation has an external meetings relay, the guest's picture and sound go through it, so they join even from a network that does not reach the installation directly.
-
 ## Limits
 
 - A guest sees only that meeting and its conversation, nothing else of the installation.

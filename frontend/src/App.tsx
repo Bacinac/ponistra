@@ -34,6 +34,7 @@ const GuestMeetingPage = lazily(() => import('./guest'), 'GuestMeetingPage');
 const OutsidePage = lazily(() => import('./outside'), 'OutsidePage');
 const VisitPage = lazily(() => import('./outside'), 'VisitPage');
 const HealthPage = lazily(() => import('./health'), 'HealthPage');
+const NetworkPage = lazily(() => import('./network'), 'NetworkPage');
 const JournalPage = lazily(() => import('./journal'), 'JournalPage');
 const HelpPage = lazily(() => import('./help'), 'HelpPage');
 const LinksPage = lazily(() => import('./links'), 'LinksPage');
@@ -43,7 +44,6 @@ const NotesPage = lazily(() => import('./notes'), 'NotesPage');
 const PresentPage = lazily(() => import('./PresentPage'), 'PresentPage');
 const PrintPage = lazily(() => import('./PrintPage'), 'PrintPage');
 const ProvidersPage = lazily(() => import('./providers'), 'ProvidersPage');
-const RelayPage = lazily(() => import('./relay'), 'RelayPage');
 const ResourcesPage = lazily(() => import('./resources'), 'ResourcesPage');
 const RetentionPage = lazily(() => import('./retention'), 'RetentionPage');
 const SearchPage = lazily(() => import('./SearchPage'), 'SearchPage');
@@ -293,9 +293,9 @@ export default function App() {
                 <Route path="/tasks" element={<TasksPage />} />
                 <Route path="/ai" element={<AiPage />} />
                 <Route path="/providers" element={<ProvidersPage />} />
-                <Route path="/meetings" element={<RelayPage />} />
                 <Route path="/applications" element={<ApplicationsPage />} />
                 <Route path="/health" element={<HealthPage />} />
+                <Route path="/network" element={<NetworkPage />} />
                 <Route path="/journal" element={<JournalPage />} />
                 <Route path="/settings/:section?" element={<SettingsPage />} />
                 <Route path="/admin" element={<AdminPage />} />

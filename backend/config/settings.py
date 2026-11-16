@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "apps.tasks",
     "apps.chat",
     "apps.meetings",
+    "apps.network",
     "apps.push",
     "apps.dav",
     "apps.vault",
@@ -194,17 +195,18 @@ READER_URL = "http://reader:8070"
 # LiveKit, which carries meetings' sound and video, on the host's own network (compose.yaml).
 LIVEKIT_URL = f"http://{required('PONISTRA_LIVEKIT')}"
 LIVEKIT_SECRET = required("PONISTRA_LIVEKIT_SECRET")
+# The ports its media reaches the host on, which a meeting from outside needs forwarded.
+LIVEKIT_UDP_PORT = int(os.environ.get("PONISTRA_LIVEKIT_UDP_PORT") or 7882)
+LIVEKIT_TCP_PORT = int(os.environ.get("PONISTRA_LIVEKIT_TCP_PORT") or 7881)
 # Its relay, TURN over TLS on 443 under a name of its own, where the installation has one.
 TURN = os.environ.get("PONISTRA_TURN", "").strip()
 # The names pointing straight at the installation's public address: the relay's, and the app's
-# own where Caddy ends its TLS. Where Cloudflare keeps them, this token (DNS of their zone) keeps
-# them on the address as it changes.
+# own where Caddy ends its TLS, which the token on the network page keeps on it (apps.network).
 DIRECT_NAMES = [
     name
     for name in (TURN, os.environ.get("PONISTRA_SITE", "").strip())
     if name and not name.startswith(":")
 ]
-CLOUDFLARE_TOKEN = os.environ.get("PONISTRA_CLOUDFLARE_TOKEN", "").strip()
 
 # The one user whose code workspace this installation keeps (D34), that workspace's home while it
 # runs here, and its address when it runs elsewhere behind a door of its own.

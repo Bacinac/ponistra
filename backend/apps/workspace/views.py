@@ -521,6 +521,14 @@ def settled(pk: int, state: str, error: str = "", session=None) -> None:
     Command.objects.filter(pk=pk, state__in=AFTER[state]).update(**moved)
 
 
+def _withdrawn(command: Command) -> None:
+    """A message or a start the workspace took back, which no later report moves on."""
+    if command.kind == Kind.CANCEL and not command.round and command.state == State.DONE:
+        Command.objects.filter(pk=int(command.text), kind__in=[Kind.SAY, Kind.CHAT]).update(
+            state=State.FAILED, error="cancelled", changed_at=timezone.now()
+        )
+
+
 def _begun(pk: int, session) -> None:
     if isinstance(session, str) and SESSION.fullmatch(session):
         Command.objects.filter(pk=pk, kind=Kind.CHAT).update(session=session)
@@ -564,8 +572,9 @@ async def commands(request):
         await request.session.aget(CONFIRMED_AT), CONFIRMED_FOR
     ):
         return JsonResponse({"error": "confirm_required"}, status=403)
-    command = await database(Command.objects.create)(**fields)
-    return JsonResponse(shown(await sent(command, pictures)))
+    command = await sent(await database(Command.objects.create)(**fields), pictures)
+    await database(_withdrawn)(command)
+    return JsonResponse(shown(command))
 
 
 def reported(outcomes) -> None:

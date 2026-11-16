@@ -24,8 +24,7 @@ from apps.blobs import store
 from apps.blobs.models import Blob
 from apps.core.api import api
 from apps.jobs.models import Job
-from apps.meetings import relay
-from apps.meetings.models import Relay
+from apps.network import address
 from apps.search import extraction, ocr
 from apps.search.models import BlobText
 from apps.users.accounts import administrator
@@ -69,15 +68,6 @@ def relays(name: str) -> bool:
     return answer[:2] == b"\x01\x01" and answer[8:] == transaction
 
 
-def reached(outside: Relay) -> bool:
-    """Whether the external relay gives those joining a meeting what they go through it with."""
-    try:
-        relay.servers(outside)
-    except relay.Unavailable:
-        return False
-    return True
-
-
 def services() -> dict:
     checks = {
         name: partial(answers, getattr(settings, setting) + page)
@@ -85,8 +75,9 @@ def services() -> dict:
     }
     if settings.TURN:
         checks["relay"] = partial(relays, settings.TURN)
-    if (outside := relay.setting()).provider:
-        checks["outside"] = partial(reached, outside)
+    checks["outside"] = address.reached
+    if (dns := address.setting()).token:
+        checks["dns"] = lambda: not dns.error
     with ThreadPoolExecutor(len(checks)) as pool:
         found = {name: pool.submit(check) for name, check in checks.items()}
         return {"database": True, **{name: each.result() for name, each in found.items()}}

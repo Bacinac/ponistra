@@ -177,7 +177,7 @@ export default function Call({
   const join = useMutation({
     mutationFn: async () => {
       const { id } = await ready();
-      const { token, ice } = guest
+      const { token } = guest
         ? await guest.enter()
         : await postJson<Joining>(`/api/meetings/${id}/join`);
       // What was turned off before joining is turned on later as a new track of the device chosen.
@@ -195,7 +195,7 @@ export default function Call({
         setStage(reason === DisconnectReason.CLIENT_INITIATED ? 'left' : 'dropped');
         setRoom(null);
       });
-      await made.connect(signalling(), token, ice ? { rtcConfig: { iceServers: ice } } : {});
+      await made.connect(signalling(), token);
       for (const track of [own?.audio, own?.video]) {
         if (!track) continue;
         if (track.isMuted) track.stop();

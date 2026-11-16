@@ -5,7 +5,7 @@ Administration gathers the pages that apply to the whole installation, which onl
 ## How to use it
 
 1. Press your initials in the top right corner, {t:frame.account}, and choose {t:admin.title}. The first page, {t:users.title}, opens.
-2. Choose a page in the left column: {t:users.title}, {t:resources.title}, {t:workdays.title}, {t:relay.title}, {t:providers.title}, {t:identity.title}, {t:ai.title}, {t:retention.title}, {t:journal.title} or {t:health.title}.
+2. Choose a page in the left column: {t:users.title}, {t:resources.title}, {t:workdays.title}, {t:network.title}, {t:providers.title}, {t:identity.title}, {t:ai.title}, {t:retention.title}, {t:journal.title} or {t:health.title}.
 3. On a phone the list of pages is a page of its own. An open page goes back to the list with {t:frame.close}.
 
 ## How it works

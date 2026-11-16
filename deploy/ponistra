@@ -14,6 +14,8 @@
 #   ponistra access <email>          a new password for a user who cannot sign in, printed once
 #   ponistra status                  each service and the version that answers
 #   ponistra workspace               the code workspace for one user, here or elsewhere, where there is none
+#   ponistra relay <name>|none       meetings' relay for networks that let out only HTTPS, under a name
+#                                    pointing straight at this host, or none
 #
 # update takes a snapshot first and, if the new version does not start, puts the old one back
 # with the database as that snapshot left it. Each release restores its own snapshots.
@@ -235,9 +237,7 @@ install() {
 	opened
 	echo "Snapshots stay on this disk until the off-site copy is set up on System health; keep the recovery kit it gives away from this server"
 	echo "Meetings from outside the local network need UDP 7882 and TCP 7881 forwarded to this host;"
-	echo "and networks that let out neither, a relay: PONISTRA_TURN=<a name pointing straight at this host> in .env,"
-	echo "TCP 443 and UDP 3478 forwarded here, then docker compose up -d; where Cloudflare keeps that name,"
-	echo "PONISTRA_CLOUDFLARE_TOKEN (Zone: Read, DNS: Edit) keeps it on a public address that changes"
+	echo "networks that let out neither need a relay: ponistra relay <a name pointing straight at this host>"
 }
 
 update() {
@@ -387,6 +387,22 @@ add_workspace() {
 	opened
 }
 
+relay() {
+	[ -n "$1" ] || fail "ponistra relay <name>|none: a name pointing straight at this host's public address"
+	ready
+	name=$1
+	[ "$name" != none ] || name=
+	sed -i '/^PONISTRA_TURN=/d' .env
+	[ -z "$name" ] || printf 'PONISTRA_TURN=%s\n' "$name" >> .env
+	started || fail "Ponistra did not start with the relay; docker compose logs frontend livekit"
+	if [ -z "$name" ]; then
+		echo "Meetings have no relay of their own"
+		return 0
+	fi
+	echo "The relay is $name: forward TCP 443 and UDP 3478 to this host, and point $name at its public address;"
+	echo "where Cloudflare keeps $name, its token on Administration, Network keeps it there as the address changes"
+}
+
 status() {
 	docker compose ps --format 'table {{.Service}}\t{{.Status}}'
 	echo "installed $(setting PONISTRA_VERSION)"
@@ -402,5 +418,6 @@ case "${1:-}" in
 	access) access "${2:-}" ;;
 	status) status ;;
 	workspace) add_workspace ;;
+	relay) relay "${2:-}" ;;
 	*) sed -n '2,/^[^#]/s/^# \{0,1\}//p' "$(basename "$0")"; exit 2 ;;
 esac

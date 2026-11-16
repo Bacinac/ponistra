@@ -32,6 +32,7 @@ from apps.mail import secured as mail_secured
 from apps.mail import views as mail
 from apps.meetings import views as meetings
 from apps.memory import views as memory
+from apps.network import views as network
 from apps.push import views as push
 from apps.retention import views as retention
 from apps.search import views as search
@@ -50,6 +51,7 @@ urlpatterns = [
     path("api/crashes", views.crash),
     path("api/crossed", views.crossed),
     path("api/health", health.health),
+    path("api/network", network.network),
     path("api/journal", journal.journal),
     path("api/retention/rules", retention.rules),
     path("api/retention/rules/<int:pk>", retention.rule),
@@ -145,7 +147,6 @@ urlpatterns = [
     path("api/meetings/<uuid:pk>/recordings", meetings.meeting_recordings),
     path("api/meetings/<uuid:pk>/guests/<str:key>/recording", meetings.guest_recording),
     path("api/meetings/recorded", meetings.recorded),
-    path("api/meetings/relay", meetings.relay_setting),
     path("api/meetings/recordings/<uuid:pk>/again", meetings.recording_again),
     path("api/meetings/<uuid:pk>/invite", meetings.invite),
     path("api/meetings/<uuid:pk>/decline", meetings.decline),

@@ -2589,7 +2589,8 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     - S2-4: Web Push;
     - S2-5: recording (our own recorder, decided 2026-11-11);
     - S2-6: the transcript made into minutes with tasks, through D28;
-    - S2-7: an external TURN service for an installation without a reachable port.
+    - S2-7: an external TURN service for an installation without a reachable port,
+      removed 2026-11-16 (below).
   - *S2-1, meetings, built 2026-10-28.* A meeting is a room at its own link,
     `/meet/<id>` under the installation's public address; anyone signed in to
     the installation joins it, each joining its own participant (the user's id
@@ -2875,6 +2876,31 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     browsers only through the relay against a LiveKit with no port inward,
     runs through Cloudflare once its key is entered on production; production
     without its port forwarding is a step of its own after it.
+  - *S2-7 removed 2026-11-16* (Ivo: "vrati kako je bilo i izbaci cloudflarov
+    turn ako nam ne pomaže"). Production ran without forwarding from
+    2026-11-13; the first guest from outside (2026-11-16) was let in, but no
+    ICE pair to LiveKit ever answered, from her side or through Cloudflare's
+    relay, though both NATs map endpoint-independently and keep the port. A
+    relay serves a browser that cannot reach out, never an SFU nothing reaches
+    inward: LiveKit takes no TURN for its own side, and answering the relay
+    outward depends on how each router filters. So an installation forwards
+    UDP 7882 and TCP 7881 (INSTALL), with LiveKit's own relay for networks
+    that let out neither; one that cannot forward needs LiveKit somewhere
+    reachable. The setting, its health check and the per-joining ICE servers
+    are gone (meetings 0008).
+  - *Network, built 2026-11-16* (Ivo: the token "kroz UI", the relay's name
+    where it belongs, the ports told to whoever installs). Administration →
+    Network (`apps.network`) shows the public address STUN finds, whether
+    LiveKit's TCP port answers at it (through the router's loopback, so "not
+    confirmed" rather than "down"), the relay's name, and keeps the
+    Cloudflare token for the names pointing straight at the installation,
+    sealed and tried before it is kept; `address.follow` reads it at each
+    look, so it takes effect without a restart, and keeps Cloudflare's last
+    refusal for the page. The health page checks both (`outside`, and `dns`
+    with a token), so the watch tells the administrators. The relay's name is
+    read by Caddy and LiveKit as they start, so it stays in `.env`, set by
+    `ponistra relay <name>|none`, which starts the installation again with
+    it; the backend never gets Docker to do it.
 - **D16: sheets at scale — closed 2026-10-20** (Ivo: "idemo sa sva tri
   koraka"). Measured on a 616 kB workbook of 11 sheets and 24,000 formulas: one
   tab whose Yjs state was 17.2 MB, 17.7 MB to the browser and 9–15 s on every

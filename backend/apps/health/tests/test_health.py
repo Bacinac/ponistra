@@ -14,6 +14,8 @@ from cryptography.x509.oid import NameOID
 
 from apps.backups import backups
 from apps.health import views
+from apps.network import address
+from apps.network.models import Dns
 from apps.search import extraction
 from apps.search.tests.test_search import upload_file
 from apps.users.models import User
@@ -27,6 +29,14 @@ def places(tmp_path, monkeypatch):
     monkeypatch.setenv("RESTIC_REPOSITORY", str(tmp_path / "backup"))
     monkeypatch.setenv("RESTIC_PASSWORD", "test")
     monkeypatch.setenv("RESTIC_CACHE_DIR", str(tmp_path / "cache"))
+
+
+@pytest.fixture(autouse=True)
+def outside(monkeypatch):
+    """Whether LiveKit's port answers at the public address, as the test sets it."""
+    state = {"reached": True}
+    monkeypatch.setattr(address, "reached", lambda: state["reached"])
+    return state
 
 
 @pytest.fixture
@@ -123,6 +133,7 @@ def test_the_health_says_what_answers_and_what_is_late(admin, settings, healthy)
         "printer": False,
         "ocr": True,
         "meetings": True,
+        "outside": True,
     }
     assert health["snapshots"] == {
         "count": 0,
@@ -165,3 +176,13 @@ def test_the_relay_is_checked_under_its_name_where_the_installation_has_one(
     assert admin.get("/api/health").json()["services"]["relay"] is False
     monkeypatch.setattr(views, "RELAY_PORT", 9)
     assert admin.get("/api/health").json()["services"]["relay"] is False
+
+
+def test_meetings_from_outside_and_the_dns_records_are_checked(admin, outside):
+    outside["reached"] = False
+    services = admin.get("/api/health").json()["services"]
+    assert services["outside"] is False and "dns" not in services
+    Dns.objects.create(token=b"sealed", hint="abcd", error="Cloudflare 403: revoked")
+    assert admin.get("/api/health").json()["services"]["dns"] is False
+    Dns.objects.update(error="")
+    assert admin.get("/api/health").json()["services"]["dns"] is True

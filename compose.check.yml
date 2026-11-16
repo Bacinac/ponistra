@@ -26,7 +26,6 @@ services:
       PONISTRA_PUBLIC_URL: http://localhost:5173
       PONISTRA_LIVEKIT: livekit:7880
       PONISTRA_TURN: ""
-      PONISTRA_CLOUDFLARE_TOKEN: ""
       PONISTRA_WORKSPACE: ""
       PONISTRA_MAP: ${PONISTRA_MAP:-}
     healthcheck:

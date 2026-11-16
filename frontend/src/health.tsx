@@ -14,12 +14,14 @@ import type { MessageKey } from './i18n/hr';
 import { button, field, primaryButton } from './styles';
 import { errorMessage } from './tree';
 
-type Service = 'database' | 'converter' | 'printer' | 'ocr' | 'meetings' | 'relay' | 'outside';
+type Service =
+  'database' | 'converter' | 'printer' | 'ocr' | 'meetings' | 'relay' | 'outside' | 'dns';
 type Queue = 'jobs' | 'ocr' | 'text' | 'unread' | 'batches';
 
 interface Health {
   version: string;
-  /** The relay is there only where the installation has one. */
+  /** The relay is there only where the installation has one, the DNS records only where it keeps
+   * them through a token. */
   services: Partial<Record<Service, boolean>>;
   snapshots:
     | { count: number; newest: string | null; due: string; late: boolean; error?: undefined }
@@ -74,13 +76,14 @@ const SERVICES: Service[] = [
   'meetings',
   'relay',
   'outside',
+  'dns',
 ];
 const QUEUES: Queue[] = ['jobs', 'ocr', 'text', 'unread', 'batches'];
 
 const cell = 'px-2 py-2';
 const value = `${cell} text-right tabular-nums`;
 
-function Section({ heading, children }: { heading: string; children: ReactNode }) {
+export function Section({ heading, children }: { heading: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-lg">{heading}</h2>
@@ -89,7 +92,7 @@ function Section({ heading, children }: { heading: string; children: ReactNode }
   );
 }
 
-function Rows({ rows }: { rows: [string, ReactNode][] }) {
+export function Rows({ rows }: { rows: [string, ReactNode][] }) {
   return (
     <table className="w-full border-collapse text-sm">
       <tbody>
@@ -104,7 +107,7 @@ function Rows({ rows }: { rows: [string, ReactNode][] }) {
   );
 }
 
-function Verdict({ ok, good, bad }: { ok: boolean; good: MessageKey; bad: MessageKey }) {
+export function Verdict({ ok, good, bad }: { ok: boolean; good: MessageKey; bad: MessageKey }) {
   const { t } = useI18n();
   const Icon = ok ? CircleCheck : CircleX;
   return (

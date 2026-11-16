@@ -34,7 +34,6 @@ Guests, those invited from outside included, carry the mark {t:meeting.guest}, a
 - If the browser allows neither the camera nor the microphone, you can join only once you allow them in the site's settings.
 - Without a network you cannot join a meeting: {t:meeting.join} and {t:meeting.rejoin} are then turned off ({t:offline.needed}). A meeting you are already in is not cut off by it.
 - If the browser does not play sound by itself, press {t:meeting.playAudio}.
-- When the installation has an external meetings relay that cannot be reached at the moment, joining is refused with {t:error.relay_unreachable} Tell the installation's administrator.
 - Moving to another screen needs permission to manage windows in the site's settings.
 
 ## Related

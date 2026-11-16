@@ -57,13 +57,17 @@ forward to the server:
 | UDP 7882 | media, the usual way |
 | TCP 7881 | media where UDP is blocked |
 
+Without these ports nothing from outside reaches the meeting: a relay
+elsewhere does not stand in for them, as LiveKit has to be reached itself.
+**Administration → Network** shows whether the public address answers on
+them, and the health page warns the administrators when it stops.
+
 For networks that let out neither, Ponistra runs a relay (TURN): point a name of
-its own straight at the server (not through a proxy or tunnel), set
-`PONISTRA_TURN=<that name>` in `.env`, forward TCP 443 and UDP 3478 to the
-server and run `docker compose up -d`. Caddy keeps the relay's certificate as
-well. Where Cloudflare keeps that name and the public address changes,
-`PONISTRA_CLOUDFLARE_TOKEN` (Zone: Read, DNS: Edit) keeps the record pointing
-at it.
+its own straight at the server (not through a proxy or tunnel), forward TCP 443
+and UDP 3478 to the server and run `ponistra relay <that name>`. Caddy keeps
+the relay's certificate as well. Where Cloudflare keeps that name and the
+public address changes, a token of its zone (Zone: Read, DNS: Edit) entered
+on **Administration → Network** keeps the record pointing at it.
 
 ## Mail, sign-in and AI
 

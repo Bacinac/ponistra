@@ -22,8 +22,6 @@ Gosta može pustiti svatko iz instalacije tko je u razgovoru sastanka, i prije n
 
 Gost u sastanku vidi i čuje sve, dijeli zaslon i piše u razgovor sastanka, a uz ime nosi oznaku {t:meeting.guest}. Ne može pozivati druge ni puštati goste. Osvježi li stranicu na istoj kartici, ne čeka ponovno na ulazu.
 
-Gost ulazi istim putem kao članovi: kad instalacija ima vanjski relej sastanaka, slika i zvuk gostu idu kroz njega, pa ulazi i s mreže koja do instalacije ne dolazi izravno.
-
 ## Ograničenja
 
 - Gost vidi samo taj sastanak i njegov razgovor, ništa drugo iz instalacije.

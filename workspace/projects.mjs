@@ -73,6 +73,7 @@ import {
   rename,
   resumed,
   say,
+  withdraw,
   interrupt,
   measured,
   modelsOf,
@@ -1063,10 +1064,10 @@ const carry = async (command) => {
     // What was asked of a round's coordinator is no longer its to do once the round has closed.
     if (command.round && roundAt(command.round).round.closed) throw new Refusal(409, 'round_closed');
     const chat = await takenOver(command.session, command.folder);
-    if (!chat) return;
+    if (!chat || readJson(commandAt(command.id))?.state !== 'sent') return;
     if (command.kind === 'rename') rename(chat, command.text);
     else if (command.kind === 'model') choose(chat, command.text);
-    else say(chat, command.text, command.images ?? []);
+    else say(chat, command.text, command.images ?? [], command.id);
     settle(command, 'done');
   } catch (error) {
     if (!(error instanceof Refusal)) console.error(`the command ${command.id} failed`, error);
@@ -1271,8 +1272,10 @@ const ordered = async (given) => {
     begun(session, given.folder, text, images);
     command = { ...command, folder: given.folder, session, text, images, state: 'done' };
   } else if (kind === 'cancel' && given.round === undefined) {
-    const waiting = readJson(commandAt(Number(text)));
-    if (!/^\d{1,18}$/.test(text ?? '') || waiting?.kind !== 'chat' || waiting.state !== 'waiting') throw new Refusal(404, 'no_condition');
+    const waiting = /^\d{1,18}$/.test(text ?? '') ? readJson(commandAt(Number(text))) : null;
+    const said = waiting?.kind === 'say' && (waiting.state === 'sent' || waiting.state === 'done');
+    if (!said && (waiting?.kind !== 'chat' || waiting.state !== 'waiting')) throw new Refusal(404, 'no_condition');
+    if (said && waiting.state === 'done') await withdraw(waiting.session, waiting.id);
     settle(waiting, 'failed', 'cancelled');
     command = { ...command, folder: waiting.folder, text, state: 'done' };
   } else if (kind === 'say' || kind === 'rename' || kind === 'model') {

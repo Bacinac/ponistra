@@ -25,7 +25,6 @@ from apps.collab.watch import GRID_PATH, watch  # noqa: E402
 from apps.contacts.sync import contacts  # noqa: E402
 from apps.content.elements import follow  # noqa: E402
 from apps.content.words import follow as words  # noqa: E402
-from apps.core import address  # noqa: E402
 from apps.core.asyncdb import database  # noqa: E402
 from apps.documents import links  # noqa: E402
 from apps.documents.paging import paginate  # noqa: E402
@@ -39,6 +38,7 @@ from apps.mail.later import later  # noqa: E402
 from apps.mail.sync import mail  # noqa: E402
 from apps.meetings import lobby  # noqa: E402
 from apps.memory.night import nightly as memory  # noqa: E402
+from apps.network import address  # noqa: E402
 from apps.push.notices import deliver  # noqa: E402
 from apps.retention.sweep import sweeping  # noqa: E402
 from apps.search.extraction import extract  # noqa: E402

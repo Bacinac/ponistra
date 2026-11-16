@@ -22,7 +22,7 @@ Prijavljeni problem stoji pod {t:health.problems} uz vrijeme kada je prvi put uo
 
 ### Usluge
 
-{t:health.service.database}, {t:health.service.converter}, {t:health.service.printer}, {t:health.service.ocr} i {t:health.service.meetings} provjeravaju se pri svakom učitavanju. {t:health.service.relay} prikazuje se samo na instalaciji koja ga ima, a {t:health.service.outside} samo kad je u [Relej sastanaka](help:admin/meetings) postavljen vanjski relej; tada se provjerava daje li pružatelj vjerodajnice.
+{t:health.service.database}, {t:health.service.converter}, {t:health.service.printer}, {t:health.service.ocr} i {t:health.service.meetings} provjeravaju se pri svakom učitavanju. {t:health.service.relay} prikazuje se samo na instalaciji koja ga ima. {t:health.service.outside} provjerava dolazi li se do poslužitelja sastanaka na javnoj adresi instalacije, a {t:health.service.dns} prikazuje se samo uz token za DNS zapise i pokazuje je li ih zadnje praćenje adrese uspjelo; oboje opisuje [Mreža](help:admin/network).
 
 ### Sigurnosne kopije
 

@@ -1,0 +1,19 @@
+{
+  "order": 85,
+  "audience": "admin",
+  "covers": [
+    "route:/network"
+  ],
+  "quiet": [
+    "network.title",
+    "network.lost"
+  ],
+  "describes": {
+    "frontend/src/network.tsx#NetworkView": "018beeb84a90",
+    "frontend/src/network.tsx#TokenForm": "a8766f1352bb",
+    "frontend/src/network.tsx#NetworkPage": "7cc4aa1dfa73",
+    "backend/apps/network/views.py#network": "76dfbdc7dc84",
+    "backend/apps/network/address.py#reached": "c261935e2aa5",
+    "backend/apps/network/address.py#follow": "39f225aca64f"
+  }
+}

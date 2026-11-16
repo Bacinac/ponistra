@@ -29,6 +29,6 @@
     "frontend/src/call.tsx#Devices": "be6c162d35f8",
     "frontend/src/meeting.tsx#MeetingLink": "5871a13882f8",
     "backend/apps/meetings/models.py#Meeting": "139417fa1f72",
-    "backend/apps/meetings/views.py#join": "551a1dd0e681"
+    "backend/apps/meetings/views.py#join": "91c664b6b4e0"
   }
 }

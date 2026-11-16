@@ -22,7 +22,7 @@ A raised problem stands under {t:health.problems} with the time it was first see
 
 ### Services
 
-{t:health.service.database}, {t:health.service.converter}, {t:health.service.printer}, {t:health.service.ocr} and {t:health.service.meetings} are checked on every load. {t:health.service.relay} is shown only on an installation that has one, and {t:health.service.outside} only when an external relay is set in [Meetings relay](help:admin/meetings); it then checks that the provider gives credentials.
+{t:health.service.database}, {t:health.service.converter}, {t:health.service.printer}, {t:health.service.ocr} and {t:health.service.meetings} are checked on every load. {t:health.service.relay} is shown only on an installation that has one. {t:health.service.outside} checks whether the meetings' server is reached at the installation's public address, and {t:health.service.dns} shows only with a token for the DNS records and tells whether the last following of the address worked; [Network](help:admin/network) describes both.
 
 ### Backups
 

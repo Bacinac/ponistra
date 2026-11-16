@@ -25,11 +25,9 @@ interface Door {
 }
 
 /** A guest's way into the call (S2-2), which `Call` takes in place of a signed-in user's. */
-/** The key a participant enters the room with, and the installation's relay where it has one:
- * the ICE servers in place of those LiveKit offers. */
+/** The key a participant enters the room with. */
 export interface Joining {
   token: string;
-  ice: RTCIceServer[] | null;
 }
 
 export interface Guesting {
