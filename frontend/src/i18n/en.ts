@@ -121,6 +121,7 @@ export const en: Record<MessageKey, string> = {
   'workspace.others': 'Others',
   'workspace.others.put': 'Move to Others',
   'workspace.others.back': 'Back to main',
+  'workspace.view.more': 'More',
   'workspace.view.overview': 'Overview',
   'workspace.view.chat': 'Conversation',
   'workspace.view.memory': 'Memory',

@@ -52,7 +52,7 @@
     "workspace/projects.mjs": "69571c89f0f5",
     "workspace/webview.mjs": "ab2c5a614673",
     "frontend/src/WorkspacePage.tsx#RoundCard": "cd3223cb5621",
-    "frontend/src/WorkspacePage.tsx#Pult": "09c489526e20",
+    "frontend/src/WorkspacePage.tsx#Pult": "a199c067cd98",
     "frontend/src/WorkspacePage.tsx#Conversation": "ff2e46649abd",
     "frontend/src/WorkspacePage.tsx#ChatRow": "8977f976a555",
     "backend/apps/workspace/views.py#commands": "9451ea942997",

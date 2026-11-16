@@ -119,6 +119,7 @@ export const hr = {
   'workspace.others': 'Ostali',
   'workspace.others.put': 'Premjesti u Ostale',
   'workspace.others.back': 'Vrati u glavne',
+  'workspace.view.more': 'Više',
   'workspace.view.overview': 'Pregled',
   'workspace.view.chat': 'Razgovor',
   'workspace.view.memory': 'Memorija',

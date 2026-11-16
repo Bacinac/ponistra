@@ -30,7 +30,7 @@ Razgovore vodi Claude Code u radnom prostoru, koji se prijavljuje jednom, pretpl
 
 ### Razgovor s agentom na stranici
 
-1. Na stranici {t:rail.projects} pritisnite razgovor. Na telefonu se tada otvara {t:workspace.view.chat} (gumbi na vrhu prebacuju između {t:workspace.view.overview}, {t:workspace.view.chat}, [{t:workspace.view.memory}](help:agents/memory), {t:workspace.view.hours} i [{t:workspace.view.spend}](help:agents/spend)); na računalu popis stoji u lijevom stupcu, kao mape uz dokumente, a razgovor desno od njega, dok ga gumb {t:workspace.view.memory}, skroz desno u retku s {t:workspace.view.chat}, ne zamijeni memorijom agenta. Svaki se pomiče zasebno, a širina popisa mijenja se povlačenjem tanke crte između popisa i razgovora. Dok ništa ne odaberete, ondje je koordinator zadnjeg kruga.
+1. Na stranici {t:rail.projects} pritisnite razgovor. Na telefonu se tada otvara {t:workspace.view.chat} (gumbi na vrhu prebacuju između {t:workspace.view.overview} i {t:workspace.view.chat}, a izbornik {t:workspace.view.more} uz njih nudi [{t:workspace.view.memory}](help:agents/memory), {t:workspace.view.hours}, [{t:workspace.view.spend}](help:agents/spend), terminal i datoteke); na računalu popis stoji u lijevom stupcu, kao mape uz dokumente, a razgovor desno od njega, dok ga gumb {t:workspace.view.memory}, skroz desno u retku s {t:workspace.view.chat}, ne zamijeni memorijom agenta. Svaki se pomiče zasebno, a širina popisa mijenja se povlačenjem tanke crte između popisa i razgovora. Dok ništa ne odaberete, ondje je koordinator zadnjeg kruga.
 2. U polje {t:workspace.say} upišite poruku ili pritisnite {t:speech.dictate} i izgovorite je.
 3. Za sliku je zalijepite u polje (Ctrl+V), povucite je na polje ili pritisnite {t:workspace.addImage}. Pokaže se umanjena ispod polja; {t:workspace.removeImage} je uklanja prije slanja. Desni klik u polje lijepi tekst iz međuspremnika na mjesto pokazivača, a sliku kad u međuspremniku nema teksta. Ne dopusti li preglednik čitanje međuspremnika, ispod polja piše: {t:error.clipboard_refused}
 4. Pritisnite {t:workspace.send} ili Enter; Shift+Enter počinje novi redak, a na telefonu Enter počinje novi redak, pa se šalje gumbom. Za česte riječi pritisnite {t:workspace.quick.catchup}, {t:workspace.quick.continue} ili {t:workspace.quick.handoff}; svaka se šalje odmah. Poslana poruka odmah stoji na dnu razgovora. Dok je agent ne pročita, uokvirena je i ispod nje piše {t:workspace.unread}; agent je čita kad završi korak na kojem radi, a tada postaje dio razgovora. Do tada je {t:workspace.withdraw} (X u poruci) vraća u polje za pisanje, ispred onoga što ste već počeli pisati, pa je možete spojiti s novom i poslati jednom; slike poslane s njom ne vraćaju se. Ako ju je agent u međuvremenu uzeo, ispod nje piše {t:error.already_read}
@@ -112,7 +112,7 @@ Ponovni odlazak na {t:rail.projects} dovodi taj isti prozor u prvi plan, umjesto
 1. Na stranici {t:rail.projects} pritisnite ikonu {t:workspace.terminal.open} desno od imena projekta.
 2. Ako u zadnjih 8 sati niste potvrdili tko ste, potvrdite to.
 3. Terminal se otvara na mjestu razgovora, u mapi projekta. Tipkajte naredbe kao u svakom terminalu; Ctrl+C prekida naredbu. Desni klik lijepi tekst iz međuspremnika, a kad je u terminalu nešto označeno, kopira označeno.
-4. Gumb {t:workspace.view.terminal} na vrhu vraća terminal dok gledate razgovor ili memoriju; naredba u njemu za to vrijeme radi dalje.
+4. Gumb {t:workspace.view.terminal} na vrhu (na telefonu u izborniku {t:workspace.view.more}) vraća terminal dok gledate razgovor ili memoriju; naredba u njemu za to vrijeme radi dalje.
 5. {t:workspace.terminal.close} desno iznad terminala zatvara ga i završava ljusku sa svime što je u njoj pokrenuto.
 
 Kad ljuska završi (naredba `exit`) ili se veza s njom prekine, terminal se sam zatvori; ikona {t:workspace.terminal.open} otvara novu ljusku. Ako se terminal ne može otvoriti, ispod njega piše: {t:workspace.terminal.unopened} {t:workspace.terminal.reopen} pokušava ponovno.
@@ -124,7 +124,7 @@ Kad ljuska završi (naredba `exit`) ili se veza s njom prekine, terminal se sam 
 3. Pritisnite datoteku. Tekst se otvara u uređivaču s brojevima redaka i bojama po vrsti datoteke; {k:Mod-f} traži u njoj, {k:Mod-z} poništava izmjenu.
 4. Uredite tekst. Iznad njega piše {t:workspace.files.unsaved}.
 5. Pritisnite {t:workspace.files.save} ili {k:Mod-s}. Kad je datoteka zapisana, piše {t:workspace.files.saved}.
-6. Gumb {t:workspace.view.files} na vrhu vraća datoteke dok gledate razgovor ili terminal; nespremljene izmjene za to vrijeme ostaju.
+6. Gumb {t:workspace.view.files} na vrhu (na telefonu u izborniku {t:workspace.view.more}) vraća datoteke dok gledate razgovor ili terminal; nespremljene izmjene za to vrijeme ostaju.
 7. {t:workspace.files.close} desno iznad datoteka zatvara ih.
 
 Datoteka koja nije tekst ili je veća od 1 MB ne otvara se u uređivaču: uz njezinu veličinu piše {t:workspace.files.binary} ili {t:workspace.files.large} Gumb {t:workspace.files.download} je preuzima. Dok nijedna datoteka nije odabrana, desno piše {t:workspace.files.none} Mapa bez ičega u sebi u stablu kaže {t:workspace.files.empty} Na telefonu je stablo preko cijelog zaslona; odabrana datoteka zamjenjuje ga, a strelica {t:workspace.files.back} lijevo od imena projekta vraća stablo.
@@ -133,7 +133,7 @@ Ako ste izmijenili datoteku pa odaberete drugu, zatvorite datoteke ili ih otvori
 
 ### Vrijeme rada
 
-1. Na stranici {t:rail.projects} pritisnite {t:workspace.view.hours}, skroz desno u retku s {t:workspace.view.chat} (na telefonu s {t:workspace.view.overview}).
+1. Na stranici {t:rail.projects} pritisnite {t:workspace.view.hours}, skroz desno u retku s {t:workspace.view.chat} (na telefonu u izborniku {t:workspace.view.more}).
 2. Za zadnji mjesec stoji vrijeme po projektu, {t:workspace.hours.total} i {t:workspace.hours.wall}, a ispod, pod {t:workspace.hours.days}, isto po danu, svaki projekt u svom stupcu.
 3. Za drugi mjesec odaberite ga u polju {t:workspace.hours.month}.
 4. Upis u Clockify ili TaskStreamer i brisanje transkripata postavljaju se gumbom {t:workspace.hours.settings} ([Upis vremena rada](help:agents/hours)).

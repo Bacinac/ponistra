@@ -1,11 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Archive,
+  Brain,
   CalendarClock,
   Check,
   ChevronDown,
   ChevronRight,
   Copy,
+  Clock,
+  Ellipsis,
+  Gauge,
   ArrowDownToLine,
   ArrowUpToLine,
   ClipboardList,
@@ -27,6 +31,7 @@ import {
   Upload,
   UsersRound,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import {
   createContext,
@@ -2189,6 +2194,19 @@ interface Starting {
 
 const LINKED = ['memory', 'hours', 'spend'] as const;
 
+/** The views a phone keeps in a menu beside the overview and the conversation. */
+const TUCKED = new Set<Tab>(['terminal', 'files', 'memory', 'hours', 'spend']);
+
+const VIEW_ICONS: Record<Tab, LucideIcon> = {
+  overview: ClipboardList,
+  chat: MessageSquarePlus,
+  terminal: SquareTerminal,
+  files: FolderTree,
+  memory: Brain,
+  hours: Clock,
+  spend: Gauge,
+};
+
 const VIEWS: Record<Tab, MessageKey> = {
   overview: 'workspace.view.overview',
   chat: 'workspace.view.chat',
@@ -2365,16 +2383,24 @@ function Pult({
       </div>
     </OpenRounds>
   );
+  const views = (Object.keys(VIEWS) as Tab[]).filter(
+    (each) =>
+      (!wide || each !== 'overview') &&
+      (terminal || each !== 'terminal') &&
+      (files || each !== 'files'),
+  );
+  const tucked = views.find((each) => TUCKED.has(each) && each === shown);
+  const counted = (each: Tab) => {
+    const count = each === 'overview' ? waiting : each === 'memory' ? proposals : 0;
+    return count > 0 ? (
+      <span className="text-danger tabular-nums">{formatNumber(count)}</span>
+    ) : null;
+  };
   const page = (
     <div className={`flex flex-col ${wide ? 'h-full' : ''}`}>
       <div role="group" aria-label={t('rail.projects')} className="mb-4 flex gap-2">
-        {(Object.keys(VIEWS) as Tab[])
-          .filter(
-            (each) =>
-              (!wide || each !== 'overview') &&
-              (terminal || each !== 'terminal') &&
-              (files || each !== 'files'),
-          )
+        {views
+          .filter((each) => wide || !TUCKED.has(each))
           .map((each) => (
             <button
               key={each}
@@ -2384,14 +2410,49 @@ function Pult({
               className={`${button} ${shown === each ? 'bg-selected' : ''} ${each === 'memory' ? 'ml-auto' : ''}`}
             >
               {t(VIEWS[each])}
-              {each === 'overview' && waiting > 0 && (
-                <span className="text-danger tabular-nums">{formatNumber(waiting)}</span>
-              )}
-              {each === 'memory' && proposals > 0 && (
-                <span className="text-danger tabular-nums">{formatNumber(proposals)}</span>
-              )}
+              {counted(each)}
             </button>
           ))}
+        {!wide && (
+          <Menu
+            trigger={
+              <button
+                type="button"
+                aria-pressed={!!tucked}
+                className={`${button} ml-auto ${tucked ? 'bg-selected' : ''}`}
+              >
+                {tucked ? (
+                  <>
+                    {t(VIEWS[tucked])}
+                    <ChevronDown size={14} aria-hidden />
+                  </>
+                ) : (
+                  <>
+                    <Ellipsis size={16} aria-hidden />
+                    <span className="sr-only">{t('workspace.view.more')}</span>
+                  </>
+                )}
+                {shown !== 'memory' && counted('memory')}
+              </button>
+            }
+          >
+            {views
+              .filter((each) => TUCKED.has(each))
+              .map((each) => (
+                <MenuItem
+                  key={each}
+                  icon={VIEW_ICONS[each]}
+                  label={
+                    each === 'memory' && proposals > 0
+                      ? `${t(VIEWS[each])} (${formatNumber(proposals)})`
+                      : t(VIEWS[each])
+                  }
+                  checked={shown === each}
+                  onSelect={() => setView(each)}
+                />
+              ))}
+          </Menu>
+        )}
       </div>
       {(released.isError || commands.isError || measured.isError) && (
         <p className="mb-2 text-sm text-danger">

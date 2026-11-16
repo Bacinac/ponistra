@@ -30,7 +30,7 @@ The chats run Claude Code in the workspace, which signs in once, with a Claude s
 
 ### Talking to the agent on the page
 
-1. On the {t:rail.projects} page press a chat. On a phone {t:workspace.view.chat} then opens (the buttons at the top switch between {t:workspace.view.overview}, {t:workspace.view.chat}, [{t:workspace.view.memory}](help:agents/memory), {t:workspace.view.hours} and [{t:workspace.view.spend}](help:agents/spend)); on a computer the list stands in the left column, like the folders beside documents, and the chat to its right, until the {t:workspace.view.memory} button, far right in the row with {t:workspace.view.chat}, replaces it with the agent's memory. Each scrolls on its own, and the list is widened or narrowed by dragging the thin line between the list and the chat. Until you pick one, the coordinator of the latest round is shown.
+1. On the {t:rail.projects} page press a chat. On a phone {t:workspace.view.chat} then opens (the buttons at the top switch between {t:workspace.view.overview} and {t:workspace.view.chat}, and the {t:workspace.view.more} menu beside them offers [{t:workspace.view.memory}](help:agents/memory), {t:workspace.view.hours}, [{t:workspace.view.spend}](help:agents/spend), the terminal and the files); on a computer the list stands in the left column, like the folders beside documents, and the chat to its right, until the {t:workspace.view.memory} button, far right in the row with {t:workspace.view.chat}, replaces it with the agent's memory. Each scrolls on its own, and the list is widened or narrowed by dragging the thin line between the list and the chat. Until you pick one, the coordinator of the latest round is shown.
 2. In the field {t:workspace.say} type a message, or press {t:speech.dictate} and say it.
 3. For an image, paste it into the field (Ctrl+V), drag it onto the field or press {t:workspace.addImage}. It shows small below the field; {t:workspace.removeImage} takes it off before sending. A right click in the field pastes the clipboard's text where the caret stands, or its image when it holds no text. If the browser does not let the clipboard be read, below the field it says: {t:error.clipboard_refused}
 4. Press {t:workspace.send} or Enter; Shift+Enter starts a new line, and on a phone Enter starts a new line, so the button sends. For frequent words press {t:workspace.quick.catchup}, {t:workspace.quick.continue} or {t:workspace.quick.handoff}; each is sent at once. A message you send stands at the foot of the conversation at once. Until the agent reads it, it is framed and below it says {t:workspace.unread}; the agent reads it when it finishes the step it is on, and it then becomes part of the conversation. Until then {t:workspace.withdraw} (the X in the message) puts it back into the field, before what you had begun to write, so that you can join it to a new one and send it once; images sent with it do not come back. If the agent took it in the meantime, below it says {t:error.already_read}
@@ -112,7 +112,7 @@ Going to {t:rail.projects} again brings that same window forward rather than ope
 1. On the {t:rail.projects} page press the {t:workspace.terminal.open} icon to the right of the project's name.
 2. If you have not confirmed who you are in the last 8 hours, confirm it.
 3. The terminal opens in the chat's place, in the project's folder. Type commands as in any terminal; Ctrl+C stops a command. A right click pastes the clipboard's text, and when something in the terminal is selected, copies the selection.
-4. The {t:workspace.view.terminal} button at the top brings the terminal back while you look at a chat or the memory; a command in it keeps running meanwhile.
+4. The {t:workspace.view.terminal} button at the top (on a phone in the {t:workspace.view.more} menu) brings the terminal back while you look at a chat or the memory; a command in it keeps running meanwhile.
 5. {t:workspace.terminal.close} at the right above the terminal closes it and ends the shell with everything started in it.
 
 When the shell ends (the `exit` command) or the connection to it is lost, the terminal closes by itself; the {t:workspace.terminal.open} icon opens a new shell. If the terminal cannot be opened, below it says: {t:workspace.terminal.unopened} {t:workspace.terminal.reopen} tries again.
@@ -124,7 +124,7 @@ When the shell ends (the `exit` command) or the connection to it is lost, the te
 3. Press a file. Text opens in an editor with line numbers and colours by the kind of file; {k:Mod-f} searches it, {k:Mod-z} undoes a change.
 4. Edit the text. Above it says {t:workspace.files.unsaved}.
 5. Press {t:workspace.files.save} or {k:Mod-s}. Once the file is written, it says {t:workspace.files.saved}.
-6. The {t:workspace.view.files} button at the top brings the files back while you look at a chat or the terminal; unsaved changes stay meanwhile.
+6. The {t:workspace.view.files} button at the top (on a phone in the {t:workspace.view.more} menu) brings the files back while you look at a chat or the terminal; unsaved changes stay meanwhile.
 7. {t:workspace.files.close} at the right above the files closes them.
 
 A file that is not text or is larger than 1 MB does not open in the editor: beside its size it says {t:workspace.files.binary} or {t:workspace.files.large} The {t:workspace.files.download} button downloads it. While no file is chosen, the right side says {t:workspace.files.none} A folder with nothing in it says in the tree {t:workspace.files.empty} On a phone the tree fills the screen; the chosen file takes its place, and the {t:workspace.files.back} arrow to the left of the project's name brings the tree back.
@@ -133,7 +133,7 @@ If you changed a file and then choose another, close the files or open them for 
 
 ### Time worked
 
-1. On the {t:rail.projects} page press {t:workspace.view.hours}, far right in the row with {t:workspace.view.chat} (on a phone with {t:workspace.view.overview}).
+1. On the {t:rail.projects} page press {t:workspace.view.hours}, far right in the row with {t:workspace.view.chat} (on a phone in the {t:workspace.view.more} menu).
 2. The latest month shows the time by project, {t:workspace.hours.total} and {t:workspace.hours.wall}, and below, under {t:workspace.hours.days}, the same by day, each project in a column of its own.
 3. For another month pick it in the {t:workspace.hours.month} field.
 4. Writing to Clockify or TaskStreamer and removing transcripts are set up with {t:workspace.hours.settings} ([Writing the time worked](help:agents/hours)).

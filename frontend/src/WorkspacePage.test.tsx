@@ -1311,6 +1311,30 @@ test('proposals for the memory wait atop the list and are accepted on the Memory
   await screen.findByRole('button', { name: 'Memorija' });
 });
 
+test('a phone keeps the overview and the conversation in the row and the other views in a menu', async () => {
+  const wide = globalThis.matchMedia;
+  onTestFinished(() => void (globalThis.matchMedia = wide));
+  vi.spyOn(globalThis, 'matchMedia').mockImplementation((query) =>
+    query.includes('min-width')
+      ? ({ ...wide(query), matches: Number(query.match(/(\d+)px/)?.[1]) <= 390 } as MediaQueryList)
+      : wide(query),
+  );
+  served({
+    'GET /api/memory/waiting': () => ({ count: 1 }),
+    'GET /api/memory': () => memory([MEMORY_PROPOSAL], []),
+  });
+  const { user } = open('/workspace', OWNER);
+  await screen.findByRole('button', { name: /^Pregled/ });
+  screen.getByRole('button', { name: 'Razgovor' });
+  expect(screen.queryByRole('button', { name: /^Memorija/ })).toBeNull();
+  await user.click(await screen.findByRole('button', { name: /^Više\s*1$/ }));
+  screen.getByRole('menuitemcheckbox', { name: 'Vrijeme rada' });
+  screen.getByRole('menuitemcheckbox', { name: 'Potrošnja' });
+  await user.click(screen.getByRole('menuitemcheckbox', { name: 'Memorija (1)' }));
+  await screen.findByRole('region', { name: 'Prijedlozi za memoriju' });
+  screen.getByRole('button', { name: 'Memorija', pressed: true });
+});
+
 test('a review groups the proposals, and a group is accepted at once', async () => {
   const asked: string[] = [];
   const other = { ...MEMORY_PROPOSAL, id: 8, file: 'project_b.md', kind: 'link' };
