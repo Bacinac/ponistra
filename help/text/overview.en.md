@@ -30,7 +30,7 @@ Every change goes to the server at once, so there is no save button. The right o
 
 When someone else is editing the document, you see their cursor in a colour with their name. Your own cursor from another device or window is marked {t:presence.you}. {t:command.undo} takes back only your own changes, not those of others.
 
-{t:view.text} shows the text in one column, {t:view.pages} as it will print, with rulers beside the page, and {t:view.slides} slide by slide. The chosen view is remembered for each document in that browser. A document imported from Word first opens in the pages view, and one from PowerPoint in the slides view. The zoom holds for all documents.
+{t:view.text} shows the text in one column, {t:view.pages} as it will print, with rulers beside the page, and {t:view.slides} slide by slide. A document first opens in the pages view, one imported from PowerPoint in the slides view, and the view you choose is remembered for each document in that browser. The text view is as wide as the text on the document's page, so a table stands as it will print. The zoom holds for all documents.
 
 ## Limits
 

@@ -7,6 +7,7 @@ import base64
 import hashlib
 import hmac
 import secrets
+import uuid
 from contextvars import ContextVar
 from datetime import timedelta
 from urllib.parse import unquote
@@ -42,6 +43,8 @@ UNUSED = timedelta(days=1)
 # Clients one address may hold registered and not let in by anyone, until UNUSED forgets them.
 MOST_UNUSED = 10
 CONSENT_PATH = "/agents/consent"
+# Whose a key is: one its user made, or the one the user's code workspace holds.
+OWN_KEY, WORKSPACE_KEY = "own", "workspace"
 
 
 def issuer() -> str:
@@ -126,6 +129,19 @@ def _issued(grant: Grant, scopes: list[str]) -> OAuthToken:
     )
 
 
+def issued_key(user, name: str, whose: str) -> tuple[Grant, str]:
+    """A key for an agent that cannot take a sign-in in the user's browser, as one on another
+    machine cannot: a grant of its own, standing until revoked, and its secret, said only now."""
+    secret = secrets.token_urlsafe(32)
+    with transaction.atomic():
+        client = Client.objects.create(
+            client_id=f"key-{uuid.uuid4()}", name=name[:200], registered={"key": whose}
+        )
+        grant = Grant.objects.create(client=client, user=user)
+        Token.objects.create(grant=grant, kind=Token.Kind.KEY, digest=digest(secret))
+    return grant, secret
+
+
 def _authorized(client_id: str, params: dict) -> str:
     client = Client.objects.get(client_id=client_id)
     made = Authorization.objects.create(
@@ -206,11 +222,11 @@ def _exchanged_refresh(refresh: Refresh, scopes: list[str]) -> OAuthToken:
 def _loaded_access(token: str) -> AccessToken | None:
     found = (
         Token.objects.select_related("grant__client")
-        .filter(kind=Token.Kind.ACCESS, digest=digest(token))
+        .filter(kind__in=(Token.Kind.ACCESS, Token.Kind.KEY), digest=digest(token))
         .first()
     )
     now = timezone.now()
-    if found is None or found.expires_at < now or found.grant.revoked_at:
+    if found is None or (found.expires_at and found.expires_at < now) or found.grant.revoked_at:
         return None
     grant = found.grant
     if grant.used_at is None or grant.used_at < now - NOTED:
@@ -219,7 +235,7 @@ def _loaded_access(token: str) -> AccessToken | None:
         token=token,
         client_id=grant.client.client_id,
         scopes=found.scopes,
-        expires_at=int(found.expires_at.timestamp()),
+        expires_at=int(found.expires_at.timestamp()) if found.expires_at else None,
         resource=mcp_url(),
         subject=str(grant.user_id),
         claims={"iss": issuer(), "client_name": grant.client.name, "grant": grant.pk},
@@ -231,7 +247,9 @@ class Provider:
     the bearer tokens its MCP server reads."""
 
     async def get_client(self, client_id: str) -> OAuthClientInformationFull | None:
-        found = await database(Client.objects.filter(client_id=client_id).first)()
+        found = await database(
+            Client.objects.filter(client_id=client_id).exclude(registered__has_key="key").first
+        )()
         return _info(found) if found else None
 
     async def register_client(self, info: OAuthClientInformationFull) -> None:

@@ -17,13 +17,15 @@ import httpx2
 import icu
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models.expressions import RawSQL
 from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django.views.decorators.csrf import csrf_exempt
 
+from apps.agents import oauth
+from apps.agents.models import Grant, Token
 from apps.blobs import store
 from apps.blobs.models import Blob, Upload
 from apps.core.api import Refused, api, body
@@ -634,6 +636,41 @@ def _from_workspace(request) -> bool:
     return bool(settings.WORKSPACE_TOKEN) and hmac.compare_digest(
         given.encode(), f"Bearer {settings.WORKSPACE_TOKEN}".encode()
     )
+
+
+@csrf_exempt
+def agent(request):
+    """The key the workspace's agent reaches PONISTRA's MCP server with: the one it holds while it
+    stands, else a new one in place of any the owner's workspace held before. A sign-in in the
+    browser would send the code back to the browser's own machine, never to the workspace."""
+    if request.method != "POST":
+        return JsonResponse({"error": "method_not_allowed"}, status=405)
+    if not _from_workspace(request):
+        return JsonResponse({"error": "refused"}, status=403)
+    owner = (
+        get_user_model().objects.filter(email__iexact=settings.WORKSPACE, is_active=True).first()
+    )
+    if owner is None:
+        return JsonResponse({"error": "not_found"}, status=404)
+    try:
+        held = json.loads(request.body or b"{}").get("key")
+    except ValueError, AttributeError:
+        held = None
+    grants = Grant.objects.filter(
+        user=owner, revoked_at=None, client__registered__key=oauth.WORKSPACE_KEY
+    )
+    if (
+        isinstance(held, str)
+        and Token.objects.filter(
+            kind=Token.Kind.KEY, digest=oauth.digest(held), grant__in=grants
+        ).exists()
+    ):
+        return JsonResponse({"key": held})
+    with transaction.atomic():
+        Token.objects.filter(grant__in=grants).delete()
+        grants.update(revoked_at=timezone.now())
+        _, secret = oauth.issued_key(owner, "Claude Code", oauth.WORKSPACE_KEY)
+    return JsonResponse({"key": secret})
 
 
 @csrf_exempt

@@ -152,3 +152,31 @@ test('an outside agent signs in at the consent page, acts as the user, and is re
   await expect(settings.getByText('Nijedan agent još nije povezan.')).toBeVisible();
   expect((await call('tools/list')).status()).toBe(401);
 });
+
+test('a key made in the settings lets an agent elsewhere in without a sign-in until it is revoked', async ({
+  page,
+}) => {
+  await page.goto('/settings/agents');
+  const settings = page.getByRole('main');
+  await settings.getByLabel('Naziv ključa').fill('Poslužitelj (e2e)');
+  await settings.getByRole('button', { name: 'Novi ključ' }).click();
+  const command = settings.getByText(/^claude mcp add --transport http ponistra /);
+  await expect(command).toBeVisible();
+  const secret = (await command.textContent())!.match(/Bearer ([\w-]+)"$/)![1];
+  const call = () =>
+    page.request.post('/api/mcp', {
+      headers: { ...MCP, Authorization: `Bearer ${secret}` },
+      data: { jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'me', arguments: {} } },
+    });
+  expect((await (await call()).json()).result.structuredContent.client).toBe('Poslužitelj (e2e)');
+
+  const row = settings.getByRole('row', { name: /Poslužitelj \(e2e\)/ });
+  await row.getByRole('button', { name: 'Radnje' }).click();
+  await page.getByRole('menuitem', { name: 'Opozovi pristup' }).click();
+  await page
+    .getByRole('alertdialog', { name: 'Opozvati pristup agentu?' })
+    .getByRole('button', { name: 'Opozovi pristup' })
+    .click();
+  await expect(row).toBeHidden();
+  expect((await call()).status()).toBe(401);
+});

@@ -231,7 +231,8 @@ export function dressed(look: Look | undefined, cell: Designed): Dressed | undef
 export class Inks {
   private kept = new Map<string, Ink>();
   private paints = new Map<string, string>();
-  private colours: (Colours & { paper: boolean }) | null = null;
+  private colours: Colours | null = null;
+  private paper: boolean | null = null;
   private pads: { x: number; y: number } | null = null;
   private heading: Ink | null = null;
   readonly host: HTMLElement;
@@ -260,7 +261,17 @@ export class Inks {
   }
 
   /** `kind` is the value's in the cell, `computed` whether that value stands in its place. */
+  /** What was read on the screen's ground is not paper's: the Pages view resolves the light
+   * scheme. */
+  private where(): void {
+    const paper = this.host.closest('.ponistra-pages') !== null;
+    if (paper === this.paper) return;
+    this.clear();
+    this.paper = paper;
+  }
+
   of(look: Dressed | undefined, kind: Value['kind'] | null, computed = false): Ink {
+    this.where();
     const key = `${computed ? '=' : ''}${kind ?? ''}${JSON.stringify(look ?? null)}`;
     let ink = this.kept.get(key);
     if (!ink) {
@@ -369,6 +380,7 @@ export class Inks {
 
   /** A colour as CSS gives it, as the canvas takes it now: a page's `light-dark()` resolved. */
   paint(css: string): string {
+    this.where();
     let found = this.paints.get(css);
     if (found === undefined) {
       const probe = this.host.appendChild(document.createElement('span'));
@@ -381,8 +393,8 @@ export class Inks {
   }
 
   colour(): Colours {
-    const paper = this.host.closest('.ponistra-pages') !== null;
-    if (!this.colours || this.colours.paper !== paper) {
+    this.where();
+    if (!this.colours) {
       const probe = this.host.appendChild(document.createElement('span'));
       const found = {} as Colours;
       for (const [name, token] of Object.entries(TOKENS) as [keyof Colours, string][]) {
@@ -390,8 +402,8 @@ export class Inks {
         found[name] = getComputedStyle(probe).color;
       }
       probe.remove();
-      if (!paper) found.ground = groundOf(this.host);
-      this.colours = { paper, ...found };
+      if (!this.paper) found.ground = groundOf(this.host);
+      this.colours = found;
     }
     return this.colours;
   }

@@ -1482,6 +1482,7 @@ export const hr = {
   'collections.draft': 'Pripremi skicu',
   'collections.send': 'Pošalji sam',
   'collections.currency': 'Iznosi i u valuti',
+  'collections.language': 'Jezik tablica i poruke',
   'collections.converted': 'Iznos u valuti zbirke',
   'collections.byHand': 'upisano rukom',
   'collections.unfiled': 'Bez datoteke',
@@ -1515,6 +1516,7 @@ export const hr = {
   'error.collecting_invalid_words': 'Riječ u predmetu može imati najviše 100 znakova.',
   'error.collecting_invalid_to': 'Adresa primatelja nije ispravna.',
   'error.collecting_invalid_currency': 'Valuta mora biti oznaka od tri slova, primjerice EUR.',
+  'error.collecting_invalid_language': 'Jezik zbirke nije podržan.',
   'error.collecting_invalid_converted': 'Iznos mora biti broj s najviše dvije decimale.',
   'error.collecting_unconverted': 'Ova stavka nema iznos koji bi se preračunao.',
   'error.collecting_unrated':
@@ -3519,6 +3521,11 @@ export const hr = {
   'agents.copy': 'Kopiraj adresu',
   'agents.how': 'Unesite je u klijenta kao MCP poslužitelj; prijava se otvara u pregledniku.',
   'agents.none': 'Nijedan agent još nije povezan.',
+  'agents.keyName': 'Naziv ključa',
+  'agents.newKey': 'Novi ključ',
+  'agents.keyOnce': 'Ključ se prikazuje samo sada. Naredba ga dodaje u Claude Code:',
+  'agents.copyCommand': 'Kopiraj naredbu',
+  'agents.workspaceKey': 'Claude Code (radni prostor)',
   'agents.client': 'Klijent',
   'agents.connected': 'Povezan',
   'agents.used': 'Zadnje korišten',
@@ -3537,6 +3544,7 @@ export const hr = {
   'agents.consent.revocable': 'Pristup možete opozvati u Postavkama pod „Agenti”.',
   'agents.consent.allow': 'Dopusti',
   'agents.consent.deny': 'Odbij',
+  'error.agents_name_required': 'Upišite naziv ključa.',
   'error.request_expired':
     'Zahtjev za prijavu je istekao ili je već odgovoren; pokrenite prijavu iz klijenta ponovno.',
   'error.contacts_refused':

@@ -78,7 +78,7 @@
     "backend/apps/workspace/views.py#worked": "57e8d7dd9d41",
     "backend/apps/workspace/views.py#hours": "af06d97e26f6",
     "workspace/worked.mjs": "24154be3227e",
-    "workspace/start.sh": "611dd1d65d85",
+    "workspace/start.sh": "6910a4c8222c",
     "workspace/claude": "86c492850ea1",
     "frontend/src/workspaceWhen.tsx#StartWhen": "3272858a1aba",
     "frontend/src/workspaceWhen.tsx#useWhenText": "3a6fcda156f3",

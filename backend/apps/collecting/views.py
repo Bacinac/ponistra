@@ -5,6 +5,7 @@ import re
 from datetime import date
 from decimal import Decimal, InvalidOperation
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
@@ -18,7 +19,7 @@ from apps.core.asyncdb import notify
 from apps.mail import sending
 from apps.mail.models import Account
 
-from . import converting, months, taking
+from . import converting, months, tabling, taking
 from .models import Collection, Item, Month
 
 LISTED = 50
@@ -86,6 +87,7 @@ def describe(collection: Collection) -> dict:
         "sends": collection.sends,
         "text": collection.text,
         "currency": collection.currency,
+        "language": collection.language,
         "active": collection.active,
         "error": collection.error,
         "months": [_month(each, collection) for each in found],
@@ -161,6 +163,13 @@ def _currency(data: dict, found: Collection) -> str:
     return given
 
 
+def _language(user, data: dict, found: Collection) -> str:
+    given = data.get("language", found.language or user.language or settings.LANGUAGE_CODE)
+    if given not in tabling.WORDS:
+        raise Refused(400, "collecting_invalid_language")
+    return given
+
+
 def _accounts(user, data: dict) -> tuple[list[int], Account | None]:
     own = set(Account.objects.filter(owner=user).values_list("pk", flat=True))
     given = data.get("accounts", [])
@@ -212,6 +221,7 @@ def _kept(user, data: dict, found: Collection) -> Collection:
             converted=None, rate=None, rated=Item.Rated.NONE
         )
     found.name, found.text, found.sends, found.currency = name.strip(), text, sends, currency
+    found.language = _language(user, data, found)
     found.recognise, found.to, found.account = recognise, to, account
     found.day, found.hour = _whole(data, "day", 1, 28), _whole(data, "hour", 0, 23)
     found.active, found.error = _flag(data, "active"), ""

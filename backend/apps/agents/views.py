@@ -62,6 +62,7 @@ def describe(grant: Grant) -> dict:
     return {
         "id": grant.pk,
         "client": grant.client.name or grant.client.client_id,
+        "key": grant.client.registered.get("key"),
         "created_at": grant.created_at,
         "used_at": grant.used_at,
     }
@@ -82,6 +83,16 @@ def clients(request):
             "clients": [describe(each) for each in found],
         }
     )
+
+
+@api("POST", confirmed=("POST",))
+def keys(request):
+    """A key the user makes for an agent, by the name they give it, said this once."""
+    name = str(body(request).get("name") or "").strip()
+    if not name:
+        raise Refused(400, "agents_name_required")
+    grant, secret = oauth.issued_key(request.user, name, oauth.OWN_KEY)
+    return JsonResponse({**describe(grant), "secret": secret}, status=201)
 
 
 @api("DELETE")

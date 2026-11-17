@@ -1012,6 +1012,8 @@ export function LiveEditor({
   const partFrom = partShown && tab ? partOwner(own, tab, breaks, partSection, partName!) : null;
   const here = partShown ? partSection : state ? sectionAt(state.doc, state.selection.from) : 0;
   const setup = setups[here];
+  const opening = geometryOf(setups[0]);
+  const textWidth = opening.width - opening.left - opening.right;
   const sectionText = JSON.stringify(
     here > 0 ? { id: breaks[here - 1], setup, before: { ...setups[here - 1], start: null } } : null,
   );
@@ -1566,6 +1568,7 @@ export function LiveEditor({
                     '--section-break': JSON.stringify(t('command.sectionBreak')),
                     '--slide-break': JSON.stringify(t('command.slideBreak')),
                     '--column-break': JSON.stringify(t('command.columnBreak')),
+                    ...(!stack && !deckOn && { '--column': `max(44rem, ${textWidth}px)` }),
                     ...(stack && {
                       paddingTop: stack.pages[0].geometry.firstTop,
                       paddingRight: stack.pages[0].left + stack.pages[0].geometry.right,

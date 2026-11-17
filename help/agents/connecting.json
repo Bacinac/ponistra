@@ -12,13 +12,16 @@
     "agents.consent.write",
     "agents.consent.never",
     "agents.consent.revocable",
-    "agents.revokeWarning"
+    "agents.revokeWarning",
+    "agents.keyOnce"
   ],
   "describes": {
-    "frontend/src/agents.tsx#Agents": "5d9b877d6b72",
-    "frontend/src/agents.tsx#ConsentPage": "a2a71c267766",
+    "frontend/src/agents.tsx#Agents": "558e033a83b5",
+    "frontend/src/agents.tsx#ConsentPage": "0813d1caa59f",
     "backend/apps/agents/views.py#consent": "2cb09c2511f4",
     "backend/apps/agents/views.py#clients": "a9daca8ef331",
-    "backend/apps/agents/views.py#client": "25e7fa3e25e9"
+    "backend/apps/agents/views.py#client": "25e7fa3e25e9",
+    "backend/apps/agents/views.py#keys": "26f7f5f91996",
+    "backend/apps/workspace/views.py#agent": "931412dbb1fe"
   }
 }

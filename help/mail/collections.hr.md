@@ -17,7 +17,7 @@ Zbirka skuplja poruke koje odaberete, poput računa, slaže njihove privitke u m
    - {t:collections.recognise}, ako želite da zbirka zadrži samo račune;
    - {t:collections.since}: dan od kojeg zbirka uzima i ranije primljenu poštu.
 5. Pod {t:collections.goes} upišite {t:collections.to} i, ako imate više računa, {t:collections.from}. Bez odabira poruka ide s {t:collections.fromDefault}.
-6. Odaberite {t:collections.day} i {t:collections.hour} u kojem zbirka šalje prethodni mjesec, a pod {t:collections.currency} oznaku valute u kojoj tablica daje i svaki iznos, primjerice EUR. Bez oznake iznosi se ne preračunavaju.
+6. Odaberite {t:collections.day} i {t:collections.hour} u kojem zbirka šalje prethodni mjesec, a pod {t:collections.currency} oznaku valute u kojoj tablica daje i svaki iznos, primjerice EUR. Bez oznake iznosi se ne preračunavaju. Pod {t:collections.language} odaberite jezik na kojem su napisane njezine tablice i poruka; nova zbirka dobiva jezik vaše Ponistre.
 7. Pod {t:collections.sends} odaberite {t:collections.draft} ili {t:collections.send}.
 8. Po želji upišite {t:collections.text}.
 9. Pritisnite {t:tree.save}. Ako ste uključili prepoznavanje, Ponistra najprije pita za pristanak: {t:collections.consent} Pristanak dajete s {t:collections.consentGive}, a vrijedi dok prepoznavanje ne isključite.
@@ -69,7 +69,7 @@ Bez prepoznavanja zbirka zadrži svaku poruku koju uzme: kao dobavljača upiše 
 
 Mjesec odlazi na odabrani dan i sat sljedećeg mjeseca, kad su pročitane sve poruke koje čekaju, a najkasnije 6 sati poslije. Poruka u predmetu ima naziv zbirke, mjesec i godinu. U tijelu je vaš tekst, tablica s dobavljačem, datumom, iznosom, valutom, iznosom u valuti zbirke i datotekama, zbroj po valuti, ukupno u valuti zbirke i potpis računa. Privitci su sve datoteke u mapi mjeseca u tom trenutku, i one koje ste sami dodali, te ista tablica kao radna knjiga. Tablica ostaje i kao dokument u mapi mjeseca.
 
-U mapi svakog mjeseca stoji ta tablica, nazvana po zbirci i mjesecu, od trenutka kad mjesec dobije prvi račun ili datoteku. Iznad tablice redak kaže je li mjesec poslan: kada je otišao, od kada njegova skica čeka ili da nije poslan. U mapi zbirke stoji njezina rekapitulacija, tablica s retkom za svaki mjesec i stupcem za svakog dobavljača, zatim ukupno za mjesec i kada je poslan, a na dnu zbrojevi svih mjeseci. Uz valutu zbirke iznosi su u njoj, bez nje svaka valuta ima svoje retke. Obje tablice prate zbirku: novi račun, promijenjen iznos ili poslana poruka prepišu ih u roku od minute, a obrisana tablica vrati se u roku od sat vremena. Ono što u njih sami upišete zamijeni se pri sljedećoj promjeni.
+U mapi svakog mjeseca stoji ta tablica, nazvana po zbirci i mjesecu, od trenutka kad mjesec dobije prvi račun ili datoteku. Iznad tablice redak kaže je li mjesec poslan: kada je otišao, od kada njegova skica čeka ili da nije poslan. U mapi zbirke stoji njezina rekapitulacija, tablica s retkom za svaki mjesec i stupcem za svakog dobavljača, zatim ukupno za mjesec i kada je poslan, a na dnu zbrojevi svih mjeseci. Uz valutu zbirke iznosi su u njoj, bez nje svaka valuta ima svoje retke. Obje tablice prate zbirku: novi račun, promijenjen iznos ili poslana poruka prepišu ih u roku od minute, a obrisana tablica vrati se u roku od sat vremena. Svaka stoji na položenoj stranici ispod naslova s nazivom zbirke, a stupci su široki koliko im sadržaj traži. Ono što u njih sami upišete zamijeni se pri sljedećoj promjeni.
 
 Uz {t:collections.draft} poruka čeka među vašim skicama da je pregledate i pošaljete. Uz {t:collections.send} odlazi sama i ostaje u poslanoj pošti.
 
@@ -89,6 +89,7 @@ Stranica se osvježava sama kad zbirka uzme ili pošalje nešto, na svakom vaše
 - {t:error.collecting_invalid_senders}
 - {t:error.collecting_invalid_since}
 - {t:error.collecting_invalid_currency}
+- {t:error.collecting_invalid_language}
 - {t:error.collecting_unrated}
 - {t:error.mail_account_gone} Uz mjesec stoji ta poruka. Povežite račun ili odaberite drugi, pa pritisnite {t:collections.sendNow}.
 

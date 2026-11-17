@@ -6,7 +6,7 @@ import { ApiError, deleteJson, getJson, postJson, putJson } from './api';
 import { Cancel, ConfirmDialog, Labelled, Modal } from './dialogs';
 import { useAi } from './editor/runs';
 import { Loading } from './frame';
-import { useI18n } from './i18n';
+import { LANGUAGE_NAMES, LANGUAGES, useI18n, type Language } from './i18n';
 import { accountName, useAccounts, type Person } from './mailData';
 import { useMessageAction } from './mailTriage';
 import { Recipients } from './recipients';
@@ -54,6 +54,7 @@ export interface Collection {
   sends: 'draft' | 'send';
   text: string;
   currency: string;
+  language: Language;
   active: boolean;
   error: string;
   months: CollectionMonth[];
@@ -96,7 +97,7 @@ function listed(text: string): string[] {
     .filter(Boolean);
 }
 
-function fresh(): Written {
+function fresh(language: Language): Written {
   const today = new Date();
   return {
     name: '',
@@ -113,6 +114,7 @@ function fresh(): Written {
     sends: 'draft',
     text: '',
     currency: 'EUR',
+    language,
     active: true,
   };
 }
@@ -128,11 +130,11 @@ function CollectionForm({
   collection: Collection | null;
   onDone: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const queryClient = useQueryClient();
   const accounts = useAccounts().data?.accounts ?? [];
   const ai = useAi().data === true;
-  const [given, setGiven] = useState<Written>(collection ?? fresh());
+  const [given, setGiven] = useState<Written>(collection ?? fresh(language));
   const [senders, setSenders] = useState(given.senders.join(', '));
   const [words, setWords] = useState(given.words.join(', '));
   const [removing, setRemoving] = useState(false);
@@ -334,6 +336,22 @@ function CollectionForm({
                 }
                 className={`${field} w-20`}
               />
+            )}
+          </Labelled>
+          <Labelled label={t('collections.language')}>
+            {(id) => (
+              <select
+                id={id}
+                value={given.language}
+                onChange={(event) => change({ language: event.target.value as Language })}
+                className={field}
+              >
+                {LANGUAGES.map((each) => (
+                  <option key={each} value={each}>
+                    {LANGUAGE_NAMES[each]}
+                  </option>
+                ))}
+              </select>
             )}
           </Labelled>
         </div>

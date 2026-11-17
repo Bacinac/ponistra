@@ -1489,6 +1489,7 @@ export const en: Record<MessageKey, string> = {
   'collections.draft': 'Prepare a draft',
   'collections.send': 'Send by itself',
   'collections.currency': 'Amounts also in',
+  'collections.language': 'Language of tables and message',
   'collections.converted': "Amount in the collection's currency",
   'collections.byHand': 'entered by hand',
   'collections.unfiled': 'No file',
@@ -1522,6 +1523,7 @@ export const en: Record<MessageKey, string> = {
   'error.collecting_invalid_words': 'A word in the subject may have at most 100 characters.',
   'error.collecting_invalid_to': 'A recipient address is not valid.',
   'error.collecting_invalid_currency': 'The currency must be a three-letter code, such as EUR.',
+  'error.collecting_invalid_language': 'The collection’s language is not supported.',
   'error.collecting_invalid_converted': 'The amount must be a number with at most two decimals.',
   'error.collecting_unconverted': 'This item has no amount to convert.',
   'error.collecting_unrated':
@@ -3526,6 +3528,11 @@ export const en: Record<MessageKey, string> = {
   'agents.copy': 'Copy address',
   'agents.how': 'Enter it in the client as an MCP server; the sign-in opens in the browser.',
   'agents.none': 'No agent is connected yet.',
+  'agents.keyName': 'Key name',
+  'agents.newKey': 'New key',
+  'agents.keyOnce': 'The key is shown only now. The command adds it to Claude Code:',
+  'agents.copyCommand': 'Copy command',
+  'agents.workspaceKey': 'Claude Code (workspace)',
   'agents.client': 'Client',
   'agents.connected': 'Connected',
   'agents.used': 'Last used',
@@ -3544,6 +3551,7 @@ export const en: Record<MessageKey, string> = {
   'agents.consent.revocable': 'Access can be revoked in Settings under “Agents”.',
   'agents.consent.allow': 'Allow',
   'agents.consent.deny': 'Deny',
+  'error.agents_name_required': 'Enter the key’s name.',
   'error.request_expired':
     'The sign-in request has expired or was already answered; start the sign-in from the client again.',
   'error.contacts_refused':

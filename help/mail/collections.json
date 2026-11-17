@@ -14,10 +14,10 @@
   ],
   "describes": {
     "frontend/src/collections.tsx#Collections": "d3cabba6ee30",
-    "frontend/src/collections.tsx#CollectionForm": "12172b9ecedf",
+    "frontend/src/collections.tsx#CollectionForm": "056218605b73",
     "frontend/src/collections.tsx#MonthRow": "8d2b68f21287",
     "frontend/src/collections.tsx#GatherDialog": "f902f6998909",
-    "backend/apps/collecting/views.py#_kept": "df1e438a2be7",
+    "backend/apps/collecting/views.py#_kept": "cc36d6230ef5",
     "backend/apps/collecting/views.py#month_sent": "76805068702b",
     "backend/apps/collecting/taking.py#named_by": "eaf3ea9661ae",
     "backend/apps/collecting/taking.py#read": "c71107947788",

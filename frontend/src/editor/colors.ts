@@ -41,9 +41,11 @@ function lightened(hex: string): string {
   return l >= 0.72 ? hex : hexOf([Math.min(0.88, Math.max(0.72, 1.24 - l)), a, b]);
 }
 
+// A fill below 0.6 is a ground the file sets light text on, and stays; mirrored, it would turn
+// light under that text.
 function deepened(hex: string): string {
   const [l, a, b] = oklab(hex);
-  return l <= 0.45 ? hex : hexOf([Math.max(0.28, 1.32 - l), a * 0.8, b * 0.8]);
+  return l < 0.6 ? hex : hexOf([Math.min(0.45, Math.max(0.28, 1.32 - l)), a * 0.8, b * 0.8]);
 }
 
 function oklab(hex: string): [number, number, number] {

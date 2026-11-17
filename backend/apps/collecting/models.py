@@ -40,6 +40,8 @@ class Collection(models.Model):
     text = models.TextField(blank=True)
     # The ISO 4217 currency each bill's amount is also given in; empty, none.
     currency = models.CharField(max_length=3, default="EUR", blank=True)
+    # What its tables and message are written in: the language of the people it goes to.
+    language = models.CharField(max_length=8)
     active = models.BooleanField(default=True)
     # The highest message read through, from which the next look goes on.
     mark = models.BigIntegerField(default=0)

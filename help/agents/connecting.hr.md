@@ -13,6 +13,13 @@ Vanjski agent, poput Claudea, ChatGPT-a ili drugog MCP klijenta, prijavljuje se 
 5. Provjerite tko traži pristup, pod {t:agents.consent.as} svoj račun i pod {t:agents.consent.returns} adresu na koju se prijava vraća. Ispod {t:agents.consent.can} piše što će agent smjeti.
 6. Pritisnite {t:agents.consent.allow} ili {t:agents.consent.deny}.
 
+### Ključ za agenta na drugom računalu
+
+Agent koji radi na drugom računalu ili poslužitelju ne može primiti prijavu iz vašeg preglednika. Takav agent se povezuje ključem.
+
+1. Pod {t:agents.title} upišite {t:agents.keyName} i pritisnite {t:agents.newKey}.
+2. Pritisnite {t:agents.copyCommand} i pokrenite naredbu u terminalu računala na kojem radi Claude Code.
+
 ### Opoziv
 
 1. Pod {t:agents.title} pronađite agenta u popisu.
@@ -22,12 +29,15 @@ Vanjski agent, poput Claudea, ChatGPT-a ili drugog MCP klijenta, prijavljuje se 
 
 Agent djeluje kao vi: vidi dokumente, poštu, kalendar, zadatke i kontakte koje vi vidite i ništa više. Što upiše u dokument dolazi kao prijedlog s njegovim imenom uz vaše, odgovor koji sastavi čeka da ga vi pošaljete, a radnje koje pokrene vidite kao i svoje. Agent ništa ne briše i ne šalje poštu.
 
+Claude Code u radnom prostoru Projekata dobiva svoj ključ sam kad se radni prostor pokrene. U popisu stoji kao {t:agents.workspaceKey}. Ključ ne istječe i vrijedi dok ga ne opozovete. Opozvani ključ radnog prostora zamijeni se novim pri sljedećem pokretanju radnog prostora.
+
 Popis pod {t:agents.title} ima stupce {t:agents.client}, {t:agents.connected} i {t:agents.used}. Kad agenta opozovete, više ne može čitati ni upisivati, a ono što je upisao ostaje.
 
 Kad agent pokrene radnju koju izvodi Claude, ne traži se zasebno odobrenje dokumenta: pristanak je dan pri povezivanju agenta.
 
 ## Ograničenja
 
+- Ključ se prikazuje samo jednom. Ako ga izgubite, opozovite ga i napravite novi.
 - Za {t:agents.consent.allow} Ponistra može tražiti potvrdu da ste to vi.
 - Agent ne prihvaća i ne odbija prijedloge; to radite vi.
 - Kad nijedan agent nije povezan, piše: {t:agents.none}

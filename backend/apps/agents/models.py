@@ -10,7 +10,8 @@ from django.db import models
 
 class Client(models.Model):
     """An MCP client as it registered itself (RFC 7591): its id, the name it gave, the rest of
-    its metadata, and the digest of its secret where it asked for one."""
+    its metadata, and the digest of its secret where it asked for one; or a key's, made by its
+    user and named by them, its metadata only `key` saying whose it is."""
 
     client_id = models.CharField(max_length=64, unique=True)
     name = models.CharField(max_length=200, blank=True)
@@ -65,17 +66,18 @@ class Grant(models.Model):
 
 class Token(models.Model):
     """An access or refresh token of a grant, kept as its digest, until it expires or is
-    revoked."""
+    revoked; a key is an access token that never expires."""
 
     class Kind(models.TextChoices):
         ACCESS = "access"
         REFRESH = "refresh"
+        KEY = "key"
 
     grant = models.ForeignKey(Grant, on_delete=models.DB_CASCADE, related_name="tokens")
     kind = models.CharField(max_length=7, choices=Kind)
     digest = models.CharField(max_length=64, unique=True)
     scopes = models.JSONField(default=list)
-    expires_at = models.DateTimeField()
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.kind} of {self.grant}"

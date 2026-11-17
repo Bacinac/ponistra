@@ -8,15 +8,16 @@ from decimal import Decimal
 from hashlib import sha256
 from logging import getLogger
 
-from django.conf import settings
 from django.db.models import F, Q
 from django.utils import timezone
-from pycrdt import XmlElement
+from pycrdt import Map, XmlElement
 
-from apps.content import blocks, operations
+from apps.collab.models import Update
+from apps.content import blocks, designs, operations, styles
 from apps.core import locks
 from apps.documents.models import Node
 from apps.documents.views import BY_TITLE, created
+from apps.engine import numformat
 
 from . import months
 from .models import Collection, Item, Month
@@ -27,8 +28,23 @@ LOCK = 0x5C21B10F
 # Read again now and then though nothing said it changed, as a file renamed in a month's folder.
 STALE = timedelta(hours=1)
 EPOCH = date(1899, 12, 30)
-WIDTHS = (28, 12, 14, 9, 40, 50)
-CONVERTED = 14
+# The characters a line of the landscape page holds, a column's room beside its text, the least
+# a column takes, and the most a column of text takes before it wraps: a column as short as SHORT
+# never does.
+LINE = 150
+SIDES = 4
+NARROWEST = 9
+LONGEST = 40
+SHORT = 16
+TEXT = {"size": 10, "line": 1.2, "after": 6}
+PAGE = {"width": 29.7, "height": 21.0, "top": 1.5, "right": 1.5, "bottom": 1.5, "left": 1.5}
+_HEADER = designs.ours("header")
+DESIGN = {
+    **_HEADER,
+    "parts": {**_HEADER["parts"], "header": {**_HEADER["parts"]["header"], "valign": "center"}},
+    "on": {"header": True},
+}
+TOTALS = "#dceaea"
 WORDS = {
     "hr": {
         "columns": ("Dobavljač", "Datum", "Iznos", "Valuta", "Datoteke", "Predmet"),
@@ -72,12 +88,8 @@ WORDS = {
 }
 
 
-def language_of(owner) -> str:
-    return (owner.language or settings.LANGUAGE_CODE)[:2]
-
-
-def words_of(owner) -> dict:
-    return WORDS.get(language_of(owner), WORDS["en"])
+def words_of(collection: Collection) -> dict:
+    return WORDS[collection.language]
 
 
 def totals(items: list[Item]) -> dict[str, Decimal]:
@@ -96,15 +108,149 @@ def file_name(node: Node) -> str:
     return f"{node.title}.{node.extension}" if node.extension else node.title
 
 
-def _paragraph(value: str, strong: bool = False) -> dict:
+def _paragraph(value: str, strong: bool = False, align: str = "") -> dict:
     text = {"type": "text", "text": value}
     if strong:
         text["marks"] = [{"type": "strong"}]
-    return {"type": "paragraph", "content": [text]}
+    paragraph = {"type": "paragraph", "content": [text]}
+    if align:
+        paragraph["attrs"] = {"align": align}
+    return paragraph
 
 
-def _text(value: str, strong: bool = False) -> dict | None:
-    return {"blocks": [_paragraph(value, strong)]} if value else None
+def _text(value: str, strong: bool = False, align: str = "") -> dict | None:
+    return {"blocks": [_paragraph(value, strong, align)]} if value else None
+
+
+def _shown(cell: dict | str | None, language: str) -> str:
+    if cell is None or isinstance(cell, str):
+        return cell or ""
+    if "blocks" in cell:
+        return " ".join(
+            each.get("text", "") for block in cell["blocks"] for each in block.get("content", [])
+        )
+    return str(numformat.shown(cell["value"], cell.get("format", "General"), language))
+
+
+def _shares(rows: list[list], language: str) -> list[float]:
+    """Each column's share of the page in per cent, as wide as its longest text, its head's longest
+    word, as a head wraps between words: what is short keeps its width, and what is long shares
+    the line's rest, wrapping past LONGEST."""
+    count = max(len(row) for row in rows)
+    needs = [
+        max(
+            NARROWEST,
+            round(max(map(len, _shown(rows[0][x], language).split()), default=0) * 1.2) + SIDES,
+            *(len(_shown(row[x], language)) + SIDES for row in rows[1:] if x < len(row)),
+        )
+        for x in range(count)
+    ]
+    long = [x for x, need in enumerate(needs) if need > SHORT]
+    rest = LINE - sum(need for x, need in enumerate(needs) if x not in long)
+    wanted = sum(min(needs[x], LONGEST) for x in long)
+    if long and wanted > rest:
+        for x in long:
+            needs[x] = max(min(needs[x], LONGEST) * rest / wanted, SHORT)
+    whole = sum(needs)
+    return [round(need * 100 / whole, 2) for need in needs]
+
+
+def laid(
+    heading: str,
+    lines: list[str],
+    rows: list[list],
+    totals: int,
+    language: str,
+    aligned: dict[int, str],
+) -> dict:
+    """A table as it is to be written: the heading and lines above it, its rows under a centred
+    head, the last `totals` rows bold and tinted, and the columns aligned as given."""
+    head = [_text(name, strong=True, align="center") for name in rows[0]]
+    return {
+        "heading": heading,
+        "lines": lines,
+        "designs": [DESIGN],
+        "rows": [head, *rows[1:]],
+        "widths": _shares(rows, language),
+        "totals": totals,
+        "aligned": sorted(aligned.items()),
+    }
+
+
+def operations_of(table: dict) -> list[dict]:
+    """The operations that write the laid table at the top of the body, with ids of its own."""
+    id = blocks.new_id()
+    rows = [blocks.new_id() for _ in table["rows"]]
+    cols = [blocks.new_id() for _ in table["widths"]]
+    made = [
+        {
+            "op": "table",
+            "at": {"start": "body"},
+            "id": id,
+            "designs": table["designs"],
+            "widths": table["widths"],
+            "rows": table["rows"],
+            "rowIds": rows,
+            "colIds": cols,
+        }
+    ]
+    made += [
+        {
+            "op": "looks",
+            "table": id,
+            "axis": "cols",
+            "from": cols[x],
+            "to": cols[x],
+            "attrs": {"align": align},
+        }
+        for x, align in table["aligned"]
+    ]
+    made.append(
+        {
+            "op": "looks",
+            "table": id,
+            "axis": "rows",
+            "from": rows[0],
+            "to": rows[0],
+            "attrs": {"align": "center"},
+        }
+    )
+    if table["totals"]:
+        made.append(
+            {
+                "op": "looks",
+                "table": id,
+                "axis": "rows",
+                "from": rows[-table["totals"]],
+                "to": rows[-1],
+                "marks": {"strong": {}},
+                "fill": TOTALS,
+            }
+        )
+    if table["totals"] > 1:
+        made.append(
+            {
+                "op": "cells",
+                "table": id,
+                "cells": [
+                    {
+                        "row": rows[-table["totals"]],
+                        "col": cols[0],
+                        "span": {"rows": table["totals"]},
+                    }
+                ],
+            }
+        )
+    above = [
+        {
+            "type": "heading",
+            "attrs": {"level": 2},
+            "content": [{"type": "text", "text": table["heading"]}],
+        },
+        *(_paragraph(line, strong=True) for line in table["lines"]),
+    ]
+    made.append({"op": "insert", "at": {"start": "body"}, "blocks": above})
+    return made
 
 
 def _serial(value: date | None, words: dict) -> dict | None:
@@ -131,14 +277,12 @@ def converted_total(items: list[Item]) -> Decimal:
     return sum((item.converted for item in items if item.converted is not None), Decimal(0))
 
 
-def tabled(items: list[Item], titles: dict[str, str], words: dict, into: str = "") -> dict:
-    """The month's table: a row for each bill, then a total in each currency and in the
-    collection's own. Text goes in as text, never as typed, so a subject that reads as a number
-    or a formula stays what it is."""
-    widths = list(WIDTHS)
-    if into:
-        widths.insert(4, CONVERTED)
-    rows = [[_text(column, strong=True) for column in columns(words, into)]]
+def tabled(items: list[Item], titles: dict[str, str], words: dict, into: str = "") -> tuple:
+    """The month's rows: one for each bill, then a total in each currency and in the
+    collection's own, with how many rows are totals. Text goes in as text, never as typed, so a
+    subject that reads as a number or a formula stays what it is."""
+    width = 7 if into else 6
+    rows = [columns(words, into)]
     for item in items:
         row = [
             _text(item.supplier),
@@ -151,21 +295,19 @@ def tabled(items: list[Item], titles: dict[str, str], words: dict, into: str = "
         if into:
             row.insert(4, _amount(item.converted, words))
         rows.append(row)
-    summed = totals(items)
-    if summed or into:
-        rows.append([None] * len(widths))
-    for currency, total in sorted(summed.items()):
+    summed = sorted(totals(items).items())
+    for currency, total in summed:
         rows.append(
-            [_text(words["total"], strong=True), None, _amount(total, words), _text(currency)]
-            + [None] * (len(widths) - 4)
+            [_text(words["total"]), None, _amount(total, words), _text(currency)]
+            + [None] * (width - 4)
         )
     if into:
         rows.append(
-            [_text(words["total"], strong=True), None, None, _text(into)]
+            [_text(words["total"]), None, None, _text(into)]
             + [_amount(converted_total(items), words)]
-            + [None] * (len(widths) - 5)
+            + [None] * (width - 5)
         )
-    return {"op": "table", "at": {"start": "body"}, "widths": widths, "rows": rows}
+    return rows, len(summed) + (1 if into else 0)
 
 
 def moment(value: datetime, language: str) -> str:
@@ -196,13 +338,19 @@ def _digest(*parts) -> str:
     return sha256(json.dumps(parts, sort_keys=True, default=str).encode()).hexdigest()
 
 
-def _written(
-    node: Node | None, folder: Node, title: str, owner, made: list[dict], author: str
-) -> Node:
+def _set_up(node: Node) -> None:
+    built = styles.TEMPLATE[styles.STYLES]
+    own = styles.own(styles.TEMPLATE[styles.THEME], {**built, "text": {**built["text"], **TEXT}})
+    own.get("page", type=Map).update(PAGE)
+    Update.objects.filter(document=node).update(data=own.get_update())
+
+
+def _written(node: Node | None, folder: Node, title: str, owner, table: dict, author: str) -> Node:
     """The document written anew in the one made before, which keeps its place, links and
-    versions, under the title it is to have."""
+    versions, under the title it is to have; a new one on a landscape page in a compact text."""
     if node is None or not node.is_live():
         node = created(folder, Node.Kind.DOCUMENT, title[:200], None, owner)
+        _set_up(node)
     elif node.title != title[:200]:
         node.title = title[:200]
         node.save(update_fields=["title", "updated_at"])
@@ -214,7 +362,7 @@ def _written(
             if isinstance(element, XmlElement)
         ]
         taken = [{"op": "delete", "from": before[0], "to": before[-1]}] if before else []
-        return [*made, *taken]
+        return [*operations_of(table), *taken]
 
     operations.perform(node.tabs.get(), written, author)
     return node
@@ -237,13 +385,13 @@ def contents(month: Month, folder: Node | None) -> tuple[list[Item], list[Node]]
 def month_written(month: Month, items: list[Item], files: list[Node], folder: Node) -> Node:
     """The month's table under a line saying whether it was sent, written when it changed."""
     collection = month.collection
-    words = words_of(collection.owner)
-    state = state_of(month, words, language_of(collection.owner))
+    words = words_of(collection)
+    state = state_of(month, words, collection.language)
     titles = {str(node.pk): file_name(node) for node in files}
-    made = [
-        tabled(items, titles, words, collection.currency),
-        {"op": "insert", "at": {"start": "body"}, "blocks": [_paragraph(state, strong=True)]},
-    ]
+    rows, summed = tabled(items, titles, words, collection.currency)
+    spoken = f"{words['months'][month.month.month - 1]} {month.month.year}"
+    heading = f"{collection.name} – {spoken}"
+    made = laid(heading, [state], rows, summed, collection.language, {1: "center", 3: "center"})
     title = f"{collection.name} {month.month:%Y-%m}"
     digest = _digest(title, made)
     if digest == month.tabled and month.table is not None and month.table.is_live():
@@ -271,8 +419,8 @@ def _month_kept(month: Month) -> None:
 def recapped(collection: Collection, found: list[Month]) -> dict | None:
     """Every month in a row by the suppliers its bills came from, in the collection's currency or
     in a row of each currency the bills were in, with whether the month was sent, then the total."""
-    words = words_of(collection.owner)
-    language = language_of(collection.owner)
+    words = words_of(collection)
+    language = collection.language
     into = collection.currency
     sums: dict[tuple[date, str], dict[str, Decimal]] = {}
     names: dict[str, str] = {}
@@ -298,7 +446,7 @@ def recapped(collection: Collection, found: list[Month]) -> dict | None:
         *([] if into else [words["currency"]]),
         words["sent"],
     ]
-    rows = [[_text(each, strong=True) for each in head]]
+    rows = [head]
     totals: dict[str, dict[str, Decimal]] = {}
     for (month, currency), row in sorted(sums.items()):
         whole = totals.setdefault(currency, {})
@@ -313,19 +461,20 @@ def recapped(collection: Collection, found: list[Month]) -> dict | None:
                 _text(sent[month]),
             ]
         )
-    rows.append([None] * len(head))
     for currency, whole in sorted(totals.items()):
         rows.append(
             [
-                _text(words["total"], strong=True),
+                _text(words["total"]),
                 *(_amount(whole.get(key), words) for key in suppliers),
                 _amount(sum(whole.values(), Decimal(0)), words),
                 *([] if into else [_text(currency)]),
                 None,
             ]
         )
-    widths = [18, *(16 for _ in suppliers), 16, *([] if into else [9]), 30]
-    return {"op": "table", "at": {"start": "body"}, "widths": widths, "rows": rows}
+    heading = f"{collection.name} – {words['recap']}"
+    width = len(head)
+    aligned = {0: "left", width - 1: "center"} | ({} if into else {width - 2: "center"})
+    return laid(heading, [], rows, len(totals), collection.language, aligned)
 
 
 def _recap_kept(collection: Collection, found: list[Month]) -> None:
@@ -335,12 +484,12 @@ def _recap_kept(collection: Collection, found: list[Month]) -> None:
     table = recapped(collection, found)
     if table is None:
         return
-    title = f"{collection.name} – {words_of(collection.owner)['recap']}"
+    title = f"{collection.name} – {words_of(collection)['recap']}"
     digest = _digest(title, table)
     if digest == collection.recapped and _live(collection.recap):
         return
     node = _written(
-        collection.recap, folder, title, collection.owner, [table], f"collecting:{collection.pk}"
+        collection.recap, folder, title, collection.owner, table, f"collecting:{collection.pk}"
     )
     Collection.objects.filter(pk=collection.pk).update(recap=node, recapped=digest)
 

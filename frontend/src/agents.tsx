@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { Bot, KeyRound, Trash2 } from 'lucide-react';
+import { useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router';
 import { deleteJson, getJson, postJson } from './api';
 import { useSession } from './auth';
@@ -8,7 +8,7 @@ import { ConfirmDialog } from './dialogs';
 import { Loading, Lobby } from './frame';
 import { useI18n } from './i18n';
 import { ActionsMenu, MenuItem } from './menu';
-import { button, primaryButton } from './styles';
+import { button, field, primaryButton } from './styles';
 import { errorMessage } from './tree';
 import { CopyButton } from './vault/parts';
 
@@ -22,6 +22,7 @@ interface Consent {
 interface Agent {
   id: number;
   client: string;
+  key: 'own' | 'workspace' | null;
   created_at: string;
   used_at: string | null;
 }
@@ -118,12 +119,14 @@ export function ConsentPage() {
   );
 }
 
-/** The agents the user let in, where an agent signs in, and the revoking of one. */
-/** The agents let in over MCP, a page of the settings. */
+/** The agents let in over MCP, a page of the settings: where an agent signs in, the keys made for
+ * agents that cannot sign in in this browser, and the revoking of either. */
 export function Agents() {
   const { t, formatDate } = useI18n();
   const queryClient = useQueryClient();
   const [removing, setRemoving] = useState<Agent | null>(null);
+  const [name, setName] = useState('');
+  const [made, setMade] = useState<string | null>(null);
   const kept = useQuery({
     queryKey: AGENTS,
     queryFn: () => getJson<{ url: string; clients: Agent[] }>('/api/agents/clients'),
@@ -135,7 +138,25 @@ export function Agents() {
       queryClient.invalidateQueries({ queryKey: AGENTS });
     },
   });
-  const failure = kept.error ?? remove.error;
+  const make = useMutation({
+    mutationFn: (named: string) =>
+      postJson<Agent & { secret: string }>('/api/agents/keys', { name: named }),
+    onSuccess: ({ secret }) => {
+      setName('');
+      setMade(secret);
+      queryClient.invalidateQueries({ queryKey: AGENTS });
+    },
+  });
+  const failure = kept.error ?? remove.error ?? make.error;
+  const command =
+    kept.data &&
+    made &&
+    `claude mcp add --transport http ponistra ${kept.data.url} --header "Authorization: Bearer ${made}"`;
+
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    make.mutate(name);
+  }
   return (
     <>
       <p className="text-sm">{t('agents.intro')}</p>
@@ -152,6 +173,34 @@ export function Agents() {
           <span className="text-muted">{t('agents.how')}</span>
         </div>
       )}
+      {command && (
+        <div className="flex flex-col gap-1 text-sm">
+          <span className="text-muted">{t('agents.keyOnce')}</span>
+          <div className="flex items-center gap-2">
+            <code className="min-w-0 flex-1 rounded border border-line bg-panel px-3 py-2 font-mono break-all select-all">
+              {command}
+            </code>
+            <CopyButton text={command} label={t('agents.copyCommand')} />
+          </div>
+        </div>
+      )}
+      <form onSubmit={submit} className="flex flex-col gap-2">
+        <label className="flex flex-col gap-1 text-sm">
+          {t('agents.keyName')}
+          <input
+            required
+            maxLength={200}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            className={field}
+          />
+        </label>
+        <div className="flex justify-end">
+          <button type="submit" disabled={make.isPending} className={primaryButton}>
+            {t('agents.newKey')}
+          </button>
+        </div>
+      </form>
       {kept.data?.clients.length === 0 && <p className="text-sm">{t('agents.none')}</p>}
       {!!kept.data?.clients.length && (
         <table className="w-full border-collapse">
@@ -170,8 +219,12 @@ export function Agents() {
               <tr key={agent.id} className="border-b border-line">
                 <td className={`${cell} max-w-0`}>
                   <p className="flex items-center gap-2 truncate">
-                    <Bot size={16} aria-hidden className="shrink-0 text-muted" />
-                    {agent.client}
+                    {agent.key ? (
+                      <KeyRound size={16} aria-hidden className="shrink-0 text-muted" />
+                    ) : (
+                      <Bot size={16} aria-hidden className="shrink-0 text-muted" />
+                    )}
+                    {agent.key === 'workspace' ? t('agents.workspaceKey') : agent.client}
                   </p>
                 </td>
                 <td className={`${cell} hidden text-sm whitespace-nowrap text-muted sm:table-cell`}>
@@ -201,7 +254,10 @@ export function Agents() {
           onConfirm={() => remove.mutate(removing)}
           onClose={() => setRemoving(null)}
         >
-          <strong>{removing.client}</strong> {t('agents.revokeWarning')}
+          <strong>
+            {removing.key === 'workspace' ? t('agents.workspaceKey') : removing.client}
+          </strong>{' '}
+          {t('agents.revokeWarning')}
         </ConfirmDialog>
       )}
     </>

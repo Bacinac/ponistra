@@ -34,7 +34,7 @@ UNRATED = "collecting_unrated"
 
 def named(collection: Collection, month: date) -> str:
     """The month as its message is titled: the collection's name and the month in words."""
-    spoken = tabling.words_of(collection.owner)["months"][month.month - 1]
+    spoken = tabling.words_of(collection)["months"][month.month - 1]
     return f"{collection.name} – {spoken} {month.year}"
 
 
@@ -74,8 +74,8 @@ def _day(value: date | None, language: str) -> str:
 
 def letter(collection: Collection, items: list[Item], titles: dict, account: Account) -> str:
     """The message's text: the collection's words, the table, and the account's signature."""
-    words = tabling.words_of(collection.owner)
-    language = tabling.language_of(collection.owner)
+    words = tabling.words_of(collection)
+    language = collection.language
     lines = [f"<p>{escape(line)}</p>" for line in collection.text.rstrip("\n").split("\n") if line]
     cell = 'style="border:1px solid #c8d0d0;padding:4px 8px"'
     right = 'style="border:1px solid #c8d0d0;padding:4px 8px;text-align:right"'

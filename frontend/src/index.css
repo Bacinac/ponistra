@@ -1594,6 +1594,11 @@
   box-shadow: none;
 }
 
+/* Paper shows no row headings, so a table keeps no room for them and stands at the margin. */
+.ponistra-printed .ponistra-table {
+  --heading-side: 0px;
+}
+
 .ponistra-printed :is([data-page-break], [data-section-break]) {
   visibility: hidden;
 }

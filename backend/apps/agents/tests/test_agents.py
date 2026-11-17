@@ -582,6 +582,55 @@ async def test_a_refresh_rotates_the_tokens_and_a_revoked_grant_ends_them(doors)
     assert (await browser.get("/api/agents/clients")).json()["clients"] == []
 
 
+async def test_a_key_lets_an_agent_in_without_a_sign_in_until_it_is_revoked(doors):
+    user, browser = await signed_in()
+    empty = await browser.post("/api/agents/keys", {"name": " "}, content_type=JSON)
+    assert empty.json()["error"] == "agents_name_required"
+    made = await browser.post("/api/agents/keys", {"name": "LXC 210"}, content_type=JSON)
+    assert made.status_code == 201, made.content
+    key = made.json()
+    assert (key["client"], key["key"]) == ("LXC 210", oauth.OWN_KEY)
+    assert not await Token.objects.filter(digest=key["secret"]).aexists()
+    doors.tokens = {"access_token": key["secret"]}
+    assert (await doors.call("me"))["user"]["email"] == user.email
+    client = await Client.objects.aget(name="LXC 210")
+    assert await oauth.Provider().get_client(client.client_id) is None
+
+    listed = (await browser.get("/api/agents/clients")).json()["clients"]
+    assert [(each["client"], each["key"]) for each in listed] == [("LXC 210", oauth.OWN_KEY)]
+    assert (await browser.delete(f"/api/agents/clients/{key['id']}")).status_code == 204
+    assert (await doors.rpc("tools/list")).status_code == 401
+
+
+async def test_the_workspace_keeps_one_key_of_its_owner(doors, settings):
+    user, _ = await signed_in()
+    settings.WORKSPACE, settings.WORKSPACE_TOKEN = user.email, "workspace-token"
+    workspace = AsyncClient()
+
+    async def asked(**given) -> str:
+        answered = await workspace.post(
+            "/api/workspace/agent",
+            given,
+            content_type=JSON,
+            headers={"Authorization": "Bearer workspace-token"},
+        )
+        assert answered.status_code == 200, answered.content
+        return answered.json()["key"]
+
+    assert (await workspace.post("/api/workspace/agent")).status_code == 403
+    first = await asked()
+    assert await asked(key=first) == first
+    doors.tokens = {"access_token": first}
+    assert (await doors.call("me"))["user"]["email"] == user.email
+
+    second = await asked(key="lost")
+    assert second != first
+    assert (await doors.rpc("tools/list")).status_code == 401
+    doors.tokens = {"access_token": second}
+    assert (await doors.rpc("tools/list")).status_code == 200
+    assert await Grant.objects.filter(user=user, revoked_at=None).acount() == 1
+
+
 async def test_a_sign_in_for_another_resource_or_with_the_wrong_secret_is_refused(doors):
     user, browser = await signed_in()
     await doors.register()

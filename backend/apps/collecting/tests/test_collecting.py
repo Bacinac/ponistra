@@ -188,10 +188,12 @@ def test_what_the_collection_is_set_to_is_checked(browser):
         ({"since": "2099-01-01"}, "collecting_invalid_since"),
         ({"accounts": [999]}, "collecting_invalid_accounts"),
         ({"sends": "send", "to": []}, "collecting_no_recipients"),
+        ({"language": "de"}, "collecting_invalid_language"),
     ]:
         response = made(browser, **given)
         assert (response.status_code, response.json()["error"]) == (400, error), given
     assert not Collection.objects.exists()
+    assert made(browser, language="en").json()["language"] == "en"
 
 
 def test_recognising_bills_asks_the_owners_leave_and_the_model_reads_each(
@@ -338,7 +340,8 @@ def _month_on_its_day(browser, account, inbox):
         "2026-10-03 Invoice-1.pdf",
     )
     assert rows[-2][:4] == ("Ukupno", None, 25.25, "USD")
-    assert rows[-1][:5] == ("Ukupno", None, None, "EUR", 20.2)
+    assert rows[-1][:5] == (None, None, None, "EUR", 20.2)
+    assert f"A{len(rows) - 1}:A{len(rows)}" in book.active.merged_cells
     assert delivering.due(at(2026, 11, 12)) is None
     delivering.delivered(month)
     again = Month.objects.get(pk=month.pk)
@@ -396,9 +399,9 @@ def _rows(node):
         return list(load_workbook(book).active.values)
 
 
-def _line(node) -> str:
+def _lines(node) -> list[str]:
     doc = xlsx.doc_of(node.tabs.get().room)
-    return next(block.text for block in blocks.in_order(blocks.read(doc, {})) if block.text)
+    return [block.text for block in blocks.in_order(blocks.read(doc, {})) if block.text][:2]
 
 
 @pytest.mark.anyio
@@ -429,7 +432,7 @@ def _tables_kept(browser, account, inbox):
     october, november = Month.objects.order_by("month")
     assert october.table.parent_id == october.folder_id
     assert october.table.title == "Troškovi za Martu 2026-10"
-    assert _line(october.table) == "Nije poslano"
+    assert _lines(october.table) == ["Troškovi za Martu – listopad 2026", "Nije poslano"]
     assert [row[:5] for row in _rows(october.table)[1:3]] == [
         ("Anthropic", datetime(2026, 10, 3), 20, "USD", 16),
         ("Cloud", datetime(2026, 10, 9), 5, "EUR", 5),
@@ -441,7 +444,6 @@ def _tables_kept(browser, account, inbox):
         ("Mjesec", "Anthropic", "Cloud", "Ukupno", "Poslano"),
         (datetime(2026, 10, 1), 16, 5, 21, "Ne"),
         (datetime(2026, 11, 1), 16, None, 16, "Ne"),
-        (None, None, None, None, None),
         ("Ukupno", 32, 5, 37, None),
     ]
     rewritten, written = [], tabling._written
@@ -460,7 +462,7 @@ def _tables_kept(browser, account, inbox):
     month.refresh_from_db()
     assert month.table_id == october.table_id
     drafted = tabling.moment(month.delivered_at, "hr")
-    assert _line(month.table) == f"Skica od {drafted}, nije poslana"
+    assert _lines(month.table)[1] == f"Skica od {drafted}, nije poslana"
     assert _rows(Collection.objects.get().recap)[1][-1] == f"Ne (skica od {drafted})"
 
     months.left(month.unsent_id)
@@ -468,7 +470,7 @@ def _tables_kept(browser, account, inbox):
         pass
     month.refresh_from_db()
     sent = tabling.moment(month.sent_at, "hr")
-    assert _line(month.table) == f"Poslano {sent}"
+    assert _lines(month.table)[1] == f"Poslano {sent}"
     assert _rows(Collection.objects.get().recap)[1][-1] == sent
 
 

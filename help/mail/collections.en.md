@@ -17,7 +17,7 @@ A collection gathers the messages you choose, such as bills, files their attachm
    - {t:collections.recognise}, if you want the collection to keep bills only;
    - {t:collections.since}: the day from which the collection also takes mail received earlier.
 5. Under {t:collections.goes}, enter the {t:collections.to} and, if you have several accounts, the account it {t:collections.from}. With none chosen, the message goes from the {t:collections.fromDefault}.
-6. Choose the {t:collections.day} and the {t:collections.hour} at which the collection sends the month before, and under {t:collections.currency} the code of the currency the table also gives each amount in, such as EUR. Without a code, amounts are not converted.
+6. Choose the {t:collections.day} and the {t:collections.hour} at which the collection sends the month before, and under {t:collections.currency} the code of the currency the table also gives each amount in, such as EUR. Without a code, amounts are not converted. Under {t:collections.language} choose the language its tables and message are written in; a new collection takes the language of your Ponistra.
 7. Under {t:collections.sends}, choose {t:collections.draft} or {t:collections.send}.
 8. If you wish, enter the {t:collections.text}.
 9. Press {t:tree.save}. If you turned recognition on, Ponistra first asks for your consent: {t:collections.consent} You give it with {t:collections.consentGive}, and it holds until you turn recognition off.
@@ -69,7 +69,7 @@ Without recognition, the collection keeps every message it takes: as the supplie
 
 A month goes on the chosen day and hour of the following month, once every message waiting has been read, and 6 hours later at the latest. The message's subject holds the collection's name, the month and the year. Its body holds your text, a table of supplier, date, amount, currency, amount in the collection's currency and files, a total for each currency, the total in the collection's currency and the account's signature. The attachments are all the files in the month's folder at that moment, those you added yourself among them, and the same table as a workbook. The table also stays as a document in the month's folder.
 
-Each month's folder holds that table, named by the collection and the month, from the moment the month has its first bill or file. Above the table a line says whether the month was sent: when it left, that its draft waits since when, or that it was not sent. The collection's folder holds its summary, a table with a row for each month and a column for each supplier, then the month's total and when it was sent, with the totals of all months at the bottom. With a collection currency the amounts are in it, without one each currency has rows of its own. Both tables follow the collection: a new bill, a changed amount or a sent message rewrites them within a minute, and a table that was deleted comes back within an hour. What you write into them yourself is replaced at the next change.
+Each month's folder holds that table, named by the collection and the month, from the moment the month has its first bill or file. Above the table a line says whether the month was sent: when it left, that its draft waits since when, or that it was not sent. The collection's folder holds its summary, a table with a row for each month and a column for each supplier, then the month's total and when it was sent, with the totals of all months at the bottom. With a collection currency the amounts are in it, without one each currency has rows of its own. Both tables follow the collection: a new bill, a changed amount or a sent message rewrites them within a minute, and a table that was deleted comes back within an hour. Each stands on a landscape page under a heading with the collection's name, its columns as wide as their content. What you write into them yourself is replaced at the next change.
 
 With {t:collections.draft}, the message waits among your drafts for you to look it over and send it. With {t:collections.send}, it leaves by itself and stays in your sent mail.
 
@@ -89,6 +89,7 @@ The page refreshes by itself when the collection takes or sends something, on ea
 - {t:error.collecting_invalid_senders}
 - {t:error.collecting_invalid_since}
 - {t:error.collecting_invalid_currency}
+- {t:error.collecting_invalid_language}
 - {t:error.collecting_unrated}
 - {t:error.mail_account_gone} The month shows this message. Connect the account or choose another, then press {t:collections.sendNow}.
 

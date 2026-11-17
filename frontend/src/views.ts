@@ -36,7 +36,6 @@ function useStored<T extends string>(key: string, values: readonly T[]): [T, (va
   return [value, choose];
 }
 
-const LAST_VIEW = 'ponistra.view';
 const VIEWS_KEPT = 'ponistra.views';
 
 function kept(): Record<string, unknown> {
@@ -48,19 +47,16 @@ function kept(): Record<string, unknown> {
   }
 }
 
-/** The view the reader last chose for the document; for one they have not, the form of the file
- * it came from, its slides or its pages, else the view they last chose for any. */
+/** The view the reader chose for the document; for one they have not, its slides where it came
+ * from a presentation, else its pages. */
 export function viewFor(documentId: string, original: TreeNode['original']): View {
   const chosen = VIEWS.find((each) => each === kept()[documentId]);
-  return chosen ?? ORIGINAL_VIEWS[original ?? ''] ?? stored(LAST_VIEW, VIEWS);
+  return chosen ?? (original === 'pptx' ? 'slides' : 'pages');
 }
-
-const ORIGINAL_VIEWS: Partial<Record<string, View>> = { pptx: 'slides', docx: 'pages' };
 
 export function keepView(documentId: string, view: View) {
   try {
     localStorage.setItem(VIEWS_KEPT, JSON.stringify({ ...kept(), [documentId]: view }));
-    localStorage.setItem(LAST_VIEW, view);
   } catch {
     return;
   }
