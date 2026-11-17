@@ -46,6 +46,7 @@ export const en: Record<MessageKey, string> = {
   'workspace.state.waiting': 'Waiting for you',
   'workspace.state.idle': 'Done',
   'workspace.state.closed': 'Closed',
+  'workspace.state.cut': 'Cut short',
   'workspace.push': 'Push',
   'workspace.asked': 'The coordinator was sent “{word}”.',
   'workspace.newRound': 'New round',

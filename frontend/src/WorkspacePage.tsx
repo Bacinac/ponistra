@@ -90,6 +90,10 @@ interface Changes {
 
 type State = 'new' | 'working' | 'background' | 'waiting' | 'idle' | 'closed';
 
+/** A state as shown: a chat at rest whose last turn was cut short before it answered is no longer
+ * done. */
+type Look = State | 'cut';
+
 /** A question a waiting chat asks its owner, with the choices it offers. */
 interface Question {
   question: string;
@@ -105,6 +109,7 @@ interface Chat {
   open: boolean;
   hosted: boolean;
   state: State;
+  cut?: boolean;
   waitingFor: string | null;
   questions?: Question[] | null;
   context: number | null;
@@ -137,6 +142,7 @@ interface Member {
   title: string;
   task: string | null;
   state: State;
+  cut?: boolean;
   hosted: boolean;
   waitingFor: string | null;
   questions?: Question[] | null;
@@ -292,19 +298,21 @@ interface Known {
   title: string;
   project: Project;
   state: State;
+  cut?: boolean;
   hosted: boolean;
   waitingFor: string | null;
   questions?: Question[] | null;
   model: string | null;
 }
 
-const STATES: Record<State, { label: MessageKey; look: string }> = {
+const STATES: Record<Look, { label: MessageKey; look: string }> = {
   new: { label: 'workspace.state.new', look: 'text-muted' },
   working: { label: 'workspace.state.working', look: 'text-accent' },
   background: { label: 'workspace.state.background', look: 'text-accent' },
   waiting: { label: 'workspace.state.waiting', look: 'font-semibold text-danger' },
   idle: { label: 'workspace.state.idle', look: 'text-ink' },
   closed: { label: 'workspace.state.closed', look: 'text-muted' },
+  cut: { label: 'workspace.state.cut', look: 'text-danger' },
 };
 
 const COMMANDS = ['workspace', 'commands'];
@@ -720,7 +728,9 @@ type Choose = (session: string) => void;
 const AT_WORK = new Set<State>(['working', 'waiting']);
 
 /** A chat that has done its part. */
-const FINISHED = new Set<State>(['idle', 'closed']);
+const FINISHED = new Set<Look>(['idle', 'closed']);
+
+const shownOf = ({ state, cut }: { state: State; cut?: boolean }): Look => (cut ? 'cut' : state);
 
 /** A tree the gate found green that no push has carried yet. */
 function pushable({ gate }: Project): boolean {
@@ -944,7 +954,7 @@ function MemberLine({
   menu?: ReactNode;
 }) {
   const { t } = useI18n();
-  const state = STATES[member.state];
+  const state = STATES[shownOf(member)];
   const name = member.name !== member.title ? member.name : null;
   const known = coordinator || name || member.context !== null || Boolean(member.changes?.files);
   const line = (
@@ -1019,7 +1029,7 @@ function RoundCard({
   const finished =
     Boolean(round.started) &&
     round.chats.length > 0 &&
-    round.chats.every((chat) => FINISHED.has(chat.state));
+    round.chats.every((chat) => FINISHED.has(shownOf(chat)));
   const consolidated = commands.data?.commands.some(
     (each) =>
       each.kind === 'consolidate' &&
@@ -1301,7 +1311,7 @@ function ChatLine({
   onChoose: Choose;
 }) {
   const { t } = useI18n();
-  const state = STATES[chat.state];
+  const state = STATES[shownOf(chat)];
   const measured = chat.context !== null || Boolean(chat.changes?.files);
   return (
     <ChatRow session={chat.id} title={chat.title} state={chat.state}>
@@ -1947,8 +1957,8 @@ function Conversation({
       <div className="flex min-w-0 items-center gap-1">
         <h2 className="min-w-0 flex-1 truncate text-base font-semibold">
           {chat.title}
-          <span className={`ml-2 text-xs font-normal ${STATES[chat.state].look}`}>
-            {t(STATES[chat.state].label)}
+          <span className={`ml-2 text-xs font-normal ${STATES[shownOf(chat)].look}`}>
+            {t(STATES[shownOf(chat)].label)}
           </span>
         </h2>
         <OpenChat chat={chat} onOpen={onOpen} look={`${small} shrink-0`} />
@@ -2228,6 +2238,7 @@ function knownOf(projects: Project[]): Map<string, Known> {
           title: member.title,
           project,
           state: member.state,
+          cut: member.cut,
           hosted: member.hosted,
           waitingFor: member.waitingFor,
           questions: member.questions ?? null,
@@ -2242,6 +2253,7 @@ function knownOf(projects: Project[]): Map<string, Known> {
         title: chat.title,
         project,
         state: chat.state,
+        cut: chat.cut,
         hosted: chat.hosted,
         waitingFor: chat.waitingFor,
         questions: chat.questions ?? null,

@@ -81,12 +81,10 @@ test('a document is shared with people outside chosen among the contacts as one 
   await people.press('Enter');
   await form.getByLabel('Uloga').selectOption('edit');
   await form.getByRole('button', { name: 'Podijeli', exact: true }).click();
-  await expect(panel.getByText('Izvan instalacije · vesna@example.org')).toBeVisible({
-    timeout: 30_000,
-  });
+  await expect(people).toHaveCount(0, { timeout: 30_000 });
+  await expect(panel.getByText('Izvan instalacije · vesna@example.org')).toBeVisible();
   await expect(panel.getByText('Vesna Vanjska', { exact: true })).toBeVisible();
   await expect(panel.getByText('Izvan instalacije · marko@example.net')).toBeVisible();
-  await expect(people).toHaveCount(0);
 });
 
 test('a folder asks for files without an account', async ({ page, browser, baseURL }) => {

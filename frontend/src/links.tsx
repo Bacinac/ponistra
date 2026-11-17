@@ -16,7 +16,7 @@ import { useRef, useState, type CSSProperties, type DragEvent, type ReactNode } 
 import { FavouriteItem, useFavouriteMarks } from './favourites';
 import { Link } from 'react-router';
 import { patchJson, postJson, upload } from './api';
-import { ChoiceBar, ChoiceBox, useChoice, type Choice } from './choice';
+import { ChoiceBar, ChoiceBox, rowOpener, useChoice, type Choice } from './choice';
 import { LinkDialog, NameDialog } from './dialogs';
 import { endDrag, startDrag } from './drag';
 import { Frame, Loading } from './frame';
@@ -200,6 +200,7 @@ function Tile({
   spot,
   draggable,
   items,
+  opener,
   onDragStart,
   onDragEnd,
   onDragOver,
@@ -211,6 +212,7 @@ function Tile({
   draggable: boolean;
   /** What can be done to the link, from its menu; none where the user only reads it. */
   items: ReactNode;
+  opener: ReturnType<typeof rowOpener>;
   onDragStart: (event: DragEvent) => void;
   onDragEnd: () => void;
   onDragOver: (event: DragEvent) => void;
@@ -229,7 +231,7 @@ function Tile({
       onDrop={onDrop}
     >
       <PlaceLink
-        {...(items ? choice.opener(link.id) : {})}
+        {...(items ? opener : {})}
         to={nodeHref(link)}
         title={link.title}
         className={`${tile} shadow-sm transition select-none [-webkit-touch-callout:none] hover:-translate-y-0.5 hover:border-accent hover:shadow-md ${picked ? 'border-accent bg-selected' : 'border-line bg-raised'} ${iconing ? 'ring-2 ring-accent' : ''} ${choice.many > 0 && items ? 'pr-9' : ''}`}
@@ -373,7 +375,7 @@ type Dialog =
   | { renaming: Listed };
 
 /** The page alone, the whole window its own, as the window the links open in on a computer: the
-    links only, until a long press on the logo opens them to editing. */
+    links only, until a long press on the logo or a link opens them to editing. */
 function Alone({
   title,
   primary,
@@ -610,7 +612,11 @@ export function LinksPage({ alone = false }: { alone?: boolean }) {
                 choice={choice}
                 spot={spot}
                 draggable={editing && fine && mine}
-                items={editing ? linkItems(link) : null}
+                items={linkItems(link)}
+                opener={rowOpener(choice.press, choice.pressed, choice.many, (range) => {
+                  setEditing(true);
+                  choice.toggle(link.id, range);
+                })}
                 onDragStart={(event) =>
                   started(event, { links: choice.has(link.id) ? choice.chosen : [link.id] })
                 }
@@ -835,7 +841,15 @@ export function LinksPage({ alone = false }: { alone?: boolean }) {
     </>
   );
   return alone ? (
-    <Alone title={t('links.title')} primary={primary} editing={editing} onEdit={setEditing}>
+    <Alone
+      title={t('links.title')}
+      primary={primary}
+      editing={editing}
+      onEdit={(on) => {
+        if (!on) choice.choose([]);
+        setEditing(on);
+      }}
+    >
       {content}
     </Alone>
   ) : (

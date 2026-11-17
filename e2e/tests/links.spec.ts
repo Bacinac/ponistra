@@ -169,6 +169,17 @@ test('the page of links keeps its own groups, outside the documents, and loads a
     timeout: 30_000,
   });
 
+  await page.goto('/start');
+  await expect(page.getByRole('button', { name: 'Novo' })).toHaveCount(0);
+  await page.getByRole('link', { name: new RegExp(`Prvo ${stamp}`) }).hover();
+  await page.mouse.down();
+  await expect(page.getByText('Odabrano: 1')).toBeVisible();
+  await page.mouse.up();
+  await expect(page.getByRole('button', { name: 'Novo' })).toBeVisible();
+  await page.getByRole('button', { name: 'Gotovo' }).click();
+  await expect(page.getByText('Odabrano: 1')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Novo' })).toHaveCount(0);
+
   await page.goto('/documents');
   await expect(
     page.getByRole('columnheader', { name: /Naziv/ }).or(page.getByText('Ova mapa je prazna.')),

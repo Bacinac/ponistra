@@ -19,9 +19,17 @@ ROUND = "ponistra-20261111-1647"
 TREE = "4b825dc642cb6eb9a060e54bf8d69288fbe4904"
 
 
-def member(id, state, at="2026-11-11T16:00:00Z", title="Obavijesti kruga"):
+def member(id, state, at="2026-11-11T16:00:00Z", title="Obavijesti kruga", cut=False):
     waiting = "input needed" if state == "waiting" else None
-    return {"id": id, "name": None, "title": title, "state": state, "waitingFor": waiting, "at": at}
+    return {
+        "id": id,
+        "name": None,
+        "title": title,
+        "state": state,
+        "cut": cut,
+        "waitingFor": waiting,
+        "at": at,
+    }
 
 
 def listed(*chats, started="2026-11-11T15:50:00Z", rounds=True, gate=None, lead=None, **round):
@@ -100,6 +108,23 @@ def test_a_round_is_ready_once_every_chat_of_it_has_finished():
 )
 def test_a_round_not_started_or_with_a_chat_not_begun_is_not_ready(chats, started):
     assert events({}, listed(*chats, started=started)) == []
+
+
+@pytest.mark.parametrize("state", ["idle", "closed"])
+def test_a_round_with_a_chat_cut_short_is_not_ready_until_it_answers(state):
+    shown, _ = compared({}, listed(member(CHAT, "working"), member(OTHER, "idle")))
+    cut = listed(member(CHAT, state, cut=True), member(OTHER, "idle"))
+    assert events(shown, cut) == []
+    assert due({}, cut) == []
+    shown, _ = compared(shown, cut)
+    answered = listed(member(CHAT, "idle"), member(OTHER, "idle"))
+    assert events(shown, answered) == [{"event": "ready", "project": "ponistra", "round": ROUND}]
+    assert [each["id"] for each in due({}, answered)] == [ROUND]
+
+
+def test_a_coordinator_cut_short_is_not_asked_to_consolidate():
+    lead = member(LEAD, "idle", title="Koordinator", cut=True)
+    assert due({}, listed(member(CHAT, "idle"), lead=lead)) == []
 
 
 def test_a_round_gone_from_the_list_was_consolidated():

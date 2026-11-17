@@ -44,6 +44,8 @@ export PONISTRA_RUN="$run"
 COMPOSE_FILE="${COMPOSE_FILE:-compose.yaml:compose.override.yaml}:$PWD/compose.check.yml"
 COMPOSE_PROJECT_NAME="ponistra-check-$(basename "$PWD")"
 export COMPOSE_FILE COMPOSE_PROJECT_NAME
+# A check killed before its trap leaves its stack, whose database would outlive the backend's files.
+docker compose --profile check down --volumes --remove-orphans --timeout 5 >/dev/null
 
 tree=
 guard=

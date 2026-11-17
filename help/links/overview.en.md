@@ -32,7 +32,7 @@ An image dropped on a tile becomes that link's icon. For several links at once, 
 
 ### A window of their own
 
-On a computer the links open in a window of their own, without the rest of Ponistra, like a meeting and {t:rail.projects}. It shows only the tiles. A long press or right click on the logo opens editing, with everything the links page does, and {t:links.done} closes it. [The links start page](/start) opens the same window, so you can set it as your browser's start page. If you are not signed in, Ponistra asks you to sign in first. On a phone, and where the browser does not allow a new window, the links stay in Ponistra.
+On a computer the links open in a window of their own, without the rest of Ponistra, like a meeting and {t:rail.projects}. It shows only the tiles. A long press or right click on the logo opens editing, as does a long press on a link, which it also chooses; a right click on a link opens its menu, with everything the links page does, and {t:links.done} closes it. [The links start page](/start) opens the same window, so you can set it as your browser's start page. If you are not signed in, Ponistra asks you to sign in first. On a phone, and where the browser does not allow a new window, the links stay in Ponistra.
 
 ## How it works
 

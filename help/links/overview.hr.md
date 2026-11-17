@@ -32,7 +32,7 @@ Sliku ispuštenu na pločicu Ponistra uzima kao ikonu te poveznice. Za više pov
 
 ### Vlastiti prozor
 
-Na računalu se poveznice otvaraju u vlastitom prozoru, bez ostatka Ponistre, kao sastanak i {t:rail.projects}. U njemu su samo pločice. Dugi pritisak ili desni klik na logo otvara uređivanje, s istim mogućnostima kao na stranici poveznica, a {t:links.done} ga zatvara. Isti prozor otvara [početna stranica poveznica](/start), pa je možete postaviti kao početnu stranicu preglednika. Ako niste prijavljeni, Ponistra najprije traži prijavu. Na telefonu i kad preglednik ne dopusti novi prozor, poveznice ostaju u Ponistri.
+Na računalu se poveznice otvaraju u vlastitom prozoru, bez ostatka Ponistre, kao sastanak i {t:rail.projects}. U njemu su samo pločice. Dugi pritisak ili desni klik na logo otvara uređivanje, kao i dugi pritisak na poveznicu, koju pritom odabere; desni klik na poveznicu otvara njezin izbornik, s istim mogućnostima kao na stranici poveznica, a {t:links.done} ga zatvara. Isti prozor otvara [početna stranica poveznica](/start), pa je možete postaviti kao početnu stranicu preglednika. Ako niste prijavljeni, Ponistra najprije traži prijavu. Na telefonu i kad preglednik ne dopusti novi prozor, poveznice ostaju u Ponistri.
 
 ## Kako radi
 

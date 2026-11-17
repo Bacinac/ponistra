@@ -125,6 +125,7 @@ const AWAITED_EVERY = 60 * 1000;
 // What a chat stopped at the weekly limit is told once the window is below it again; never the word
 // `nastavi`, which opens a round.
 const RESUMED = 'Tjedni limit je opet ispod praga. Dovrši zadatak od mjesta gdje si stao.';
+const CONTINUED = 'Radni prostor je ponovno pokrenut usred tvog posla. Nastavi zadatak od mjesta gdje si stao.';
 const COMMAND = /^(\d{1,18})\.json$/;
 // A command for a chat that works in the editor all this long fails.
 const UNTAKEN = 60 * 60 * 1000;
@@ -312,6 +313,31 @@ const saidIn = (lines) => {
   }
   return said;
 };
+
+// How the chat's last turn ended short of the agent's own end of it: `cut` when its process ended
+// or an error ended it (Claude Code resuming such a session answers it with a `<synthetic>` message
+// of its own, as it answers an error), `stopped` when its owner stopped it; null once it answered.
+// A local command's lines are no turn.
+const STOPPED = '[Request interrupted by user';
+const LOCAL = /^<(command-name|local-command-)/;
+const cutOf = (lines) => {
+  for (let at = lines.length - 1; at >= 0; at--) {
+    if (!lines[at].includes('"type":"assistant"') && !lines[at].includes('"type":"user"')) continue;
+    const entry = parsed(lines[at]);
+    if (entry?.type === 'assistant')
+      return entry.message?.model !== '<synthetic>' && entry.message?.stop_reason === 'end_turn' ? null : 'cut';
+    if (entry?.type !== 'user' || entry.isCompactSummary) continue;
+    const content = entry.message?.content;
+    const text = (typeof content === 'string' ? content : Array.isArray(content) ? (content.find((block) => block?.type === 'text')?.text ?? '') : '').trimStart();
+    if (LOCAL.test(text)) continue;
+    return text.startsWith(STOPPED) ? 'stopped' : 'cut';
+  }
+  return null;
+};
+
+// A chat at rest whose last turn did not end with its answer has not done its part.
+const AT_REST = new Set(['idle', 'closed']);
+const cutIn = (state, lines) => AT_REST.has(state) && cutOf(lines) !== null;
 
 const lastSaid = (lines) => {
   for (let at = lines.length - 1; at >= 0; at--) {
@@ -533,6 +559,7 @@ const chatOf = (path, id, live, trees, led, kept = new Set()) => {
     open: Boolean(session),
     hosted: session?.hosted ?? false,
     state: session?.state ?? 'closed',
+    cut: cutIn(session?.state ?? 'closed', lines),
     waitingFor: session?.waitingFor ?? null,
     questions: session?.questions ?? null,
     context: contextOf(lines),
@@ -614,7 +641,7 @@ const memberOf = (folder, live, trees, id, prompt) => {
   const first = firstLine(prompt);
   const told = (/^\*\*(.+?)\.?\*\*/.exec(first)?.[1] ?? first.replace(/[*`]/g, '')).slice(0, 120);
   if (typeof id !== 'string' || !SESSION.test(id))
-    return { id: null, name: null, title: told, task, state: 'new', hosted: false, waitingFor: null, questions: null, at: null, context: null, model: null, changes: null, heard: null };
+    return { id: null, name: null, title: told, task, state: 'new', cut: false, hosted: false, waitingFor: null, questions: null, at: null, context: null, model: null, changes: null, heard: null };
   const transcript = transcriptOf(folder, id);
   const stat = existsSync(transcript) ? statSync(transcript) : null;
   const lines = stat ? tailOf(transcript, stat.size) : [];
@@ -630,10 +657,11 @@ const memberOf = (folder, live, trees, id, prompt) => {
   const session = live.get(id);
   if (session) {
     const { name, state, hosted, waitingFor, questions, at } = session;
-    return { ...shared, name, state, hosted, waitingFor, questions, at };
+    return { ...shared, name, state, cut: cutIn(state, lines), hosted, waitingFor, questions, at };
   }
   // A chat given its session that has not yet written a word has done nothing, so is not finished.
-  return { ...shared, name: null, state: stat ? 'closed' : 'new', hosted: false, waitingFor: null, questions: null, at: stat?.mtime.toISOString() ?? null };
+  const state = stat ? 'closed' : 'new';
+  return { ...shared, name: null, state, cut: cutIn(state, lines), hosted: false, waitingFor: null, questions: null, at: stat?.mtime.toISOString() ?? null };
 };
 
 // What a chat last said through its hooks: that it answered, with its answer, or that it waits.
@@ -885,6 +913,28 @@ const led = () => {
       } catch (error) {
         console.error(`a chat of ${round.round} did not start`, error);
       }
+    }
+  }
+};
+
+// What a restart of the workspace cut short in a round goes on once it runs again: each chat of an
+// open round started, and its coordinator until it says it has done the round, unless its owner
+// stopped it or the weekly limit holds it.
+const continued = () => {
+  for (const { round } of roundFiles()) {
+    if (round.closed && (round.done || round.dismissed)) continue;
+    const chats = round.closed || !round.started ? [] : round.chats.map((chat) => chat?.sessionId);
+    for (const id of [round.coordinator, ...chats]) {
+      if (!SESSION.test(id ?? '') || round.paused?.includes(id)) continue;
+      const transcript = transcriptOf(round.folder, id);
+      if (!existsSync(transcript) || cutOf(tailOf(transcript, statSync(transcript).size)) !== 'cut') continue;
+      console.log(`the chat ${id} of ${round.round} was cut short: telling it to go on`);
+      takenOver(id, round.folder)
+        .then((chat) => {
+          if (chat) say(chat, CONTINUED);
+          else console.error(`the chat ${id} of ${round.round} works elsewhere and was not told to go on`);
+        })
+        .catch((error) => console.error(`the chat ${id} of ${round.round} was not told to go on`, error));
     }
   }
 };
@@ -1665,6 +1715,7 @@ endedAway();
 resumed(() => {
   waiting ??= setTimeout(tell, QUIET);
 });
+continued();
 
 // A project's gate is followed from when its store first appears, which the next change reveals.
 const gates = new Map();

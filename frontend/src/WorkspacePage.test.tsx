@@ -571,6 +571,36 @@ test('a consolidated round with a green tree not yet pushed is offered Pushaj in
   await waitFor(() => expect(asked).toEqual([{ kind: 'push', round: ROUND.id }]));
 });
 
+test('a round with a chat cut short is not finished: the chat shows so and no push is offered', async () => {
+  const cut = {
+    ...FINISHED_ROUND,
+    coordinator: { ...FINISHED_ROUND.coordinator, at: '2026-11-11T16:05:00Z' },
+    chats: [FINISHED_ROUND.chats[0], { ...FINISHED_ROUND.chats[1], cut: true }],
+  };
+  served({
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: [{ ...PROJECTS.projects[1], gate: UNPUSHED, chats: [], rounds: [cut] }],
+    }),
+    'GET /api/workspace/commands': () => ({
+      commands: [
+        {
+          ...COMMAND,
+          id: 3,
+          kind: 'consolidate',
+          round: ROUND.id,
+          state: 'done',
+          changed_at: '2026-11-11T15:00:00Z',
+        },
+      ],
+    }),
+  });
+  open('/workspace', OWNER);
+  const round = await screen.findByRole('region', { name: /^Krug / });
+  within(within(round).getByRole('button', { name: /Grupe u panelu/ })).getByText('Prekinut');
+  expect(within(round).queryByRole('button', { name: 'Pushaj' })).toBeNull();
+});
+
 test('the coordinator of a closed round is told to push while its green tree waits', async () => {
   const asked: Asked[] = [];
   const project = (gate: typeof GATE) => ({

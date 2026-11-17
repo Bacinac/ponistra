@@ -36,6 +36,12 @@ WEEKLY = {"week", "model"}
 _one_at_a_time = threading.Lock()
 
 
+def _finished(member: dict) -> bool:
+    """Whether the chat has done its part: at rest, its last turn ended with its answer rather
+    than cut short by a restart, an error or its owner."""
+    return member["state"] in FINISHED and not member.get("cut")
+
+
 def _tag(key: str) -> str:
     return push.topic("code", uuid.uuid5(uuid.NAMESPACE_URL, key))
 
@@ -77,7 +83,7 @@ def compared(before: dict, projects: list[dict]) -> tuple[dict, list[tuple[dict,
                     }
                     told.append((event, _tag(coordinator["id"])))
             chats = round["chats"]
-            if round["started"] and chats and all(chat["state"] in FINISHED for chat in chats):
+            if round["started"] and chats and all(_finished(chat) for chat in chats):
                 shown["ready"].append(round["id"])
                 if round["id"] not in before.get("ready", []):
                     event = {"event": "ready", "project": name, "round": round["id"]}
@@ -124,9 +130,9 @@ def limited(before: dict, usage: dict | None) -> tuple[list[str], list[tuple[dic
 
 def due(before: dict, projects: list[dict]) -> list[dict]:
     """The rounds to consolidate by themselves: every chat of each has finished, its coordinator
-    is free, nothing is asked of it, its owner left it to consolidate itself and it was not yet
-    asked to since its chats last finished. A coordinator still busy when the chats finish is
-    asked once it is free."""
+    is free and not cut short, nothing is asked of it, its owner left it to consolidate itself
+    and it was not yet asked to since its chats last finished. A coordinator still busy when the
+    chats finish is asked once it is free."""
     asked = set(before.get("consolidating", []))
     return [
         round
@@ -134,9 +140,10 @@ def due(before: dict, projects: list[dict]) -> list[dict]:
         for round in project.get("rounds", [])
         if round["started"]
         and round["chats"]
-        and all(chat["state"] in FINISHED for chat in round["chats"])
+        and all(_finished(chat) for chat in round["chats"])
         and round["id"] not in asked
         and round["coordinator"]["state"] == "idle"
+        and not round["coordinator"].get("cut")
         and round.get("auto", True)
         and not round.get("asked")
     ]
