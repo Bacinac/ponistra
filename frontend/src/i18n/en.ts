@@ -1500,6 +1500,7 @@ export const en: Record<MessageKey, string> = {
   'collections.consent':
     'The messages the collection takes and their attachments are sent to an AI model to recognise bills.',
   'collections.consentGive': 'Allow',
+  'collections.recap': 'Summary',
   'collections.openFolder': 'Open folder',
   'collections.kept': 'Taken',
   'collections.waiting': 'Waiting',

@@ -23,7 +23,7 @@ You invite the installation's colleagues by ringing them, and others by a link t
 
 ## How it works
 
-Colleagues are rung in every Ponistra they have open and on their phone, until they answer, decline or 45 seconds pass. The colleagues you rang join the meeting's conversation, whether they answer or not. People outside the installation get from your account, by email, a link of their own that lets them straight into the meeting, without waiting at the door.
+Colleagues are rung in every Ponistra they have open and on their phone, until they answer, decline or 45 seconds pass. The colleagues you rang join the meeting's conversation, whether they answer or not. People outside the installation get from your account, by email, a link of their own that lets them straight into the meeting, without waiting at the door. Someone at the domain of one of your accounts, such as a colleague at your company, gets it from that account, so the mail stays on your company's server; everyone else from your default account.
 
 A meeting added to an event is not invited to here: those invited to the event already have the link, so the meeting's header offers only {t:meeting.copyLink}. A conversation's meeting rings everyone in the conversation, as [the conversations overview](help:chat/overview) describes.
 

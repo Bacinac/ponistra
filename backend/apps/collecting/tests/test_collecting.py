@@ -13,11 +13,13 @@ from apps.actions.models import ActionRun
 from apps.ai import installation, model
 from apps.ai.tests.recorded import Recorded, message, used
 from apps.blobs import store
-from apps.collecting import converting, delivering, months, taking
+from apps.collecting import converting, delivering, months, tabling, taking
 from apps.collecting.models import Collection, Item, Month
+from apps.content import blocks
 from apps.core import sealed
 from apps.documents.models import Node
 from apps.documents.views import created
+from apps.exports import xlsx
 from apps.mail.models import Account, Attachment, Folder, Message, Role, Unsent
 from apps.push import notices
 from apps.push.models import Notice
@@ -387,6 +389,87 @@ def _month_past_asked(browser, account, inbox):
     assert delivering.deliver_next()
     assert Month.objects.get().delivered_at is not None
     assert Unsent.objects.count() == 1
+
+
+def _rows(node):
+    with xlsx.workbook(node) as book:
+        return list(load_workbook(book).active.values)
+
+
+def _line(node) -> str:
+    doc = xlsx.doc_of(node.tabs.get().room)
+    return next(block.text for block in blocks.in_order(blocks.read(doc, {})) if block.text)
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_each_month_and_the_summary_keep_a_table_saying_whether_it_was_sent(
+    live, browser, account, inbox
+):
+    await sync_to_async(_tables_kept)(browser, account, inbox)
+
+
+def _tables_kept(browser, account, inbox):
+    made(browser)
+    collection = Collection.objects.get()
+    Collection.objects.update(created_at=at(2026, 10, 1))
+    mail(account, inbox, "Invoice", "b@anthropic.com", at(2026, 10, 3), ("a.pdf", PDF, ""))
+    mail(account, inbox, "Invoice", "b@cloud.example", at(2026, 10, 9), ("c.pdf", PDF, ""))
+    mail(account, inbox, "Invoice", "b@anthropic.com", at(2026, 11, 2), ("b.pdf", PDF, ""))
+    drained()
+    Item.objects.filter(sender="b@anthropic.com").update(
+        supplier="Anthropic", amount="20.00", currency="USD", converted="16.00"
+    )
+    Item.objects.filter(sender="b@cloud.example").update(
+        supplier="Cloud", amount="5.00", currency="EUR", converted="5.00"
+    )
+    months.touched(collection.pk)
+    while tabling.tabled_next():
+        pass
+    october, november = Month.objects.order_by("month")
+    assert october.table.parent_id == october.folder_id
+    assert october.table.title == "Troškovi za Martu 2026-10"
+    assert _line(october.table) == "Nije poslano"
+    assert [row[:5] for row in _rows(october.table)[1:3]] == [
+        ("Anthropic", datetime(2026, 10, 3), 20, "USD", 16),
+        ("Cloud", datetime(2026, 10, 9), 5, "EUR", 5),
+    ]
+    collection.refresh_from_db()
+    assert collection.recap.parent_id == collection.folder_id
+    assert collection.recap.title == "Troškovi za Martu – Rekapitulacija"
+    assert _rows(collection.recap) == [
+        ("Mjesec", "Anthropic", "Cloud", "Ukupno", "Poslano"),
+        (datetime(2026, 10, 1), 16, 5, 21, "Ne"),
+        (datetime(2026, 11, 1), 16, None, 16, "Ne"),
+        (None, None, None, None, None),
+        ("Ukupno", 32, 5, 37, None),
+    ]
+    rewritten, written = [], tabling._written
+    tabling._written = lambda *given: rewritten.append(given) or written(*given)
+    try:
+        months.touched(collection.pk)
+        while tabling.tabled_next():
+            pass
+    finally:
+        tabling._written = written
+    assert rewritten == []
+
+    month = delivered_at(at(2026, 11, 11, 9))
+    while tabling.tabled_next():
+        pass
+    month.refresh_from_db()
+    assert month.table_id == october.table_id
+    drafted = tabling.moment(month.delivered_at, "hr")
+    assert _line(month.table) == f"Skica od {drafted}, nije poslana"
+    assert _rows(Collection.objects.get().recap)[1][-1] == f"Ne (skica od {drafted})"
+
+    months.left(month.unsent_id)
+    while tabling.tabled_next():
+        pass
+    month.refresh_from_db()
+    sent = tabling.moment(month.sent_at, "hr")
+    assert _line(month.table) == f"Poslano {sent}"
+    assert _rows(Collection.objects.get().recap)[1][-1] == sent
 
 
 def test_messages_chosen_by_hand_join_a_collection(browser, account, inbox):

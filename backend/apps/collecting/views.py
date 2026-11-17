@@ -42,6 +42,7 @@ def _month(month: Month, collection: Collection) -> dict:
         "past": month.past,
         "asked_at": month.asked_at,
         "delivered_at": month.delivered_at,
+        "sent_at": month.sent_at,
         "unsent": month.unsent_id,
         "failed": month.failed,
         "kept": month.kept,
@@ -77,6 +78,7 @@ def describe(collection: Collection) -> dict:
         "recognise": collection.recognise,
         "since": collection.since.isoformat(),
         "folder": _node(collection.folder),
+        "recap": _node(collection.recap),
         "to": collection.to,
         "account": collection.account_id,
         "day": collection.day,
@@ -234,7 +236,7 @@ def collections(request):
     if request.method == "POST":
         made = _kept(request.user, body(request), Collection(owner=request.user))
         return JsonResponse(describe(made), status=201)
-    found = Collection.objects.filter(owner=request.user).select_related("folder")
+    found = Collection.objects.filter(owner=request.user).select_related("folder", "recap")
     found = found.order_by("name", "pk")
     return JsonResponse({"collections": [describe(each) for each in found]})
 

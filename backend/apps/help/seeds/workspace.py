@@ -352,7 +352,7 @@ CHATS = [
                 "Divide the next round for quotes: VAT by country, the suppliers' price lists "
                 "and the PDF on our letterhead.",
                 [read("quotes", "README.md")],
-                "Three chats ready, one per area. They start when you press Start.",
+                "Three chats ready, one per area. They start when you press Start chats.",
                 took=4,
             ),
         ],

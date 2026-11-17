@@ -1493,6 +1493,7 @@ export const hr = {
   'collections.consent':
     'Poruke koje zbirka uzme i njihovi privitci šalju se modelu umjetne inteligencije da prepozna račune.',
   'collections.consentGive': 'Dopusti',
+  'collections.recap': 'Rekapitulacija',
   'collections.openFolder': 'Otvori mapu',
   'collections.kept': 'Uzeto',
   'collections.waiting': 'Čeka',

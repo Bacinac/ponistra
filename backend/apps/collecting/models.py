@@ -43,6 +43,12 @@ class Collection(models.Model):
     active = models.BooleanField(default=True)
     # The highest message read through, from which the next look goes on.
     mark = models.BigIntegerField(default=0)
+    # The table of every month by supplier, kept in its folder, and what it was last written of.
+    recap = models.ForeignKey(
+        "documents.Node", null=True, on_delete=models.DB_SET_NULL, related_name="+"
+    )
+    recapped = models.CharField(max_length=64, blank=True)
+    tabled_at = models.DateTimeField(null=True)
     error = models.CharField(max_length=40, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     changed_at = models.DateTimeField(auto_now=True)
@@ -66,6 +72,7 @@ class Month(models.Model):
     table = models.ForeignKey(
         "documents.Node", null=True, on_delete=models.DB_SET_NULL, related_name="+"
     )
+    tabled = models.CharField(max_length=64, blank=True)
     # A month whose day came before the collection was made, sent only when the owner asks.
     past = models.BooleanField(default=False)
     asked_at = models.DateTimeField(null=True)
@@ -73,6 +80,8 @@ class Month(models.Model):
     unsent = models.ForeignKey(
         "mail.Unsent", null=True, on_delete=models.DB_SET_NULL, related_name="+"
     )
+    # When the message left, by itself or as the owner sent the draft.
+    sent_at = models.DateTimeField(null=True)
     failed = models.CharField(max_length=40, blank=True)
 
     class Meta:

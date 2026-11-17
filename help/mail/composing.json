@@ -16,7 +16,7 @@
     "frontend/src/recipients.tsx#Recipients": "d0740930ef41",
     "frontend/src/MailEditor.tsx#MailEditor": "3c87c009d47a",
     "frontend/src/mail.tsx#UnsentList": "1c1254cf0565",
-    "backend/apps/mail/views.py#sent": "0d743a42c0f8",
+    "backend/apps/mail/views.py#sent": "6d993cdce365",
     "backend/apps/mail/views.py#sender": "261b9f0f64cf",
     "backend/apps/mail/views.py#people": "5efed8b4d1eb"
   }

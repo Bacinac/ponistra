@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronDown, ChevronRight, FolderOpen, Mail, Plus, Send } from 'lucide-react';
+import { ChevronDown, ChevronRight, FolderOpen, Mail, Plus, Send, Sheet } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
 import { ApiError, deleteJson, getJson, postJson, putJson } from './api';
@@ -27,6 +27,7 @@ interface CollectionMonth {
   past: boolean;
   asked_at: string | null;
   delivered_at: string | null;
+  sent_at: string | null;
   failed: string;
   kept: number;
   waiting: number;
@@ -45,6 +46,7 @@ export interface Collection {
   recognise: boolean;
   since: string;
   folder: Placed | null;
+  recap: Placed | null;
   to: Person[];
   account: number | null;
   day: number;
@@ -74,7 +76,7 @@ interface CollectionItem {
   node: Placed | null;
 }
 
-type Written = Omit<Collection, 'id' | 'folder' | 'error' | 'months'>;
+type Written = Omit<Collection, 'id' | 'folder' | 'recap' | 'error' | 'months'>;
 
 const COLLECTIONS = ['mail', 'collections'];
 const DAYS = Array.from({ length: 28 }, (_, at) => at + 1);
@@ -512,14 +514,15 @@ function MonthRow({ collection, month }: { collection: Collection; month: Collec
     ? codeText(month.failed, t)
     : month.asked_at
       ? t('collections.sending')
-      : month.delivered_at
-        ? t(collection.sends === 'send' ? 'collections.sentAt' : 'collections.draftedAt').replace(
-            '{when}',
-            formatDate(month.delivered_at),
-          )
-        : month.past
-          ? t('collections.notSent')
-          : t('collections.dueAt').replace('{when}', formatDate(month.due_at));
+      : month.sent_at
+        ? t('collections.sentAt').replace('{when}', formatDate(month.sent_at))
+        : month.delivered_at
+          ? t(
+              collection.sends === 'send' ? 'collections.sending' : 'collections.draftedAt',
+            ).replace('{when}', formatDate(month.delivered_at))
+          : month.past
+            ? t('collections.notSent')
+            : t('collections.dueAt').replace('{when}', formatDate(month.due_at));
   const counted = (
     [
       ['collections.kept', month.kept],
@@ -600,6 +603,12 @@ function CollectionView({ collection, onEdit }: { collection: Collection; onEdit
             <Link to={nodeHref({ ...collection.folder, kind: 'folder' })} className={button}>
               <FolderOpen className="size-4" />
               {t('collections.openFolder')}
+            </Link>
+          )}
+          {collection.recap && (
+            <Link to={nodeHref({ ...collection.recap, kind: 'document' })} className={button}>
+              <Sheet className="size-4" />
+              {t('collections.recap')}
             </Link>
           )}
           <button type="button" onClick={onEdit} className={button}>

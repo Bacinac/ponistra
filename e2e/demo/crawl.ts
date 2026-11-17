@@ -217,7 +217,13 @@ export class Walk {
         await settled(this.page, next, quiet);
         await scrolled(this.page, quiet);
         await visited();
-        const shown = await this.page.locator('body').innerText();
+        // A help article quotes the messages it explains, so its text is no page's error.
+        const shown = await this.page.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>('.ponistra-help')].reduce(
+            (text, article) => text.replace(article.innerText, ''),
+            document.body.innerText,
+          ),
+        );
         for (const broken of BROKEN)
           if (shown.includes(broken)) failed(`${next}: shows "${broken}"`);
         for (const link of await linksOn(this.page, this.origin)) this.offer(link);

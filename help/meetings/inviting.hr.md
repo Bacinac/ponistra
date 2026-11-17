@@ -23,7 +23,7 @@ Kolege iz instalacije pozivate zvonjenjem, a ostale poveznicom koja im stiže e-
 
 ## Kako radi
 
-Kolegama zvoni u svakoj Ponistri koju imaju otvorenu i na mobitelu, dok se ne jave, ne odbiju ili dok ne prođe 45 sekundi. Kolege kojima ste zazvonili ulaze u razgovor sastanka, javili se ili ne. Osobe izvan instalacije dobivaju e-poštom s vašeg računa poveznicu samo za sebe, koja ih pušta ravno u sastanak, bez čekanja na ulazu.
+Kolegama zvoni u svakoj Ponistri koju imaju otvorenu i na mobitelu, dok se ne jave, ne odbiju ili dok ne prođe 45 sekundi. Kolege kojima ste zazvonili ulaze u razgovor sastanka, javili se ili ne. Osobe izvan instalacije dobivaju e-poštom s vašeg računa poveznicu samo za sebe, koja ih pušta ravno u sastanak, bez čekanja na ulazu. Osoba na domeni jednog od vaših računa, primjerice kolega u vašoj tvrtki, dobiva je s tog računa, pa poruka ostaje na poslužitelju vaše tvrtke; svi ostali s vašeg zadanog računa.
 
 Sastanak dodan događaju ne poziva se ovdje: pozvani u događaju već imaju poveznicu, pa sastanak u zaglavlju nudi samo {t:meeting.copyLink}. Razgovor sa sastankom zvoni svima u razgovoru, kako opisuje [pregled razgovora](help:chat/overview).
 

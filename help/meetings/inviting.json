@@ -13,7 +13,7 @@
     "frontend/src/invite.tsx#Rings": "46622909b06e",
     "frontend/src/ringing.tsx#Ringing": "1e983ec357aa",
     "frontend/src/ringing.tsx#useRingTone": "d94f5b3fbb7f",
-    "backend/apps/meetings/views.py#invite": "d8e69cb250b6",
+    "backend/apps/meetings/views.py#invite": "231724685010",
     "backend/apps/meetings/views.py#_let_in": "8bfb46aa8cc4",
     "backend/apps/meetings/views.py#_rung": "79f7052960db",
     "backend/apps/meetings/views.py#decline": "1e0116a65c61",

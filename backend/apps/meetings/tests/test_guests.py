@@ -124,6 +124,39 @@ def test_someone_asked_by_mail_enters_by_a_link_of_their_own(owner, monkeypatch,
 
 
 @pytest.mark.django_db
+def test_someone_at_the_domain_of_one_of_the_users_accounts_is_written_from_it(owner, monkeypatch):
+    delivered = []
+
+    async def deliver(account, message):
+        delivered.append((message["To"], message["From"], account.address))
+        return [], True
+
+    monkeypatch.setattr(sending, "delivered", deliver)
+    for address, protocol, default in (
+        ("ivo@example.com", Account.Protocol.IMAP, True),
+        ("ivo@drugi.test", Account.Protocol.ACTIVESYNC, False),
+    ):
+        Account.objects.create(
+            owner=owner,
+            address=address,
+            username=address,
+            secret=b"",
+            protocol=protocol,
+            imap_host="imap.example.com",
+            smtp_host="smtp.example.com",
+            default=default,
+        )
+    meeting = Meeting.objects.made("Ponuda", owner)
+    people = [{"name": "", "address": "eva@Drugi.test"}, {"name": "", "address": "ana@treci.test"}]
+    answer = sent(signed(owner), "post", f"/api/meetings/{meeting.id}/invite", people=people)
+    assert answer.status_code == 200
+    assert [(to, account) for to, _, account in delivered] == [
+        ("eva@drugi.test", "ivo@drugi.test"),
+        ("ana@treci.test", "ivo@example.com"),
+    ]
+
+
+@pytest.mark.django_db
 def test_someone_by_the_meetings_link_waits_until_someone_in_it_lets_them_in(owner, settings):
     meeting = Meeting.objects.made("Kolegij", owner)
     stranger = User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-72")

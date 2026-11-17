@@ -24,13 +24,14 @@ A collection gathers the messages you choose, such as bills, files their attachm
 
 ### The months
 
-Below each collection stand its last 13 months. Beside a month stands how many messages were {t:collections.kept}, how many are {t:collections.waiting} to be read, how many were {t:collections.passed} and how many were {t:collections.missed}, and when the month was sent or will be.
+Below each collection stand its last 13 months. Beside a month stands how many messages were {t:collections.kept}, how many are {t:collections.waiting} to be read, how many were {t:collections.passed} and how many were {t:collections.missed}, and whether the month was sent, is waiting among your drafts or when it will go.
 
 1. Press the folder icon beside a month to open its files, or {t:collections.openFolder} beside the collection's name for the whole collection.
-2. Press {t:collections.sendNow} for a month that is {t:collections.notSent}.
-3. Press {t:collections.sendAgain} and confirm to send a month already sent once more, with all that is now in its folder. While the message is being made, the month shows {t:collections.sending}.
-4. Press a month to see its items: the date, the supplier, the amount and the amount in the collection's currency. A bill without a file shows {t:collections.unfiled}, and pressing it opens the message.
-5. If your bank charged a different amount, enter it in the {t:collections.converted} field beside the item and press Enter. The amount then shows {t:collections.byHand}. Clear it to go back to the amount by the rate.
+2. Press {t:collections.recap} beside the collection's name to open the table of all its months.
+3. Press {t:collections.sendNow} for a month that is {t:collections.notSent}.
+4. Press {t:collections.sendAgain} and confirm to send a month already sent once more, with all that is now in its folder. While the message is being made, the month shows {t:collections.sending}.
+5. Press a month to see its items: the date, the supplier, the amount and the amount in the collection's currency. A bill without a file shows {t:collections.unfiled}, and pressing it opens the message.
+6. If your bank charged a different amount, enter it in the {t:collections.converted} field beside the item and press Enter. The amount then shows {t:collections.byHand}. Clear it to go back to the amount by the rate.
 
 ### Adding a file by hand
 
@@ -66,7 +67,9 @@ Each message belongs to the month it came in, by the installation's time. The co
 
 Without recognition, the collection keeps every message it takes: as the supplier it writes the sender's name or domain, as the date the day it came. With recognition, an AI model reads the message's text and the text of its attachments, decides whether it is a bill and reads the supplier, date, amount and currency. A message that is not a bill is marked {t:collections.passed} and its attachments do not go into the folder. The collection waits up to 30 minutes for Ponistra to read the text of a PDF attachment. Each reading counts in the AI spending. A message you add by hand is always kept; the model only reads its details.
 
-A month goes on the chosen day and hour of the following month, once every message waiting has been read, and 6 hours later at the latest. The message's subject holds the collection's name, the month and the year. Its body holds your text, a table of supplier, date, amount, currency, amount in the collection's currency and files, a total for each currency, the total in the collection's currency and the account's signature. The attachments are all the files in the month's folder at that moment, those you added yourself among them, and the same table as a workbook. The table also stays as a document in the month's folder, and sending again refreshes it.
+A month goes on the chosen day and hour of the following month, once every message waiting has been read, and 6 hours later at the latest. The message's subject holds the collection's name, the month and the year. Its body holds your text, a table of supplier, date, amount, currency, amount in the collection's currency and files, a total for each currency, the total in the collection's currency and the account's signature. The attachments are all the files in the month's folder at that moment, those you added yourself among them, and the same table as a workbook. The table also stays as a document in the month's folder.
+
+Each month's folder holds that table, named by the collection and the month, from the moment the month has its first bill or file. Above the table a line says whether the month was sent: when it left, that its draft waits since when, or that it was not sent. The collection's folder holds its summary, a table with a row for each month and a column for each supplier, then the month's total and when it was sent, with the totals of all months at the bottom. With a collection currency the amounts are in it, without one each currency has rows of its own. Both tables follow the collection: a new bill, a changed amount or a sent message rewrites them within a minute, and a table that was deleted comes back within an hour. What you write into them yourself is replaced at the next change.
 
 With {t:collections.draft}, the message waits among your drafts for you to look it over and send it. With {t:collections.send}, it leaves by itself and stays in your sent mail.
 

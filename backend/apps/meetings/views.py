@@ -20,6 +20,7 @@ from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database, waited
 from apps.mail import sending
 from apps.mail.imap import Failed
+from apps.mail.models import Account
 from apps.users.models import User
 
 from . import livekit, lobby, recordings, rings
@@ -177,9 +178,18 @@ def _people(given) -> list:
     return found
 
 
-def _asked(user, pk: uuid.UUID, people: list) -> tuple[Meeting, dict, list, object]:
-    """The meeting, the colleagues among the people by the address they asked, those outside
-    the installation each with the link that lets them in, and the account they are written to
+def _writer(user, address) -> Account:
+    """The account a person outside is written from: one of the user's at their domain, so that
+    the mail stays on the organisation's own server, past no filter of mail from outside; else
+    the one the user's mail goes out from."""
+    domain = address.domain.lower()
+    same = user.mail_accounts.filter(address__iendswith=f"@{domain}").order_by("-default", "pk")
+    return same.first() or sender_of(user)
+
+
+def _asked(user, pk: uuid.UUID, people: list) -> tuple[Meeting, dict, list]:
+    """The meeting, the colleagues among the people by the address they asked, and those outside
+    the installation each with the link that lets them in and the account they are written
     from."""
     found = _found(pk)
     colleagues, outside = {}, []
@@ -194,8 +204,8 @@ def _asked(user, pk: uuid.UUID, people: list) -> tuple[Meeting, dict, list, obje
             outside.append(each)
         elif colleague.pk != user.pk:
             colleagues[address] = colleague
-    account = sender_of(user) if outside else None
-    return found, colleagues, [(each, _let_in(found, user, each).link) for each in outside], account
+    written = [(each, _let_in(found, user, each).link, _writer(user, each)) for each in outside]
+    return found, colleagues, written
 
 
 def _let_in(meeting: Meeting, user, address) -> Guest:
@@ -229,12 +239,12 @@ async def invite(request, pk):
     data = body(request)
     user = request.user
     people = _people(data.get("people"))
-    found, colleagues, outside, account = await database(_asked)(user, pk, people)
+    found, colleagues, outside = await database(_asked)(user, pk, people)
     if outside:
         language = data.get("language") if data.get("language") in ASKED else "en"
         title, text = ASKED[language]
-        name = user.get_full_name() or account.name or account.address
-        for address, link in outside:
+        for address, link, account in outside:
+            name = user.get_full_name() or account.name or account.address
             message = sending.composed(
                 account,
                 [address],
@@ -254,7 +264,7 @@ async def invite(request, pk):
     return JsonResponse(
         {
             "rung": sorted(each.get_full_name() or each.email for each in colleagues.values()),
-            "written": [address.addr_spec for address, _ in outside],
+            "written": [address.addr_spec for address, _, _ in outside],
         }
     )
 

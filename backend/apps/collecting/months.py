@@ -49,6 +49,14 @@ def touched(collection_id: int) -> None:
     Collection.objects.filter(pk=collection_id).update(changed_at=timezone.now())
 
 
+def left(unsent: int) -> None:
+    """Notes the month whose message this was as sent, as it leaves."""
+    found = list(Month.objects.filter(unsent_id=unsent).values_list("collection_id", flat=True))
+    if found:
+        Month.objects.filter(unsent_id=unsent).update(sent_at=timezone.now())
+        Collection.objects.filter(pk__in=found).update(changed_at=timezone.now())
+
+
 def _live(node: Node | None) -> bool:
     return node is not None and node.is_live()
 

@@ -41,6 +41,7 @@ from apps.blobs.models import Blob, Upload
 from apps.blobs.views import describe as describe_blob
 from apps.blobs.views import serve as serve_blob
 from apps.calendar import invitations
+from apps.collecting import months as collecting
 from apps.contacts import search as contacts
 from apps.content import schema
 from apps.core import sealed
@@ -1780,6 +1781,11 @@ async def sent(user, data: dict) -> dict:
     left = [Q(pk=unsent)] if type(unsent := data.get("unsent")) is int else []
     if key is not None:
         left.append(Q(written__queued=key))
+    if type(unsent) is int:
+        try:
+            await database(collecting.left)(unsent)
+        except Exception:
+            log.exception("mail: the collection's month of message %s was not marked sent", unsent)
     if left:
         await database(Unsent.objects.filter(reduce(or_, left), owner=user).delete)()
     kept_as = await database(sending.recorded)(given["account"], message, given["answered"])
