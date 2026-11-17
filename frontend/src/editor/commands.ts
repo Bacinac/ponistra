@@ -73,6 +73,7 @@ import {
   RectangleHorizontal,
   Percent,
   Pilcrow,
+  PilcrowRight,
   Play,
   Redo2,
   Replace,
@@ -911,6 +912,15 @@ export const COMMANDS: readonly EditorCommand[] = [
     where: PROSE,
     keys: ['Mod-m'],
     ...indented(1),
+  },
+  {
+    id: 'paragraph.indents',
+    label: 'command.indents',
+    icon: PilcrowRight,
+    group: 'paragraph',
+    where: PARAGRAPHS,
+    enabled: editing(({ view }) => textblocks(view.state).length > 0),
+    run: (context) => context.open('indents'),
   },
   {
     id: 'paragraph.tabs',

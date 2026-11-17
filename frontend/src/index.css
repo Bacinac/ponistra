@@ -1235,16 +1235,16 @@
 .ponistra-mark-edge.ponistra-mark-x {
   top: 0;
   bottom: 0;
-  width: 0.5rem;
-  margin-left: -0.25rem;
+  width: 1.5rem;
+  margin-left: -0.75rem;
 }
 
 .ponistra-mark-edge.ponistra-mark-y,
 .ponistra-mark-stop {
   left: 0;
   right: 0;
-  height: 0.5rem;
-  margin-top: -0.25rem;
+  height: 1.5rem;
+  margin-top: -0.75rem;
 }
 
 .ponistra-mark-edge::after,
@@ -1283,14 +1283,27 @@
 .ponistra-mark-left,
 .ponistra-mark-right {
   --ruler-mark: var(--control);
-  width: 0.625rem;
-  margin-left: -0.3125rem;
+  width: 1rem;
+  margin-left: -0.5rem;
+}
+
+/* The shape is drawn inside a wider box, as a clip-path also clips where a pointer takes it. */
+.ponistra-mark-first::after,
+.ponistra-mark-hanging::after,
+.ponistra-mark-left::after,
+.ponistra-mark-right::after {
+  position: absolute;
+  inset: 0 0.1875rem;
   background: var(--ruler-mark);
+  content: '';
 }
 
 .ponistra-mark-first {
   top: 0;
   height: 0.4375rem;
+}
+
+.ponistra-mark-first::after {
   clip-path: polygon(0 0, 100% 0, 50% 100%);
 }
 
@@ -1298,6 +1311,10 @@
 .ponistra-mark-right {
   top: 0.6875rem;
   height: 0.3125rem;
+}
+
+.ponistra-mark-hanging::after,
+.ponistra-mark-right::after {
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 

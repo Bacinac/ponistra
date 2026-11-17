@@ -93,3 +93,41 @@ export function setIndent(marker: IndentMarker, at: number, width: number): Comm
     return { indent: left || null, firstLine: first || null, right: right || null };
   });
 }
+
+/** Where a paragraph's lines stand, as its markers do on the ruler: its first line and its other
+ * lines from the text's left edge, its right from the text's right edge. */
+export interface Placed {
+  first: number;
+  lines: number;
+  right: number;
+}
+
+export function placedOf({ left, first, right }: Indents): Placed {
+  return { first: hundredths(left + first), lines: left, right };
+}
+
+/** A paragraph's indents with its lines placed, as far as they keep their room in a text this
+ * wide. An item of a list keeps its lines at a whole level. */
+export function placedIndents(placed: Placed, width: number, listed: boolean): Indents {
+  const opening = width - LEAST_LINE;
+  const most = Math.min(INDENT_MAX, opening);
+  const left = listed
+    ? within(Math.round(placed.lines / INDENT_STEP), 0, Math.floor(most / INDENT_STEP)) *
+      INDENT_STEP
+    : within(hundredths(placed.lines), 0, most);
+  const first = within(hundredths(placed.first), 0, opening);
+  const right = within(hundredths(placed.right), 0, opening - Math.max(left, first));
+  return { left, first: hundredths(first - left), right };
+}
+
+/** Places the lines of every selected paragraph where `changed` says, each keeping the rest. */
+export function setPlaced(changed: Partial<Placed>, width: number): Command {
+  return reshape((attrs) => {
+    const before = indentsOf(attrs);
+    const listed = LISTS.some((kind) => kind === attrs.list);
+    const placed = { ...placedOf(before), ...changed };
+    const { left, first, right } = placedIndents(placed, width, listed);
+    if (left === before.left && first === before.first && right === before.right) return null;
+    return { indent: left || null, firstLine: first || null, right: right || null };
+  });
+}

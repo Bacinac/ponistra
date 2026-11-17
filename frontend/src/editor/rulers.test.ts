@@ -1,7 +1,16 @@
 import { EditorState, TextSelection } from 'prosemirror-state';
 import { describe, expect, it } from 'vitest';
 import { STANDARD } from './pages';
-import { indentsOf, movedEdge, movedIndent, setIndent, snapped } from './rulers';
+import {
+  indentsOf,
+  movedEdge,
+  movedIndent,
+  placedIndents,
+  placedOf,
+  setIndent,
+  setPlaced,
+  snapped,
+} from './rulers';
 import { schema } from './schema';
 
 describe('rulers', () => {
@@ -50,5 +59,39 @@ describe('rulers', () => {
     ]);
     setIndent('hanging', 0, 16)(state, (tr) => (state = state.apply(tr)));
     expect(state.doc.child(0).attrs).toMatchObject({ indent: null, firstLine: null });
+  });
+
+  it('place a paragraph’s lines where they are typed, as far as they keep their room', () => {
+    expect(placedOf({ left: 2, first: -1, right: 0.5 })).toEqual({
+      first: 1,
+      lines: 2,
+      right: 0.5,
+    });
+    expect(placedIndents({ first: 0, lines: 1.5, right: 1 }, 16, false)).toEqual({
+      left: 1.5,
+      first: -1.5,
+      right: 1,
+    });
+    expect(placedIndents({ first: -2, lines: 3.3, right: 20 }, 16, true)).toEqual({
+      left: 3.75,
+      first: -3.75,
+      right: 16 - 3.75 - 1,
+    });
+  });
+
+  it('place the lines of every selected paragraph, each keeping what was not changed', () => {
+    const doc = schema.node('doc', null, [
+      schema.node('paragraph', { indent: 1, firstLine: 0.5 }, schema.text('Prvi')),
+      schema.node('paragraph', { indent: 2, right: 1 }, schema.text('Drugi')),
+    ]);
+    let state = EditorState.create({ doc });
+    state = state.apply(state.tr.setSelection(TextSelection.create(doc, 2, doc.content.size - 2)));
+    setPlaced({ first: 0 }, 16)(state, (tr) => (state = state.apply(tr)));
+    expect([0, 1].map((index) => indentsOf(state.doc.child(index).attrs))).toEqual([
+      { left: 1, first: -1, right: 0 },
+      { left: 2, first: -2, right: 1 },
+    ]);
+    setPlaced({ first: 0, lines: 0, right: 0 }, 16)(state, (tr) => (state = state.apply(tr)));
+    expect(state.doc.child(1).attrs).toMatchObject({ indent: null, firstLine: null, right: null });
   });
 });

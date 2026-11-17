@@ -67,6 +67,7 @@ export type Dialog =
   | 'goTo'
   | 'chart'
   | 'tabStops'
+  | 'indents'
   | 'compare'
   | 'compareFile'
   | 'ask'

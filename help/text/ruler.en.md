@@ -16,6 +16,12 @@ A paragraph's alignment, indents and tab stops, and the page's margins, are chan
 2. On the horizontal ruler drag the {t:ruler.left} or {t:ruler.right}, the {t:ruler.indent}, {t:ruler.hanging}, {t:ruler.first} or {t:ruler.indentRight}.
 3. On the vertical ruler drag the {t:ruler.top}, {t:ruler.bottom}, {t:ruler.header} or {t:ruler.footer}.
 
+### The indents dialog
+
+1. Stand in a paragraph or select several.
+2. In the right-click menu in the text choose {t:command.indents} The {t:indents.title} dialog opens with the places the markers have on the ruler.
+3. Type the {t:ruler.first}, {t:ruler.hanging} or {t:ruler.indentRight} in centimetres and press {t:styles.apply}.
+
 ### Tab stops on the ruler
 
 1. With the button beside the horizontal ruler choose the {t:ruler.tabKind}: {t:ruler.tab.left}, {t:ruler.tab.center}, {t:ruler.tab.right} or {t:ruler.tab.decimal}.
@@ -32,6 +38,8 @@ A paragraph's alignment, indents and tab stops, and the page's margins, are chan
 ## How it works
 
 Indents and tab stops hold for the chosen paragraphs. Margins, header and footer hold for the whole section, as in the [page setup](help:text/page). The {k:Tab} key in the text inserts a {t:command.tab} up to the next tab stop, and a leader fills the gap up to it with dots, hyphens or an underscore.
+
+The first line's indent and the hanging indent are measured from the left margin, the right indent from the right one. The dialog changes only what you changed in it, so each selected paragraph keeps its other indents; a list item moves a whole level in the dialog too. A paragraph always keeps at least a centimetre of line.
 
 A tab stop's position is measured from the left margin, in centimetres, and cannot lie beyond the text's width.
 

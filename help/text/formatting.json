@@ -6,7 +6,7 @@
   "describes": {
     "frontend/src/editor/commands.ts#palette": "9578975bf515",
     "frontend/src/editor/commands.ts#clearFormatting": "cc2c61b61f89",
-    "frontend/src/editor/commands.ts#COMMANDS": "72a066932638",
+    "frontend/src/editor/commands.ts#COMMANDS": "6b09563a03a2",
     "colors/colors.json": "bf52c59fc3f0"
   }
 }

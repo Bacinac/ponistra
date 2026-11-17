@@ -214,6 +214,7 @@ import { bodyOf } from './tab';
 import { linesOf } from './tables';
 import { GoToDialog } from './NameBox';
 import { TableNameDialog } from './TableNameDialog';
+import { IndentsDialog } from './IndentsDialog';
 import { TabStopsDialog } from './TabStopsDialog';
 import { cellOf, cellViewAt, tableIn, type Write } from './tableBase';
 import { cellKeys, revealCell, showCell, tablesPlugin } from './tablesPlugin';
@@ -1706,6 +1707,13 @@ export function LiveEditor({
         <ListFormatDialog
           view={writing ?? editor.view}
           lists={lists}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === 'indents' && editor && (
+        <IndentsDialog
+          view={writing ?? editor.view}
+          width={setup.width - setup.left - setup.right}
           onClose={() => setDialog(null)}
         />
       )}

@@ -8,7 +8,10 @@ const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 /** What axe finds against WCAG 2.2 AA on the page as it stands, in both schemes: one line per
  * rule and element, with its impact and the element's opening tag. A page that holds a
  * connection open (`live`) is never idle on the network, so it is taken as soon as it loads. */
-async function violations(page: Page, { live = false } = {}): Promise<string[]> {
+async function violations(
+  page: Page,
+  { live = false, equivalent }: { live?: boolean; equivalent?: RegExp } = {},
+): Promise<string[]> {
   const found: string[] = [];
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme });
@@ -16,6 +19,7 @@ async function violations(page: Page, { live = false } = {}): Promise<string[]> 
     const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze();
     for (const { id, impact, nodes } of violations) {
       for (const { html } of nodes) {
+        if (id === 'target-size' && equivalent?.test(html)) continue;
         found.push(`${colorScheme} ${id} (${impact}): ${html.slice(0, html.indexOf('>') + 1)}`);
       }
     }
@@ -154,6 +158,26 @@ test('a document meets WCAG 2.2 AA', async ({ page }) => {
   await page.keyboard.press('Enter');
   await page.keyboard.type('Odlomak teksta.');
   expect(await violations(page)).toEqual([]);
+});
+
+test('a document on its pages, its rulers among them, meets WCAG 2.2 AA', async ({ page }) => {
+  await page.goto(await newDocument(page, 'Stranice'));
+  await page.locator('.ProseMirror').click();
+  await page.keyboard.type('Odlomak teksta.');
+  const first = page.getByRole('slider', { name: 'Uvlaka prvog retka' });
+  await expect(first).toHaveAttribute('aria-valuenow', '0');
+  // WCAG 2.5.8 lets a target be smaller where a control of full size does the same: every length
+  // the ruler's sliders set, stacked where the indents meet the margin, is typed in a dialog too
+  // (Page setup, Indents, Tabs), which axe cannot know.
+  const equivalent = /class="ponistra-mark /;
+  expect(await violations(page, { equivalent })).toEqual([]);
+  await page.locator('.ProseMirror p').first().click({ button: 'right' });
+  await page.getByRole('menuitem', { name: 'Uvlake…' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Uvlake' });
+  expect(await violations(page, { equivalent })).toEqual([]);
+  await dialog.getByLabel('Uvlaka prvog retka (cm)').fill('1.25');
+  await dialog.getByRole('button', { name: 'Primijeni' }).click();
+  await expect(first).toHaveAttribute('aria-valuenow', '1.25');
 });
 
 test('a document’s menu and its dialog of theme and styles meet WCAG 2.2 AA', async ({ page }) => {

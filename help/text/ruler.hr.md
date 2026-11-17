@@ -16,6 +16,12 @@ Poravnanje, uvlake i tabulatori odlomka te margine stranice mijenjaju se naredba
 2. Na vodoravnom ravnalu povucite {t:ruler.left} ili {t:ruler.right}, {t:ruler.indent}, {t:ruler.hanging}, {t:ruler.first} ili {t:ruler.indentRight}.
 3. Na okomitom ravnalu povucite {t:ruler.top}, {t:ruler.bottom}, {t:ruler.header} ili {t:ruler.footer}.
 
+### Dijalog uvlaka
+
+1. Stanite u odlomak ili odaberite više njih.
+2. U izborniku desne tipke miša u tekstu odaberite {t:command.indents} Otvara se dijalog {t:indents.title} s položajima koje oznake imaju na ravnalu.
+3. Upišite {t:ruler.first}, {t:ruler.hanging} ili {t:ruler.indentRight} u centimetrima i pritisnite {t:styles.apply}.
+
 ### Tabulatori na ravnalu
 
 1. Gumbom uz vodoravno ravnalo odaberite {t:ruler.tabKind}: {t:ruler.tab.left}, {t:ruler.tab.center}, {t:ruler.tab.right} ili {t:ruler.tab.decimal}.
@@ -32,6 +38,8 @@ Poravnanje, uvlake i tabulatori odlomka te margine stranice mijenjaju se naredba
 ## Kako radi
 
 Uvlake i tabulatori vrijede za odabrane odlomke. Margine, zaglavlje i podnožje vrijede za cijeli odjeljak, kao i u [postavkama stranice](help:text/page). Tipka {k:Tab} u tekstu umeće {t:command.tab} do sljedećeg tabulatora, a vodilica popunjava razmak do njega točkicama, crticama ili podvlakom.
+
+Uvlaka prvog retka i viseća uvlaka mjere se od lijeve margine, desna uvlaka od desne. Dijalog mijenja samo ono što ste u njemu promijenili, pa svaki odabrani odlomak ostale uvlake zadržava; stavka popisa i u dijalogu ide za cijelu razinu. Odlomku uvijek ostaje barem centimetar retka.
 
 Položaj tabulatora mjeri se od lijeve margine, u centimetrima, i ne može biti izvan širine teksta.
 
