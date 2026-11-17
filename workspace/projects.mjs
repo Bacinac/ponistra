@@ -1367,7 +1367,7 @@ const ordered = async (given) => {
     command.state = 'taken';
     writeJson(commandAt(id), command);
     try {
-      restarted();
+      await restarted();
     } catch (error) {
       settle(command, 'failed', error instanceof Refusal ? error.message : 'unread');
       throw error;
@@ -1475,7 +1475,7 @@ const selfId = () => {
 // The workspace is made again by its own compose project, from a container of its own image beside
 // it, as a command run in here ends with the container it stops. The image goes by its name: a
 // rebuild under containerd's store drops the running image's id, the one a restart is for.
-const restarted = () => {
+const restarted = async () => {
   const busy = restartOf(running(), scriptsOf(processes()));
   if (!busy) throw new Refusal(409, 'no_docker');
   if (busy.working.length || busy.scripts.length) throw new Refusal(409, 'workspace_busy');
@@ -1486,6 +1486,7 @@ const restarted = () => {
   const directory = label('project.working_dir');
   if (!project || !service || !directory) throw new Refusal(409, 'not_from_compose');
   const files = (label('project.config_files') ?? '').split(',').filter(Boolean);
+  if (![directory, ...files].every((path) => existsSync(path))) throw new Refusal(409, 'compose_moved');
   const helper = `${self.Name.replace(/^\//, '')}_restart`;
   try {
     if (docker('inspect', '--format', '{{.State.Running}}', helper) === 'true') throw new Refusal(409, 'restart_running');
@@ -1504,7 +1505,27 @@ const restarted = () => {
     ...files.flatMap((file) => ['--file', file]),
     'up', '--detach', '--no-deps', '--no-build', '--force-recreate', service,
   );
+  await helperFailed(helper);
   return { ok: true };
+};
+
+// A helper that recreates the workspace ends it, so only one that exits first has failed.
+const HELPER_WATCH = 15_000;
+const helperFailed = async (helper) => {
+  for (let waited = 0; waited < HELPER_WATCH; waited += 500) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const [running, code] = docker('inspect', '--format', '{{.State.Running}} {{.State.ExitCode}}', helper).split(' ');
+    if (running === 'true') continue;
+    if (code === '0') return;
+    let said = '';
+    try {
+      said = execFileSync('docker', ['logs', '--tail', '20', helper], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      said = error.stderr ?? '';
+    }
+    console.error(`restart helper ${helper} exited ${code}: ${said.trim()}`);
+    throw new Refusal(409, 'restart_failed');
+  }
 };
 
 const bodyOf = (request, most = 4096) =>

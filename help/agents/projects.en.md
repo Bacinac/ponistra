@@ -241,6 +241,8 @@ The page exists only for the owner of the code workspace.
 - {t:error.no_docker} The workspace has no access to Docker, so the restart button is not shown; an installation gets it only when the agent was given Docker.
 - {t:error.not_in_docker} The workspace was not started as a Docker container.
 - {t:error.not_from_compose} The workspace was not started through Docker Compose, so there is no definition to make it again from.
+- {t:error.compose_moved} The folder holding the workspace's definition was moved after it started. Start it once from the new folder (`docker compose up -d --force-recreate`), and the button works by itself again.
+- {t:error.restart_failed} Docker Compose could not make the workspace again; what it said stands in the workspace's log, and the workspace goes on running as before.
 
 A chat without a title, such as one with no answer yet, is not on the list. The limits are those of one plan, the one Claude Code in the workspace is signed in with, so chats outside it spend them too; the page shows the last measure, at most five minutes old. Claude Code gives this as an experimental figure, so a shape the workspace does not know shows as {t:workspace.limits.unread} rather than as a zero. When the workspace cannot read the server's state, {t:workspace.host.unread} stands in place of the values.
 

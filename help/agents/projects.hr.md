@@ -241,6 +241,8 @@ Stranica postoji samo za vlasnika radnog prostora za kod.
 - {t:error.no_docker} Radni prostor nema pristup Dockeru pa se gumb za restart ne prikazuje; instalacija ga dobiva samo ako je agentu dan Docker.
 - {t:error.not_in_docker} Radni prostor nije pokrenut kao Docker kontejner.
 - {t:error.not_from_compose} Radni prostor nije pokrenut kroz Docker Compose, pa nema definicije iz koje bi se ponovno stvorio.
+- {t:error.compose_moved} Mapa s definicijom radnog prostora premještena je nakon što je pokrenut. Pokrenite ga jednom iz nove mape (`docker compose up -d --force-recreate`), a gumb poslije opet radi sam.
+- {t:error.restart_failed} Docker Compose nije mogao ponovno stvoriti radni prostor; što je javio stoji u logu radnog prostora, a radni prostor radi dalje kao prije.
 
 Razgovor bez naslova, primjerice onaj u kojemu još nije bilo odgovora, ne stoji na popisu. Limiti su jedne pretplate, one kojom je prijavljen Claude Code u radnom prostoru, pa ih troše i razgovori izvan njega; stranica pokazuje stanje zadnjeg mjerenja, najviše pet minuta staro. Claude Code taj podatak daje kao probni, pa oblik koji radni prostor ne prepozna javlja kao {t:workspace.limits.unread}, umjesto da pokaže nulu. Ne može li radni prostor pročitati stanje poslužitelja, umjesto vrijednosti stoji {t:workspace.host.unread}.
 

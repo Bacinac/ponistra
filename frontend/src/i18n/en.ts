@@ -2956,6 +2956,9 @@ export const en: Record<MessageKey, string> = {
   'error.not_in_docker': 'The workspace does not run in Docker, so it cannot restart itself.',
   'error.not_from_compose':
     'The workspace was not started through Docker Compose, so it cannot restart itself.',
+  'error.compose_moved':
+    'The folder the workspace was started from no longer exists; start it once by hand from its new folder.',
+  'error.restart_failed': "The workspace's restart failed; the reason is in the workspace's log.",
   'error.no_chat': 'That chat was not found.',
   'error.chat_working': 'The chat is working or waiting for your answer; open it once it is done.',
   'error.chat_busy':

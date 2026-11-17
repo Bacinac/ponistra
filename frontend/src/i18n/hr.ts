@@ -2950,6 +2950,9 @@ export const hr = {
   'error.not_in_docker': 'Radni prostor ne radi u Dockeru pa se ne može sam restartati.',
   'error.not_from_compose':
     'Radni prostor nije pokrenut kroz Docker Compose pa se ne može sam restartati.',
+  'error.compose_moved':
+    'Mapa iz koje je radni prostor pokrenut više ne postoji; pokrenite ga jednom ručno iz njegove nove mape.',
+  'error.restart_failed': 'Restart radnog prostora nije uspio; razlog je u logu radnog prostora.',
   'error.no_chat': 'Taj chat nije pronađen.',
   'error.chat_working': 'Chat upravo radi ili čeka vaš odgovor; otvorite ga kad završi.',
   'error.chat_busy': 'Chat je cijeli sat radio u uređivaču pa poruka nije predana.',
