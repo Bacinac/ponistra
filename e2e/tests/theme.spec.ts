@@ -102,11 +102,11 @@ test('a chosen theme holds against the system and is remembered', async ({ page 
     page.evaluate(
       () => document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content,
     );
-  // The pointer jumps straight from the trigger onto the item, which Radix reads as leaving the
-  // submenu and closes it under the click; a key does what a steady hand would.
+  // A pointer jumping between the trigger and the item is read by Radix as leaving the submenu,
+  // which closes it under the click or before it opens; keys do what a steady hand would.
   const choose = async (name: string) => {
     await page.getByRole('button', { name: /^Račun / }).click();
-    await page.getByRole('menuitem', { name: 'Tema', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Tema', exact: true }).press('ArrowRight');
     const kept = page.waitForResponse('**/api/auth/preferences');
     await page.getByRole('menuitemradio', { name }).press('Enter');
     await kept;
@@ -139,7 +139,7 @@ test('the theme and language chosen go with the account to a browser that never 
   const choose = async (menu: string, name: string) => {
     const kept = page.waitForResponse('**/api/auth/preferences');
     await page.getByRole('button', { name: /^(Račun|Account) / }).click();
-    await page.getByRole('menuitem', { name: menu, exact: true }).click();
+    await page.getByRole('menuitem', { name: menu, exact: true }).press('ArrowRight');
     await page.getByRole('menuitemradio', { name }).press('Enter');
     await kept;
   };

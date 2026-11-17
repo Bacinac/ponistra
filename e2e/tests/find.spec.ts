@@ -5,7 +5,7 @@ import { cellTexts, insertTable, tab } from './helpers/tables';
 test('a tab is searched in its text and cells, and replaced at once as one change', async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Probno traženje'));
+  await page.goto(await newDocument(page, 'Probno traženje', 'text'));
   const editor = page.locator('.ProseMirror').first();
   await editor.click();
   await page.keyboard.type('Čaj i čajnik.');

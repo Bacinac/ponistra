@@ -57,12 +57,12 @@ WORDS = {
         "date": "d.m.yyyy.",
         "amount": "#,##0.00",
         "recap": "Rekapitulacija",
-        "month": "Mjesec",
+        "supplier": "Dobavljač",
         "currency": "Valuta",
         "sent": "Poslano",
         "sentAt": "Poslano {when}",
         "drafted": "Skica od {when}, nije poslana",
-        "draftedShort": "Ne (skica od {when})",
+        "draft": "Skica",
         "unsent": "Nije poslano",
         "no": "Ne",
     },
@@ -76,12 +76,12 @@ WORDS = {
         "date": "yyyy-mm-dd",
         "amount": "#,##0.00",
         "recap": "Summary",
-        "month": "Month",
+        "supplier": "Supplier",
         "currency": "Currency",
         "sent": "Sent",
         "sentAt": "Sent {when}",
         "drafted": "Draft of {when}, not sent",
-        "draftedShort": "No (draft of {when})",
+        "draft": "Draft",
         "unsent": "Not sent",
         "no": "No",
     },
@@ -162,9 +162,11 @@ def laid(
     totals: int,
     language: str,
     aligned: dict[int, str],
+    trailing: int = 0,
 ) -> dict:
     """A table as it is to be written: the heading and lines above it, its rows under a centred
-    head, the last `totals` rows bold and tinted, and the columns aligned as given."""
+    head, the `totals` rows before the last `trailing` bold and tinted, and the columns aligned as
+    given."""
     head = [_text(name, strong=True, align="center") for name in rows[0]]
     return {
         "heading": heading,
@@ -173,6 +175,7 @@ def laid(
         "rows": [head, *rows[1:]],
         "widths": _shares(rows, language),
         "totals": totals,
+        "trailing": trailing,
         "aligned": sorted(aligned.items()),
     }
 
@@ -215,14 +218,16 @@ def operations_of(table: dict) -> list[dict]:
             "attrs": {"align": "center"},
         }
     )
+    last = len(rows) - 1 - table["trailing"]
+    first = last - table["totals"] + 1
     if table["totals"]:
         made.append(
             {
                 "op": "looks",
                 "table": id,
                 "axis": "rows",
-                "from": rows[-table["totals"]],
-                "to": rows[-1],
+                "from": rows[first],
+                "to": rows[last],
                 "marks": {"strong": {}},
                 "fill": TOTALS,
             }
@@ -234,7 +239,7 @@ def operations_of(table: dict) -> list[dict]:
                 "table": id,
                 "cells": [
                     {
-                        "row": rows[-table["totals"]],
+                        "row": rows[first],
                         "col": cols[0],
                         "span": {"rows": table["totals"]},
                     }
@@ -328,9 +333,10 @@ def state_of(month: Month, words: dict, language: str) -> str:
 
 def _sent_cell(month: Month, words: dict, language: str) -> str:
     if month.sent_at is not None:
-        return moment(month.sent_at, language)
+        day = month.sent_at.astimezone(months.ZONE)
+        return f"{day.day}.{day.month}.{day.year}." if language == "hr" else f"{day:%Y-%m-%d}"
     if month.delivered_at is not None and month.unsent_id is not None:
-        return words["draftedShort"].format(when=moment(month.delivered_at, language))
+        return words["draft"]
     return words["no"]
 
 
@@ -345,9 +351,12 @@ def _set_up(node: Node) -> None:
     Update.objects.filter(document=node).update(data=own.get_update())
 
 
-def _written(node: Node | None, folder: Node, title: str, owner, table: dict, author: str) -> Node:
-    """The document written anew in the one made before, which keeps its place, links and
-    versions, under the title it is to have; a new one on a landscape page in a compact text."""
+def _written(
+    node: Node | None, folder: Node, title: str, owner, tables: list[dict], author: str
+) -> Node:
+    """The document written anew with its tables in order, in the one made before, which keeps
+    its place, links and versions, under the title it is to have; a new one on a landscape page in
+    a compact text."""
     if node is None or not node.is_live():
         node = created(folder, Node.Kind.DOCUMENT, title[:200], None, owner)
         _set_up(node)
@@ -362,7 +371,9 @@ def _written(node: Node | None, folder: Node, title: str, owner, table: dict, au
             if isinstance(element, XmlElement)
         ]
         taken = [{"op": "delete", "from": before[0], "to": before[-1]}] if before else []
-        return [*operations_of(table), *taken]
+        # Each table is written at the top of the body, so the last written stands first.
+        made = [each for table in reversed(tables) for each in operations_of(table)]
+        return [*made, *taken]
 
     operations.perform(node.tabs.get(), written, author)
     return node
@@ -396,7 +407,7 @@ def month_written(month: Month, items: list[Item], files: list[Node], folder: No
     digest = _digest(title, made)
     if digest == month.tabled and month.table is not None and month.table.is_live():
         return month.table
-    node = _written(month.table, folder, title, collection.owner, made, f"collecting:{month.pk}")
+    node = _written(month.table, folder, title, collection.owner, [made], f"collecting:{month.pk}")
     Month.objects.filter(pk=month.pk).update(table=node, tabled=digest)
     month.table, month.tabled = node, digest
     return node
@@ -416,80 +427,101 @@ def _month_kept(month: Month) -> None:
         month_written(month, items, files, folder)
 
 
-def recapped(collection: Collection, found: list[Month]) -> dict | None:
-    """Every month in a row by the suppliers its bills came from, in the collection's currency or
-    in a row of each currency the bills were in, with whether the month was sent, then the total."""
+def recapped(collection: Collection, found: list[Month]) -> list[dict]:
+    """A table for each year, newest first: a row for each supplier, in the collection's currency
+    or in a row of each currency its bills were in, a column for each month and the year's total,
+    then the months' totals and when each month was sent."""
     words = words_of(collection)
     language = collection.language
     into = collection.currency
-    sums: dict[tuple[date, str], dict[str, Decimal]] = {}
+    sums: dict[int, dict[tuple[str, str], dict[date, Decimal]]] = {}
     names: dict[str, str] = {}
-    by: dict[str, Decimal] = {}
     for item in Item.objects.filter(month__in=found, state=Item.State.KEPT).select_related("month"):
         value = item.converted if into else item.amount
         if value is None:
             continue
-        currency = into or item.currency
         key = item.supplier.strip().casefold()
         names.setdefault(key, item.supplier.strip())
-        row = sums.setdefault((item.month.month, currency), {})
-        row[key] = row.get(key, Decimal(0)) + value
-        by[key] = by.get(key, Decimal(0)) + value
-    if not sums:
-        return None
-    suppliers = sorted(by, key=lambda key: (-by[key], names[key]))
+        row = sums.setdefault(item.month.month.year, {}).setdefault(
+            (key, into or item.currency), {}
+        )
+        row[item.month.month] = row.get(item.month.month, Decimal(0)) + value
     sent = {month.month: _sent_cell(month, words, language) for month in found}
+    return [
+        _year(collection, year, sums[year], names, sent, words)
+        for year in sorted(sums, reverse=True)
+    ]
+
+
+def _year(
+    collection: Collection,
+    year: int,
+    sums: dict[tuple[str, str], dict[date, Decimal]],
+    names: dict[str, str],
+    sent: dict[date, str],
+    words: dict,
+) -> dict:
+    into = collection.currency
+    shown = sorted({month for row in sums.values() for month in row})
+    by: dict[str, Decimal] = {}
+    for (key, _), row in sums.items():
+        by[key] = by.get(key, Decimal(0)) + sum(row.values(), Decimal(0))
     head = [
-        words["month"],
-        *(names[key] or "—" for key in suppliers),
-        words["total"],
+        words["supplier"],
         *([] if into else [words["currency"]]),
-        words["sent"],
+        *(words["months"][month.month - 1] for month in shown),
+        words["total"],
     ]
     rows = [head]
-    totals: dict[str, dict[str, Decimal]] = {}
-    for (month, currency), row in sorted(sums.items()):
+    totals: dict[str, dict[date, Decimal]] = {}
+    for key, currency in sorted(sums, key=lambda each: (-by[each[0]], names[each[0]], each[1])):
+        row = sums[(key, currency)]
         whole = totals.setdefault(currency, {})
-        for key, value in row.items():
-            whole[key] = whole.get(key, Decimal(0)) + value
+        for month, value in row.items():
+            whole[month] = whole.get(month, Decimal(0)) + value
         rows.append(
             [
-                {"value": (month - EPOCH).days, "format": "mmmm yyyy"},
-                *(_amount(row.get(key), words) for key in suppliers),
-                _amount(sum(row.values(), Decimal(0)), words),
+                _text(names[key] or "—"),
                 *([] if into else [_text(currency)]),
-                _text(sent[month]),
+                *(_amount(row.get(month), words) for month in shown),
+                _amount(sum(row.values(), Decimal(0)), words),
             ]
         )
     for currency, whole in sorted(totals.items()):
         rows.append(
             [
                 _text(words["total"]),
-                *(_amount(whole.get(key), words) for key in suppliers),
-                _amount(sum(whole.values(), Decimal(0)), words),
                 *([] if into else [_text(currency)]),
-                None,
+                *(_amount(whole.get(month), words) for month in shown),
+                _amount(sum(whole.values(), Decimal(0)), words),
             ]
         )
-    heading = f"{collection.name} – {words['recap']}"
-    width = len(head)
-    aligned = {0: "left", width - 1: "center"} | ({} if into else {width - 2: "center"})
-    return laid(heading, [], rows, len(totals), collection.language, aligned)
+    rows.append(
+        [
+            _text(words["sent"]),
+            *([] if into else [None]),
+            *(_text(sent.get(month, ""), align="center") for month in shown),
+            None,
+        ]
+    )
+    heading = f"{collection.name} – {words['recap']} {year}"
+    aligned = {0: "left"} | ({} if into else {1: "center"})
+    return laid(heading, [], rows, len(totals), collection.language, aligned, trailing=1)
 
 
 def _recap_kept(collection: Collection, found: list[Month]) -> None:
     folder = _live(collection.folder)
     if folder is None:
         return
-    table = recapped(collection, found)
-    if table is None:
+    tables = recapped(collection, found)
+    if not tables:
         return
     title = f"{collection.name} – {words_of(collection)['recap']}"
-    digest = _digest(title, table)
+    digest = _digest(title, tables)
     if digest == collection.recapped and _live(collection.recap):
         return
     node = _written(
-        collection.recap, folder, title, collection.owner, table, f"collecting:{collection.pk}"
+        collection.recap, folder, title, collection.owner, tables, f"collecting:{collection.pk}"
     )
     Collection.objects.filter(pk=collection.pk).update(recap=node, recapped=digest)
 

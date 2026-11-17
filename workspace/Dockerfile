@@ -81,8 +81,8 @@ COPY projects.mjs chats.mjs memory.mjs terminal.mjs host.mjs worked.mjs files.mj
 # The terminal runs on code-server's own node-pty and ws; a code-server that moves either fails here.
 RUN /usr/lib/code-server/lib/node --input-type=module -e "await import('/etc/ponistra/terminal.mjs')"
 # Every chat says through its hooks when it has answered or waits on its owner (D52), for whatever
-# settings of its own the owner keeps.
-COPY heard.mjs /etc/ponistra/heard.mjs
+# settings of its own the owner keeps; a shell command that would wait on itself is refused.
+COPY heard.mjs guarded.mjs /etc/ponistra/
 COPY managed-settings.json /etc/claude-code/managed-settings.json
 COPY claude /usr/local/bin/claude
 COPY start.sh /usr/local/bin/start

@@ -1,6 +1,9 @@
 {
   "cleanupPeriodDays": 36500,
   "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "/usr/lib/code-server/lib/node /etc/ponistra/guarded.mjs" }] }
+    ],
     "Stop": [
       { "hooks": [{ "type": "command", "command": "/usr/lib/code-server/lib/node /etc/ponistra/heard.mjs" }] }
     ],

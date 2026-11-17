@@ -441,11 +441,13 @@ def _tables_kept(browser, account, inbox):
     assert collection.recap.parent_id == collection.folder_id
     assert collection.recap.title == "Troškovi za Martu – Rekapitulacija"
     assert _rows(collection.recap) == [
-        ("Mjesec", "Anthropic", "Cloud", "Ukupno", "Poslano"),
-        (datetime(2026, 10, 1), 16, 5, 21, "Ne"),
-        (datetime(2026, 11, 1), 16, None, 16, "Ne"),
-        ("Ukupno", 32, 5, 37, None),
+        ("Dobavljač", "listopad", "studeni", "Ukupno"),
+        ("Anthropic", 16, 16, 32),
+        ("Cloud", 5, None, 5),
+        ("Ukupno", 21, 16, 37),
+        ("Poslano", "Ne", "Ne", None),
     ]
+    assert _lines(collection.recap)[0] == "Troškovi za Martu – Rekapitulacija 2026"
     rewritten, written = [], tabling._written
     tabling._written = lambda *given: rewritten.append(given) or written(*given)
     try:
@@ -463,7 +465,7 @@ def _tables_kept(browser, account, inbox):
     assert month.table_id == october.table_id
     drafted = tabling.moment(month.delivered_at, "hr")
     assert _lines(month.table)[1] == f"Skica od {drafted}, nije poslana"
-    assert _rows(Collection.objects.get().recap)[1][-1] == f"Ne (skica od {drafted})"
+    assert _rows(Collection.objects.get().recap)[-1][1] == "Skica"
 
     months.left(month.unsent_id)
     while tabling.tabled_next():
@@ -471,7 +473,8 @@ def _tables_kept(browser, account, inbox):
     month.refresh_from_db()
     sent = tabling.moment(month.sent_at, "hr")
     assert _lines(month.table)[1] == f"Poslano {sent}"
-    assert _rows(Collection.objects.get().recap)[1][-1] == sent
+    day = month.sent_at.astimezone(months.ZONE)
+    assert _rows(Collection.objects.get().recap)[-1][1] == f"{day.day}.{day.month}.{day.year}."
 
 
 def test_messages_chosen_by_hand_join_a_collection(browser, account, inbox):
