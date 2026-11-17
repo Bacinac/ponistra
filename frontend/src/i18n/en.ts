@@ -250,6 +250,8 @@ export const en: Record<MessageKey, string> = {
   'workspace.terminal.close': 'Close terminal',
   'workspace.terminal.unopened': 'The terminal could not be opened.',
   'workspace.terminal.reopen': 'Open again',
+  'workspace.terminal.lost': 'The terminal lost its connection, reconnecting…',
+  'workspace.terminal.taken': 'The terminal is open elsewhere.',
   'workspace.files.open': 'Open files',
   'workspace.files.close': 'Close files',
   'workspace.files.back': 'Back to the files',

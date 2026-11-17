@@ -4382,7 +4382,7 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     sends the code it reads to its maker anyway, and a workspace cut off from the
     internet installs no package.
   - *Ivo's own*, the first elsewhere. Ivo's workspace on LXC 210 is the same image
-    run from a directory of its own (`/mnt/docker/workspace`, with the host shell's
+    run from a directory of its own (`/mnt/docker/_infra/workspace`, with the host shell's
     tools layered on), as `bacinac` over `/home/bacinac` and `/mnt/docker` with the
     host's Docker: the dev PONISTRA it edits cannot be its door, and his production
     on mlaka will open it as its workspace elsewhere. It publishes no port; only the

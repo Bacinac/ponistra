@@ -6,11 +6,13 @@ folder (workspace/terminal.mjs). It opens only under a recent confirmation of wh
     browser → {"folder": <project path>, "cols": …, "rows": …}
     then binary frames both ways: what the owner types and what the shell writes;
     browser → {"cols": …, "rows": …} resizes the terminal;
+    browser → {"close": true} ends the shell;
     browser → "ping", answered "pong", by which the page finds a socket that died on its way.
 
-The socket closes with EXITED once the shell exits (its status the reason), REFUSED for anyone
-but the owner freshly confirmed, and UNREACHABLE when the workspace could not be reached or
-dropped it."""
+The shell outlives the socket: the next one for the project is shown what it wrote meanwhile.
+The socket closes with EXITED once the shell exits (its status the reason), TAKEN when the
+project's terminal was opened elsewhere, REFUSED for anyone but the owner freshly confirmed, and
+UNREACHABLE when the workspace could not be reached or dropped it."""
 
 import json
 import logging
@@ -35,10 +37,12 @@ logger = logging.getLogger(__name__)
 PATH = "/api/workspace/terminal"
 EXITED = 4000
 REFUSED = 4403
+TAKEN = 4409
 UNREACHABLE = 4502
 # What the workspace closes with that the page tells apart: the shell ended, a project it does
-# not know, too many terminals open.
-PASSED = {EXITED, 4404, 4429}
+# not know, the terminal opened elsewhere, too many terminals open.
+PASSED = {EXITED, 4404, TAKEN, 4429}
+CLOSE = {"close": True}
 PING = "ping"
 PONG = "pong"
 FRAME = 1 << 20
@@ -95,13 +99,16 @@ async def _typed(receive, send, workspace: ClientConnection) -> None:
                 await send({"type": "websocket.send", "text": PONG})
                 continue
             with suppress(ValueError):
-                if size := _size(json.loads(message.get("text") or "")):
+                given = json.loads(message.get("text") or "")
+                if given == CLOSE:
+                    await workspace.send(json.dumps(CLOSE))
+                elif size := _size(given):
                     await workspace.send(json.dumps({"cols": size[0], "rows": size[1]}))
         await workspace.close()
 
 
 async def _shown(workspace: ClientConnection, send, typing: CancelScope) -> None:
-    # A browser gone fails the send; the shell ends as the workspace's socket closes behind it.
+    # A browser gone fails the send; the workspace keeps the shell as its socket closes behind it.
     with suppress(ConnectionClosed, OSError):
         async for message in workspace:
             if isinstance(message, bytes):

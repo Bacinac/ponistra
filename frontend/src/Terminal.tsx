@@ -3,7 +3,7 @@ import { Terminal as Xterm, type ITheme } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw, X } from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import { postJson } from './api';
+import { postJson, unavailable } from './api';
 import { useI18n } from './i18n';
 import { useHeldRelease } from './release';
 import { button, iconButton } from './styles';
@@ -14,6 +14,13 @@ const PATH = '/api/workspace/terminal';
 // A socket that died on its way never reports closing, so the page asks and waits for the answer.
 const PINGED = 20_000;
 const ANSWERED_WITHIN = 10_000;
+const FIRST_RETRY = 1_000;
+const LAST_RETRY = 15_000;
+const EXITED = 4000;
+const TAKEN = 4409;
+// Refused, a project the workspace does not know, too many terminals: trying again changes nothing.
+const ENDED = new Set([4403, 4404, 4429]);
+const CLOSE = { close: true };
 const ANSI = [
   'black',
   'red',
@@ -54,8 +61,9 @@ function look(element: HTMLElement): ITheme {
   return theme;
 }
 
-/** A login shell in the project's folder of the workspace (KR25), ended when this is closed and
- * closed when the shell ends or its connection is lost. */
+/** A login shell in the project's folder of the workspace (KR25). It outlives this panel and its
+ * connection: a connection lost is opened again and shown what the shell wrote meanwhile, and
+ * only closing the panel or the shell's exit ends it. */
 export function TerminalPanel({
   folder,
   name,
@@ -70,8 +78,9 @@ export function TerminalPanel({
   const [opened, setOpened] = useState(0);
   const closing = useEffectEvent(onClose);
   const [failure, setFailure] = useState<Error | null>(null);
-  const [unopened, setUnopened] = useState(false);
+  const [state, setState] = useState<'open' | 'lost' | 'taken' | 'unopened'>('open');
   const [refused, setRefused] = useState<'copy' | 'paste' | null>(null);
+  const ending = useRef<() => void>(onClose);
   useHeldRelease(true);
 
   useEffect(() => {
@@ -96,52 +105,97 @@ export function TerminalPanel({
     let gone = false;
     let pinging: ReturnType<typeof setInterval> | undefined;
     let unanswered: ReturnType<typeof setTimeout> | undefined;
-    let started = false;
-    const ended = () => {
-      if (gone) return;
-      gone = true;
-      closing();
+    let retrying: ReturnType<typeof setTimeout> | undefined;
+    let delay = FIRST_RETRY;
+    const quiet = () => {
+      clearInterval(pinging);
+      clearTimeout(unanswered);
+      unanswered = undefined;
     };
     const sent = (data: string | Uint8Array<ArrayBuffer>) => {
       if (socket?.readyState === WebSocket.OPEN) socket.send(data);
     };
-    postJson(PATH).then(
-      () => {
-        if (gone) return;
-        const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const opening = new WebSocket(`${scheme}//${location.host}${PATH}`);
-        socket = opening;
-        opening.binaryType = 'arraybuffer';
-        opening.onopen = () => {
-          opening.send(JSON.stringify({ folder, cols: terminal.cols, rows: terminal.rows }));
-          pinging = setInterval(() => {
-            opening.send('ping');
-            unanswered ??= setTimeout(ended, ANSWERED_WITHIN);
-          }, PINGED);
-        };
-        opening.onmessage = (event) => {
-          if (event.data instanceof ArrayBuffer) {
-            started = true;
-            terminal.write(new Uint8Array(event.data));
-          } else if (event.data === 'pong') {
-            clearTimeout(unanswered);
-            unanswered = undefined;
-          }
-        };
-        opening.onclose = () => {
-          if (started) ended();
-          else if (!gone) {
-            clearInterval(pinging);
-            clearTimeout(unanswered);
-            setUnopened(true);
-          }
-        };
-        terminal.focus();
-      },
-      (error: Error) => {
-        if (!gone) setFailure(error);
-      },
-    );
+    const retried = () => {
+      if (gone) return;
+      setState('lost');
+      retrying = setTimeout(connected, delay);
+      delay = Math.min(delay * 2, LAST_RETRY);
+    };
+    const now = () => {
+      if (retrying === undefined || gone) return;
+      clearTimeout(retrying);
+      connected();
+    };
+    const dropped = (lost: WebSocket) => {
+      if (lost !== socket) return;
+      socket = null;
+      quiet();
+      lost.onclose = lost.onmessage = null;
+      lost.close();
+      retried();
+    };
+    function connected() {
+      retrying = undefined;
+      postJson(PATH).then(
+        () => {
+          if (gone) return;
+          const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
+          const opening = new WebSocket(`${scheme}//${location.host}${PATH}`);
+          socket = opening;
+          opening.binaryType = 'arraybuffer';
+          let fresh = true;
+          opening.onopen = () => {
+            opening.send(JSON.stringify({ folder, cols: terminal.cols, rows: terminal.rows }));
+            pinging = setInterval(() => {
+              opening.send('ping');
+              unanswered ??= setTimeout(() => dropped(opening), ANSWERED_WITHIN);
+            }, PINGED);
+          };
+          opening.onmessage = (event) => {
+            if (event.data instanceof ArrayBuffer) {
+              if (fresh) {
+                fresh = false;
+                delay = FIRST_RETRY;
+                setState('open');
+                terminal.reset();
+              }
+              terminal.write(new Uint8Array(event.data));
+            } else if (event.data === 'pong') {
+              clearTimeout(unanswered);
+              unanswered = undefined;
+            }
+          };
+          opening.onclose = ({ code }) => {
+            if (gone || opening !== socket) return;
+            socket = null;
+            quiet();
+            if (code === EXITED) {
+              gone = true;
+              closing();
+            } else if (code === TAKEN) setState('taken');
+            else if (ENDED.has(code)) setState('unopened');
+            else retried();
+          };
+          terminal.focus();
+        },
+        (error: Error) => {
+          if (gone) return;
+          if (unavailable(error)) retried();
+          else setFailure(error);
+        },
+      );
+    }
+    connected();
+    ending.current = () => {
+      if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(CLOSE));
+      gone = true;
+      closing();
+    };
+    const shown = () => {
+      if (!document.hidden) now();
+    };
+    window.addEventListener('online', now);
+    document.addEventListener('visibilitychange', shown);
     const typed = terminal.onData((data) => sent(encoder.encode(data)));
     const raw = terminal.onBinary((data) => sent(Uint8Array.from(data, (c) => c.charCodeAt(0))));
     const resized = terminal.onResize(({ cols, rows }) => sent(JSON.stringify({ cols, rows })));
@@ -172,8 +226,10 @@ export function TerminalPanel({
     });
     return () => {
       gone = true;
-      clearInterval(pinging);
-      clearTimeout(unanswered);
+      quiet();
+      clearTimeout(retrying);
+      window.removeEventListener('online', now);
+      document.removeEventListener('visibilitychange', shown);
       element.removeEventListener('contextmenu', clicked);
       unscheme();
       sized.disconnect();
@@ -187,7 +243,7 @@ export function TerminalPanel({
 
   const reopen = () => {
     setFailure(null);
-    setUnopened(false);
+    setState('open');
     setOpened((count) => count + 1);
   };
   return (
@@ -198,7 +254,7 @@ export function TerminalPanel({
           type="button"
           aria-label={t('workspace.terminal.close')}
           title={t('workspace.terminal.close')}
-          onClick={onClose}
+          onClick={() => ending.current()}
           className={iconButton}
         >
           <X size={16} aria-hidden />
@@ -212,10 +268,17 @@ export function TerminalPanel({
           {refused === 'copy' ? t('workspace.copyFailed') : codeText('clipboard_refused', t)}
         </p>
       )}
-      {(failure || unopened) && (
+      {!failure && state === 'lost' && (
+        <p role="status" className="mt-2 text-sm text-muted">
+          {t('workspace.terminal.lost')}
+        </p>
+      )}
+      {(failure || state === 'taken' || state === 'unopened') && (
         <div role="status" className="mt-2 flex flex-wrap items-center gap-2 text-sm">
           <span className="text-danger">
-            {failure ? errorMessage(failure, t) : t('workspace.terminal.unopened')}
+            {failure
+              ? errorMessage(failure, t)
+              : t(state === 'taken' ? 'workspace.terminal.taken' : 'workspace.terminal.unopened')}
           </span>
           <button type="button" onClick={reopen} className={button}>
             <RotateCcw size={14} aria-hidden />

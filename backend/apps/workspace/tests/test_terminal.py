@@ -57,7 +57,11 @@ class Workspace:
         await connection.send(b"$ ")
         async for message in connection:
             if isinstance(message, str):
-                self.sized.append(json.loads(message))
+                given = json.loads(message)
+                if given == {"close": True}:
+                    await connection.close(terminal.EXITED, "129")
+                    return
+                self.sized.append(given)
             elif message == b"exit\r":
                 await connection.close(terminal.EXITED, "3")
                 return
@@ -170,7 +174,7 @@ async def test_the_owners_terminal_passes_what_is_typed_and_shown_until_the_shel
 
 @pytest.mark.anyio
 @pytest.mark.django_db(transaction=True)
-async def test_a_browser_that_leaves_ends_the_shell(linked, workspace):
+async def test_a_browser_that_leaves_lets_go_of_the_workspaces_socket(linked, workspace):
     opening = {"folder": FOLDER, "cols": 80, "rows": 24}
     cookie = await signed()
     async with create_task_group() as tg:
@@ -179,6 +183,35 @@ async def test_a_browser_that_leaves_ends_the_shell(linked, workspace):
         browser.to_server.send_nowait({"type": "websocket.disconnect", "code": 1001})
         assert (await browser.message())["type"] == "websocket.close"
     assert workspace.left
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_the_owner_closing_the_terminal_ends_the_shell(linked, workspace):
+    opening = {"folder": FOLDER, "cols": 80, "rows": 24}
+    cookie = await signed()
+    async with create_task_group() as tg:
+        browser = Browser(cookie, opening, tg)
+        assert await browser.shown() == b"$ "
+        browser.to_server.send_nowait({"type": "websocket.receive", "text": '{"close": true}'})
+        assert await browser.message() == {"type": "websocket.close", "code": 4000, "reason": "129"}
+    assert workspace.sized == []
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_a_terminal_opened_elsewhere_closes_as_taken(linked, monkeypatch):
+    async def taken(connection):
+        await connection.close(terminal.TAKEN)
+
+    opening = {"folder": FOLDER, "cols": 80, "rows": 24}
+    cookie = await signed()
+    async with serve(taken, "127.0.0.1", 0) as server:
+        port = server.sockets[0].getsockname()[1]
+        monkeypatch.setattr(terminal, "far", lambda *_: f"ws://127.0.0.1:{port}/ponistra/terminal")
+        async with create_task_group() as tg:
+            browser = Browser(cookie, opening, tg)
+            assert (await browser.message())["code"] == terminal.TAKEN
 
 
 @pytest.mark.anyio

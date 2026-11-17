@@ -248,6 +248,8 @@ export const hr = {
   'workspace.terminal.close': 'Zatvori terminal',
   'workspace.terminal.unopened': 'Terminal se nije mogao otvoriti.',
   'workspace.terminal.reopen': 'Otvori ponovno',
+  'workspace.terminal.lost': 'Veza s terminalom je prekinuta, spajam ponovno…',
+  'workspace.terminal.taken': 'Terminal je otvoren na drugom mjestu.',
   'workspace.files.open': 'Otvori datoteke',
   'workspace.files.close': 'Zatvori datoteke',
   'workspace.files.back': 'Natrag na popis datoteka',
