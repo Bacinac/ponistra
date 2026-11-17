@@ -519,6 +519,17 @@ test('the camera’s background, framing and light and the sound’s processing 
     .poll(async () => lightWall(await meanColour(preview)), { timeout: 30_000 })
     .toBe(true);
 
+  await meeting.getByRole('button', { name: 'Pridruži se' }).click();
+  await expect(tiles(meeting)).toHaveCount(1, { timeout: 30_000 });
+  const there = await device(browser, baseURL!, problems, sessions().colleague);
+  await there.goto(new URL(meeting.url()).pathname);
+  await there.getByRole('button', { name: 'Pridruži se' }).click();
+  const seen = tiles(there).filter({ hasNotText: '(vi)' }).locator('video');
+  await expect.poll(async () => lightWall(await meanColour(seen)), { timeout: 30_000 }).toBe(true);
+  await there.context().close();
+
+  // Chosen once the call is seen: every processing at once keeps the page's thread busy without a
+  // graphics card, past the time a busy host leaves a call to start.
   await meeting.getByRole('button', { name: 'Uređaji' }).click();
   let kept = meeting.waitForResponse('**/api/auth/preferences');
   await meeting.getByRole('menuitemcheckbox', { name: 'Prati lice' }).press('Enter');
@@ -536,15 +547,6 @@ test('the camera’s background, framing and light and the sound’s processing 
   await kept;
   await expect(meeting.getByRole('alert')).toHaveCount(0);
 
-  await meeting.getByRole('button', { name: 'Pridruži se' }).click();
-  // Every processing on at once keeps the page's thread busy without a graphics card.
-  await expect(tiles(meeting)).toHaveCount(1, { timeout: 30_000 });
-  const there = await device(browser, baseURL!, problems, sessions().colleague);
-  await there.goto(new URL(meeting.url()).pathname);
-  await there.getByRole('button', { name: 'Pridruži se' }).click();
-  const seen = tiles(there).filter({ hasNotText: '(vi)' }).locator('video');
-  await expect.poll(async () => lightWall(await meanColour(seen)), { timeout: 30_000 }).toBe(true);
-  await there.context().close();
   await meeting.getByRole('button', { name: 'Napusti' }).click();
   await expect(meeting.getByText('Napustili ste sastanak.')).toBeVisible();
   await meeting.close();

@@ -171,7 +171,12 @@ for (const list of LISTS) {
     await page.goto('/');
     const stamp = Date.now();
     const titles = Array.from({ length: COUNT }, (_, at) => `Red${stamp}x${at}`);
+    // The rows are made one request after another, which a busy host stretches over most of a minute.
+    const budget = test.info().timeout;
+    const begun = Date.now();
+    test.setTimeout(budget * 4);
     await list.fill(page, titles, stamp);
+    test.setTimeout(budget + Date.now() - begun);
 
     for (const width of [1500, 390]) {
       await page.setViewportSize({ width, height: 800 });

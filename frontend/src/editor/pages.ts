@@ -964,7 +964,13 @@ function endnotes(view: EditorView, scale: number): Measured[] {
  * them. */
 function placeNotes(view: EditorView, laid: Laid | null, sheets: readonly Geometry[] = []): void {
   const feet = new Map(laid?.feet.map((foot) => [foot.index, foot]));
-  shownNotes(view, 'foot').notes.forEach(({ item }, index) => {
+  const atFoot = shownNotes(view, 'foot').notes;
+  const atEnd = shownNotes(view, 'end');
+  const found = [...atFoot, ...atEnd.notes].find(({ item }) =>
+    item.classList.contains('ponistra-found'),
+  )?.item;
+  const before = found?.getBoundingClientRect().top;
+  atFoot.forEach(({ item }, index) => {
     const foot = feet.get(index);
     const [left, right] =
       foot && sheets.length > 1 ? insetOf(sheets, laid!.sections[foot.page]) : [0, 0];
@@ -976,11 +982,14 @@ function placeNotes(view: EditorView, laid: Laid | null, sheets: readonly Geomet
   });
   const gaps = new Map<number, number>();
   for (const each of laid?.breaks ?? []) if (each.kind === 'note') gaps.set(each.index, each.gap);
-  const { section, notes } = shownNotes(view, 'end');
+  const { section, notes } = atEnd;
   if (section) section.style.paddingTop = gaps.has(0) ? `${gaps.get(0)}px` : '';
   notes.forEach(({ item }, index) => {
     item.style.paddingTop = index > 0 && gaps.has(index) ? `${gaps.get(index)}px` : '';
   });
+  // A search hit scrolls to its note before the pages are laid, which can move it out of view.
+  if (found && found.getBoundingClientRect().top !== before)
+    found.scrollIntoView({ block: 'center' });
 }
 
 function linesOf(

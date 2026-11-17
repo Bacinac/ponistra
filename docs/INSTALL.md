@@ -146,7 +146,7 @@ services:
       OAUTH2_PROXY_REDIRECT_URL: https://code.example.com/oauth2/callback
       OAUTH2_PROXY_UPSTREAMS: http://workspace:8080,http://workspace:8081/ponistra/
       # The installation's own requests, which the workspace checks against the token itself.
-      OAUTH2_PROXY_SKIP_AUTH_ROUTES: ^/ponistra/(projects|commands|terminal|memory(/file|/write)?|chats/[0-9a-f-]{36})$
+      OAUTH2_PROXY_SKIP_AUTH_ROUTES: ^/ponistra/(projects|commands|terminal|memory(/file|/write)?|files(/read|/raw|/write)?|chats/[0-9a-f-]{36})$
       OAUTH2_PROXY_AUTHENTICATED_EMAILS_FILE: /owner
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
