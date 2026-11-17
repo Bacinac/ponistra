@@ -148,7 +148,7 @@ test('the search box offering commands meets WCAG 2.2 AA', async ({ page }) => {
 });
 
 test('a document meets WCAG 2.2 AA', async ({ page }) => {
-  await page.goto(await newDocument(page, 'Pristupačnost'));
+  await page.goto(await newDocument(page, 'Pristupačnost', 'text'));
   await page.locator('.ProseMirror').click();
   await page.keyboard.type('# Naslov');
   await page.keyboard.press('Enter');
@@ -157,7 +157,7 @@ test('a document meets WCAG 2.2 AA', async ({ page }) => {
 });
 
 test('a document’s menu and its dialog of theme and styles meet WCAG 2.2 AA', async ({ page }) => {
-  await page.goto(await newDocument(page, 'Stilovi'));
+  await page.goto(await newDocument(page, 'Stilovi', 'text'));
   await page.locator('header button[aria-current="page"]').click();
   await expect(page.getByRole('menu')).toBeVisible();
   expect(await violations(page)).toEqual([]);

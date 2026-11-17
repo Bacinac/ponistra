@@ -30,7 +30,7 @@ Svaka izmjena odmah se šalje poslužitelju, pa gumba za spremanje nema. Desno n
 
 Kad dokument uređuje još netko, vidite njegov kursor u boji s imenom. Vaš kursor s drugog uređaja ili iz drugog prozora označen je s {t:presence.you}. {t:command.undo} poništava samo vaše izmjene, ne i tuđe.
 
-{t:view.text} prikazuje tekst u jednom stupcu, {t:view.pages} onako kako će biti ispisan, s ravnalima uz stranicu, a {t:view.slides} slajd po slajd. Dokument se prvi put otvara u prikazu stranica, a uvezen iz PowerPointa u prikazu slajdova; prikaz koji odaberete pamti se za svaki dokument u tom pregledniku. Prikaz teksta širok je koliko i tekst na stranici dokumenta, pa tablica stoji onako kako će biti ispisana. Povećanje vrijedi za sve dokumente.
+{t:view.text} prikazuje tekst u jednom stupcu, {t:view.pages} onako kako će biti ispisan, s ravnalima uz stranicu, a {t:view.slides} slajd po slajd. Dokument se prvi put otvara u prikazu stranica, uvezen iz PowerPointa u prikazu slajdova, a uvezen iz Excela u prikazu teksta; prikaz koji odaberete pamti se za svaki dokument u tom pregledniku. Prikaz teksta širok je koliko i tekst na stranici dokumenta, pa tablica stoji onako kako će biti ispisana. Povećanje vrijedi za sve dokumente.
 
 ## Ograničenja
 

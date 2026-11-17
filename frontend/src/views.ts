@@ -47,11 +47,16 @@ function kept(): Record<string, unknown> {
   }
 }
 
-/** The view the reader chose for the document; for one they have not, its slides where it came
- * from a presentation, else its pages. */
+const NATIVE: Partial<Record<NonNullable<TreeNode['original']>, View>> = {
+  pptx: 'slides',
+  xlsx: 'text',
+};
+
+/** The view the reader chose for the document; for one they have not, the view of what it came
+ * from, a presentation's slides and a workbook's sheets, else its pages. */
 export function viewFor(documentId: string, original: TreeNode['original']): View {
   const chosen = VIEWS.find((each) => each === kept()[documentId]);
-  return chosen ?? (original === 'pptx' ? 'slides' : 'pages');
+  return chosen ?? (original && NATIVE[original]) ?? 'pages';
 }
 
 export function keepView(documentId: string, view: View) {

@@ -16,7 +16,7 @@ async function insert(page: Page, query: string, option: string): Promise<void> 
 test('slide and column breaks and speaker notes show in the text and stay off the pages', async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Prezentacija'));
+  await page.goto(await newDocument(page, 'Prezentacija', 'text'));
   const editor = page.locator('.ProseMirror').first();
   await editor.click();
   await page.keyboard.type('# Cijene');
@@ -53,7 +53,7 @@ test('slide and column breaks and speaker notes show in the text and stay off th
 test('the Slides view lays each slide in its layout’s boxes, shrinks text to fit them, and the slides go to PowerPoint and come back', async ({
   page,
 }) => {
-  const offer = await newDocument(page, 'Ponuda');
+  const offer = await newDocument(page, 'Ponuda', 'text');
   await page.goto(offer);
   const editor = page.locator('.ProseMirror').first();
   await editor.click();
@@ -189,7 +189,7 @@ test('the Slides view lays each slide in its layout’s boxes, shrinks text to f
 test('a show runs every tab’s slides on the whole screen, its presenter’s window following it', async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Izlaganje'));
+  await page.goto(await newDocument(page, 'Izlaganje', 'text'));
   const editor = page.locator('.ProseMirror').first();
   await editor.click();
   await page.keyboard.type('# Uvod');

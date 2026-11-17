@@ -120,7 +120,7 @@ test('every view of the commands reaches the text and the tables', async ({ page
 });
 
 test('the toolbar formats the text and its paragraphs', async ({ page }) => {
-  await page.goto(await newDocument(page, 'Probno oblikovanje'));
+  await page.goto(await newDocument(page, 'Probno oblikovanje', 'text'));
   const editor = page.locator('.ProseMirror');
   const hint = editor.locator('.ponistra-empty');
   await expect(hint).toHaveCount(1);
@@ -156,7 +156,7 @@ test('the toolbar formats the text and its paragraphs', async ({ page }) => {
 test('in the Suggesting mode what is typed and taken out is proposed, and accepted as any proposal', async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Probno predlaganje'));
+  await page.goto(await newDocument(page, 'Probno predlaganje', 'text'));
   const editor = page.locator('.ProseMirror');
   await editor.click({ position: { x: 300, y: 300 } });
   await page.keyboard.type('Rok je 30 dana.');
@@ -193,7 +193,7 @@ test('in the Suggesting mode what is typed and taken out is proposed, and accept
 });
 
 test('a table takes the picked size and leaves room to write below it', async ({ page }) => {
-  await page.goto(await newDocument(page, 'Probna tablica'));
+  await page.goto(await newDocument(page, 'Probna tablica', 'text'));
   const editor = page.locator('.ProseMirror').first();
   await editor.click();
   await page.keyboard.type('Ponuda');

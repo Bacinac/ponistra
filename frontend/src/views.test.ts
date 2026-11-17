@@ -5,13 +5,14 @@ import { keepView, viewFor } from './views';
 describe('the view a document opens in', () => {
   beforeEach(() => localStorage.clear());
 
-  it('is its pages, or its slides where it came from a presentation', () => {
+  it('is the view of what it came from, else its pages', () => {
     keepView('notes', 'text');
-    expect([viewFor('deck', 'pptx'), viewFor('offer', 'docx'), viewFor('new', null)]).toEqual([
-      'slides',
-      'pages',
-      'pages',
-    ]);
+    expect([
+      viewFor('deck', 'pptx'),
+      viewFor('book', 'xlsx'),
+      viewFor('offer', 'docx'),
+      viewFor('new', null),
+    ]).toEqual(['slides', 'text', 'pages', 'pages']);
   });
 
   it('is the one its reader chose for it', () => {

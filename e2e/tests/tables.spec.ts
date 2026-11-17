@@ -467,7 +467,7 @@ test('a table in use shows its headings, which select whole lines and point them
 test('a whole column or row formatted by its heading gives its look to every cell, a row added later too', async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Oblikovani stupci'));
+  await page.goto(await newDocument(page, 'Oblikovani stupci', 'text'));
   await page.locator('.ProseMirror').first().click();
   await page.keyboard.type('Ponuda');
   await page.keyboard.press('Enter');
@@ -571,7 +571,7 @@ test('a named table is pointed at by its name from a formula in another table', 
 test("a cell keeps its look as Word keeps a paragraph mark's: under a formula, cleared and written again", async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Oblikovane ćelije'));
+  await page.goto(await newDocument(page, 'Oblikovane ćelije', 'text'));
   await page.locator('.ProseMirror').first().click();
   await insertTable(page, '2 × 3');
   const table = page.locator('.ponistra-table');
@@ -991,7 +991,7 @@ test('a table is duplicated below as values, which stay as they were when its ce
 test('rows frozen above a cell stay at the top while the table runs on past them, and are freed', async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Zamrznuti redci'));
+  await page.goto(await newDocument(page, 'Zamrznuti redci', 'text'));
   await page.locator('.ProseMirror').first().click();
   const rows = Array.from(
     { length: 60 },
@@ -1127,7 +1127,7 @@ async function ground(table: Locator, address: string): Promise<string> {
 test('cells are filled from the toolbar, a whole column as its line, in either theme, and the fill taken off', async ({
   page,
 }) => {
-  await page.goto(await newDocument(page, 'Ispunjene ćelije'));
+  await page.goto(await newDocument(page, 'Ispunjene ćelije', 'text'));
   await page.locator('.ProseMirror').first().click();
   await insertTable(page, '3 × 3');
   const table = page.locator('.ponistra-table');

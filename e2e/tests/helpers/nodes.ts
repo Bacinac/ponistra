@@ -33,7 +33,7 @@ export function idIn(segment: string): string {
 }
 
 /** A new document in the root, by the address the app itself gives it. */
-export async function newDocument(page: Page, title: string): Promise<string> {
+export async function newDocument(page: Page, title: string, view?: 'text'): Promise<string> {
   await page.goto('/');
   const made = await page.evaluate(async (title) => {
     await fetch('/api/auth/session');
@@ -46,6 +46,14 @@ export async function newDocument(page: Page, title: string): Promise<string> {
     if (!response.ok) throw new Error(`POST /api/nodes: ${response.status}`);
     return response.json();
   }, title);
+  if (view)
+    await page.evaluate(
+      ({ id, view }) => {
+        const kept = JSON.parse(localStorage.getItem('ponistra.views') ?? '{}');
+        localStorage.setItem('ponistra.views', JSON.stringify({ ...kept, [id]: view }));
+      },
+      { id: made.id, view },
+    );
   return nodeHref(made);
 }
 

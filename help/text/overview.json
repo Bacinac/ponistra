@@ -23,7 +23,7 @@
     "frontend/src/editor/Toolbar.tsx#Toolbar": "94894b127087",
     "frontend/src/editor/slash.tsx#slashMenu": "a088be571d1b",
     "frontend/src/editor/presence.ts#presence": "fd1d30109b98",
-    "frontend/src/views.ts#viewFor": "b9e5f36bdcae",
+    "frontend/src/views.ts#viewFor": "55fa52004a1d",
     "frontend/src/choices.tsx#ZoomChoices": "f0eea43c9000"
   }
 }
