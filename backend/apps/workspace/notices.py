@@ -60,6 +60,8 @@ def compared(before: dict, projects: list[dict]) -> tuple[dict, list[tuple[dict,
                         "chat": member["title"],
                         "session": member["id"],
                     }
+                    if questions := member.get("questions"):
+                        event["question"] = questions[0]["question"]
                     told.append((event, _tag(member["id"])))
             coordinator = round["coordinator"]
             heard = coordinator.get("heard")

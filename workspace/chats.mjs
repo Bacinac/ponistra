@@ -131,6 +131,20 @@ const gone = (pid) =>
     look();
   });
 
+// What an AskUserQuestion asks, one question at a time, as the page lays out its choices.
+const questionsOf = (name, input) =>
+  name === 'AskUserQuestion' && Array.isArray(input?.questions)
+    ? input.questions.map(({ question, header, options, multiSelect }) => ({
+        question: String(question ?? ''),
+        header: String(header ?? ''),
+        options: (options ?? []).map(({ label, description }) => ({
+          label: String(label ?? ''),
+          description: String(description ?? ''),
+        })),
+        multiSelect: Boolean(multiSelect),
+      }))
+    : null;
+
 const toolOf = (name, input) => {
   if (name === 'AskUserQuestion' && Array.isArray(input?.questions))
     return input.questions
@@ -196,14 +210,20 @@ class Chat {
     this.write({ type: 'control_response', response: { subtype: 'success', request_id, response } });
   }
 
-  // Yes lets the tool run, No refuses it; a question is answered in the owner's own words.
-  answer(yes, words = null) {
+  // Yes lets the tool run, No refuses it; a question takes an answer of its own to each it asks,
+  // or the owner's own words to them all.
+  answer(yes, answers = null, words = null) {
     const { tool, input } = this.asked;
     if (tool === 'AskUserQuestion') {
-      const answer = words ?? (yes ? 'Yes' : 'No');
-      const answers = Object.fromEntries((input.questions ?? []).map(({ question }) => [question, answer]));
-      return this.answered({ behavior: 'allow', updatedInput: { ...input, answers } });
+      const asked = (input.questions ?? []).map(({ question }) => question);
+      if (words) answers = Object.fromEntries(asked.map((question) => [question, words]));
+      if (!answers) throw new Refusal(409, 'questions');
+      if (asked.some((question) => typeof answers[question] !== 'string' || !answers[question].trim()))
+        throw new Refusal(400, 'invalid_text');
+      const given = Object.fromEntries(asked.map((question) => [question, answers[question].trim()]));
+      return this.answered({ behavior: 'allow', updatedInput: { ...input, answers: given } });
     }
+    if (answers) throw new Refusal(409, 'not_questions');
     if (yes) return this.answered({ behavior: 'allow', updatedInput: input });
     this.answered({ behavior: 'deny', message: words ?? DENIED });
   }
@@ -244,7 +264,14 @@ const heard = (chat, line) => {
   }
   if (message.type === 'control_request' && message.request?.subtype === 'can_use_tool') {
     const { tool_name: tool, input } = message.request;
-    chat.asked = { request_id: message.request_id, tool, input, at: new Date().toISOString(), waitingFor: toolOf(tool, input) };
+    chat.asked = {
+      request_id: message.request_id,
+      tool,
+      input,
+      at: new Date().toISOString(),
+      waitingFor: toolOf(tool, input),
+      questions: questionsOf(tool, input),
+    };
     changed();
   } else if (message.type === 'control_response' && chat.choosing.has(message.response?.request_id)) {
     const { request_id, subtype, error } = message.response;
@@ -360,7 +387,7 @@ export const begun = (session, folder, text, images = []) => {
     which the command that carried it may withdraw until the chat takes it in. */
 export const say = (chat, text, images = [], command = null) => {
   if (chat.asked && text) {
-    chat.answer(false, text);
+    chat.answer(false, null, text);
     if (images.length) chat.said(null, images);
     return;
   }
@@ -376,10 +403,10 @@ export const withdraw = async (session, command) => {
   chat.queued.delete(command);
 };
 
-export const answer = (session, yes) => {
+export const answer = (session, yes, answers = null) => {
   const chat = hosted.get(session);
   if (!chat?.asked) throw new Refusal(409, 'not_waiting');
-  chat.answer(yes);
+  chat.answer(yes, answers);
 };
 
 export const rename = (chat, title) => chat.renamed(title);

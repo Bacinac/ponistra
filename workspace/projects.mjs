@@ -436,6 +436,7 @@ const running = () => {
       name: entry.name ?? null,
       state: state === 'idle' && shells.has(entry.pid) ? 'background' : state,
       waitingFor: asked ? asked.waitingFor : entry.status === 'waiting' ? (entry.waitingFor ?? null) : null,
+      questions: asked?.questions ?? null,
       at: asked ? asked.at : new Date(entry.statusUpdatedAt ?? entry.updatedAt ?? entry.startedAt ?? Date.now()).toISOString(),
       cwd: entry.cwd,
       startedAt: entry.startedAt,
@@ -448,6 +449,7 @@ const running = () => {
       name: null,
       state: asked ? 'waiting' : 'working',
       waitingFor: asked?.waitingFor ?? null,
+      questions: asked?.questions ?? null,
       at: asked?.at ?? new Date().toISOString(),
       cwd: folder,
       startedAt: Date.now(),
@@ -532,6 +534,7 @@ const chatOf = (path, id, live, trees, led, kept = new Set()) => {
     hosted: session?.hosted ?? false,
     state: session?.state ?? 'closed',
     waitingFor: session?.waitingFor ?? null,
+    questions: session?.questions ?? null,
     context: contextOf(lines),
     model: modelOf(id, lines),
     changes: session ? changesOf(path, transcript, trees) : null,
@@ -611,7 +614,7 @@ const memberOf = (folder, live, trees, id, prompt) => {
   const first = firstLine(prompt);
   const told = (/^\*\*(.+?)\.?\*\*/.exec(first)?.[1] ?? first.replace(/[*`]/g, '')).slice(0, 120);
   if (typeof id !== 'string' || !SESSION.test(id))
-    return { id: null, name: null, title: told, task, state: 'new', hosted: false, waitingFor: null, at: null, context: null, model: null, changes: null, heard: null };
+    return { id: null, name: null, title: told, task, state: 'new', hosted: false, waitingFor: null, questions: null, at: null, context: null, model: null, changes: null, heard: null };
   const transcript = transcriptOf(folder, id);
   const stat = existsSync(transcript) ? statSync(transcript) : null;
   const lines = stat ? tailOf(transcript, stat.size) : [];
@@ -626,11 +629,11 @@ const memberOf = (folder, live, trees, id, prompt) => {
   };
   const session = live.get(id);
   if (session) {
-    const { name, state, hosted, waitingFor, at } = session;
-    return { ...shared, name, state, hosted, waitingFor, at };
+    const { name, state, hosted, waitingFor, questions, at } = session;
+    return { ...shared, name, state, hosted, waitingFor, questions, at };
   }
   // A chat given its session that has not yet written a word has done nothing, so is not finished.
-  return { ...shared, name: null, state: stat ? 'closed' : 'new', hosted: false, waitingFor: null, at: stat?.mtime.toISOString() ?? null };
+  return { ...shared, name: null, state: stat ? 'closed' : 'new', hosted: false, waitingFor: null, questions: null, at: stat?.mtime.toISOString() ?? null };
 };
 
 // What a chat last said through its hooks: that it answered, with its answer, or that it waits.
@@ -1031,6 +1034,18 @@ const sessionGiven = (session) => {
   return session;
 };
 
+// The answer to each question a chat asks, as {question: answer}.
+const answersGiven = (text) => {
+  let answers;
+  try {
+    answers = JSON.parse(text ?? '');
+  } catch {
+    throw new Refusal(400, 'invalid_text');
+  }
+  if (!answers || typeof answers !== 'object' || Array.isArray(answers)) throw new Refusal(400, 'invalid_text');
+  return answers;
+};
+
 const titleGiven = (text) => {
   if (!text || text.length > TITLE || text.includes('\n')) throw new Refusal(400, 'invalid_text');
   return text;
@@ -1300,8 +1315,7 @@ const ordered = async (given) => {
     undone(session);
   } else if (kind === 'answer') {
     const session = sessionGiven(given.session);
-    if (text !== 'yes' && text !== 'no') throw new Refusal(400, 'invalid_text');
-    answered(session, text === 'yes');
+    answered(session, text === 'yes', text === 'yes' || text === 'no' ? null : answersGiven(text));
     command = { ...command, folder: live.get(session)?.cwd ?? null, session, text, state: 'done' };
   } else if (kind === 'stop') {
     const session = sessionGiven(given.session);
@@ -1385,6 +1399,7 @@ const chatAt = (id, place = {}) => {
     title: titleOf(tailOf(transcript, size)),
     state: live?.state ?? 'closed',
     waitingFor: live?.waitingFor ?? null,
+    questions: live?.questions ?? null,
     ...page,
   };
 };
@@ -1532,7 +1547,7 @@ const sent = (stream) => {
 // What the page shows of the register, the rounds and the gates.
 const shown = (live) =>
   JSON.stringify([
-    [...live].map(([id, { state, waitingFor }]) => [id, state, waitingFor]),
+    [...live].map(([id, { state, waitingFor, questions }]) => [id, state, waitingFor, questions]),
     roundFiles().map(({ id, round }) => [id, round]),
     commandFiles().map((command) => [command.id, command.state]),
     readdirSync(HEARD).map((name) => [name, changedAt(join(HEARD, name))]),

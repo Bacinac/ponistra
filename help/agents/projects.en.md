@@ -43,9 +43,12 @@ The chats run Claude Code in the workspace, which signs in once, with a Claude s
 
 1. On the {t:rail.projects} page, while a chat waits, {t:workspace.waitingForYou} stands at the top of the list (on a phone in {t:workspace.view.overview}, the number beside that button saying how many chats wait).
 2. There stands every chat waiting for your answer or permission, with what it asks.
-3. Press {t:workspace.yes} or {t:workspace.no}. A question offering answers can also be answered in your own words: pick the chat, type them into the field {t:workspace.say} and send them.
+3. To a permission, press {t:workspace.yes} or {t:workspace.no}.
+4. A chat asking you questions with offered answers has no buttons there, but a red mark with the number of its questions (Questions for you: 2). Click the chat or the mark and the questions appear in the conversation, each on its own: a heading, the question and a button for each offered answer, its description below it.
+5. Press an answer to each question. Where more than one answer may be chosen, each press turns one on or off. Instead of an offered answer you can type your own into the field {t:workspace.ownAnswer} below the question.
+6. Once every question has an answer, press {t:workspace.sendAnswers}.
 
-The same {t:workspace.yes} and {t:workspace.no} also stand in the conversation when a waiting chat is selected.
+The same {t:workspace.yes} and {t:workspace.no}, or the same questions, also stand in the conversation when a waiting chat is selected.
 
 ### The chat's menu
 
@@ -148,7 +151,7 @@ The workspace runs the chats itself: it holds one Claude Code process for each, 
 
 The mark {t:workspace.inUse} stands beside a chat that runs, in the workspace or in the editor, and in its place the state when the agent works or waits for you.
 
-The conversation on the page shows your last two questions and everything after them; {t:workspace.earlier} at the top brings the ones before, and your latest question stays pinned at the top while you read below it. Your messages stand on the right, those sent while the agent worked included, the agent's on the left with its formatting (bold, code, lists, tables), what the tool itself told the agent (a background task finished, a message from another session arrived, the conversation was compacted) as a short line in the middle, and consecutive tool calls folded into one line with the number of tools, which opens on a click. While the agent works the conversation is read again every five seconds, otherwise when the agent finishes a step. A message does not go through Ponistra's AI: each is a row in Ponistra's database, and the workspace hands it to that chat's process, as if you had typed it. Images go with the message; beside a message with images the conversation on the page shows how many. An image larger than 1568 pixels on its longer side is scaled down before it is sent. {t:workspace.yes} and {t:workspace.no} answer the permission or question the chat asked.
+The conversation on the page shows your last two questions and everything after them; {t:workspace.earlier} at the top brings the ones before, and your latest question stays pinned at the top while you read below it. Your messages stand on the right, those sent while the agent worked included, the agent's on the left with its formatting (bold, code, lists, tables), what the tool itself told the agent (a background task finished, a message from another session arrived, the conversation was compacted) as a short line in the middle, and consecutive tool calls folded into one line with the number of tools, which opens on a click. While the agent works the conversation is read again every five seconds, otherwise when the agent finishes a step. A message does not go through Ponistra's AI: each is a row in Ponistra's database, and the workspace hands it to that chat's process, as if you had typed it. Images go with the message; beside a message with images the conversation on the page shows how many. An image larger than 1568 pixels on its longer side is scaled down before it is sent. {t:workspace.yes} and {t:workspace.no} answer a permission, and questions with offered answers get an answer each: the chat receives them as if you had chosen them in the editor. A notification on the phone of such a chat bears its first question and has no buttons, but opens the chat.
 
 Every chat has two lines. The first holds its title, state and the time of its last change; state and time each keep a column of their own, the same down the whole list, so a title too long is cut short with an ellipsis before them. The second, smaller, holds {t:workspace.coordinator} for a round's coordinator, the session's name where it differs from the title, and two measures:
 

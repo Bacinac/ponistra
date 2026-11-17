@@ -94,6 +94,8 @@ SPENT_SENT = 2_000
 MODEL_NAME = re.compile(r"[A-Za-z0-9._:@-]{1,100}")
 WINDOW_KINDS = {"session", "week", "model"}
 ANSWERS = {"yes", "no"}
+# As many questions as Claude Code asks at once.
+QUESTIONS = 4
 SWITCHES = {"on", "off"}
 # What a chat's model reads as a picture, each small enough to reach it whole.
 PICTURES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
@@ -391,6 +393,25 @@ def _text(given: dict, allowed: set[str] | None = None) -> str:
     return text.strip()
 
 
+def _answer(given: dict) -> str:
+    """Yes or No to what a chat waits on, or an answer to each question it asks, as
+    {question: answer}."""
+    text = _text(given)
+    if text in ANSWERS:
+        return text
+    try:
+        answers = json.loads(text)
+    except ValueError:
+        raise Refused(400, "invalid_text") from None
+    if (
+        not isinstance(answers, dict)
+        or not 0 < len(answers) <= QUESTIONS
+        or not all(isinstance(each, str) and each.strip() for each in answers.values())
+    ):
+        raise Refused(400, "invalid_text")
+    return text
+
+
 def _pictures(user, given: dict) -> list[dict]:
     """The images the owner uploaded to go with a chat's message, as its model reads them."""
     listed = given.get("images", [])
@@ -487,7 +508,7 @@ def _asked_of(user, given: dict) -> tuple[dict, list[dict]]:
     elif kind == Kind.SAY:
         fields["text"] = _text(given)
     elif kind == Kind.ANSWER:
-        fields["text"] = _text(given, ANSWERS)
+        fields["text"] = _answer(given)
     elif kind == Kind.RENAME:
         title = _text(given)
         if len(title) > TITLE or "\n" in title:

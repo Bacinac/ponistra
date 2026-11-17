@@ -60,6 +60,20 @@ def test_a_chat_waiting_is_told_once_and_again_only_when_it_waits_anew():
     assert len(events(shown, again)) == 1
 
 
+def test_a_chat_waiting_on_questions_is_told_by_its_first():
+    asking = member(CHAT, "waiting")
+    asking["questions"] = [{"question": "Pushati?", "header": "Push", "options": []}]
+    assert events({}, listed(asking)) == [
+        {
+            "event": "waiting",
+            "project": "ponistra",
+            "chat": "Obavijesti kruga",
+            "session": CHAT,
+            "question": "Pushati?",
+        }
+    ]
+
+
 def test_the_coordinator_waiting_is_told_too():
     projects = listed(member(CHAT, "working"))
     projects[0]["rounds"][0]["coordinator"] = member(LEAD, "waiting", title="Koordinator")
@@ -373,7 +387,8 @@ def test_each_event_is_worded_in_the_browsers_language_and_opens_the_code_page(d
     notice = Notice(kind=Notice.Kind.CODE, data=data)
     for language, (title, body) in (("hr", hr), ("en", en)):
         worded = notices.worded(notice, language, 0)
-        assert (worded["title"], worded["body"], worded["url"]) == (title, body, "/workspace")
+        opened = f"/workspace?chat={data['session']}" if "session" in data else "/workspace"
+        assert (worded["title"], worded["body"], worded["url"]) == (title, body, opened)
 
 
 @pytest.mark.parametrize(
@@ -398,6 +413,15 @@ def test_a_chat_waiting_is_answered_from_the_notification(data):
             {"action": "yes", "title": yes},
             {"action": "no", "title": no},
         ]
+
+
+def test_a_chat_asking_questions_is_answered_on_its_page():
+    data = {"event": "waiting", "project": "ponistra", "chat": "Plan", "session": CHAT}
+    worded = notices.worded(
+        Notice(kind=Notice.Kind.CODE, data={**data, "question": "Pushati?"}), "hr", 0
+    )
+    assert worded["body"] == "ponistra: Pushati?"
+    assert "actions" not in worded and "session" not in worded
 
 
 def test_what_only_reports_carries_no_answers():

@@ -1029,6 +1029,81 @@ test('a chat waiting on its owner is answered Yes or No atop the list', async ()
   );
 });
 
+const ASKED = [
+  {
+    question: 'Pushati sada?',
+    header: 'Push',
+    options: [
+      { label: 'Pushaj', description: 'Cijeli tok do produkcije' },
+      { label: 'Samo commit', description: '' },
+    ],
+    multiSelect: false,
+  },
+  {
+    question: 'Što još?',
+    header: 'Dodaci',
+    options: [
+      { label: 'Pomoć', description: '' },
+      { label: 'Plan', description: '' },
+    ],
+    multiSelect: true,
+  },
+];
+
+test('a chat asking questions is marked atop the list and answered one question at a time in it', async () => {
+  const asked: Asked[] = [];
+  const [general, alpha] = PROJECTS.projects;
+  const questioned = {
+    ...ROUND,
+    chats: ROUND.chats.map((chat) =>
+      chat.id === 'two' ? { ...chat, waitingFor: 'AskUserQuestion', questions: ASKED } : chat,
+    ),
+  };
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: [general, { ...alpha, rounds: [questioned] }],
+    }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const waiting = await screen.findByRole('region', { name: 'Čeka vas' });
+  expect(within(waiting).queryByRole('button', { name: 'Da' })).toBeNull();
+  await user.click(within(waiting).getByRole('button', { name: 'Pitanja za vas: 2' }));
+  const chat = screen.getByRole('region', { name: 'Razgovor' });
+  const send = await within(chat).findByRole('button', { name: 'Pošalji odgovore' });
+  expect(send).toHaveProperty('disabled', true);
+  const push = within(chat).getByRole('group', { name: /Pushati sada\?/ });
+  await user.click(within(push).getByRole('button', { name: /Samo commit/ }));
+  await user.click(within(push).getByRole('button', { name: /Pushaj/ }));
+  expect(
+    within(push)
+      .getByRole('button', { name: /Samo commit/ })
+      .getAttribute('aria-pressed'),
+  ).toBe('false');
+  expect(send).toHaveProperty('disabled', true);
+  const more = within(chat).getByRole('group', { name: /Što još\?/ });
+  await user.click(within(more).getByRole('button', { name: 'Pomoć' }));
+  await user.click(within(more).getByRole('button', { name: 'Plan' }));
+  await user.click(send);
+  await waitFor(() =>
+    expect(asked).toEqual([
+      {
+        kind: 'answer',
+        session: 'two',
+        text: JSON.stringify({ 'Pushati sada?': 'Pushaj', 'Što još?': 'Pomoć, Plan' }),
+      },
+    ]),
+  );
+});
+
+test('a notification of a waiting chat opens that chat', async () => {
+  served();
+  open('/workspace?chat=two', OWNER);
+  const chat = await screen.findByRole('region', { name: 'Razgovor' });
+  await within(chat).findByRole('heading', { name: /Grupe u panelu/ });
+});
+
 test('what was asked of a chat stands at its foot until it is carried out', async () => {
   served({
     'GET /api/workspace/commands': () => ({

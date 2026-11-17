@@ -224,6 +224,10 @@ def test_the_owner_reads_a_chat_on_from_a_place_in_its_transcript(owner, workspa
         ({"kind": "auto", "round": ROUND, "text": "off"}, {"round": ROUND, "text": "off"}),
         ({"kind": "say", "session": SESSION, "text": " bok "}, {"session": SESSION, "text": "bok"}),
         ({"kind": "answer", "session": SESSION, "text": "no"}, {"session": SESSION, "text": "no"}),
+        (
+            {"kind": "answer", "session": SESSION, "text": '{"Pushati?": "Pushaj"}'},
+            {"session": SESSION, "text": '{"Pushati?": "Pushaj"}'},
+        ),
         ({"kind": "archive", "session": SESSION}, {"session": SESSION}),
         ({"kind": "stop", "session": SESSION}, {"session": SESSION}),
         (
@@ -349,6 +353,8 @@ def test_a_message_carries_no_file_but_an_image_of_its_own(owner, workspace):
         ({"kind": "say", "session": "../projects", "text": "x"}, "invalid_session"),
         ({"kind": "say", "session": SESSION, "text": "  "}, "invalid_text"),
         ({"kind": "answer", "session": SESSION, "text": "maybe"}, "invalid_text"),
+        ({"kind": "answer", "session": SESSION, "text": '{"Pushati?": " "}'}, "invalid_text"),
+        ({"kind": "answer", "session": SESSION, "text": '["Pushaj"]'}, "invalid_text"),
         ({"kind": "rename", "session": SESSION, "text": "dva\nretka"}, "invalid_text"),
         ({"kind": "rename", "session": SESSION, "text": "x" * 101}, "invalid_text"),
         ({"kind": "auto", "round": ROUND, "text": "sometimes"}, "invalid_text"),

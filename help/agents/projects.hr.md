@@ -43,9 +43,12 @@ Razgovore vodi Claude Code u radnom prostoru, koji se prijavljuje jednom, pretpl
 
 1. Na stranici {t:rail.projects}, dok neki razgovor čeka, na vrhu popisa stoji {t:workspace.waitingForYou} (na telefonu u {t:workspace.view.overview}, a broj uz taj gumb kaže koliko razgovora čeka).
 2. Ondje stoji svaki razgovor koji čeka vaš odgovor ili dopuštenje, s onim što pita.
-3. Pritisnite {t:workspace.yes} ili {t:workspace.no}. Na pitanje s ponuđenim odgovorima možete odgovoriti i svojim riječima: odaberite razgovor, upišite ih u polje {t:workspace.say} i pošaljite.
+3. Na dopuštenje pritisnite {t:workspace.yes} ili {t:workspace.no}.
+4. Razgovor koji vam postavlja pitanja s ponuđenim odgovorima ondje nema gumba, nego crvenu oznaku s brojem pitanja (Pitanja za vas: 2). Kliknite razgovor ili oznaku i pitanja se pojave u razgovoru, svako za sebe: naslov, pitanje i po jedan gumb za svaki ponuđeni odgovor, s njegovim opisom ispod.
+5. Na svako pitanje pritisnite odgovor. Gdje se smije odabrati više odgovora, svaki pritisak uključuje ili isključuje jedan. Umjesto ponuđenog odgovora možete upisati svoj u polje {t:workspace.ownAnswer} ispod pitanja.
+6. Kad svako pitanje ima odgovor, pritisnite {t:workspace.sendAnswers}.
 
-Isti {t:workspace.yes} i {t:workspace.no} stoje i u razgovoru kad je odabran razgovor koji čeka.
+Isti {t:workspace.yes} i {t:workspace.no}, odnosno ista pitanja, stoje i u razgovoru kad je odabran razgovor koji čeka.
 
 ### Izbornik razgovora
 
@@ -148,7 +151,7 @@ Razgovore vodi sam radni prostor: za svaki drži jedan proces Claude Codea, pa n
 
 Oznaka {t:workspace.inUse} stoji uz razgovor koji radi, u radnom prostoru ili u uređivaču, a umjesto nje stanje kad agent radi ili čeka vas.
 
-Razgovor na stranici pokazuje zadnja dva vaša pitanja i sve nakon njih; {t:workspace.earlier} na vrhu dohvaća prethodna, a vaše zadnje pitanje ostaje prikovano na vrhu dok čitate ispod njega. Vaše poruke stoje desno, agentove lijevo s oblikovanjem (podebljano, kod, popisi, tablice), ono što je agentu javio sam alat (pozadinski zadatak je završio, stigla je poruka druge sesije, razgovor je sažet) kao kratak redak u sredini, a uzastopne pozive alata složene u jedan redak s brojem alata, koji se otvara klikom. Dok agent radi, razgovor se osvježava svakih pet sekundi, inače kad agent završi korak. Poruka ne ide kroz AI Ponistre: svaka je redak u bazi Ponistre, a radni prostor je predaje procesu tog razgovora, kao da ste je sami napisali. Slike idu s porukom; uz poruku sa slikama razgovor na stranici pokazuje njihov broj. Slika veća od 1568 točaka po duljoj stranici prije slanja se smanjuje. {t:workspace.yes} i {t:workspace.no} odgovaraju na dopuštenje ili pitanje koje je razgovor postavio.
+Razgovor na stranici pokazuje zadnja dva vaša pitanja i sve nakon njih; {t:workspace.earlier} na vrhu dohvaća prethodna, a vaše zadnje pitanje ostaje prikovano na vrhu dok čitate ispod njega. Vaše poruke stoje desno, agentove lijevo s oblikovanjem (podebljano, kod, popisi, tablice), ono što je agentu javio sam alat (pozadinski zadatak je završio, stigla je poruka druge sesije, razgovor je sažet) kao kratak redak u sredini, a uzastopne pozive alata složene u jedan redak s brojem alata, koji se otvara klikom. Dok agent radi, razgovor se osvježava svakih pet sekundi, inače kad agent završi korak. Poruka ne ide kroz AI Ponistre: svaka je redak u bazi Ponistre, a radni prostor je predaje procesu tog razgovora, kao da ste je sami napisali. Slike idu s porukom; uz poruku sa slikama razgovor na stranici pokazuje njihov broj. Slika veća od 1568 točaka po duljoj stranici prije slanja se smanjuje. {t:workspace.yes} i {t:workspace.no} odgovaraju na dopuštenje, a pitanja s ponuđenim odgovorima dobivaju svaki svoj odgovor: razgovor ih prima kao da ste ih odabrali u uređivaču. Obavijest na telefonu o takvom razgovoru nosi njegovo prvo pitanje i nema gumba, nego otvara razgovor.
 
 Svaki razgovor ima dva retka. U prvom su naslov, stanje i vrijeme zadnje promjene; stanje i vrijeme imaju svaki svoj stupac, jednak u cijelom popisu, pa predug naslov skraćen je trotočjem prije njih. U drugom, sitnije, stoji {t:workspace.coordinator} kad je to koordinator kruga, ime sesije kad se razlikuje od naslova i dvije mjere:
 

@@ -90,6 +90,14 @@ interface Changes {
 
 type State = 'new' | 'working' | 'background' | 'waiting' | 'idle' | 'closed';
 
+/** A question a waiting chat asks its owner, with the choices it offers. */
+interface Question {
+  question: string;
+  header: string;
+  options: { label: string; description: string }[];
+  multiSelect: boolean;
+}
+
 interface Chat {
   id: string;
   title: string;
@@ -98,6 +106,7 @@ interface Chat {
   hosted: boolean;
   state: State;
   waitingFor: string | null;
+  questions?: Question[] | null;
   context: number | null;
   model: string | null;
   changes: Changes | null;
@@ -130,6 +139,7 @@ interface Member {
   state: State;
   hosted: boolean;
   waitingFor: string | null;
+  questions?: Question[] | null;
   at: string | null;
   context: number | null;
   model: string | null;
@@ -262,6 +272,7 @@ interface Transcript {
   title: string | null;
   state: State;
   waitingFor: string | null;
+  questions?: Question[] | null;
   said: Said[];
   /** Where in the chat's transcript this page begins, null at its start. */
   earlier: number | null;
@@ -283,6 +294,7 @@ interface Known {
   state: State;
   hosted: boolean;
   waitingFor: string | null;
+  questions?: Question[] | null;
   model: string | null;
 }
 
@@ -1511,6 +1523,102 @@ function ProjectSection({
   );
 }
 
+/** What the owner answered to a chat's questions, one answer after another. */
+function answered(text: string): string {
+  try {
+    return Object.values(JSON.parse(text) as Record<string, string>).join(' · ');
+  } catch {
+    return text;
+  }
+}
+
+/** The questions a waiting chat asks, each with its choices to press, or the owner's own words,
+ * sent once each has its answer. */
+function Questions({ session, questions }: { session: string; questions: Question[] }) {
+  const { t } = useI18n();
+  const answering = useCommand();
+  const [chosen, setChosen] = useState<Record<string, string[]>>({});
+  const [own, setOwn] = useState<Record<string, string>>({});
+  const answerOf = (asked: Question) =>
+    own[asked.question]?.trim() || (chosen[asked.question] ?? []).join(', ');
+  const ready = questions.every((asked) => answerOf(asked));
+  const choose = (asked: Question, label: string) => {
+    const was = chosen[asked.question] ?? [];
+    const now = asked.multiSelect
+      ? was.includes(label)
+        ? was.filter((each) => each !== label)
+        : [...was, label]
+      : [label];
+    setChosen({ ...chosen, [asked.question]: now });
+    setOwn({ ...own, [asked.question]: '' });
+  };
+  return (
+    <form
+      className="flex flex-col gap-4 rounded border border-danger p-3"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (!ready) return;
+        const answers = Object.fromEntries(
+          questions.map((asked) => [asked.question, answerOf(asked)]),
+        );
+        answering.mutate({ kind: 'answer', session, text: JSON.stringify(answers) });
+      }}
+    >
+      {questions.map((asked) => (
+        <fieldset key={asked.question} className="flex min-w-0 flex-col gap-2">
+          <legend className="mb-2 text-sm">
+            {asked.header && (
+              <span className="mr-2 rounded bg-hover px-1.5 py-0.5 text-xs font-semibold">
+                {asked.header}
+              </span>
+            )}
+            <span className="font-medium">{asked.question}</span>
+          </legend>
+          <div className="flex flex-col gap-1.5">
+            {asked.options.map((option) => {
+              const pressed = (chosen[asked.question] ?? []).includes(option.label);
+              return (
+                <button
+                  key={option.label}
+                  type="button"
+                  aria-pressed={pressed}
+                  onClick={() => choose(asked, option.label)}
+                  className="flex min-h-11 flex-col items-start rounded border border-line px-3 py-2 text-left hover:bg-hover aria-pressed:border-accent aria-pressed:bg-selected"
+                >
+                  <span className="text-sm font-semibold">{option.label}</span>
+                  {option.description && (
+                    <span className="text-sm text-muted">{option.description}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <input
+            type="text"
+            aria-label={`${asked.question}: ${t('workspace.ownAnswer')}`}
+            placeholder={t('workspace.ownAnswer')}
+            value={own[asked.question] ?? ''}
+            onChange={(event) => {
+              setOwn({ ...own, [asked.question]: event.target.value });
+              if (event.target.value.trim()) setChosen({ ...chosen, [asked.question]: [] });
+            }}
+            className={field}
+          />
+        </fieldset>
+      ))}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="submit" disabled={!ready || answering.isPending} className={primaryButton}>
+          <Check size={16} aria-hidden />
+          {t('workspace.sendAnswers')}
+        </button>
+        {answering.isError && (
+          <span className="text-sm text-danger">{errorMessage(answering.error, t)}</span>
+        )}
+      </div>
+    </form>
+  );
+}
+
 /** Yes or No to what a waiting chat asks, pressed in its panel as the owner would. */
 function Answers({ session }: { session: string }) {
   const { t } = useI18n();
@@ -1932,7 +2040,9 @@ function Conversation({
           ) : (
             <li key={command.id} className="self-end text-xs text-muted">
               {command.kind === 'answer'
-                ? t(command.text === 'yes' ? 'workspace.yes' : 'workspace.no')
+                ? command.text === 'yes' || command.text === 'no'
+                  ? t(command.text === 'yes' ? 'workspace.yes' : 'workspace.no')
+                  : answered(command.text ?? '')
                 : command.kind === 'close' || command.kind === 'archive' || command.kind === 'stop'
                   ? t(`workspace.${command.kind}`)
                   : command.kind === 'open'
@@ -1951,12 +2061,19 @@ function Conversation({
           ),
         )}
       </ol>
-      {chat.state === 'waiting' && (
-        <div className="flex flex-wrap items-center gap-2 rounded border border-line p-2">
-          {chat.waitingFor && <span className="min-w-0 flex-1 text-sm">{chat.waitingFor}</span>}
-          <Answers session={chat.id} />
-        </div>
-      )}
+      {chat.state === 'waiting' &&
+        (chat.questions?.length ? (
+          <Questions
+            key={`${chat.id} ${chat.questions[0].question}`}
+            session={chat.id}
+            questions={chat.questions}
+          />
+        ) : (
+          <div className="flex flex-wrap items-center gap-2 rounded border border-line p-2">
+            {chat.waitingFor && <span className="min-w-0 flex-1 text-sm">{chat.waitingFor}</span>}
+            <Answers session={chat.id} />
+          </div>
+        ))}
       <form
         className="flex flex-col gap-2"
         onSubmit={(event) => {
@@ -2057,7 +2174,7 @@ function ModelChoice({ chat, models }: { chat: Known; models: Model[] }) {
 
 /** The chats that wait on their owner, answered here; nothing while none waits. */
 function Waiting({ known, onChoose }: { known: Map<string, Known>; onChoose: Choose }) {
-  const { t } = useI18n();
+  const { t, formatNumber } = useI18n();
   const waiting = [...known.values()].filter((chat) => chat.state === 'waiting');
   if (!waiting.length) return null;
   return (
@@ -2076,10 +2193,22 @@ function Waiting({ known, onChoose }: { known: Map<string, Known>; onChoose: Cho
                 {titled(chat.project) ?? t('workspace.general')}
               </span>
             </button>
-            {chat.waitingFor && <p className="mt-1 text-sm">{chat.waitingFor}</p>}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <Answers session={chat.id} />
-            </div>
+            {chat.questions?.length ? (
+              <button
+                type="button"
+                onClick={() => onChoose(chat.id)}
+                className="mt-1 block text-left text-sm text-danger hover:text-accent"
+              >
+                {t('workspace.questions').replace('{count}', formatNumber(chat.questions.length))}
+              </button>
+            ) : (
+              <>
+                {chat.waitingFor && <p className="mt-1 text-sm">{chat.waitingFor}</p>}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Answers session={chat.id} />
+                </div>
+              </>
+            )}
           </li>
         ))}
       </ul>
@@ -2101,6 +2230,7 @@ function knownOf(projects: Project[]): Map<string, Known> {
           state: member.state,
           hosted: member.hosted,
           waitingFor: member.waitingFor,
+          questions: member.questions ?? null,
           model: member.model ?? null,
         });
       }
@@ -2114,6 +2244,7 @@ function knownOf(projects: Project[]): Map<string, Known> {
         state: chat.state,
         hosted: chat.hosted,
         waitingFor: chat.waitingFor,
+        questions: chat.questions ?? null,
         model: chat.model,
       });
     }
@@ -2279,6 +2410,12 @@ function Pult({
     if (askedView) setView(askedView);
   }, [askedView]);
   const [picked, setPicked] = useState<string | null>(null);
+  useEffect(() => {
+    const askedChat = asked.get('chat');
+    if (!askedChat) return;
+    setPicked(askedChat);
+    setView('chat');
+  }, [asked]);
   const [terminal, setTerminal] = useState<{ folder: string; name: string } | null>(null);
   const [files, setFiles] = useState<{ folder: string; name: string } | null>(null);
   const [filesDirty, setFilesDirty] = useState(false);

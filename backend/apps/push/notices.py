@@ -8,6 +8,7 @@ import uuid
 from collections.abc import Callable
 from datetime import timedelta
 from logging import getLogger
+from urllib.parse import quote
 
 import httpx2
 from django.db import transaction
@@ -280,7 +281,7 @@ def worded(notice: Notice, language: str, waiting: int) -> dict:
                     else name
                 )
             elif event == "waiting":
-                body = f"{project}: {data['chat']}"
+                body = f"{project}: {data.get('question') or data['chat']}"
             elif event in ("said", "asks"):
                 body = f"{project}: {data['text'] or data['chat']}"
             elif event in ("ready", "consolidated"):
@@ -289,7 +290,12 @@ def worded(notice: Notice, language: str, waiting: int) -> dict:
                 body = words["code_failed"].format(project=project, count=data["failed"])
             else:
                 body = project
-            url = "/workspace?view=memory" if event in ("memory", "advice") else "/workspace"
+            if event in ("memory", "advice"):
+                url = "/workspace?view=memory"
+            elif event in ANSWERED:
+                url = f"/workspace?chat={quote(data['session'])}"
+            else:
+                url = "/workspace"
             yes_no = [
                 {"action": "yes", "title": words["code_yes"]},
                 {"action": "no", "title": words["code_no"]},
@@ -297,7 +303,8 @@ def worded(notice: Notice, language: str, waiting: int) -> dict:
             # A memory's proposal is accepted or rejected where the notification says (MEM5).
             if event == "memory" and data.get("proposal"):
                 answers = {"answer": f"/api/memory/proposals/{data['proposal']}", "actions": yes_no}
-            if event in ANSWERED:
+            # A question's choices are made on the page, in the chat that asks it.
+            if event in ANSWERED and not data.get("question"):
                 answers = {"session": data["session"], "actions": yes_no}
         case _:
             raise ValueError(f"unknown notice kind {notice.kind!r}")
