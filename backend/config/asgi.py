@@ -1,4 +1,6 @@
+import logging
 import os
+import signal
 from contextlib import suppress
 
 from anyio import create_task_group
@@ -96,36 +98,45 @@ async def lifespan(receive, send) -> None:
     await database(interrupted)()
     await database(jobs_interrupted)()
     await database(mail_interrupted)()
-    async with collab, agents.server.session_manager.run(), create_task_group() as background:
-        background.start_soon(keep)
-        background.start_soon(live.listen)
-        background.start_soon(extract)
-        background.start_soon(recognise)
-        background.start_soon(draw)
-        background.start_soon(collecting)
-        background.start_soon(links.follow)
-        background.start_soon(edit)
-        background.start_soon(follow)
-        background.start_soon(words)
-        background.start_soon(paginate)
-        background.start_soon(batches)
-        background.start_soon(work)
-        background.start_soon(nightly)
-        background.start_soon(offsite)
-        background.start_soon(mail)
-        background.start_soon(later)
-        background.start_soon(contacts)
-        background.start_soon(calendars)
-        background.start_soon(shares)
-        background.start_soon(drives)
-        background.start_soon(deliver)
-        background.start_soon(address.follow)
-        background.start_soon(health)
-        background.start_soon(directories)
-        background.start_soon(sweeping)
-        background.start_soon(memory)
-        background.start_soon(timesheets)
-        await send({"type": "lifespan.startup.complete"})
-        await receive()
-        background.cancel_scope.cancel()
+    try:
+        async with collab, agents.server.session_manager.run(), create_task_group() as background:
+            background.start_soon(keep)
+            background.start_soon(live.listen)
+            background.start_soon(extract)
+            background.start_soon(recognise)
+            background.start_soon(draw)
+            background.start_soon(collecting)
+            background.start_soon(links.follow)
+            background.start_soon(edit)
+            background.start_soon(follow)
+            background.start_soon(words)
+            background.start_soon(paginate)
+            background.start_soon(batches)
+            background.start_soon(work)
+            background.start_soon(nightly)
+            background.start_soon(offsite)
+            background.start_soon(mail)
+            background.start_soon(later)
+            background.start_soon(contacts)
+            background.start_soon(calendars)
+            background.start_soon(shares)
+            background.start_soon(drives)
+            background.start_soon(deliver)
+            background.start_soon(address.follow)
+            background.start_soon(health)
+            background.start_soon(directories)
+            background.start_soon(sweeping)
+            background.start_soon(memory)
+            background.start_soon(timesheets)
+            await send({"type": "lifespan.startup.complete"})
+            await receive()
+            background.cancel_scope.cancel()
+    except Exception:
+        # uvicorn keeps serving after the lifespan fails, with live changes, mail, jobs and the
+        # agents' server gone; ending the process lets the container start them all again.
+        logging.getLogger(__name__).critical(
+            "background loops ended, stopping the server", exc_info=True
+        )
+        os.kill(os.getpid(), signal.SIGTERM)
+        raise
     await send({"type": "lifespan.shutdown.complete"})

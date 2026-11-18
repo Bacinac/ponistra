@@ -14,6 +14,6 @@
     "frontend/src/network.tsx#NetworkPage": "7cc4aa1dfa73",
     "backend/apps/network/views.py#network": "76dfbdc7dc84",
     "backend/apps/network/address.py#reached": "c261935e2aa5",
-    "backend/apps/network/address.py#follow": "39f225aca64f"
+    "backend/apps/network/address.py#follow": "0ef43ab625de"
   }
 }

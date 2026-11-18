@@ -135,8 +135,8 @@ async def follow() -> None:
         return
     pointed = None
     while True:
-        token = await to_thread.run_sync(lambda: opened(setting()))
         try:
+            token = await to_thread.run_sync(lambda: opened(setting()))
             if token:
                 address = await to_thread.run_sync(public)
                 if (address, token) != pointed:
