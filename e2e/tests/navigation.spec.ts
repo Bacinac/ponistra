@@ -339,12 +339,14 @@ test('a page that outlives its release takes the new one at the next page it goe
   page,
 }) => {
   let release = '1.0.0';
+  let told = '';
   let socket: WebSocketRoute | undefined;
   await page.routeWebSocket('**/api/live', (route) => {
     socket = route;
     const server = route.connectToServer();
     server.onMessage((text) => {
       const message = JSON.parse(String(text));
+      if (message.type === 'state') told = release;
       route.send(JSON.stringify(message.type === 'state' ? { ...message, release } : message));
     });
   });
@@ -363,7 +365,8 @@ test('a page that outlives its release takes the new one at the next page it goe
 
   release = '1.0.1';
   await socket!.close();
-  await page.waitForTimeout(1500);
+  await expect.poll(() => told, { timeout: 30_000 }).toBe('1.0.1');
+  await page.waitForTimeout(500);
   expect(reloaded).toBe(false);
   await main.getByRole('link', { name: 'Pošta' }).click();
   await expect.poll(() => reloaded).toBe(true);

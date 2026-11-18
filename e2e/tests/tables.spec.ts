@@ -1329,6 +1329,7 @@ test('a comment on a cell marks the cell, leads back to it from the panel and is
 
   await page.reload();
   await expect(thread).toContainText('Montaža je 300 EUR.');
+  await table.scrollIntoViewIfNeeded();
   await expect(mark).toHaveCount(1);
   await cellAt(table, 'A1').click();
   await expect(thread).not.toHaveAttribute('aria-current', 'true');
