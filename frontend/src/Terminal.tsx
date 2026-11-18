@@ -4,6 +4,7 @@ import '@xterm/xterm/css/xterm.css';
 import { RotateCcw, X } from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { postJson, unavailable } from './api';
+import { clipboardHeld } from './clipboard';
 import { useI18n } from './i18n';
 import { useHeldRelease } from './release';
 import { button, iconButton } from './styles';
@@ -209,10 +210,10 @@ export function TerminalPanel({
         );
         terminal.clearSelection();
       } else
-        navigator.clipboard.readText().then(
-          (text) => {
+        clipboardHeld().then(
+          ({ text }) => {
             setRefused(null);
-            terminal.paste(text);
+            if (text) terminal.paste(text);
           },
           () => setRefused('paste'),
         );

@@ -1,5 +1,23 @@
+// A right click on a window just brought forward reads the clipboard before the window holds the
+// focus, or on Windows while the program that copied still holds it, and the browser refuses or
+// reads nothing; a moment later it reads what was copied.
+const ATTEMPTS = 4;
+const APART = 100;
+
 /** What the clipboard holds: its text, or the images on it when it holds no text. */
 export async function clipboardHeld(): Promise<{ text: string; files: File[] }> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const held = await read();
+      if (held.text || held.files.length || attempt === ATTEMPTS) return held;
+    } catch (error) {
+      if (attempt === ATTEMPTS) throw error;
+    }
+    await new Promise((resume) => setTimeout(resume, APART));
+  }
+}
+
+async function read() {
   const items = await navigator.clipboard.read();
   for (const item of items)
     if (item.types.includes('text/plain'))

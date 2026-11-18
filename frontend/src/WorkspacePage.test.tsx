@@ -873,7 +873,7 @@ test('a right click pastes into the message where the caret stands, and says whe
   (field as HTMLTextAreaElement).setSelectionRange(6, 6);
   fireEvent.contextMenu(field);
   await waitFor(() => expect(field).toHaveProperty('value', 'Ovdje lijepim tekst'));
-  read.mockRejectedValueOnce(new Error('NotAllowedError'));
+  read.mockRejectedValue(new Error('NotAllowedError'));
   fireEvent.contextMenu(field);
   await within(chat).findByText(/Preglednik ne dopušta Ponistri čitanje međuspremnika/);
 });

@@ -65,7 +65,7 @@
     "backend/apps/workspace/views.py#_pictures": "fcf96c92311e",
     "frontend/src/workspaceLimits.tsx#Limits": "2a9fdad03777",
     "backend/apps/workspace/notices.py#limited": "829a5935d580",
-    "frontend/src/Terminal.tsx#TerminalPanel": "eb54f58c4dc9",
+    "frontend/src/Terminal.tsx#TerminalPanel": "a9ac47aeb26d",
     "backend/apps/workspace/terminal.py": "168b0ec7e57c",
     "backend/apps/workspace/views.py#terminal": "4d63434c87e9",
     "workspace/terminal.mjs": "288446363486",
