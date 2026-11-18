@@ -9,7 +9,7 @@ Na stranici {t:auth.title} ulazite u Ponistru lozinkom ili pristupnim ključem, 
 1. Otvorite adresu svoje instalacije. Dok niste prijavljeni, prikazuje se stranica {t:auth.title}.
 2. Upišite {t:auth.email} i {t:auth.password}, pa pritisnite {t:auth.signIn}. Dok traje, gumb prikazuje: {t:auth.signingIn}
 3. Ako ste dodali [aplikaciju za autentifikaciju](help:account/authenticator) ili instalacija traži drugi korak, otvara se {t:auth.secondTitle} i traži kôd iz aplikacije ili pristupni ključ.
-4. Umjesto lozinke možete pritisnuti {t:auth.passkey} i potvrditi otiskom prsta, licem ili PIN-om uređaja. Dok način prijave nije odabran, pristupni ključevi spremljeni na uređaju nude se i ispod polja za e-poštu čim ga otvorite. Kad je administrator prijavu pristupnim ključem isključio, stranica je ne nudi.
+4. Osim kad je kao način prijave odabrana lozinka, umjesto lozinke možete pritisnuti {t:auth.passkey} i potvrditi otiskom prsta, licem ili PIN-om uređaja. Dok način prijave nije odabran, pristupni ključevi spremljeni na uređaju nude se i ispod polja za e-poštu čim ga otvorite. Kad je administrator prijavu pristupnim ključem isključio, stranica je ne nudi.
 5. Ako je administrator povezao izdavatelja prijave organizacije, stranica nudi i gumb s njegovim nazivom. Pritisnite ga, prijavite se kod izdavatelja i preglednik se vraća u Ponistru prijavljen.
 
 ### Način prijave
@@ -17,6 +17,7 @@ Na stranici {t:auth.title} ulazite u Ponistru lozinkom ili pristupnim ključem, 
 1. U Postavkama otvorite {t:settings.signIn}; {t:signIn.choice} je na vrhu.
 2. Odaberite {t:signIn.none}, {t:password.title} ili {t:signIn.passkey}. {t:signIn.passkey} se ne nudi kad je prijava pristupnim ključem isključena.
 3. Kad je odabran pristupni ključ, stranica prijave nudi samo gumb {t:auth.passkey}. Za prijavu lozinkom na njoj pritisnite {t:auth.withPassword}.
+4. Kad je odabrana lozinka, stranica prijave ne nudi pristupni ključ.
 
 ### Odjava
 
@@ -25,7 +26,7 @@ Na stranici {t:auth.title} ulazite u Ponistru lozinkom ili pristupnim ključem, 
 
 ## Kako radi
 
-Način prijave određuje samo što stranica prijave pokazuje prvo, ne i što je dopušteno. Račun ga pamti za sve uređaje, a preglednik čuva kopiju za stranicu prijave, koja ga tako zna i prije nego što se prijavite. {t:signIn.passkey} može se odabrati tek kad imate barem jedan pristupni ključ. Kad uklonite posljednji, izbor se vraća na {t:signIn.none}.
+Način prijave određuje samo što stranica prijave nudi, ne i što je dopušteno. Račun ga pamti za sve uređaje, a preglednik čuva kopiju za stranicu prijave, koja ga tako zna i prije nego što se prijavite. {t:signIn.passkey} može se odabrati tek kad imate barem jedan pristupni ključ. Kad uklonite posljednji, izbor se vraća na {t:signIn.none}.
 
 Ako potvrda na uređaju odmah nakon pritiska na {t:auth.passkey} ne uspije zato što uređaj još zatvara ponudu ispod polja za e-poštu, Ponistra je jednom sama ponovi.
 

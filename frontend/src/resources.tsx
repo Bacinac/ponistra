@@ -135,7 +135,6 @@ function Inventory({ resources }: { resources: Resource[] }) {
       }
     >
       <div className="flex w-full max-w-5xl flex-col gap-4">
-        <p className="text-sm text-muted">{t('resources.note')}</p>
         {remove.isError && <p className="text-sm text-danger">{errorMessage(remove.error, t)}</p>}
         {resources.length === 0 ? (
           <p className="text-sm text-muted">{t('resources.none')}</p>

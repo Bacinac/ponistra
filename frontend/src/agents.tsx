@@ -7,8 +7,9 @@ import { useSession } from './auth';
 import { ConfirmDialog } from './dialogs';
 import { Loading, Lobby } from './frame';
 import { useI18n } from './i18n';
+import { Headed, inline, inlineField } from './headed';
 import { ActionsMenu, MenuItem } from './menu';
-import { button, field, primaryButton } from './styles';
+import { button, compactField, primaryButton } from './styles';
 import { errorMessage } from './tree';
 import { CopyButton } from './vault/parts';
 
@@ -126,6 +127,7 @@ export function Agents() {
   const queryClient = useQueryClient();
   const [removing, setRemoving] = useState<Agent | null>(null);
   const [name, setName] = useState('');
+  const [open, setOpen] = useState(false);
   const [made, setMade] = useState<string | null>(null);
   const kept = useQuery({
     queryKey: AGENTS,
@@ -143,6 +145,7 @@ export function Agents() {
       postJson<Agent & { secret: string }>('/api/agents/keys', { name: named }),
     onSuccess: ({ secret }) => {
       setName('');
+      setOpen(false);
       setMade(secret);
       queryClient.invalidateQueries({ queryKey: AGENTS });
     },
@@ -158,95 +161,123 @@ export function Agents() {
     make.mutate(name);
   }
   return (
-    <>
-      <p className="text-sm">{t('agents.intro')}</p>
+    <div className="flex max-w-2xl flex-col gap-8">
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
       {kept.data && (
-        <div className="flex flex-col gap-1 text-sm">
-          <span className="text-muted">{t('agents.url')}</span>
-          <div className="flex items-center gap-2">
+        <Headed heading={t('agents.url')}>
+          <div className="flex items-center gap-2 text-sm">
             <code className="min-w-0 flex-1 rounded border border-line bg-panel px-3 py-2 font-mono break-all select-all">
               {kept.data.url}
             </code>
             <CopyButton text={kept.data.url} label={t('agents.copy')} />
           </div>
-          <span className="text-muted">{t('agents.how')}</span>
-        </div>
+        </Headed>
       )}
-      {command && (
-        <div className="flex flex-col gap-1 text-sm">
-          <span className="text-muted">{t('agents.keyOnce')}</span>
-          <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 rounded border border-line bg-panel px-3 py-2 font-mono break-all select-all">
-              {command}
-            </code>
-            <CopyButton text={command} label={t('agents.copyCommand')} />
+      <Headed
+        heading={t('agents.title')}
+        action={
+          !open && (
+            <button
+              type="button"
+              onClick={() => {
+                make.reset();
+                setOpen(true);
+              }}
+              className={button}
+            >
+              {t('agents.newKey')}
+            </button>
+          )
+        }
+      >
+        {open && (
+          <form onSubmit={submit} className={inline}>
+            <label className={inlineField}>
+              {t('agents.keyName')}
+              <input
+                required
+                autoFocus
+                maxLength={200}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className={compactField}
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setName('');
+              }}
+              className={button}
+            >
+              {t('tree.cancel')}
+            </button>
+            <button type="submit" disabled={make.isPending} className={primaryButton}>
+              {t('agents.makeKey')}
+            </button>
+          </form>
+        )}
+        {command && (
+          <div className="flex flex-col gap-1 text-sm">
+            <span className="text-muted">{t('agents.keyOnce')}</span>
+            <div className="flex items-center gap-2">
+              <code className="min-w-0 flex-1 rounded border border-line bg-panel px-3 py-2 font-mono break-all select-all">
+                {command}
+              </code>
+              <CopyButton text={command} label={t('agents.copyCommand')} />
+            </div>
           </div>
-        </div>
-      )}
-      <form onSubmit={submit} className="flex flex-col gap-2">
-        <label className="flex flex-col gap-1 text-sm">
-          {t('agents.keyName')}
-          <input
-            required
-            maxLength={200}
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className={field}
-          />
-        </label>
-        <div className="flex justify-end">
-          <button type="submit" disabled={make.isPending} className={primaryButton}>
-            {t('agents.newKey')}
-          </button>
-        </div>
-      </form>
-      {kept.data?.clients.length === 0 && <p className="text-sm">{t('agents.none')}</p>}
-      {!!kept.data?.clients.length && (
-        <table className="w-full border-collapse">
-          <thead className="text-left text-sm text-muted">
-            <tr className="border-b border-line">
-              <th className="w-full px-2 py-2 font-normal">{t('agents.client')}</th>
-              <th className="hidden px-2 py-2 font-normal sm:table-cell">
-                {t('agents.connected')}
-              </th>
-              <th className="px-2 py-2 font-normal whitespace-nowrap">{t('agents.used')}</th>
-              <th className="w-10" />
-            </tr>
-          </thead>
-          <tbody>
-            {kept.data.clients.map((agent) => (
-              <tr key={agent.id} className="border-b border-line">
-                <td className={`${cell} max-w-0`}>
-                  <p className="flex items-center gap-2 truncate">
-                    {agent.key ? (
-                      <KeyRound size={16} aria-hidden className="shrink-0 text-muted" />
-                    ) : (
-                      <Bot size={16} aria-hidden className="shrink-0 text-muted" />
-                    )}
-                    {agent.key === 'workspace' ? t('agents.workspaceKey') : agent.client}
-                  </p>
-                </td>
-                <td className={`${cell} hidden text-sm whitespace-nowrap text-muted sm:table-cell`}>
-                  {formatDate(agent.created_at)}
-                </td>
-                <td className={`${cell} text-sm whitespace-nowrap text-muted`}>
-                  {agent.used_at ? formatDate(agent.used_at) : t('users.never')}
-                </td>
-                <td className="pr-2">
-                  <ActionsMenu>
-                    <MenuItem
-                      icon={Trash2}
-                      label={t('agents.revoke')}
-                      onSelect={() => setRemoving(agent)}
-                    />
-                  </ActionsMenu>
-                </td>
+        )}
+        {kept.data?.clients.length === 0 && <p className="text-sm">{t('agents.none')}</p>}
+        {!!kept.data?.clients.length && (
+          <table className="w-full border-collapse">
+            <thead className="text-left text-sm text-muted">
+              <tr className="border-b border-line">
+                <th className="w-full px-2 py-2 font-normal">{t('agents.client')}</th>
+                <th className="hidden px-2 py-2 font-normal sm:table-cell">
+                  {t('agents.connected')}
+                </th>
+                <th className="px-2 py-2 font-normal whitespace-nowrap">{t('agents.used')}</th>
+                <th className="w-10" />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </thead>
+            <tbody>
+              {kept.data.clients.map((agent) => (
+                <tr key={agent.id} className="border-b border-line">
+                  <td className={`${cell} max-w-0`}>
+                    <p className="flex items-center gap-2 truncate">
+                      {agent.key ? (
+                        <KeyRound size={16} aria-hidden className="shrink-0 text-muted" />
+                      ) : (
+                        <Bot size={16} aria-hidden className="shrink-0 text-muted" />
+                      )}
+                      {agent.key === 'workspace' ? t('agents.workspaceKey') : agent.client}
+                    </p>
+                  </td>
+                  <td
+                    className={`${cell} hidden text-sm whitespace-nowrap text-muted sm:table-cell`}
+                  >
+                    {formatDate(agent.created_at)}
+                  </td>
+                  <td className={`${cell} text-sm whitespace-nowrap text-muted`}>
+                    {agent.used_at ? formatDate(agent.used_at) : t('users.never')}
+                  </td>
+                  <td className="pr-2">
+                    <ActionsMenu>
+                      <MenuItem
+                        icon={Trash2}
+                        label={t('agents.revoke')}
+                        onSelect={() => setRemoving(agent)}
+                      />
+                    </ActionsMenu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Headed>
       {removing && (
         <ConfirmDialog
           heading={t('agents.revokeTitle')}
@@ -260,6 +291,6 @@ export function Agents() {
           {t('agents.revokeWarning')}
         </ConfirmDialog>
       )}
-    </>
+    </div>
   );
 }

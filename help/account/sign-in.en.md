@@ -9,7 +9,7 @@ On the {t:auth.title} page you enter Ponistra with a password or a passkey, and 
 1. Open your installation's address. While you are not signed in, the {t:auth.title} page shows.
 2. Type {t:auth.email} and {t:auth.password}, then press {t:auth.signIn}. Meanwhile the button shows: {t:auth.signingIn}
 3. If you added an [authenticator app](help:account/authenticator) or the installation asks for a second step, {t:auth.secondTitle} opens and asks for a code from the app or a passkey.
-4. Instead of a password you can press {t:auth.passkey} and confirm with a fingerprint, face or the device's PIN. While no sign-in method is chosen, passkeys kept on the device are also offered below the email field as soon as you open it. When the administrator has turned signing in with a passkey off, the page does not offer it.
+4. Unless the password is chosen as the sign-in method, you can press {t:auth.passkey} instead of a password and confirm with a fingerprint, face or the device's PIN. While no sign-in method is chosen, passkeys kept on the device are also offered below the email field as soon as you open it. When the administrator has turned signing in with a passkey off, the page does not offer it.
 5. If an administrator has connected the organisation's sign-in provider, the page also offers a button with its name. Press it, sign in at the provider, and the browser comes back to Ponistra signed in.
 
 ### Sign-in method
@@ -17,6 +17,7 @@ On the {t:auth.title} page you enter Ponistra with a password or a passkey, and 
 1. In Settings open {t:settings.signIn}; {t:signIn.choice} is at the top.
 2. Choose {t:signIn.none}, {t:password.title} or {t:signIn.passkey}. {t:signIn.passkey} is not offered when signing in with a passkey is off.
 3. With the passkey chosen, the sign-in page offers only the {t:auth.passkey} button. To sign in with a password there, press {t:auth.withPassword}.
+4. With the password chosen, the sign-in page offers no passkey.
 
 ### Signing out
 
@@ -25,7 +26,7 @@ On the {t:auth.title} page you enter Ponistra with a password or a passkey, and 
 
 ## How it works
 
-The sign-in method decides only what the sign-in page shows first, not what is allowed. The account keeps it for every device, and the browser keeps a copy for the sign-in page, which thus knows it before you sign in. {t:signIn.passkey} can be chosen only once you have at least one passkey. When you remove the last one, the choice goes back to {t:signIn.none}.
+The sign-in method decides only what the sign-in page offers, not what is allowed. The account keeps it for every device, and the browser keeps a copy for the sign-in page, which thus knows it before you sign in. {t:signIn.passkey} can be chosen only once you have at least one passkey. When you remove the last one, the choice goes back to {t:signIn.none}.
 
 If the confirmation on the device fails straight after pressing {t:auth.passkey} because the device is still closing the offer below the email field, Ponistra asks once more by itself.
 

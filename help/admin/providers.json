@@ -5,7 +5,6 @@
     "route:/providers"
   ],
   "quiet": [
-    "providers.intro",
     "providers.google.note",
     "providers.microsoft.note",
     "providers.endsSoon",
@@ -14,9 +13,9 @@
     "providers.secretReplace"
   ],
   "describes": {
-    "frontend/src/providers.tsx#ClientForm": "8ee77438366c",
+    "frontend/src/providers.tsx#ClientForm": "9e4937b2923b",
     "frontend/src/providers.tsx#endsSoon": "83de0f47565a",
-    "frontend/src/providers.tsx#ProvidersPage": "5915e5fd5201",
+    "frontend/src/providers.tsx#ProvidersPage": "8027380633e8",
     "backend/apps/mail/views.py#client": "a5c1d2125262"
   }
 }

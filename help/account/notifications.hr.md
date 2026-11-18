@@ -15,7 +15,7 @@ Ponistra javlja novu poštu, poruku koja nije otišla u zakazano vrijeme, poruku
 ### Instalirana aplikacija
 
 1. Pod {t:notifications.installTitle} pritisnite {t:notifications.install} ako ga preglednik nudi.
-2. Ako ga ne nudi, instalirajte aplikaciju iz izbornika preglednika, kako stranica opisuje.
+2. Ako ga ne nudi, stranica ne prikazuje {t:notifications.installTitle}; instalirajte aplikaciju iz izbornika preglednika: Chrome i Edge „Instaliraj aplikaciju”, Safari „Dijeli → Dodaj u Dock” ili „Dodaj na početni zaslon”.
 3. Kad je aplikacija instalirana, piše: {t:notifications.installed}
 
 ### Drugi preglednici

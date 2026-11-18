@@ -7,7 +7,7 @@ Kad je oporavak sefova uključen, administrator može korisniku koji je zaboravi
 ### Uključivanje
 
 1. Izradite i otključajte svoj sef.
-2. Na stranici {t:users.title}, u odjeljku {t:recovery.title}, gdje piše {t:recovery.off} pritisnite {t:recovery.turnOn}.
+2. Na stranici {t:users.title}, u odjeljku {t:recovery.title}, gdje piše {t:recovery.off} pritisnite {t:recovery.turnOn} desno od naslova.
 3. Drugog administratora koji ima sef, a nalazi se pod {t:recovery.waiting}, potvrdite gumbom {t:vault.confirm}.
 
 ### Oporavak sefa korisnika

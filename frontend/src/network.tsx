@@ -92,7 +92,7 @@ function NetworkView({ network }: { network: Network }) {
   const { t } = useI18n();
   const { udp, tcp } = network.ports;
   return (
-    <div className="flex w-full max-w-xl flex-col gap-6">
+    <div className="flex w-full max-w-2xl flex-col gap-8">
       <Section heading={t('network.meetings')}>
         <Rows
           rows={[

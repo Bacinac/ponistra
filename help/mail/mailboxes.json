@@ -11,7 +11,7 @@
     "backend/apps/mail/views.py#mailbox": "1df2eaa9e9b1",
     "backend/apps/mail/views.py#mailbox_grants": "51dd1a684063",
     "backend/apps/mail/opened.py#noted": "ae7f798c5ee1",
-    "frontend/src/mailShared.tsx#Mailboxes": "b2913e4c0088",
+    "frontend/src/mailShared.tsx#Mailboxes": "ea2428061db9",
     "frontend/src/mailShared.tsx#MailboxLinks": "bc7d8aadbb75",
     "frontend/src/mailShared.tsx#BoxLinks": "11c9ce7d89bb",
     "backend/apps/users/erasure.py#erase": "c85041015655",

@@ -16,6 +16,7 @@ import { deleteJson, getJson, patchJson, postJson } from './api';
 import { ConfirmDialog, Modal, NameDialog } from './dialogs';
 import { Loading } from './frame';
 import { useI18n } from './i18n';
+import { Headed } from './headed';
 import type { MessageKey } from './i18n/hr';
 import { BoxContext, type Mailbox, useAccounts, useBox } from './mailData';
 import { RemoveButton } from './mailParts';
@@ -248,19 +249,20 @@ export function Mailboxes({ accounts }: { accounts: () => ReactNode }) {
   const [making, setMaking] = useState(false);
   if (!listed.data) return listed.isError ? null : <Loading />;
   return (
-    <section aria-label={t('mail.mailboxes')} className="flex flex-col gap-4">
-      <h2 className="font-semibold">{t('mail.mailboxes')}</h2>
+    <Headed
+      heading={t('mail.mailboxes')}
+      action={
+        <button type="button" onClick={() => setMaking(true)} className={button}>
+          <Users size={16} aria-hidden />
+          {t('mail.mailboxNew')}
+        </button>
+      }
+    >
       {listed.data.mailboxes.map((mailbox) => (
         <BoxContext key={mailbox.id} value={mailbox.id}>
           <MailboxRow mailbox={mailbox}>{accounts()}</MailboxRow>
         </BoxContext>
       ))}
-      <div>
-        <button type="button" onClick={() => setMaking(true)} className={button}>
-          <Users size={16} aria-hidden />
-          {t('mail.mailboxNew')}
-        </button>
-      </div>
       {making && (
         <NameDialog
           heading={t('mail.mailboxNew')}
@@ -273,6 +275,6 @@ export function Mailboxes({ accounts }: { accounts: () => ReactNode }) {
           onClose={() => setMaking(false)}
         />
       )}
-    </section>
+    </Headed>
   );
 }

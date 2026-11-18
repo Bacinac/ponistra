@@ -364,7 +364,6 @@ export function SignatureDialog({ account, onClose }: { account: Account; onClos
           rows={6}
           autoFocus
         />
-        <p className="text-sm text-muted">{t('mail.signatureHint')}</p>
         {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
         <div className="flex justify-end gap-2">
           <Cancel />
@@ -437,7 +436,6 @@ export function AccountDialog({
   return (
     <Modal heading={t(account ? 'mail.edit' : 'mail.connectTitle')} onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-3">
-        {!account && <p className="text-sm text-muted">{t('mail.connectNote')}</p>}
         {!account && <Providers known={known} returned={returned} />}
         <Labelled label={t('mail.address')}>
           {(id) => (

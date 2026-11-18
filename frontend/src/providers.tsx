@@ -8,6 +8,7 @@ import { ConfirmDialog, Labelled } from './dialogs';
 import { Loaded } from './frame';
 import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
+import { Headed } from './headed';
 import { button, field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
 import { ACCOUNTS, type Provider } from './mailData';
@@ -45,6 +46,7 @@ function endsSoon(expires: string | null): boolean {
 function ClientForm({ client }: { client: Client }) {
   const { t, formatDate } = useI18n();
   const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
   const [clientId, setClientId] = useState(client.client_id);
   const [secret, setSecret] = useState('');
   const [expires, setExpires] = useState(client.expires ?? '');
@@ -62,6 +64,7 @@ function ClientForm({ client }: { client: Client }) {
       }),
     onSuccess: () => {
       setSecret('');
+      setOpen(false);
       changed();
     },
   });
@@ -76,6 +79,13 @@ function ClientForm({ client }: { client: Client }) {
   });
   const kept = client.hint !== '' && !client.lost;
   const failure = save.error ?? remove.error;
+  const close = () => {
+    setOpen(false);
+    setClientId(client.client_id);
+    setSecret('');
+    setExpires(client.expires ?? '');
+    save.reset();
+  };
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -83,99 +93,117 @@ function ClientForm({ client }: { client: Client }) {
   }
 
   return (
-    <>
-      <form onSubmit={submit} className="flex flex-col gap-3 rounded-lg border border-line p-4">
-        <h2 className="text-base font-semibold">{t(`providers.${client.provider}`)}</h2>
-        <p className="text-sm text-muted">{t(`providers.${client.provider}.note`)}</p>
-        <Labelled label={t('providers.redirect')}>
-          {(id) => (
-            <div className="flex items-center gap-1">
-              <input
-                id={id}
-                readOnly
-                value={client.redirect}
-                onFocus={(event) => event.target.select()}
-                className={field}
-              />
-              <button
-                type="button"
-                aria-label={t('providers.copy')}
-                title={t('providers.copy')}
-                onClick={() => void navigator.clipboard.writeText(client.redirect)}
-                className={iconButton}
-              >
-                <Copy size={16} aria-hidden />
+    <section
+      aria-label={t(`providers.${client.provider}`)}
+      className="flex flex-col gap-2 border-b border-line pb-3"
+    >
+      <div className="flex min-h-9 flex-wrap items-center justify-between gap-2">
+        <h3 className="font-medium">{t(`providers.${client.provider}`)}</h3>
+        {!open && (
+          <div className="flex gap-2">
+            {client.client_id && (
+              <button type="button" onClick={() => setRemoving(true)} className={button}>
+                {t('providers.remove')}
               </button>
-            </div>
-          )}
-        </Labelled>
-        <Labelled label={t('providers.clientId')}>
-          {(id) => (
-            <input
-              id={id}
-              required
-              maxLength={255}
-              spellCheck={false}
-              value={clientId}
-              onChange={(event) => setClientId(event.target.value)}
-              className={field}
-            />
-          )}
-        </Labelled>
-        <Labelled label={t('providers.secret')}>
-          {(id) => (
-            <input
-              id={id}
-              type="password"
-              required={!kept}
-              autoComplete="new-password"
-              spellCheck={false}
-              value={secret}
-              placeholder={kept ? t('providers.secretReplace') : undefined}
-              onChange={(event) => setSecret(event.target.value)}
-              className={field}
-            />
-          )}
-        </Labelled>
-        {kept && (
-          <p className="-mt-2 text-xs text-muted">
-            {t('providers.secretKept')} …{client.hint}
-          </p>
+            )}
+            <button type="button" onClick={() => setOpen(true)} className={button}>
+              {t(client.client_id ? 'providers.change' : 'providers.setUp')}
+            </button>
+          </div>
         )}
-        {client.lost && <p className="text-sm text-danger">{t('providers.secretLost')}</p>}
-        {client.provider === 'microsoft' && (
-          <Labelled label={t('providers.expires')}>
+      </div>
+      <p className="text-sm text-muted">
+        {client.client_id
+          ? [
+              `${t('providers.clientId')}: ${client.client_id}`,
+              kept && `${t('providers.secretKept')} …${client.hint}`,
+              client.changed_at && `${t('providers.changed')}: ${formatDate(client.changed_at)}`,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          : t('providers.none')}
+      </p>
+      {client.lost && <p className="text-sm text-danger">{t('providers.secretLost')}</p>}
+      {endsSoon(client.expires) && <p className="text-sm text-danger">{t('providers.endsSoon')}</p>}
+      {open && (
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <p className="text-sm text-muted">{t(`providers.${client.provider}.note`)}</p>
+          <Labelled label={t('providers.redirect')}>
+            {(id) => (
+              <div className="flex items-center gap-1">
+                <input
+                  id={id}
+                  readOnly
+                  value={client.redirect}
+                  onFocus={(event) => event.target.select()}
+                  className={field}
+                />
+                <button
+                  type="button"
+                  aria-label={t('providers.copy')}
+                  title={t('providers.copy')}
+                  onClick={() => void navigator.clipboard.writeText(client.redirect)}
+                  className={iconButton}
+                >
+                  <Copy size={16} aria-hidden />
+                </button>
+              </div>
+            )}
+          </Labelled>
+          <Labelled label={t('providers.clientId')}>
             {(id) => (
               <input
                 id={id}
-                type="date"
-                value={expires}
-                onChange={(event) => setExpires(event.target.value)}
+                required
+                autoFocus
+                maxLength={255}
+                spellCheck={false}
+                value={clientId}
+                onChange={(event) => setClientId(event.target.value)}
                 className={field}
               />
             )}
           </Labelled>
-        )}
-        {endsSoon(client.expires) && (
-          <p className="text-sm text-danger">{t('providers.endsSoon')}</p>
-        )}
-        {client.changed_at && (
-          <p className="text-sm text-muted">
-            {t('providers.changed')}: {formatDate(client.changed_at)}
-          </p>
-        )}
-        {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-        <div className="flex justify-end gap-2">
-          {client.client_id && (
-            <button type="button" onClick={() => setRemoving(true)} className={button}>
-              {t('providers.remove')}
-            </button>
+          <Labelled label={t('providers.secret')}>
+            {(id) => (
+              <input
+                id={id}
+                type="password"
+                required={!kept}
+                autoComplete="new-password"
+                spellCheck={false}
+                value={secret}
+                placeholder={kept ? t('providers.secretReplace') : undefined}
+                onChange={(event) => setSecret(event.target.value)}
+                className={field}
+              />
+            )}
+          </Labelled>
+          {client.provider === 'microsoft' && (
+            <Labelled label={t('providers.expires')}>
+              {(id) => (
+                <input
+                  id={id}
+                  type="date"
+                  value={expires}
+                  onChange={(event) => setExpires(event.target.value)}
+                  className={field}
+                />
+              )}
+            </Labelled>
           )}
-          <button type="submit" disabled={save.isPending} className={primaryButton}>
-            {t(save.isPending ? 'mail.checking' : 'providers.save')}
-          </button>
-        </div>
-      </form>
+          {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={close} className={button}>
+              {t('tree.cancel')}
+            </button>
+            <button type="submit" disabled={save.isPending} className={primaryButton}>
+              {t(save.isPending ? 'mail.checking' : 'providers.save')}
+            </button>
+          </div>
+        </form>
+      )}
+      {!open && failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
       {removing && (
         <ConfirmDialog
           heading={t('providers.removeTitle')}
@@ -186,48 +214,36 @@ function ClientForm({ client }: { client: Client }) {
           {t('providers.removeWarning')}
         </ConfirmDialog>
       )}
-    </>
+    </section>
   );
 }
 
-/** Where an administrator enters the installation's own clients at Google and Microsoft, through
-    which its users' accounts sign in instead of with a password. */
+/** Whether a message's sender sees which colleagues opened it, saved as it is ticked. */
 function OpenedForm({ setting }: { setting: MailSetting }) {
   const { t, formatDate } = useI18n();
   const queryClient = useQueryClient();
-  const [opened, setOpened] = useState(setting.opened);
   const save = useMutation({
-    mutationFn: () => patchJson<MailSetting>('/api/mail/setting', { opened }),
+    mutationFn: (opened: boolean) => patchJson<MailSetting>('/api/mail/setting', { opened }),
     onSuccess: (saved) => queryClient.setQueryData(SETTING, saved),
   });
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    save.mutate();
-  };
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <h2 className="text-base font-semibold">{t('mail.openedSetting')}</h2>
+    <Headed heading={t('mail.openedSetting')}>
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={opened}
-          onChange={(event) => setOpened(event.target.checked)}
+          checked={setting.opened}
+          disabled={save.isPending}
+          onChange={(event) => save.mutate(event.target.checked)}
         />
         {t('mail.openedEnabled')}
       </label>
-      <p className="text-sm text-muted">{t('mail.openedNote')}</p>
       {setting.changed_at && (
         <p className="text-sm text-muted">
           {t('providers.changed')}: {formatDate(setting.changed_at)}
         </p>
       )}
       {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
-      <div className="flex justify-end">
-        <button type="submit" disabled={save.isPending} className={primaryButton}>
-          {t('providers.save')}
-        </button>
-      </div>
-    </form>
+    </Headed>
   );
 }
 
@@ -249,15 +265,13 @@ export function ProvidersPage() {
     <Loaded query={clients}>
       {(data) => (
         <AdminFrame title={t('providers.title')}>
-          <div className="flex w-full max-w-xl flex-col gap-8">
+          <div className="flex w-full max-w-2xl flex-col gap-8">
             <Loaded query={setting}>{(found) => <OpenedForm setting={found} />}</Loaded>
-            <section className="flex flex-col gap-4">
-              <h2 className="text-base font-semibold">{t('providers.signIn')}</h2>
-              <p className="text-sm text-muted">{t('providers.intro')}</p>
+            <Headed heading={t('providers.signIn')}>
               {data.clients.map((client) => (
                 <ClientForm key={client.provider} client={client} />
               ))}
-            </section>
+            </Headed>
           </div>
         </AdminFrame>
       )}

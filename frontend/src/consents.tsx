@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { deleteJson, putJson } from './api';
 import { useI18n } from './i18n';
 import { useSearchConsent, useSearchConsentChange } from './sentence';
-import { field } from './styles';
+import { compactField } from './styles';
 import { TranslationConsent } from './translation';
 import { errorMessage } from './tree';
 import { SPEECH, useSpeech } from './voice';
@@ -32,15 +32,15 @@ export function Consents() {
   const failure = search.error ?? changeSearch.error ?? speech.error ?? changeSpeech.error;
   const spoken = speech.data?.enabled === true;
   return (
-    <>
+    <div className="flex max-w-2xl flex-col gap-4">
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-wrap items-center justify-between gap-2 text-sm">
         {t('consents.search')}
         <select
           value={answerOf(search.data)}
           disabled={!ai || search.isPending || changeSearch.isPending}
           onChange={(event) => changeSearch.mutate(ANSWERS[event.target.value as Answer])}
-          className={field}
+          className={compactField}
         >
           {(Object.keys(ANSWERS) as Answer[]).map((answer) => (
             <option key={answer} value={answer}>
@@ -48,8 +48,8 @@ export function Consents() {
             </option>
           ))}
         </select>
-        {!ai && <span className="text-muted">{t('consents.aiOff')}</span>}
       </label>
+      {!ai && <p className="-mt-2 text-sm text-muted">{t('consents.aiOff')}</p>}
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
@@ -61,6 +61,6 @@ export function Consents() {
       </label>
       {speech.data && !spoken && <p className="text-sm text-muted">{t('speech.off')}</p>}
       <TranslationConsent ai={ai} />
-    </>
+    </div>
   );
 }

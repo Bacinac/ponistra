@@ -6,14 +6,14 @@ While you are away, Ponistra answers mail from your account by itself, and colle
 
 ### Turning it on
 
-1. Open Settings and choose {t:away.title}.
-2. Enter the {t:away.first} and the {t:away.last}.
+1. Open Settings and choose {t:away.title}. While no time away is set, below the heading it says: {t:away.none}
+2. Press {t:away.set} and enter the {t:away.first} and the {t:away.last}.
 3. Enter the {t:away.textHr}, the {t:away.textEn} or both.
-4. Press {t:away.save}. The period is written above the form.
+4. Press {t:away.save}. The form closes and the period is written below the heading.
 
 ### Changing and turning off
 
-1. Change the dates or the text and press {t:away.save} again.
+1. Press {t:away.edit}, change the dates or the text and press {t:away.save} again.
 2. Press {t:away.off} if you came back early.
 
 ### What colleagues see

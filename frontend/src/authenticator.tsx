@@ -3,8 +3,9 @@ import { useState, type FormEvent } from 'react';
 import { ApiError, deleteJson, getJson, postJson } from './api';
 import { ConfirmDialog } from './dialogs';
 import { useI18n } from './i18n';
+import { Headed, inline, inlineField } from './headed';
 import { Qr } from './phoneApp';
-import { button, field, primaryButton } from './styles';
+import { button, compactField, primaryButton } from './styles';
 import { errorMessage } from './tree';
 
 interface Kept {
@@ -25,8 +26,9 @@ function grouped(secret: string): string {
 }
 
 /** The user's authenticator app, the second factor of their sign-in with a password: added by
- * scanning its secret and typing its first code, and removed. */
-export function Authenticator({ onAdded }: { onAdded?: () => void }) {
+ * scanning its secret and typing its first code, and removed. Headed as a part of the settings,
+ * bare where a sign-in waits for it. */
+export function Authenticator({ onAdded, headed }: { onAdded?: () => void; headed?: boolean }) {
   const { t, formatDate } = useI18n();
   const queryClient = useQueryClient();
   const [made, setMade] = useState<Made | null>(null);
@@ -65,91 +67,95 @@ export function Authenticator({ onAdded }: { onAdded?: () => void }) {
     confirm.mutate();
   }
 
-  if (kept.data?.authenticator) {
-    return (
-      <div className="flex flex-col gap-3">
+  const added = kept.data?.authenticator;
+  const action = added ? (
+    <button type="button" onClick={() => setRemoving(true)} className={button}>
+      {t('authenticator.remove')}
+    </button>
+  ) : (
+    kept.isSuccess &&
+    !made && (
+      <button
+        type="button"
+        disabled={begin.isPending}
+        onClick={() => begin.mutate()}
+        className={headed ? button : primaryButton}
+      >
+        {t('authenticator.add')}
+      </button>
+    )
+  );
+  const shown = (
+    <>
+      {added && (
         <p className="text-sm">
-          {t('authenticator.since')} {formatDate(kept.data.confirmed_at!)}
+          {t('authenticator.since')} {formatDate(kept.data!.confirmed_at!)}
         </p>
-        {failure && (
-          <p className="text-sm text-danger">
-            {failure instanceof ApiError && failure.code === 'last_factor'
-              ? t('authenticator.last')
-              : errorMessage(failure, t)}
-          </p>
-        )}
-        <div className="flex justify-end">
-          <button type="button" onClick={() => setRemoving(true)} className={button}>
-            {t('authenticator.remove')}
-          </button>
-        </div>
-        {removing && (
-          <ConfirmDialog
-            heading={t('authenticator.removeTitle')}
-            confirmLabel={t('authenticator.remove')}
-            onConfirm={() => remove.mutate()}
-            onClose={() => setRemoving(false)}
-          >
-            {t('authenticator.removeWarning')}
-          </ConfirmDialog>
-        )}
-      </div>
-    );
-  }
-
-  if (made) {
-    return (
-      <form onSubmit={submit} className="flex flex-col gap-3">
-        <p className="text-sm">{t('authenticator.scan')}</p>
-        <Qr text={made.uri} label={t('authenticator.qr')} />
-        <p className="font-mono text-sm break-all select-all">{grouped(made.secret)}</p>
-        <label className="flex flex-col gap-1 text-sm sm:max-w-xs">
-          {t('authenticator.code')}
-          <input
-            required
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9 ]{6,7}"
-            maxLength={7}
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            className={field}
-          />
-        </label>
-        {confirm.isError && (
-          <p className="text-sm text-danger">
-            {confirm.error instanceof ApiError && confirm.error.code === 'invalid_code'
-              ? t('authenticator.invalid')
-              : errorMessage(confirm.error, t)}
-          </p>
-        )}
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={() => setMade(null)} className={button}>
-            {t('tree.cancel')}
-          </button>
-          <button type="submit" disabled={confirm.isPending} className={primaryButton}>
-            {t('authenticator.confirm')}
-          </button>
-        </div>
-      </form>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-3">
-      {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-      {kept.isSuccess && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            disabled={begin.isPending}
-            onClick={() => begin.mutate()}
-            className={primaryButton}
-          >
-            {t('authenticator.add')}
-          </button>
-        </div>
       )}
+      {failure && (
+        <p className="text-sm text-danger">
+          {failure instanceof ApiError && failure.code === 'last_factor'
+            ? t('authenticator.last')
+            : errorMessage(failure, t)}
+        </p>
+      )}
+      {made && (
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <p className="text-sm">{t('authenticator.scan')}</p>
+          <Qr text={made.uri} label={t('authenticator.qr')} />
+          <p className="font-mono text-sm break-all select-all">{grouped(made.secret)}</p>
+          <div className={inline}>
+            <label className={inlineField}>
+              {t('authenticator.code')}
+              <input
+                required
+                autoFocus
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9 ]{6,7}"
+                maxLength={7}
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                className={compactField}
+              />
+            </label>
+            <button type="button" onClick={() => setMade(null)} className={button}>
+              {t('tree.cancel')}
+            </button>
+            <button type="submit" disabled={confirm.isPending} className={primaryButton}>
+              {t('authenticator.confirm')}
+            </button>
+          </div>
+          {confirm.isError && (
+            <p className="text-sm text-danger">
+              {confirm.error instanceof ApiError && confirm.error.code === 'invalid_code'
+                ? t('authenticator.invalid')
+                : errorMessage(confirm.error, t)}
+            </p>
+          )}
+        </form>
+      )}
+      {removing && (
+        <ConfirmDialog
+          heading={t('authenticator.removeTitle')}
+          confirmLabel={t('authenticator.remove')}
+          onConfirm={() => remove.mutate()}
+          onClose={() => setRemoving(false)}
+        >
+          {t('authenticator.removeWarning')}
+        </ConfirmDialog>
+      )}
+    </>
+  );
+
+  return headed ? (
+    <Headed heading={t('authenticator.title')} action={action}>
+      {shown}
+    </Headed>
+  ) : (
+    <div className="flex flex-col gap-3">
+      {shown}
+      {action && <div className="flex justify-end">{action}</div>}
     </div>
   );
 }

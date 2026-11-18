@@ -158,8 +158,9 @@ test('a key made in the settings lets an agent elsewhere in without a sign-in un
 }) => {
   await page.goto('/settings/agents');
   const settings = page.getByRole('main');
-  await settings.getByLabel('Naziv ključa').fill('Poslužitelj (e2e)');
   await settings.getByRole('button', { name: 'Novi ključ' }).click();
+  await settings.getByLabel('Naziv ključa').fill('Poslužitelj (e2e)');
+  await settings.getByRole('button', { name: 'Izradi', exact: true }).click();
   const command = settings.getByText(/^claude mcp add --transport http ponistra /);
   await expect(command).toBeVisible();
   const secret = (await command.textContent())!.match(/Bearer ([\w-]+)"$/)![1];

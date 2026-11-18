@@ -17,7 +17,7 @@ An outside agent, such as Claude, ChatGPT or another MCP client, signs in throug
 
 An agent that runs on another computer or server cannot receive the sign-in from your browser. Such an agent connects with a key.
 
-1. Under {t:agents.title} enter the {t:agents.keyName} and press {t:agents.newKey}.
+1. Beside {t:agents.title} press {t:agents.newKey}, enter the {t:agents.keyName} and press {t:agents.makeKey}.
 2. Press {t:agents.copyCommand} and run the command in the terminal of the computer where Claude Code runs.
 
 ### Revoking

@@ -97,7 +97,7 @@ test('the problems the watch raised stand first, each with when it began', async
   });
   open('/health', { is_admin: true });
 
-  const problems = (await screen.findByRole('heading', { name: 'Problemi' })).parentElement!;
+  const problems = await screen.findByRole('region', { name: 'Problemi' });
   expect(
     within(problems)
       .getAllByRole('row')

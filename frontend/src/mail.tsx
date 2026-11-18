@@ -101,6 +101,7 @@ import { between, formatSize } from './explorer';
 import { Cancel, Close, ConfirmDialog, Labelled, Modal, NameDialog } from './dialogs';
 import { Frame, Loading, PrimaryAction } from './frame';
 import { useI18n } from './i18n';
+import { Headed } from './headed';
 import type { MessageKey } from './i18n/hr';
 import { ActionsMenu, ContextMenuArea, Menu, MenuItem, MenuSeparator, MenuSub } from './menu';
 import { steady, useLongPress, useMenuPress } from './press';
@@ -1428,10 +1429,10 @@ function RuleDialog({
     own. */
 export function MailAccounts() {
   return (
-    <>
+    <div className="flex max-w-2xl flex-col gap-8">
       <MailAccountList />
       <Mailboxes accounts={() => <MailAccountList />} />
-    </>
+    </div>
   );
 }
 
@@ -1447,7 +1448,15 @@ function MailAccountList() {
     );
   const mine = accounts.data.accounts;
   return (
-    <>
+    <Headed
+      heading={t('mail.accounts')}
+      action={
+        <button type="button" onClick={() => setConnecting(true)} className={button}>
+          <MailPlus size={16} aria-hidden />
+          {t('mail.connect')}
+        </button>
+      }
+    >
       {mine.length === 0 ? (
         <p className="text-sm text-muted">{t('mail.none')}</p>
       ) : (
@@ -1471,14 +1480,8 @@ function MailAccountList() {
           ))}
         </ul>
       )}
-      <div>
-        <button type="button" onClick={() => setConnecting(true)} className={primaryButton}>
-          <MailPlus size={16} aria-hidden />
-          {t('mail.connect')}
-        </button>
-      </div>
       {connecting && <AccountDialog known={accounts.data} onClose={() => setConnecting(false)} />}
-    </>
+    </Headed>
   );
 }
 
@@ -1497,10 +1500,9 @@ export function MailSettings() {
   const failure = unrule.error ?? decide.error;
   const row = 'flex min-w-0 items-center gap-2 border-b border-line py-1 pl-2';
   return (
-    <>
+    <div className="flex max-w-2xl flex-col gap-8">
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-      <section aria-label={t('mail.rules')} className="flex flex-col gap-2">
-        <h2 className="font-semibold">{t('mail.rules')}</h2>
+      <Headed heading={t('mail.rules')}>
         {rules.length === 0 ? (
           <p className="text-sm text-muted">{t('mail.rulesNone')}</p>
         ) : (
@@ -1523,9 +1525,8 @@ export function MailSettings() {
             })}
           </ul>
         )}
-      </section>
-      <section aria-label={t('mail.decidedTitle')} className="flex flex-col gap-2">
-        <h2 className="font-semibold">{t('mail.decidedTitle')}</h2>
+      </Headed>
+      <Headed heading={t('mail.decidedTitle')}>
         {images.length === 0 ? (
           <p className="text-sm text-muted">{t('mail.decidedNone')}</p>
         ) : (
@@ -1545,9 +1546,9 @@ export function MailSettings() {
             ))}
           </ul>
         )}
-      </section>
+      </Headed>
       <MailKeysSection />
-    </>
+    </div>
   );
 }
 
@@ -2417,7 +2418,6 @@ function Waiting({ accounts, onConnect }: { accounts: Account[]; onConnect: () =
     return (
       <div className="flex w-full max-w-xl flex-col items-start gap-3">
         <p>{t('mail.none')}</p>
-        <p className="text-sm text-muted">{t('mail.connectNote')}</p>
         <button type="button" onClick={onConnect} className={primaryButton}>
           <MailPlus size={16} aria-hidden />
           {t('mail.connect')}

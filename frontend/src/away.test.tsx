@@ -22,6 +22,9 @@ test('time away is set, kept and turned off in the settings', async () => {
   };
   const first = open('/settings/away');
   await first.settled();
+  expect(screen.getByText('Nije postavljena.')).toBeTruthy();
+  expect(screen.queryByLabelText('Prvi dan')).toBeNull();
+  await first.user.click(screen.getByRole('button', { name: 'Postavi odsutnost' }));
   const save = screen.getByRole('button', { name: 'Spremi' });
   expect(save).toHaveProperty('disabled', true);
   await first.user.type(screen.getByLabelText('Prvi dan'), day(0));
@@ -32,15 +35,18 @@ test('time away is set, kept and turned off in the settings', async () => {
   );
   await first.user.click(save);
   await screen.findByText(/^Odsutnost traje /);
+  expect(screen.queryByLabelText('Prvi dan')).toBeNull();
 
   cleanup();
   const again = open('/settings/away');
   await again.settled();
+  await again.user.click(await screen.findByRole('button', { name: 'Uredi' }));
   await waitFor(() => expect(screen.getByLabelText('Zadnji dan')).toHaveProperty('value', day(5)));
   expect(screen.getByLabelText('Tekst na hrvatskom')).toHaveProperty(
     'value',
     'Odsutan sam do kraja tjedna.',
   );
+  await again.user.click(screen.getByRole('button', { name: 'Odustani' }));
   await again.user.click(screen.getByRole('button', { name: 'Isključi odsutnost' }));
   await waitFor(() => expect(screen.queryByText(/^Odsutnost traje /)).toBeNull());
 });

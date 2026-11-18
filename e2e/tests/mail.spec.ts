@@ -578,9 +578,9 @@ test('an account signs in through its provider once an administrator has entered
     page.getByLabel('Pošiljatelj poruke vidi koje su je kolege otvorile i kada'),
   ).toBeChecked();
 
-  const microsoft = page
-    .locator('form')
-    .filter({ has: page.getByRole('heading', { name: 'Microsoft' }) });
+  const microsoft = page.getByRole('region', { name: 'Microsoft', exact: true });
+  await expect(microsoft.getByText('Nije postavljeno.')).toBeVisible();
+  await microsoft.getByRole('button', { name: 'Postavi' }).click();
   await expect(microsoft.getByLabel('Adresa za povratak (redirect URI)')).toHaveValue(
     redirect('microsoft'),
   );
@@ -590,7 +590,7 @@ test('an account signs in through its provider once an administrator has entered
   await microsoft.getByRole('button', { name: 'Spremi' }).click();
   await expect(microsoft.getByText('Tajna je spremljena i završava na …cret')).toBeVisible();
   expect(entered).toEqual({ client_id: 'ponistra-id', secret: 's3cret', expires: '2028-10-24' });
-  await expect(microsoft.getByLabel('Tajna klijenta')).toHaveValue('');
+  await expect(microsoft.getByLabel('Tajna klijenta')).toBeHidden();
 
   await page.goto('/settings/mail-accounts');
   await page.getByRole('button', { name: 'Poveži račun' }).click();

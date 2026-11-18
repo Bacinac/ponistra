@@ -5,12 +5,13 @@ import { Navigate } from 'react-router';
 import { deleteJson, getJson, patchJson, postJson } from './api';
 import { useSession } from './auth';
 import { CALENDAR } from './calendarData';
-import { Cancel, ConfirmDialog, Modal, Picker } from './dialogs';
+import { Cancel, ConfirmDialog, Modal } from './dialogs';
 import { Loaded, PrimaryAction } from './frame';
+import { Headed } from './headed';
 import { useI18n } from './i18n';
 import { MenuItem } from './menu';
 import { AdminFrame } from './settings';
-import { field, iconButton, primaryButton } from './styles';
+import { compactField, field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
 import { useFilePicker } from './upload';
 
@@ -209,27 +210,29 @@ function Country({ workdays }: { workdays: Workdays }) {
     );
   const regions = workdays.countries[workdays.country] ?? [];
   return (
-    <section className="flex flex-col gap-3">
-      <p className="text-sm text-muted">{t('workdays.note')}</p>
-      <div className="grid max-w-xl gap-3 sm:grid-cols-2">
-        <Picker
-          label={t('workdays.country')}
-          value={workdays.country}
-          options={countries}
-          onChange={(country) => choose(country, '')}
-        />
-        {regions.length > 0 && (
-          <Picker
-            label={t('workdays.subdivision')}
-            value={workdays.subdivision}
-            options={[['', t('workdays.wholeCountry')], ...regions] as const}
-            onChange={(subdivision) => choose(workdays.country, subdivision)}
+    <Headed
+      heading={t('workdays.holidays')}
+      action={
+        <div className="flex flex-wrap gap-2">
+          <Chooser
+            label={t('workdays.country')}
+            value={workdays.country}
+            options={countries}
+            onChange={(country) => choose(country, '')}
           />
-        )}
-      </div>
+          {regions.length > 0 && (
+            <Chooser
+              label={t('workdays.subdivision')}
+              value={workdays.subdivision}
+              options={[['', t('workdays.wholeCountry')], ...regions] as const}
+              onChange={(subdivision) => choose(workdays.country, subdivision)}
+            />
+          )}
+        </div>
+      }
+    >
       {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
-      <h2 className="text-sm font-semibold">{t('workdays.holidays')}</h2>
-      <ul className="flex max-w-xl flex-col text-sm">
+      <ul className="flex flex-col text-sm">
         {workdays.holidays.map((each) => (
           <li key={`${each.date} ${each.en}`} className="flex gap-3 border-b border-line py-1.5">
             <span className="w-32 shrink-0 text-muted">{formatDays(each.date, each.date)}</span>
@@ -237,7 +240,34 @@ function Country({ workdays }: { workdays: Workdays }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Headed>
+  );
+}
+
+function Chooser({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: readonly (readonly [string, string])[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className={compactField}
+    >
+      {options.map(([option, text]) => (
+        <option key={option} value={option}>
+          {text}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -254,25 +284,28 @@ function Hours({ workdays }: { workdays: Workdays }) {
     save.mutate(hours, { onSuccess: (data) => queryClient.setQueryData(WORKDAYS, data) });
   };
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold">{t('workdays.hours')}</h2>
-      <div className="grid max-w-xl grid-cols-2 gap-3">
-        {(['opens', 'closes'] as const).map((each) => (
-          <label key={each} className="flex flex-col gap-1 text-sm">
-            {t(`workdays.${each}`)}
-            <input
-              type="time"
-              required
-              value={hours[each]}
-              onChange={(event) => setHours({ ...hours, [each]: event.target.value })}
-              onBlur={kept}
-              className={field}
-            />
-          </label>
-        ))}
-      </div>
+    <Headed
+      heading={t('workdays.hours')}
+      action={
+        <div className="flex flex-wrap gap-3">
+          {(['opens', 'closes'] as const).map((each) => (
+            <label key={each} className="flex items-center gap-2 text-sm">
+              {t(`workdays.${each}`)}
+              <input
+                type="time"
+                required
+                value={hours[each]}
+                onChange={(event) => setHours({ ...hours, [each]: event.target.value })}
+                onBlur={kept}
+                className={compactField}
+              />
+            </label>
+          ))}
+        </div>
+      }
+    >
       {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
-    </section>
+    </Headed>
   );
 }
 
@@ -313,12 +346,10 @@ function Closures({ workdays }: { workdays: Workdays }) {
       }
     >
       {picker.element}
-      <div className="flex w-full max-w-5xl flex-col gap-6">
+      <div className="flex w-full max-w-2xl flex-col gap-8">
         <Country workdays={workdays} />
         <Hours workdays={workdays} />
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold">{t('workdays.closures')}</h2>
-          <p className="text-sm text-muted">{t('workdays.closuresNote')}</p>
+        <Headed heading={t('workdays.closures')}>
           {read.isError && <p className="text-sm text-danger">{errorMessage(read.error, t)}</p>}
           {remove.isError && <p className="text-sm text-danger">{errorMessage(remove.error, t)}</p>}
           {workdays.closures.length === 0 ? (
@@ -360,7 +391,7 @@ function Closures({ workdays }: { workdays: Workdays }) {
               </tbody>
             </table>
           )}
-        </section>
+        </Headed>
       </div>
       {dialog?.type === 'edit' && <ClosureDialog closure={dialog.closure} onClose={close} />}
       {dialog?.type === 'import' && <ImportDialog spans={dialog.spans} onClose={close} />}

@@ -7,13 +7,14 @@ Administrator uključuje Claudea i pretvaranje govora u tekst za cijelu instalac
 ### Claude
 
 1. Otvorite {t:admin.title} i odaberite {t:ai.title}.
-2. Upišite {t:ai.key} i označite {t:ai.enabled}.
-3. Pritisnite {t:ai.save}.
+2. U odjeljku {t:ai.claude} pritisnite {t:ai.keyAdd}, odnosno {t:ai.keyChange} kad je ključ već spremljen.
+3. Upišite {t:ai.key} i pritisnite {t:ai.save}.
+4. Označite {t:ai.enabled}; oznaka se sprema odmah.
 
 ### Govor u tekst
 
-1. U odjeljku {t:speech.heading} upišite {t:speech.key}.
-2. Označite {t:speech.enabled} i pritisnite {t:ai.save}.
+1. U odjeljku {t:speech.heading} pritisnite {t:ai.keyAdd} i upišite {t:speech.key}.
+2. Pritisnite {t:ai.save} i označite {t:speech.enabled}.
 
 ### Mjesečni strop
 
@@ -27,7 +28,7 @@ Administrator uključuje Claudea i pretvaranje govora u tekst za cijelu instalac
 
 ## Kako radi
 
-Radnje s Claudeom šalju tekst modelu Claude tvrtke Anthropic u SAD-u, API ključem ove instalacije. Dok je umjetna inteligencija isključena, te su radnje vidljive, ali onemogućene. Ključ se pri spremanju provjerava, sprema se zaključan i više se ne prikazuje; piše samo {t:ai.keyKept} i zadnja četiri znaka. Novi ključ upisan u isto polje zamjenjuje dosadašnji. Uz postavku piše i {t:ai.changed}.
+Radnje s Claudeom šalju tekst modelu Claude tvrtke Anthropic u SAD-u, API ključem ove instalacije. Dok je umjetna inteligencija isključena, te su radnje vidljive, ali onemogućene. Ključ se pri spremanju provjerava, sprema se zaključan i više se ne prikazuje; piše samo {t:ai.keyKept} i zadnja četiri znaka. Novi ključ upisan nakon {t:ai.keyChange} zamjenjuje dosadašnji. Uz postavku piše i {t:ai.changed}.
 
 Govor u tekst šalje izgovoreno modelu tvrtke OpenAI, a dobiveni tekst, dok je Claude uključen, Claude pretvara u događaj, zadatak ili bilješku. Svaki korisnik prije prvog snimanja daje svoj pristanak.
 

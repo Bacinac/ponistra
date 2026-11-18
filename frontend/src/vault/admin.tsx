@@ -6,6 +6,7 @@ import { deleteJson, getJson, postJson, putJson } from '../api';
 import type { User } from '../auth';
 import { Close, ConfirmDialog, Modal } from '../dialogs';
 import { Loading } from '../frame';
+import { Headed } from '../headed';
 import { useI18n } from '../i18n';
 import { button, primaryButton } from '../styles';
 import { errorMessage } from '../tree';
@@ -105,31 +106,39 @@ export function RecoverySection() {
   const failure = recovery.error ?? vault.error ?? turnOn.error ?? turnOff.error ?? confirm.error;
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="font-semibold">{t('recovery.title')}</h2>
-      <p className="text-sm text-muted">{t('recovery.note')}</p>
-      {data && !data.on && (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm">{t('recovery.off')}</p>
-          {vault.data ? (
+    <Headed
+      heading={t('recovery.title')}
+      action={
+        data?.on ? (
+          <button type="button" onClick={() => setOff(true)} className={button}>
+            {t('recovery.turnOff')}
+          </button>
+        ) : (
+          data &&
+          vault.data && (
             <button
               type="button"
               disabled={turnOn.isPending}
               onClick={() => turnOn.mutate()}
-              className={`${primaryButton} self-start`}
+              className={button}
             >
               <ShieldCheck size={16} aria-hidden />
               {t('recovery.turnOn')}
             </button>
-          ) : (
-            vault.isSuccess && (
-              <p className="text-sm text-muted">
-                {t('recovery.needVault')}{' '}
-                <Link to="/vault" className="text-accent underline underline-offset-2">
-                  {t('vault.title')}
-                </Link>
-              </p>
-            )
+          )
+        )
+      }
+    >
+      {data && !data.on && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted">{t('recovery.off')}</p>
+          {!vault.data && vault.isSuccess && (
+            <p className="text-sm text-muted">
+              {t('recovery.needVault')}{' '}
+              <Link to="/vault" className="text-accent underline underline-offset-2">
+                {t('vault.title')}
+              </Link>
+            </p>
           )}
         </div>
       )}
@@ -169,9 +178,6 @@ export function RecoverySection() {
               </ul>
             </div>
           )}
-          <button type="button" onClick={() => setOff(true)} className={`${button} self-start`}>
-            {t('recovery.turnOff')}
-          </button>
         </div>
       )}
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
@@ -185,7 +191,7 @@ export function RecoverySection() {
           {t('recovery.turnOffWarning')}
         </ConfirmDialog>
       )}
-    </section>
+    </Headed>
   );
 }
 

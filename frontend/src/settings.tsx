@@ -54,22 +54,12 @@ interface Entry {
 }
 
 function SignIn() {
-  const { t } = useI18n();
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex max-w-2xl flex-col gap-8">
       <SignInChoice />
-      <section aria-label={t('passkeys.title')} className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold">{t('passkeys.title')}</h2>
-        <Passkeys />
-      </section>
-      <section aria-label={t('authenticator.title')} className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold">{t('authenticator.title')}</h2>
-        <Authenticator />
-      </section>
-      <section aria-label={t('password.title')} className="flex flex-col gap-3">
-        <h2 className="text-base font-semibold">{t('password.title')}</h2>
-        <PasswordForm />
-      </section>
+      <Passkeys />
+      <Authenticator headed />
+      <PasswordForm />
     </div>
   );
 }

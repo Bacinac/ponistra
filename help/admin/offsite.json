@@ -3,7 +3,6 @@
   "audience": "admin",
   "covers": [],
   "quiet": [
-    "health.offsite.note",
     "health.offsite.none",
     "health.offsite.how",
     "health.offsite.howDays",
@@ -21,7 +20,7 @@
     "health.kit.renewWarning"
   ],
   "describes": {
-    "frontend/src/health.tsx#OffsiteSection": "4e6cbf008136",
+    "frontend/src/health.tsx#OffsiteSection": "1aee253799e0",
     "frontend/src/health.tsx#OffsiteForm": "d665f6c03f56",
     "frontend/src/health.tsx#KitDialog": "9e44a0dab89f",
     "frontend/src/health.tsx#kitText": "8e7fb6f60339",

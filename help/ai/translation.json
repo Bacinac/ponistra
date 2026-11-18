@@ -10,7 +10,7 @@
     "ai.consent.body"
   ],
   "describes": {
-    "frontend/src/translation.tsx#ReadingLanguages": "518e27d2acdc",
+    "frontend/src/translation.tsx#ReadingLanguages": "8fb03386ac1c",
     "frontend/src/translation.tsx#TranslationConsentDialog": "d2402acabdaf",
     "frontend/src/translation.tsx#useConsented": "9a8b484a85fb",
     "frontend/src/translation.tsx#useForeign": "c7451b8485bc",

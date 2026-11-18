@@ -17,7 +17,8 @@ import {
   type PushState,
   type Subscribed,
 } from './push';
-import { button, primaryButton } from './styles';
+import { button } from './styles';
+import { Headed } from './headed';
 import { errorMessage } from './tree';
 
 interface Setting {
@@ -87,56 +88,52 @@ export function Notifications() {
   const offered = pushWorks && state.data?.on && permission !== 'denied';
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="text-sm text-muted">{t('notifications.note')}</p>
-      <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">{t('notifications.thisBrowser')}</h2>
-        <p className="text-sm">{status}</p>
-        {offered && (
-          <div>
-            {on ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => turnOff.mutate()}
-                className={button}
-              >
-                <BellOff size={16} aria-hidden />
-                {t('notifications.disable')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                disabled={busy || !state.isSuccess}
-                onClick={() => turnOn.mutate()}
-                className={primaryButton}
-              >
-                <BellRing size={16} aria-hidden />
-                {t('notifications.enable')}
-              </button>
-            )}
-          </div>
-        )}
-      </section>
-      <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">{t('notifications.installTitle')}</h2>
-        <p className="text-sm">
-          {t(install.installed ? 'notifications.installed' : 'notifications.installNote')}
-        </p>
-        {install.offered && (
-          <div>
-            <button type="button" onClick={() => void askToInstall()} className={primaryButton}>
-              <Download size={16} aria-hidden />
-              {t('notifications.install')}
+    <div className="flex max-w-2xl flex-col gap-8">
+      <Headed
+        heading={t('notifications.thisBrowser')}
+        action={
+          offered &&
+          (on ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => turnOff.mutate()}
+              className={button}
+            >
+              <BellOff size={16} aria-hidden />
+              {t('notifications.disable')}
             </button>
-          </div>
-        )}
-        {!install.installed && !install.offered && (
-          <p className="text-sm text-muted">{t('notifications.installHint')}</p>
-        )}
-      </section>
-      <section className="flex flex-col gap-2">
-        <h2 className="font-semibold">{t('notifications.browsers')}</h2>
+          ) : (
+            <button
+              type="button"
+              disabled={busy || !state.isSuccess}
+              onClick={() => turnOn.mutate()}
+              className={button}
+            >
+              <BellRing size={16} aria-hidden />
+              {t('notifications.enable')}
+            </button>
+          ))
+        }
+      >
+        <p className="text-sm">{status}</p>
+      </Headed>
+      {(install.installed || install.offered) && (
+        <Headed
+          heading={t('notifications.installTitle')}
+          action={
+            install.offered && (
+              <button type="button" onClick={() => void askToInstall()} className={button}>
+                <Download size={16} aria-hidden />
+                {t('notifications.install')}
+              </button>
+            )
+          }
+        >
+          {install.installed && <p className="text-sm">{t('notifications.installed')}</p>}
+        </Headed>
+      )}
+      <Headed heading={t('notifications.browsers')}>
         {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
         {state.isSuccess && browsers.length === 0 && (
           <p className="text-sm">{t('notifications.none')}</p>
@@ -192,7 +189,7 @@ export function Notifications() {
             </tbody>
           </table>
         )}
-      </section>
+      </Headed>
       {admin && <InstallationSetting />}
     </div>
   );
@@ -215,8 +212,7 @@ function InstallationSetting() {
   const failure = setting.error ?? change.error;
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="font-semibold">{t('notifications.setting')}</h2>
+    <Headed heading={t('notifications.setting')}>
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
@@ -226,7 +222,6 @@ function InstallationSetting() {
         />
         {t('notifications.settingOn')}
       </label>
-      <p className="text-sm text-muted">{t('notifications.settingNote')}</p>
       {setting.data?.changed_by && setting.data.changed_at && (
         <p className="text-sm text-muted">
           {t('notifications.settingChanged')}: {setting.data.changed_by.name},{' '}
@@ -234,7 +229,7 @@ function InstallationSetting() {
         </p>
       )}
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-    </section>
+    </Headed>
   );
 }
 

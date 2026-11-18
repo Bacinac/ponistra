@@ -8,7 +8,8 @@ import { Loaded, Loading } from './frame';
 import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
 import { SPEECH } from './voice';
-import { field, primaryButton } from './styles';
+import { button, compactField, primaryButton } from './styles';
+import { Headed, inline, inlineField } from './headed';
 import { errorMessage, Failure } from './tree';
 
 /** The installation's AI as the server tells an administrator: never its key, only how it
@@ -57,9 +58,7 @@ function Usage() {
   const { spent, requests } = usage.data;
   return (
     <>
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg">{t('ai.usage.heading')}</h2>
-        <p className="text-sm text-muted">{t('ai.usage.note')}</p>
+      <Headed heading={t('ai.usage.heading')}>
         {spent.length === 0 ? (
           <p className="text-sm text-muted">{t('ai.usage.none')}</p>
         ) : (
@@ -103,10 +102,8 @@ function Usage() {
             </table>
           </div>
         )}
-      </section>
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg">{t('ai.requests.heading')}</h2>
-        <p className="text-sm text-muted">{t('ai.requests.note')}</p>
+      </Headed>
+      <Headed heading={t('ai.requests.heading')}>
         {requests.length === 0 ? (
           <p className="text-sm text-muted">{t('ai.requests.none')}</p>
         ) : (
@@ -135,7 +132,7 @@ function Usage() {
             </tbody>
           </table>
         )}
-      </section>
+      </Headed>
     </>
   );
 }
@@ -145,74 +142,100 @@ function Usage() {
 function KeyForm({
   path,
   setting,
-  intro,
+  heading,
   enabledLabel,
   keyLabel,
   onSaved,
 }: {
   path: string;
   setting: Setting;
-  intro: string;
+  heading: string;
   enabledLabel: string;
   keyLabel: string;
   onSaved: (saved: Setting) => void;
 }) {
   const { t, formatDate } = useI18n();
-  const [enabled, setEnabled] = useState(setting.enabled);
+  const [open, setOpen] = useState(false);
   const [key, setKey] = useState('');
   const save = useMutation({
-    mutationFn: () => patchJson<Setting>(path, { enabled, key: key.trim() || undefined }),
+    mutationFn: (change: { enabled?: boolean; key?: string }) => patchJson<Setting>(path, change),
     onSuccess: (saved) => {
       onSaved(saved);
       setKey('');
+      setOpen(false);
     },
   });
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    save.mutate();
+    save.mutate({ key: key.trim() });
   };
   const kept = setting.hint !== '' && !setting.lost;
   return (
-    <form onSubmit={submit} className="flex w-full max-w-xl flex-col gap-4">
-      <p className="text-sm text-muted">{intro}</p>
+    <Headed
+      heading={heading}
+      action={
+        !open && (
+          <button
+            type="button"
+            onClick={() => {
+              save.reset();
+              setOpen(true);
+            }}
+            className={button}
+          >
+            {t(kept ? 'ai.keyChange' : 'ai.keyAdd')}
+          </button>
+        )
+      }
+    >
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
-          checked={enabled}
-          onChange={(event) => setEnabled(event.target.checked)}
+          checked={setting.enabled}
+          disabled={save.isPending}
+          onChange={(event) => save.mutate({ enabled: event.target.checked })}
         />
         {enabledLabel}
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        {keyLabel}
-        <input
-          type="password"
-          autoComplete="new-password"
-          spellCheck={false}
-          value={key}
-          placeholder={kept ? t('ai.keyReplace') : undefined}
-          onChange={(event) => setKey(event.target.value)}
-          className={field}
-        />
-      </label>
+      {open && (
+        <form onSubmit={submit} className={inline}>
+          <label className={inlineField}>
+            {keyLabel}
+            <input
+              type="password"
+              required
+              autoFocus
+              autoComplete="new-password"
+              spellCheck={false}
+              value={key}
+              onChange={(event) => setKey(event.target.value)}
+              className={compactField}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setKey('');
+            }}
+            className={button}
+          >
+            {t('tree.cancel')}
+          </button>
+          <button type="submit" disabled={save.isPending} className={primaryButton}>
+            {t('ai.save')}
+          </button>
+        </form>
+      )}
       {kept && (
         <p className="text-sm text-muted">
           {t('ai.keyKept')} …{setting.hint}
+          {setting.changed_at && ` · ${t('ai.changed')}: ${formatDate(setting.changed_at)}`}
         </p>
       )}
       {setting.lost && <p className="text-sm text-danger">{t('ai.keyLost')}</p>}
-      {setting.changed_at && (
-        <p className="text-sm text-muted">
-          {t('ai.changed')}: {formatDate(setting.changed_at)}
-        </p>
-      )}
       {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
-      <div className="flex justify-end">
-        <button type="submit" disabled={save.isPending} className={primaryButton}>
-          {t('ai.save')}
-        </button>
-      </div>
-    </form>
+    </Headed>
   );
 }
 
@@ -225,7 +248,8 @@ function MonthlyForm({
   onSaved: (saved: Setting) => void;
 }) {
   const { t } = useI18n();
-  const [monthly, setMonthly] = useState(setting.monthly == null ? '' : String(setting.monthly));
+  const shown = setting.monthly == null ? '' : String(setting.monthly);
+  const [monthly, setMonthly] = useState(shown);
   const save = useMutation({
     mutationFn: () =>
       patchJson<Setting>('/api/ai', { monthly: monthly.trim() === '' ? null : Number(monthly) }),
@@ -236,27 +260,33 @@ function MonthlyForm({
     save.mutate();
   };
   return (
-    <form onSubmit={submit} className="flex w-full max-w-xl flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        {t('ai.monthly')}
-        <input
-          type="number"
-          inputMode="decimal"
-          min={0}
-          step={0.01}
-          value={monthly}
-          placeholder={t('ai.monthlyNone')}
-          onChange={(event) => setMonthly(event.target.value)}
-          className={field}
-        />
-      </label>
+    <Headed
+      heading={t('ai.monthly')}
+      action={
+        <form onSubmit={submit} className="flex items-center gap-2">
+          <input
+            type="number"
+            inputMode="decimal"
+            aria-label={t('ai.monthly')}
+            min={0}
+            step={0.01}
+            value={monthly}
+            placeholder={t('ai.monthlyNone')}
+            onChange={(event) => setMonthly(event.target.value)}
+            className={`${compactField} w-32`}
+          />
+          <button
+            type="submit"
+            disabled={save.isPending || monthly === shown}
+            className={primaryButton}
+          >
+            {t('ai.save')}
+          </button>
+        </form>
+      }
+    >
       {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
-      <div className="flex justify-end">
-        <button type="submit" disabled={save.isPending} className={primaryButton}>
-          {t('ai.save')}
-        </button>
-      </div>
-    </form>
+    </Headed>
   );
 }
 
@@ -267,27 +297,20 @@ function SpeechForm() {
     queryKey: ['ai-speech'],
     queryFn: () => getJson<Setting>('/api/ai/speech'),
   });
+  if (setting.isPending) return <Loading />;
+  if (setting.isError) return <Failure error={setting.error} />;
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg">{t('speech.heading')}</h2>
-      {setting.isPending ? (
-        <Loading />
-      ) : setting.isError ? (
-        <Failure error={setting.error} />
-      ) : (
-        <KeyForm
-          path="/api/ai/speech"
-          setting={setting.data}
-          intro={t('speech.intro')}
-          enabledLabel={t('speech.enabled')}
-          keyLabel={t('speech.key')}
-          onSaved={(saved) => {
-            queryClient.setQueryData(['ai-speech'], saved);
-            void queryClient.invalidateQueries({ queryKey: SPEECH });
-          }}
-        />
-      )}
-    </section>
+    <KeyForm
+      path="/api/ai/speech"
+      setting={setting.data}
+      heading={t('speech.heading')}
+      enabledLabel={t('speech.enabled')}
+      keyLabel={t('speech.key')}
+      onSaved={(saved) => {
+        queryClient.setQueryData(['ai-speech'], saved);
+        void queryClient.invalidateQueries({ queryKey: SPEECH });
+      }}
+    />
   );
 }
 
@@ -300,7 +323,7 @@ function Settings({ setting }: { setting: Setting }) {
         <KeyForm
           path="/api/ai"
           setting={setting}
-          intro={t('ai.intro')}
+          heading={t('ai.claude')}
           enabledLabel={t('ai.enabled')}
           keyLabel={t('ai.key')}
           onSaved={(saved) => {

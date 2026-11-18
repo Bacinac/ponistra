@@ -17,7 +17,7 @@ Vanjski agent, poput Claudea, ChatGPT-a ili drugog MCP klijenta, prijavljuje se 
 
 Agent koji radi na drugom računalu ili poslužitelju ne može primiti prijavu iz vašeg preglednika. Takav agent se povezuje ključem.
 
-1. Pod {t:agents.title} upišite {t:agents.keyName} i pritisnite {t:agents.newKey}.
+1. Kod {t:agents.title} pritisnite {t:agents.newKey}, upišite {t:agents.keyName} i pritisnite {t:agents.makeKey}.
 2. Pritisnite {t:agents.copyCommand} i pokrenite naredbu u terminalu računala na kojem radi Claude Code.
 
 ### Opoziv

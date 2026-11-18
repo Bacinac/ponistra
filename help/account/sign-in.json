@@ -9,7 +9,7 @@
   ],
   "describes": {
     "frontend/src/auth.tsx#LoginForm": "531015a48148",
-    "frontend/src/auth.tsx#SignInChoice": "9f32d80a49bc",
+    "frontend/src/auth.tsx#SignInChoice": "26792e5ffb1d",
     "frontend/src/auth.tsx#useLogout": "33f00ffd20d0",
     "backend/apps/users/views.py#login": "e30eb5044466",
     "frontend/src/passkeys.tsx#answered": "574176e24396",

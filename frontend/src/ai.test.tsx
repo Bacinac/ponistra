@@ -71,7 +71,9 @@ test('an administrator bounds what each user may spend in a month, or lifts the 
   });
   const { user } = open('/ai', { is_admin: true });
 
-  const field = await screen.findByLabelText('Mjesečni strop po korisniku (USD)');
+  const field = await screen.findByRole('spinbutton', {
+    name: 'Mjesečni strop po korisniku (USD)',
+  });
   expect(field).toHaveProperty('value', '25');
   const form = field.closest('form')!;
   await user.clear(field);

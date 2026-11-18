@@ -8,7 +8,7 @@
     "frontend/src/offline.tsx#keptRooms": "c0f223a6d7b7",
     "frontend/src/offline.tsx#KeepItem": "c0989049e691",
     "frontend/src/offline.tsx#useKeeper": "bc24a7f66f3a",
-    "frontend/src/devices.tsx#ThisDevice": "6d30bf50c027",
+    "frontend/src/devices.tsx#ThisDevice": "c47dd0a5c111",
     "frontend/src/kept.ts#keepable": "7c25827fc4eb",
     "frontend/src/kept.ts#empty": "4b5fa2e62a34",
     "frontend/src/api.ts#leftBy": "08560d09ecc7",

@@ -5,10 +5,10 @@ With your account's password you sign in to Ponistra and confirm sensitive actio
 ## How to use it
 
 1. In Settings open {t:settings.signIn}; {t:password.title} is below {t:passkeys.title}.
-2. Type {t:password.new}.
-3. Press {t:password.change}.
+2. Press {t:password.change} and type {t:password.new}.
+3. Press {t:tree.save}.
 4. If Ponistra asks, confirm that it is you.
-5. When done, below the field it says: {t:password.changed}
+5. When done, below the heading it says: {t:password.changed}
 
 ## How it works
 

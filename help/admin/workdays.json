@@ -5,18 +5,16 @@
     "route:/workdays"
   ],
   "quiet": [
-    "workdays.note",
-    "workdays.closuresNote",
     "workdays.importNote",
     "workdays.deleteWarning"
   ],
   "describes": {
-    "frontend/src/workdays.tsx#Country": "4202c60e9244",
-    "frontend/src/workdays.tsx#Closures": "83f780a61ec2",
+    "frontend/src/workdays.tsx#Country": "debd161e78b2",
+    "frontend/src/workdays.tsx#Closures": "9a8b7a183773",
     "frontend/src/workdays.tsx#ClosureDialog": "fa9615ad0af4",
     "frontend/src/workdays.tsx#ImportDialog": "0015fdabd438",
     "frontend/src/workdays.tsx#WorkdaysPage": "b77d64f148d6",
-    "frontend/src/workdays.tsx#Hours": "003487d3abe2",
+    "frontend/src/workdays.tsx#Hours": "3296598e486a",
     "backend/apps/calendar/workdays.py#hours": "1a9eafc47490"
   }
 }

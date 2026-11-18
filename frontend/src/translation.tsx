@@ -5,7 +5,8 @@ import { ApiError, getJson, postJson, putJson } from './api';
 import { useVisitor } from './auth';
 import { Cancel, Modal } from './dialogs';
 import { languageName, useI18n } from './i18n';
-import { button, field, iconButton, primaryButton } from './styles';
+import { Headed } from './headed';
+import { button, compactField, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
 import { useAi } from './editor/runs';
 
@@ -58,45 +59,50 @@ export function ReadingLanguages() {
     .sort((a, b) => name(a).localeCompare(name(b), language));
   const changed = (languages: string[]) => change.mutate({ languages, automatic: found.automatic });
   return (
-    <div className="flex flex-col gap-2 text-sm">
-      {change.error && <p className="text-danger">{errorMessage(change.error, t)}</p>}
-      {t('translation.reads')}
-      <ul aria-label={t('translation.reads')} className="flex flex-wrap gap-2">
-        {reads.map((code) => (
-          <li
-            key={code}
-            className="flex min-w-0 items-center gap-1 rounded-full bg-panel py-1 pr-1 pl-3"
+    <div className="flex max-w-2xl flex-col gap-8">
+      <Headed
+        heading={t('translation.reads')}
+        action={
+          <select
+            value=""
+            aria-label={t('translation.add')}
+            disabled={change.isPending}
+            onChange={(event) => changed([...reads, event.target.value])}
+            className={compactField}
           >
-            <span className="truncate">{name(code)}</span>
-            <button
-              type="button"
-              disabled={reads.length === 1 || change.isPending}
-              onClick={() => changed(reads.filter((each) => each !== code))}
-              title={t('translation.remove')}
-              aria-label={`${t('translation.remove')}: ${name(code)}`}
-              className={iconButton}
-            >
-              <X size={14} aria-hidden />
-            </button>
-          </li>
-        ))}
-      </ul>
-      <select
-        value=""
-        aria-label={t('translation.add')}
-        disabled={change.isPending}
-        onChange={(event) => changed([...reads, event.target.value])}
-        className={field}
+            <option value="" disabled>
+              {t('translation.add')}
+            </option>
+            {others.map((code) => (
+              <option key={code} value={code}>
+                {name(code)}
+              </option>
+            ))}
+          </select>
+        }
       >
-        <option value="" disabled>
-          {t('translation.add')}
-        </option>
-        {others.map((code) => (
-          <option key={code} value={code}>
-            {name(code)}
-          </option>
-        ))}
-      </select>
+        {change.error && <p className="text-sm text-danger">{errorMessage(change.error, t)}</p>}
+        <ul aria-label={t('translation.reads')} className="flex flex-wrap gap-2 text-sm">
+          {reads.map((code) => (
+            <li
+              key={code}
+              className="flex min-w-0 items-center gap-1 rounded-full bg-panel py-1 pr-1 pl-3"
+            >
+              <span className="truncate">{name(code)}</span>
+              <button
+                type="button"
+                disabled={reads.length === 1 || change.isPending}
+                onClick={() => changed(reads.filter((each) => each !== code))}
+                title={t('translation.remove')}
+                aria-label={`${t('translation.remove')}: ${name(code)}`}
+                className={iconButton}
+              >
+                <X size={14} aria-hidden />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Headed>
     </div>
   );
 }

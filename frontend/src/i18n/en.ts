@@ -1123,11 +1123,10 @@ export const en: Record<MessageKey, string> = {
   'password.title': 'Password',
   'password.changed': 'Your password has been changed.',
   'passkeys.title': 'Passkeys',
-  'passkeys.note':
-    "A passkey signs you in with your device's fingerprint, face or PIN, without an email or password. The key stays on the device; Ponistra keeps only its public part.",
   'passkeys.none': 'You have no passkeys yet.',
   'passkeys.newName': 'Name of the new passkey',
   'passkeys.add': 'Add a passkey',
+  'passkeys.make': 'Add',
   'passkeys.adding': 'Adding…',
   'passkeys.created': 'Added',
   'passkeys.delete': 'Remove passkey',
@@ -1141,9 +1140,6 @@ export const en: Record<MessageKey, string> = {
     'Your administrator requires signing in with a passkey. Add one on this device to continue; from your next sign-in a password is no longer enough.',
   'devices.title': 'Devices',
   'devices.mine': 'Signed-in devices',
-  'devices.note':
-    'The browsers you are signed in on. Sign out of any you do not recognise or no longer use.',
-  'devices.theirNote': 'The browsers the user is signed in on.',
   'devices.device': 'Device',
   'devices.signedIn': 'Signed in',
   'devices.seen': 'Last active',
@@ -1164,8 +1160,6 @@ export const en: Record<MessageKey, string> = {
   'offline.unmark': 'Stop keeping on this device',
   'offline.needed': 'Needs the network',
   'notifications.title': 'Notifications',
-  'notifications.note':
-    'Ponistra tells you of new mail, messages and meeting calls even when it is not open: in the browser or the installed app, on the computer and on the phone. A notification travels encrypted through the browser’s push service; no one but this device reads what it says.',
   'notifications.thisBrowser': 'This browser',
   'notifications.on': 'Notifications are on.',
   'notifications.off': 'Notifications are off.',
@@ -1179,12 +1173,8 @@ export const en: Record<MessageKey, string> = {
   'notifications.offInstallation':
     'The administrator has turned notifications off for this installation.',
   'notifications.installTitle': 'App',
-  'notifications.installNote':
-    'The installed app opens from the desktop or the Home Screen, in a window of its own, and receives notifications like the browser.',
   'notifications.installed': 'The app is installed.',
   'notifications.install': 'Install the app',
-  'notifications.installHint':
-    'The browser’s menu offers the installation: Chrome and Edge “Install app”, Safari “Share → Add to Dock” or “Add to Home Screen”.',
   'notifications.browsers': 'Browsers receiving notifications',
   'notifications.none': 'No browser receives notifications.',
   'notifications.browser': 'Browser',
@@ -1195,8 +1185,6 @@ export const en: Record<MessageKey, string> = {
   'notifications.remove': 'Remove',
   'notifications.setting': 'Notifications in the installation',
   'notifications.settingOn': 'The installation sends notifications to browsers',
-  'notifications.settingNote':
-    'Off, notifications come only while Ponistra is open and nothing goes to the browsers’ push services.',
   'notifications.settingChanged': 'Last changed by',
   'mail.accounts': 'Mail accounts',
   'mail.connect': 'Connect an account',
@@ -1209,8 +1197,6 @@ export const en: Record<MessageKey, string> = {
   'mail.mailboxRemoveTitle': 'Remove the shared mailbox?',
   'mail.mailboxRemoveWarning': 'is removed together with its accounts and all its mail.',
   'mail.connectTitle': 'Connect a mail account',
-  'mail.connectNote':
-    'Ponistra takes the mail from your existing mailbox and sends through it; it neither changes nor deletes what your provider holds.',
   'mail.edit': 'Account settings',
   'mail.remove': 'Remove account',
   'mail.removeTitle': 'Remove the account?',
@@ -1241,8 +1227,6 @@ export const en: Record<MessageKey, string> = {
   'mail.signature.scope': 'For which accounts',
   'mail.signature.shared': 'The same signature for every account',
   'mail.signature.own': 'A signature of its own for this account',
-  'mail.signatureHint':
-    'It goes under a new message and above the quoted text of a reply; choosing another sender changes it too.',
   'mail.servers': 'Server settings',
   'mail.username': 'User name',
   'mail.protocol': 'Server type',
@@ -1315,8 +1299,6 @@ export const en: Record<MessageKey, string> = {
   'mail.oauthSwitch.google': 'Sign in through Google instead of a password',
   'mail.oauthSwitch.microsoft': 'Sign in through Microsoft instead of a password',
   'providers.title': 'Mail',
-  'providers.intro':
-    "Accounts at Google and Microsoft sign in through the provider instead of a password, by this installation's registration with each of them. An administrator makes the registration at the provider with the return address shown below, and enters its ID and secret here.",
   'providers.google': 'Google',
   'providers.google.note':
     'In the Google Cloud console: an OAuth client of type “Web application” with the scopes https://mail.google.com/ and https://www.googleapis.com/auth/carddav, and the Google Contacts CardDAV API enabled. For Google Workspace choose “Internal”. For personal Gmail accounts the app is “In production” without Google’s verification: Google warns at sign-in that the app is unverified, and it takes at most 100 users.',
@@ -1335,6 +1317,9 @@ export const en: Record<MessageKey, string> = {
     'The secret ends soon. Make a new one at Microsoft and enter it here, or the accounts stop signing in.',
   'providers.changed': 'Changed',
   'providers.save': 'Save',
+  'providers.setUp': 'Set up',
+  'providers.change': 'Change',
+  'providers.none': 'Not set up.',
   'providers.remove': 'Remove',
   'providers.removeTitle': 'Remove the registration?',
   'providers.removeWarning':
@@ -1344,8 +1329,6 @@ export const en: Record<MessageKey, string> = {
     "The server's directory has no email address for these recipients; write it in place of the Notes name",
   'mail.openedSetting': 'Read within the organisation',
   'mail.openedEnabled': 'The sender of a message sees which colleagues opened it, and when',
-  'mail.openedNote':
-    'Applies to every user of the installation. No read receipt is asked for or sent, and nothing leaves the installation; only opening a message counts, never marking it read. Turning it off erases everything noted so far.',
   'mail.openedBy': 'Colleagues who opened it',
   'mail.openedAll': 'Opened by every colleague',
   'mail.of': 'of',
@@ -1432,7 +1415,7 @@ export const en: Record<MessageKey, string> = {
   'mail.sealed.noKeys': 'The message is encrypted, and the vault holds no mail key.',
   'mail.sealed.opening': 'Opening the message…',
   'mail.keys': 'Encryption keys',
-  'mail.keysNone': 'No keys yet. A sender’s key is kept when you read their signed message.',
+  'mail.keysNone': 'No keys yet.',
   'mail.keysOwn': 'Your key',
   'mail.keysRemove': 'Remove key',
   'mail.keysBring': 'Load a key from a file…',
@@ -1468,6 +1451,9 @@ export const en: Record<MessageKey, string> = {
   'away.textHr': 'Text in Croatian',
   'away.textEn': 'Text in English',
   'away.save': 'Save',
+  'away.set': 'Set time away',
+  'away.edit': 'Edit',
+  'away.none': 'Not set.',
   'away.off': 'Turn off',
   'away.failed': 'An automatic answer was not sent:',
   'away.then': 'Away',
@@ -1617,8 +1603,6 @@ export const en: Record<MessageKey, string> = {
   'error.heir_required': 'Choose who takes over the documents and mailboxes.',
   'error.invalid_heir': 'Only another active user can take over the documents.',
   'company.title': 'Company folders',
-  'company.note':
-    'Company folders appear under “Company” for those you give them to. You lay them out and give them to groups; only those with a role in them see what is inside.',
   'company.none': 'No company folders yet.',
   'company.new': 'New company folder',
   'company.edit': 'Edit company folder',
@@ -1720,8 +1704,6 @@ export const en: Record<MessageKey, string> = {
   'policy.passkeys.administrators': 'Required for administrators',
   'policy.passkeys.everyone': 'Required for all users',
   'policy.secondFactor': 'Second step at sign-in with a password',
-  'policy.note':
-    'Whoever must have a passkey signs in with a password only until they add one, and from then on only with the passkey.',
   'error.forbidden': 'You do not have the right to do this.',
   'error.move_out':
     'Only an owner can move an item outside the folder your editing right comes from.',
@@ -2168,12 +2150,12 @@ export const en: Record<MessageKey, string> = {
   'run.missed': 'Skipped',
   'run.open': 'Open',
   'ai.title': 'Artificial intelligence',
-  'ai.intro':
-    "Actions such as summarising send text to Anthropic's Claude model (USA) with this installation's API key. While artificial intelligence is off, these actions are shown but disabled.",
+  'ai.claude': 'Claude',
+  'ai.keyChange': 'Change key',
+  'ai.keyAdd': 'Add key',
   'ai.enabled': 'On for this installation',
   'ai.key': 'Anthropic API key',
   'ai.keyKept': 'The saved key ends in',
-  'ai.keyReplace': 'A new key, only to replace the saved one',
   'ai.keyLost':
     "The saved key can no longer be opened because the installation's secret has changed; enter it again.",
   'ai.changed': 'Last changed',
@@ -2190,8 +2172,6 @@ export const en: Record<MessageKey, string> = {
   'ai.consent.always': 'Always in this document',
   'ai.consent.withdraw': 'Withdraw permission for Claude',
   'ai.usage.heading': 'Usage',
-  'ai.usage.note':
-    "The models' tokens and cost by month and action over the last twelve months, in US dollars at Anthropic's prices.",
   'ai.usage.month': 'Month',
   'ai.usage.action': 'Action',
   'ai.usage.runs': 'Runs',
@@ -2201,8 +2181,6 @@ export const en: Record<MessageKey, string> = {
   'ai.usage.unpriced': 'without a price',
   'ai.usage.none': 'No model has run an action yet.',
   'ai.requests.heading': 'Free requests',
-  'ai.requests.note':
-    'Requests from “Other…” over the last twelve months, grouped by their text, without the user or the document. Frequent ones are candidates for ready-made actions.',
   'ai.requests.request': 'Request',
   'ai.requests.times': 'Times',
   'ai.requests.last': 'Last asked',
@@ -2430,8 +2408,6 @@ export const en: Record<MessageKey, string> = {
   'health.answers': 'Running',
   'health.silent': 'Not answering',
   'health.snapshots': 'Backups',
-  'health.snapshots.note':
-    'Made every night and before every update. On the server: ponistra backup, ponistra backups and ponistra restore.',
   'health.snapshots.newest': 'Newest',
   'health.snapshots.due': 'Next',
   'health.snapshots.count': 'Kept',
@@ -2539,8 +2515,6 @@ export const en: Record<MessageKey, string> = {
   'health.queue.unread': 'Files whose text cannot be read',
   'health.queue.batches': 'Actions over folders',
   'health.offsite': 'Off-site copy',
-  'health.offsite.note':
-    'Every snapshot is mirrored, encrypted, to an S3 bucket away from this server, such as Cloudflare R2. The bucket refuses deleting or overwriting until its lock runs out, so not even whoever takes over the server can delete the copy.',
   'health.offsite.none':
     'No off-site copy is set up: should this server fail, its snapshots go with it.',
   'health.offsite.error': 'The last mirroring failed:',
@@ -3120,8 +3094,6 @@ export const en: Record<MessageKey, string> = {
   'translation.consent.always': 'Always for my mail',
   'consents.speech': 'Speech is sent to OpenAI to be written as text',
   'speech.heading': 'Speech to text',
-  'speech.intro':
-    "What is said is sent as audio to OpenAI's gpt-transcribe model (USA) with this installation's API key, which returns it as text; while AI is on, Claude reads the text and proposes an event, a task or a note. Each user gives their consent before their first recording.",
   'speech.enabled': 'On for this installation',
   'speech.key': 'OpenAI API key',
   'speech.say': 'Say a command or a note',
@@ -3350,8 +3322,6 @@ export const en: Record<MessageKey, string> = {
   'vault.log.gone': 'a deleted item',
   'vault.log.none': 'Nobody has opened or shared this collection yet.',
   'vault.company.title': 'Company vault collections',
-  'vault.company.note':
-    'Collections of passwords the company gives to groups. An administrator lays them out but cannot read them: the first owner to open one makes its key.',
   'vault.company.none': 'No company vault collections yet.',
   'vault.company.new': 'New vault collection',
   'vault.company.edit': 'Edit the vault collection',
@@ -3359,8 +3329,6 @@ export const en: Record<MessageKey, string> = {
   'vault.company.deleteTitle': 'Delete the vault collection?',
   'vault.company.deleteWarning': 'is deleted only if it is empty.',
   'recovery.title': 'Vault recovery',
-  'recovery.note':
-    "When it is on, each vault is also locked with the company's key at its next unlocking, so an administrator can prepare a one-time code for someone who forgot their password. Whoever can recover a vault can read it too; the user sees every recovery in their vault.",
   'recovery.off': 'Vault recovery is off.',
   'recovery.on': 'On',
   'recovery.turnOn': 'Turn recovery on',
@@ -3519,8 +3487,6 @@ export const en: Record<MessageKey, string> = {
   'appPasswords.deleteTitle': 'Remove the app password?',
   'appPasswords.deleteWarning': 'can no longer be used; the device stops reading contacts.',
   'phoneApp.title': 'Android app',
-  'phoneApp.note':
-    "On an Android phone, Ponistra runs as an app of its own that updates itself from this installation and keeps your contacts in the phone's address book.",
   'phoneApp.connect': 'Connect a phone',
   'phoneApp.steps': 'Install the app if you do not have it yet, then open it here.',
   'phoneApp.download': 'Download the app',
@@ -3533,14 +3499,12 @@ export const en: Record<MessageKey, string> = {
   'phoneApp.noCode':
     "The link carries no connection code. Connect the phone again from Ponistra's settings.",
   'agents.title': 'Agents',
-  'agents.intro':
-    'An outside agent (Claude, ChatGPT or another MCP client) reads your documents, mail, calendar and tasks and writes proposals you confirm. Each signs in through your account and can be revoked here.',
   'agents.url': 'Server address (MCP)',
   'agents.copy': 'Copy address',
-  'agents.how': 'Enter it in the client as an MCP server; the sign-in opens in the browser.',
   'agents.none': 'No agent is connected yet.',
   'agents.keyName': 'Key name',
   'agents.newKey': 'New key',
+  'agents.makeKey': 'Create',
   'agents.keyOnce': 'The key is shown only now. The command adds it to Claude Code:',
   'agents.copyCommand': 'Copy command',
   'agents.workspaceKey': 'Claude Code (workspace)',
@@ -3658,8 +3622,6 @@ export const en: Record<MessageKey, string> = {
   'calendar.offers': 'Times everyone is free',
   'calendar.noOffers': 'There is no time in the next two months at which everyone is free.',
   'resources.title': 'Rooms and resources',
-  'resources.note':
-    'A room, a piece of equipment or a vehicle is booked by putting it on an event; at one time it can be on one only.',
   'resources.none': 'There are no rooms or resources yet.',
   'resources.new': 'New resource',
   'resources.edit': 'Edit resource',
@@ -3677,8 +3639,6 @@ export const en: Record<MessageKey, string> = {
   'resources.active': 'In use',
   'resources.retired': 'retired',
   'workdays.title': 'Days off',
-  'workdays.note':
-    "The weekend and public holidays of the chosen country, and of its region where they differ by region, are the installation's days off. Series that mind days off move or skip their occurrences by them.",
   'workdays.country': 'Country',
   'workdays.subdivision': 'Region',
   'workdays.wholeCountry': 'Whole country',
@@ -3687,8 +3647,6 @@ export const en: Record<MessageKey, string> = {
   'workdays.closes': 'To',
   'workdays.holidays': 'Holidays in the coming year',
   'workdays.closures': 'Company days off',
-  'workdays.closuresNote':
-    'Days the company does not work although they are no holidays: a collective leave, a day between a holiday and the weekend.',
   'workdays.none': 'No company days off yet.',
   'workdays.new': 'New day off',
   'workdays.edit': 'Edit day off',

@@ -6,14 +6,14 @@ Dok ste odsutni, Ponistra sama odgovara na poštu s vašeg računa, a kolege vid
 
 ### Uključivanje
 
-1. Otvorite Postavke i odaberite {t:away.title}.
-2. Upišite {t:away.first} i {t:away.last}.
+1. Otvorite Postavke i odaberite {t:away.title}. Dok odsutnost nije postavljena, ispod naslova piše: {t:away.none}
+2. Pritisnite {t:away.set} i upišite {t:away.first} i {t:away.last}.
 3. Upišite {t:away.textHr}, {t:away.textEn} ili oba teksta.
-4. Pritisnite {t:away.save}. Iznad obrasca piše razdoblje odsutnosti.
+4. Pritisnite {t:away.save}. Obrazac se zatvara, a ispod naslova piše razdoblje odsutnosti.
 
 ### Promjena i isključivanje
 
-1. Promijenite datume ili tekst i ponovno pritisnite {t:away.save}.
+1. Pritisnite {t:away.edit}, promijenite datume ili tekst i ponovno pritisnite {t:away.save}.
 2. Pritisnite {t:away.off} ako ste se vratili ranije.
 
 ### Što vide kolege

@@ -4,6 +4,7 @@ import { deleteJson, getJson, putJson } from './api';
 import { Labelled } from './dialogs';
 import { Loading } from './frame';
 import { useI18n } from './i18n';
+import { Headed } from './headed';
 import { button, field, primaryButton } from './styles';
 import { codeText, errorMessage } from './tree';
 import { day } from './when';
@@ -28,14 +29,13 @@ function dayStart(given: string, after = 0): Date {
   return new Date(year, month - 1, date + after);
 }
 
-function AwayForm({ away }: { away: Away | null }) {
-  const { t, formatDays } = useI18n();
+function AwayForm({ away, onClose }: { away: Away | null; onClose: () => void }) {
+  const { t } = useI18n();
   const queryClient = useQueryClient();
   const [first, setFirst] = useState(away ? day(new Date(away.starts_at)) : '');
   const [last, setLast] = useState(away ? day(lastDay(away.ends_at)) : '');
   const [hr, setHr] = useState(away?.text_hr ?? '');
   const [en, setEn] = useState(away?.text_en ?? '');
-  const done = () => queryClient.invalidateQueries({ queryKey: AWAY });
   const save = useMutation({
     mutationFn: () =>
       putJson('/api/mail/away', {
@@ -44,36 +44,25 @@ function AwayForm({ away }: { away: Away | null }) {
         text_hr: hr,
         text_en: en,
       }),
-    onSuccess: done,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: AWAY });
+      onClose();
+    },
   });
-  const off = useMutation({ mutationFn: () => deleteJson('/api/mail/away'), onSuccess: done });
   const ready = first !== '' && last !== '' && first <= last && Boolean(hr.trim() || en.trim());
-  const failure = save.error ?? off.error;
   const submit = (event: FormEvent) => {
     event.preventDefault();
     save.mutate();
   };
   return (
-    <form onSubmit={submit} className="flex max-w-xl flex-col gap-3">
-      {away && (
-        <p className="text-sm text-muted">
-          {t('away.period').replace(
-            '{when}',
-            formatDays(day(new Date(away.starts_at)), day(lastDay(away.ends_at))),
-          )}
-        </p>
-      )}
-      {away?.failed && (
-        <p className="text-sm text-danger">
-          {t('away.failed')} {codeText(away.failed, t)}
-        </p>
-      )}
+    <form onSubmit={submit} className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-3">
         <Labelled label={t('away.first')}>
           {(id) => (
             <input
               id={id}
               type="date"
+              autoFocus
               value={first}
               onChange={(event) => setFirst(event.target.value)}
               className={field}
@@ -115,31 +104,30 @@ function AwayForm({ away }: { away: Away | null }) {
           />
         )}
       </Labelled>
-      {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-      <div className="flex flex-wrap gap-2">
+      {save.isError && <p className="text-sm text-danger">{errorMessage(save.error, t)}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={onClose} className={button}>
+          {t('tree.cancel')}
+        </button>
         <button type="submit" disabled={!ready || save.isPending} className={primaryButton}>
           {t('away.save')}
         </button>
-        {away && (
-          <button
-            type="button"
-            disabled={off.isPending}
-            onClick={() => off.mutate()}
-            className={button}
-          >
-            {t('away.off')}
-          </button>
-        )}
       </div>
     </form>
   );
 }
 
 export function AwaySettings() {
-  const { t } = useI18n();
+  const { t, formatDays } = useI18n();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
   const found = useQuery({
     queryKey: AWAY,
     queryFn: () => getJson<{ away: Away | null }>('/api/mail/away'),
+  });
+  const off = useMutation({
+    mutationFn: () => deleteJson('/api/mail/away'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: AWAY }),
   });
   if (!found.data)
     return found.isError ? (
@@ -147,7 +135,49 @@ export function AwaySettings() {
     ) : (
       <Loading />
     );
-  return <AwayForm key={found.data.away?.ends_at ?? 'none'} away={found.data.away} />;
+  const away = found.data.away;
+  return (
+    <div className="flex max-w-2xl flex-col gap-8">
+      <Headed
+        heading={t('away.title')}
+        action={
+          !open && (
+            <div className="flex gap-2">
+              {away && (
+                <button
+                  type="button"
+                  disabled={off.isPending}
+                  onClick={() => off.mutate()}
+                  className={button}
+                >
+                  {t('away.off')}
+                </button>
+              )}
+              <button type="button" onClick={() => setOpen(true)} className={button}>
+                {t(away ? 'away.edit' : 'away.set')}
+              </button>
+            </div>
+          )
+        }
+      >
+        <p className="text-sm">
+          {away
+            ? t('away.period').replace(
+                '{when}',
+                formatDays(day(new Date(away.starts_at)), day(lastDay(away.ends_at))),
+              )
+            : t('away.none')}
+        </p>
+        {away?.failed && (
+          <p className="text-sm text-danger">
+            {t('away.failed')} {codeText(away.failed, t)}
+          </p>
+        )}
+        {off.isError && <p className="text-sm text-danger">{errorMessage(off.error, t)}</p>}
+        {open && <AwayForm away={away} onClose={() => setOpen(false)} />}
+      </Headed>
+    </div>
+  );
 }
 
 /** Who of the others in a talk of a few is away now. */

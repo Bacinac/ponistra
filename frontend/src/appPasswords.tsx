@@ -8,6 +8,7 @@ import { Cancel, Close, ConfirmDialog, Modal } from './dialogs';
 import { useI18n } from './i18n';
 import { ActionsMenu, MenuItem } from './menu';
 import { button, field, primaryButton } from './styles';
+import { Headed } from './headed';
 import { connectPage, onAndroid, Qr, Steps } from './phoneApp';
 import { errorMessage } from './tree';
 import { CopyButton } from './vault/parts';
@@ -185,68 +186,77 @@ export function AppPasswords() {
   }
 
   return (
-    <>
+    <div className="flex max-w-2xl flex-col gap-8">
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
       {shelved && (
-        <section className="flex flex-col gap-2 rounded border border-line p-3">
-          <h2 className="text-sm font-semibold">{t('phoneApp.title')}</h2>
-          <p className="text-sm text-muted">{t('phoneApp.note')}</p>
-          <div>
+        <Headed
+          heading={t('phoneApp.title')}
+          action={
             <button
               type="button"
               onClick={() => pair.mutate()}
               disabled={pair.isPending}
-              className={primaryButton}
+              className={button}
             >
               {t('phoneApp.connect')}
             </button>
-          </div>
-        </section>
+          }
+        />
       )}
-      {kept.data?.app_passwords.length === 0 && <p className="text-sm">{t('appPasswords.none')}</p>}
-      {!!kept.data?.app_passwords.length && (
-        <table className="w-full border-collapse">
-          <thead className="text-left text-sm text-muted">
-            <tr className="border-b border-line">
-              <th className="w-full px-2 py-2 font-normal">{t('appPasswords.device')}</th>
-              <th className="hidden px-2 py-2 font-normal sm:table-cell">
-                {t('passkeys.created')}
-              </th>
-              <th className="px-2 py-2 font-normal whitespace-nowrap">{t('appPasswords.used')}</th>
-              <th className="w-10" />
-            </tr>
-          </thead>
-          <tbody>
-            {kept.data.app_passwords.map((password) => (
-              <tr key={password.id} className="border-b border-line">
-                <td className={`${cell} max-w-0`}>
-                  <p className="truncate">{password.name}</p>
-                </td>
-                <td className={`${cell} hidden text-sm whitespace-nowrap text-muted sm:table-cell`}>
-                  {formatDate(password.created_at)}
-                </td>
-                <td className={`${cell} text-sm whitespace-nowrap text-muted`}>
-                  {password.used_at ? formatDate(password.used_at) : t('users.never')}
-                </td>
-                <td className="pr-2">
-                  <ActionsMenu>
-                    <MenuItem
-                      icon={Trash2}
-                      label={t('appPasswords.delete')}
-                      onSelect={() => setRemoving(password)}
-                    />
-                  </ActionsMenu>
-                </td>
+      <Headed
+        heading={t('appPasswords.title')}
+        action={
+          <button type="button" onClick={() => setOther(true)} className={button}>
+            {t('appPasswords.otherOpen')}
+          </button>
+        }
+      >
+        {kept.data?.app_passwords.length === 0 && (
+          <p className="text-sm">{t('appPasswords.none')}</p>
+        )}
+        {!!kept.data?.app_passwords.length && (
+          <table className="w-full border-collapse">
+            <thead className="text-left text-sm text-muted">
+              <tr className="border-b border-line">
+                <th className="w-full px-2 py-2 font-normal">{t('appPasswords.device')}</th>
+                <th className="hidden px-2 py-2 font-normal sm:table-cell">
+                  {t('passkeys.created')}
+                </th>
+                <th className="px-2 py-2 font-normal whitespace-nowrap">
+                  {t('appPasswords.used')}
+                </th>
+                <th className="w-10" />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-      <div>
-        <button type="button" onClick={() => setOther(true)} className={button}>
-          {t('appPasswords.otherOpen')}
-        </button>
-      </div>
+            </thead>
+            <tbody>
+              {kept.data.app_passwords.map((password) => (
+                <tr key={password.id} className="border-b border-line">
+                  <td className={`${cell} max-w-0`}>
+                    <p className="truncate">{password.name}</p>
+                  </td>
+                  <td
+                    className={`${cell} hidden text-sm whitespace-nowrap text-muted sm:table-cell`}
+                  >
+                    {formatDate(password.created_at)}
+                  </td>
+                  <td className={`${cell} text-sm whitespace-nowrap text-muted`}>
+                    {password.used_at ? formatDate(password.used_at) : t('users.never')}
+                  </td>
+                  <td className="pr-2">
+                    <ActionsMenu>
+                      <MenuItem
+                        icon={Trash2}
+                        label={t('appPasswords.delete')}
+                        onSelect={() => setRemoving(password)}
+                      />
+                    </ActionsMenu>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Headed>
       {other && <OtherAppDialog onMade={refresh} onClose={() => setOther(false)} />}
       {removing && (
         <ConfirmDialog
@@ -265,7 +275,7 @@ export function AppPasswords() {
           onClose={() => closePairing(pairing)}
         />
       )}
-    </>
+    </div>
   );
 }
 

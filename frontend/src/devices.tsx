@@ -5,7 +5,8 @@ import { deleteJson, getJson } from './api';
 import { Close, Modal } from './dialogs';
 import { useI18n } from './i18n';
 import { useKeepDevice, useKeeping, usePass } from './offline';
-import { button, dangerButton, primaryButton } from './styles';
+import { button, dangerButton } from './styles';
+import { Headed } from './headed';
 import { errorMessage } from './tree';
 
 interface Device {
@@ -65,22 +66,23 @@ function ThisDevice() {
     status = `${t('offline.kept')} ${formatDate(new Date(pass.at).toISOString())}`;
   else if (on) status = t('offline.keeping');
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="font-semibold">{t('offline.title')}</h2>
-      <p className={`text-sm ${on && pass.failed ? 'text-danger' : ''}`}>{status}</p>
-      {keep.error && <p className="text-sm text-danger">{errorMessage(keep.error, t)}</p>}
-      <div>
+    <Headed
+      heading={t('offline.title')}
+      action={
         <button
           type="button"
           disabled={keep.isPending}
           onClick={() => change(!on)}
-          className={on ? button : primaryButton}
+          className={button}
         >
           {on ? <WifiOff size={16} aria-hidden /> : <HardDriveDownload size={16} aria-hidden />}
           {t(on ? 'offline.disable' : 'offline.enable')}
         </button>
-      </div>
-    </section>
+      }
+    >
+      <p className={`text-sm ${on && pass.failed ? 'text-danger' : ''}`}>{status}</p>
+      {keep.error && <p className="text-sm text-danger">{errorMessage(keep.error, t)}</p>}
+    </Headed>
   );
 }
 
@@ -111,10 +113,8 @@ export function Devices({
   const failure = listed.error ?? end.error ?? endAll.error;
   const sessions = listed.data?.sessions ?? [];
 
-  return (
+  const list = (
     <>
-      {!user && <ThisDevice />}
-      <p className="text-sm text-muted">{t(user ? 'devices.theirNote' : 'devices.note')}</p>
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
       {listed.isSuccess && sessions.length === 0 && <p className="text-sm">{t('devices.none')}</p>}
       {sessions.length > 0 && (
@@ -188,6 +188,14 @@ export function Devices({
         </div>
       )}
     </>
+  );
+  return user ? (
+    list
+  ) : (
+    <div className="flex max-w-2xl flex-col gap-8">
+      <ThisDevice />
+      <Headed heading={t('devices.mine')}>{list}</Headed>
+    </div>
   );
 }
 

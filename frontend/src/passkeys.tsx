@@ -4,9 +4,10 @@ import { useState, type FormEvent } from 'react';
 import { ApiError, deleteJson, getJson, patchJson, postJson } from './api';
 import { ConfirmDialog, NameDialog } from './dialogs';
 import { useI18n } from './i18n';
+import { Headed, inline, inlineField } from './headed';
 import type { MessageKey } from './i18n/hr';
 import { ActionsMenu, MenuItem, MenuSeparator } from './menu';
-import { field, primaryButton } from './styles';
+import { button, compactField, primaryButton } from './styles';
 import { errorMessage } from './tree';
 
 interface Passkey {
@@ -117,6 +118,7 @@ export function Passkeys() {
   const { t, formatDate } = useI18n();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
+  const [open, setOpen] = useState(false);
   const [dialog, setDialog] = useState<{ type: 'rename' | 'delete'; passkey: Passkey } | null>(
     null,
   );
@@ -130,6 +132,7 @@ export function Passkeys() {
     mutationFn: () => makePasskey(name),
     onSuccess: () => {
       setName('');
+      setOpen(false);
       refresh();
     },
   });
@@ -148,8 +151,25 @@ export function Passkeys() {
   }
 
   return (
-    <>
-      <p className="text-sm text-muted">{t('passkeys.note')}</p>
+    <Headed
+      heading={t('passkeys.title')}
+      action={
+        passkeysWork &&
+        !open && (
+          <button
+            type="button"
+            onClick={() => {
+              add.reset();
+              setOpen(true);
+            }}
+            className={button}
+          >
+            {t('passkeys.add')}
+          </button>
+        )
+      }
+    >
+      {!passkeysWork && <p className="text-sm text-danger">{t('passkeys.unsupported')}</p>}
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
       {kept.data?.passkeys.length === 0 && <p className="text-sm">{t('passkeys.none')}</p>}
       {!!kept.data?.passkeys.length && (
@@ -196,28 +216,36 @@ export function Passkeys() {
           </tbody>
         </table>
       )}
-      {passkeysWork ? (
-        <form onSubmit={submit} className="flex flex-col gap-2">
-          <label className="flex flex-col gap-1 text-sm">
+      {open && (
+        <form onSubmit={submit} className={inline}>
+          <label className={inlineField}>
             {t('passkeys.newName')}
             <input
               required
+              autoFocus
               maxLength={150}
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className={field}
+              className={compactField}
             />
           </label>
-          {add.isError && <p className="text-sm text-danger">{passkeyMessage(add.error, t)}</p>}
-          <div className="flex justify-end">
-            <button type="submit" disabled={add.isPending} className={primaryButton}>
-              {t(add.isPending ? 'passkeys.adding' : 'passkeys.add')}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setName('');
+              add.reset();
+            }}
+            className={button}
+          >
+            {t('tree.cancel')}
+          </button>
+          <button type="submit" disabled={add.isPending} className={primaryButton}>
+            {t(add.isPending ? 'passkeys.adding' : 'passkeys.make')}
+          </button>
         </form>
-      ) : (
-        <p className="text-sm text-danger">{t('passkeys.unsupported')}</p>
       )}
+      {add.isError && <p className="text-sm text-danger">{passkeyMessage(add.error, t)}</p>}
       {dialog?.type === 'rename' && (
         <NameDialog
           heading={t('tree.rename')}
@@ -241,6 +269,6 @@ export function Passkeys() {
           <strong>{dialog.passkey.name}</strong> {t('passkeys.deleteWarning')}
         </ConfirmDialog>
       )}
-    </>
+    </Headed>
   );
 }

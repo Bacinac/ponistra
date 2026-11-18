@@ -3,7 +3,6 @@
   "audience": "admin",
   "covers": [],
   "quiet": [
-    "recovery.note",
     "recovery.prepareNote",
     "recovery.handOver",
     "recovery.turnOffWarning",
@@ -13,7 +12,7 @@
     "recovery.notHolder"
   ],
   "describes": {
-    "frontend/src/vault/admin.tsx#RecoverySection": "f9f1e8c7f67d",
+    "frontend/src/vault/admin.tsx#RecoverySection": "747d28af824b",
     "frontend/src/vault/admin.tsx#RecoverDialog": "c55f9be80460",
     "backend/apps/vault/company.py#recovery": "ae69a41757bf",
     "backend/apps/vault/company.py#holders": "6f7805d248a9",

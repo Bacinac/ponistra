@@ -1120,11 +1120,10 @@ export const hr = {
   'password.title': 'Lozinka',
   'password.changed': 'Lozinka je promijenjena.',
   'passkeys.title': 'Pristupni ključevi',
-  'passkeys.note':
-    'Pristupnim ključem prijavljujete se otiskom prsta, licem ili PIN-om uređaja, bez e-pošte i lozinke. Ključ ostaje na uređaju, a Ponistra čuva samo njegov javni dio.',
   'passkeys.none': 'Još nemate pristupnih ključeva.',
   'passkeys.newName': 'Naziv novog ključa',
   'passkeys.add': 'Dodaj pristupni ključ',
+  'passkeys.make': 'Dodaj',
   'passkeys.adding': 'Dodavanje…',
   'passkeys.created': 'Dodan',
   'passkeys.delete': 'Ukloni ključ',
@@ -1138,9 +1137,6 @@ export const hr = {
     'Administrator traži prijavu pristupnim ključem. Dodajte ga na ovom uređaju da biste nastavili; od sljedeće prijave lozinka više nije dovoljna.',
   'devices.title': 'Uređaji',
   'devices.mine': 'Prijavljeni uređaji',
-  'devices.note':
-    'Preglednici u kojima ste prijavljeni. Odjavite onaj koji ne prepoznajete ili više ne koristite.',
-  'devices.theirNote': 'Preglednici u kojima je korisnik prijavljen.',
   'devices.device': 'Uređaj',
   'devices.signedIn': 'Prijava',
   'devices.seen': 'Zadnja aktivnost',
@@ -1161,8 +1157,6 @@ export const hr = {
   'offline.unmark': 'Ne čuvaj na ovom uređaju',
   'offline.needed': 'Potrebna je mreža',
   'notifications.title': 'Obavijesti',
-  'notifications.note':
-    'Ponistra javlja novu poštu, poruke i pozive u sastanak i kad nije otvorena: u pregledniku ili u instaliranoj aplikaciji, na računalu i na mobitelu. Obavijest putuje šifrirana kroz push-servis preglednika; nitko osim ovog uređaja ne čita njezin sadržaj.',
   'notifications.thisBrowser': 'Ovaj preglednik',
   'notifications.on': 'Obavijesti su uključene.',
   'notifications.off': 'Obavijesti su isključene.',
@@ -1175,12 +1169,8 @@ export const hr = {
     'Na iPhoneu i iPadu obavijesti rade samo iz aplikacije dodane na početni zaslon: Dijeli → Dodaj na početni zaslon, pa ih uključite ondje.',
   'notifications.offInstallation': 'Administrator je isključio obavijesti za ovu instalaciju.',
   'notifications.installTitle': 'Aplikacija',
-  'notifications.installNote':
-    'Instalirana aplikacija otvara se s radne površine ili početnog zaslona, u vlastitom prozoru, i prima obavijesti kao i preglednik.',
   'notifications.installed': 'Aplikacija je instalirana.',
   'notifications.install': 'Instaliraj aplikaciju',
-  'notifications.installHint':
-    'Instalaciju nudi izbornik preglednika: Chrome i Edge „Instaliraj aplikaciju”, Safari „Dijeli → Dodaj na Dock” odnosno „Dodaj na početni zaslon”.',
   'notifications.browsers': 'Preglednici koji primaju obavijesti',
   'notifications.none': 'Nijedan preglednik ne prima obavijesti.',
   'notifications.browser': 'Preglednik',
@@ -1191,8 +1181,6 @@ export const hr = {
   'notifications.remove': 'Ukloni',
   'notifications.setting': 'Obavijesti u instalaciji',
   'notifications.settingOn': 'Instalacija šalje obavijesti preglednicima',
-  'notifications.settingNote':
-    'Isključeno, obavijesti stižu samo dok je Ponistra otvorena i ništa ne odlazi push-servisima preglednika.',
   'notifications.settingChanged': 'Zadnje promijenio',
   'mail.accounts': 'Računi e-pošte',
   'mail.connect': 'Poveži račun',
@@ -1205,8 +1193,6 @@ export const hr = {
   'mail.mailboxRemoveTitle': 'Ukloniti zajednički sandučić?',
   'mail.mailboxRemoveWarning': 'uklanja se zajedno sa svojim računima i svom poštom.',
   'mail.connectTitle': 'Povezivanje računa e-pošte',
-  'mail.connectNote':
-    'Ponistra preuzima poštu iz vašeg postojećeg sandučića i šalje kroz njega; ono što je kod pružatelja ne mijenja i ne briše.',
   'mail.edit': 'Postavke računa',
   'mail.remove': 'Ukloni račun',
   'mail.removeTitle': 'Ukloniti račun?',
@@ -1237,8 +1223,6 @@ export const hr = {
   'mail.signature.scope': 'Za koje račune',
   'mail.signature.shared': 'Isti potpis za sve račune',
   'mail.signature.own': 'Vlastiti potpis za ovaj račun',
-  'mail.signatureHint':
-    'Stoji ispod nove poruke i iznad citiranog teksta u odgovoru; kad se promijeni pošiljatelj, mijenja se i potpis.',
   'mail.servers': 'Postavke poslužitelja',
   'mail.username': 'Korisničko ime',
   'mail.protocol': 'Vrsta poslužitelja',
@@ -1309,8 +1293,6 @@ export const hr = {
   'mail.oauthSwitch.google': 'Prijavljuj se preko Googlea umjesto lozinkom',
   'mail.oauthSwitch.microsoft': 'Prijavljuj se preko Microsofta umjesto lozinkom',
   'providers.title': 'Pošta',
-  'providers.intro':
-    'Računi kod Googlea i Microsofta prijavljuju se preko pružatelja umjesto lozinkom, kroz registraciju ove instalacije kod svakog od njih. Administrator registraciju izrađuje kod pružatelja s adresom za povratak navedenom ispod, a ovdje unosi njezin ID i tajnu.',
   'providers.google': 'Google',
   'providers.google.note':
     'U konzoli Google Clouda: OAuth klijent vrste „Web application” s opsezima https://mail.google.com/ i https://www.googleapis.com/auth/carddav te uključen Google Contacts CardDAV API. Za Google Workspace odaberite „Internal”. Za osobne Gmail račune aplikacija je „In production” bez Googleove provjere: pri prijavi Google upozorava da aplikacija nije provjerena, a prima najviše 100 korisnika.',
@@ -1329,6 +1311,9 @@ export const hr = {
     'Tajna uskoro istječe. Izradite novu kod Microsofta i unesite je ovdje, inače se računi prestaju prijavljivati.',
   'providers.changed': 'Promijenjeno',
   'providers.save': 'Spremi',
+  'providers.setUp': 'Postavi',
+  'providers.change': 'Promijeni',
+  'providers.none': 'Nije postavljeno.',
   'providers.remove': 'Ukloni',
   'providers.removeTitle': 'Ukloniti registraciju?',
   'providers.removeWarning':
@@ -1338,8 +1323,6 @@ export const hr = {
     'Imenik poslužitelja nema adresu e-pošte za ove primatelje; upišite je umjesto Notes imena',
   'mail.openedSetting': 'Pročitano unutar organizacije',
   'mail.openedEnabled': 'Pošiljatelj poruke vidi koje su je kolege otvorile i kada',
-  'mail.openedNote':
-    'Vrijedi za sve korisnike instalacije. Potvrda o čitanju ne traži se niti šalje i ništa ne izlazi iz instalacije; broji se samo otvaranje poruke, ne i označavanje pročitanom. Isključivanjem se briše sve što je dotad zabilježeno.',
   'mail.openedBy': 'Kolege koji su je otvorili',
   'mail.openedAll': 'Otvorili su je svi kolege',
   'mail.of': 'od',
@@ -1424,8 +1407,7 @@ export const hr = {
   'mail.sealed.noKeys': 'Poruka je šifrirana, a u sefu nema ključa pošte.',
   'mail.sealed.opening': 'Otvaranje poruke…',
   'mail.keys': 'Ključevi za šifriranje',
-  'mail.keysNone':
-    'Još nema ključeva. Ključ pošiljatelja pamti se kad pročitate njegovu potpisanu poruku.',
+  'mail.keysNone': 'Još nema ključeva.',
   'mail.keysOwn': 'Vaš ključ',
   'mail.keysRemove': 'Ukloni ključ',
   'mail.keysBring': 'Učitaj ključ iz datoteke…',
@@ -1461,6 +1443,9 @@ export const hr = {
   'away.textHr': 'Tekst na hrvatskom',
   'away.textEn': 'Tekst na engleskom',
   'away.save': 'Spremi',
+  'away.set': 'Postavi odsutnost',
+  'away.edit': 'Uredi',
+  'away.none': 'Nije postavljena.',
   'away.off': 'Isključi odsutnost',
   'away.failed': 'Automatski odgovor na neku poruku nije poslan:',
   'away.then': 'Odsutni',
@@ -1608,8 +1593,6 @@ export const hr = {
   'error.heir_required': 'Odaberite tko preuzima dokumente i sandučiće.',
   'error.invalid_heir': 'Dokumente može preuzeti samo drugi aktivni korisnik.',
   'company.title': 'Mape tvrtke',
-  'company.note':
-    'Mape tvrtke stoje pod „Tvrtka” onima kojima ih dodijelite. Vi ih postavljate i dodjeljujete grupama, a njihov sadržaj vidi samo tko u njima ima ulogu.',
   'company.none': 'Još nema mapa tvrtke.',
   'company.new': 'Nova mapa tvrtke',
   'company.edit': 'Uredi mapu tvrtke',
@@ -1711,8 +1694,6 @@ export const hr = {
   'policy.passkeys.administrators': 'Obavezna za administratore',
   'policy.passkeys.everyone': 'Obavezna za sve korisnike',
   'policy.secondFactor': 'Drugi korak pri prijavi lozinkom',
-  'policy.note':
-    'Tko mora imati pristupni ključ, lozinkom se prijavljuje samo dok ga ne doda, a nakon toga samo ključem.',
   'error.forbidden': 'Za ovo nemate pravo.',
   'error.move_out':
     'Izvan mape iz koje vam dolazi pravo uređivanja stavku može premjestiti samo vlasnik.',
@@ -2159,12 +2140,12 @@ export const hr = {
   'run.missed': 'Preskočeno',
   'run.open': 'Otvori',
   'ai.title': 'Umjetna inteligencija',
-  'ai.intro':
-    'Radnje poput sažimanja šalju tekst modelu Claude tvrtke Anthropic (SAD) API ključem ove instalacije. Dok je umjetna inteligencija isključena, te su radnje vidljive, ali onemogućene.',
+  'ai.claude': 'Claude',
+  'ai.keyChange': 'Promijeni ključ',
+  'ai.keyAdd': 'Dodaj ključ',
   'ai.enabled': 'Uključena za ovu instalaciju',
   'ai.key': 'API ključ tvrtke Anthropic',
   'ai.keyKept': 'Spremljeni ključ završava s',
-  'ai.keyReplace': 'Novi ključ, samo za zamjenu spremljenoga',
   'ai.keyLost':
     'Spremljeni ključ više se ne može otvoriti jer se promijenila tajna instalacije; unesite ga ponovno.',
   'ai.changed': 'Zadnja promjena',
@@ -2181,8 +2162,6 @@ export const hr = {
   'ai.consent.always': 'Uvijek u ovom dokumentu',
   'ai.consent.withdraw': 'Povuci odobrenje za Claude',
   'ai.usage.heading': 'Potrošnja',
-  'ai.usage.note':
-    'Tokeni i trošak modela po mjesecu i radnji u posljednjih dvanaest mjeseci, u američkim dolarima prema cjeniku tvrtke Anthropic.',
   'ai.usage.month': 'Mjesec',
   'ai.usage.action': 'Radnja',
   'ai.usage.runs': 'Izvođenja',
@@ -2192,8 +2171,6 @@ export const hr = {
   'ai.usage.unpriced': 'bez cijene',
   'ai.usage.none': 'Modeli još nisu izveli nijednu radnju.',
   'ai.requests.heading': 'Slobodne upute',
-  'ai.requests.note':
-    'Upute iz izbornika „Drugo…” u posljednjih dvanaest mjeseci, grupirane po tekstu, bez korisnika i dokumenta. Česte upute kandidati su za gotove radnje.',
   'ai.requests.request': 'Uputa',
   'ai.requests.times': 'Puta',
   'ai.requests.last': 'Zadnji put',
@@ -2421,8 +2398,6 @@ export const hr = {
   'health.answers': 'Radi',
   'health.silent': 'Ne odgovara',
   'health.snapshots': 'Sigurnosne kopije',
-  'health.snapshots.note':
-    'Rade se svake noći i prije svakog ažuriranja. Na poslužitelju: ponistra backup, ponistra backups i ponistra restore.',
   'health.snapshots.newest': 'Najnovija',
   'health.snapshots.due': 'Sljedeća',
   'health.snapshots.count': 'Čuva se',
@@ -2530,8 +2505,6 @@ export const hr = {
   'health.queue.unread': 'Datoteke čiji se tekst ne može pročitati',
   'health.queue.batches': 'Radnje nad mapama',
   'health.offsite': 'Kopija izvan poslužitelja',
-  'health.offsite.note':
-    'Svaka sigurnosna kopija šifrirana se preslikava u spremnik S3 izvan ovog poslužitelja, primjerice Cloudflare R2. Spremnik ne dopušta brisanje ni prepisivanje dok mu ne istekne zaključavanje, pa kopiju ne može izbrisati ni onaj tko preuzme poslužitelj.',
   'health.offsite.none':
     'Kopija izvan poslužitelja nije postavljena: propadne li ovaj poslužitelj, sa sobom odnosi i sigurnosne kopije.',
   'health.offsite.error': 'Posljednje preslikavanje nije uspjelo:',
@@ -3116,8 +3089,6 @@ export const hr = {
   'translation.consent.always': 'Uvijek za moju poštu',
   'consents.speech': 'Izgovoreno se šalje tvrtki OpenAI na pretvaranje u tekst',
   'speech.heading': 'Govor u tekst',
-  'speech.intro':
-    'Izgovoreno se šalje kao zvuk modelu gpt-transcribe tvrtke OpenAI (SAD) API ključem ove instalacije, koji ga vraća kao tekst; kad je umjetna inteligencija uključena, tekst čita Claude i predlaže događaj, zadatak ili bilješku. Svaki korisnik prije prvog snimanja daje svoj pristanak.',
   'speech.enabled': 'Uključen za ovu instalaciju',
   'speech.key': 'API ključ tvrtke OpenAI',
   'speech.say': 'Izgovorite naredbu ili bilješku',
@@ -3344,8 +3315,6 @@ export const hr = {
   'vault.log.gone': 'obrisana stavka',
   'vault.log.none': 'Još nitko nije otvorio ni podijelio ovu zbirku.',
   'vault.company.title': 'Zbirke sefa tvrtke',
-  'vault.company.note':
-    'Zbirke lozinki koje tvrtka daje grupama. Administrator ih slaže, ali ih ne može pročitati: ključ postavlja prvi vlasnik koji zbirku otvori.',
   'vault.company.none': 'Još nema zbirki sefa tvrtke.',
   'vault.company.new': 'Nova zbirka sefa',
   'vault.company.edit': 'Uredi zbirku sefa',
@@ -3353,8 +3322,6 @@ export const hr = {
   'vault.company.deleteTitle': 'Obrisati zbirku sefa?',
   'vault.company.deleteWarning': 'briše se samo ako je prazna.',
   'recovery.title': 'Oporavak sefova',
-  'recovery.note':
-    'Kad je uključen, svaki se sef pri sljedećem otključavanju zaključava i ključem tvrtke, pa administrator može pripremiti jednokratni kod korisniku koji je zaboravio lozinku. Tko može oporaviti sef, može ga i pročitati; svaki oporavak korisnik vidi u svom sefu.',
   'recovery.off': 'Oporavak sefova nije uključen.',
   'recovery.on': 'Uključen',
   'recovery.turnOn': 'Uključi oporavak',
@@ -3511,8 +3478,6 @@ export const hr = {
   'appPasswords.deleteTitle': 'Ukloniti lozinku aplikacije?',
   'appPasswords.deleteWarning': 'više se neće moći upotrijebiti; uređaj prestaje čitati kontakte.',
   'phoneApp.title': 'Android aplikacija',
-  'phoneApp.note':
-    'Na telefonu s Androidom Ponistra radi kao zasebna aplikacija koja se sama ažurira s ove instalacije i drži vaše kontakte u imeniku telefona.',
   'phoneApp.connect': 'Poveži telefon',
   'phoneApp.steps': 'Instalirajte aplikaciju ako je još nemate, a zatim je otvorite ovdje.',
   'phoneApp.download': 'Preuzmi aplikaciju',
@@ -3526,14 +3491,12 @@ export const hr = {
   'phoneApp.noCode':
     'Poveznica nema kod za povezivanje. Povežite telefon ponovno iz postavki Ponistre.',
   'agents.title': 'Agenti',
-  'agents.intro':
-    'Vanjski agent (Claude, ChatGPT ili drugi MCP klijent) čita vaše dokumente, poštu, kalendar i zadatke te upisuje prijedloge koje vi potvrđujete. Svaki se prijavljuje preko vašeg računa i ovdje ga možete opozvati.',
   'agents.url': 'Adresa poslužitelja (MCP)',
   'agents.copy': 'Kopiraj adresu',
-  'agents.how': 'Unesite je u klijenta kao MCP poslužitelj; prijava se otvara u pregledniku.',
   'agents.none': 'Nijedan agent još nije povezan.',
   'agents.keyName': 'Naziv ključa',
   'agents.newKey': 'Novi ključ',
+  'agents.makeKey': 'Izradi',
   'agents.keyOnce': 'Ključ se prikazuje samo sada. Naredba ga dodaje u Claude Code:',
   'agents.copyCommand': 'Kopiraj naredbu',
   'agents.workspaceKey': 'Claude Code (radni prostor)',
@@ -3651,8 +3614,6 @@ export const hr = {
   'calendar.offers': 'Slobodni termini za sve',
   'calendar.noOffers': 'U sljedeća dva mjeseca nema termina u kojem su svi slobodni.',
   'resources.title': 'Sobe i resursi',
-  'resources.note':
-    'Soba, oprema ili vozilo rezervira se tako da se stavi na događaj; u isto vrijeme može biti samo na jednom.',
   'resources.none': 'Još nema nijedne sobe ni resursa.',
   'resources.new': 'Novi resurs',
   'resources.edit': 'Uredi resurs',
@@ -3670,8 +3631,6 @@ export const hr = {
   'resources.active': 'U uporabi',
   'resources.retired': 'izvan uporabe',
   'workdays.title': 'Neradni dani',
-  'workdays.note':
-    'Vikend i praznici odabrane države, a gdje se razlikuju po regijama i regije, neradni su dani instalacije. Prema njima se pomiču ili preskaču ponavljanja nizova koji paze na neradne dane.',
   'workdays.country': 'Država',
   'workdays.subdivision': 'Regija',
   'workdays.wholeCountry': 'Cijela država',
@@ -3680,8 +3639,6 @@ export const hr = {
   'workdays.closes': 'Do',
   'workdays.holidays': 'Praznici u sljedećih godinu dana',
   'workdays.closures': 'Neradni dani tvrtke',
-  'workdays.closuresNote':
-    'Dani kad tvrtka ne radi iako nisu praznici: kolektivni godišnji odmor, dan između praznika i vikenda.',
   'workdays.none': 'Još nema nijednog neradnog dana tvrtke.',
   'workdays.new': 'Novi neradni dan',
   'workdays.edit': 'Uredi neradni dan',

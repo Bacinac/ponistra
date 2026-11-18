@@ -8,7 +8,7 @@
     "consents.mail.automatic"
   ],
   "describes": {
-    "frontend/src/consents.tsx#Consents": "f8c8c69643f6",
+    "frontend/src/consents.tsx#Consents": "dd3375e906f8",
     "frontend/src/translation.tsx#TranslationConsent": "f0c83a93617e"
   }
 }

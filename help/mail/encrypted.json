@@ -10,7 +10,7 @@
     "frontend/src/mailSealed.tsx#withUnsealed": "eef14f6d6154",
     "frontend/src/mailSeal.tsx#sealedFor": "360311b7661d",
     "frontend/src/mailSeal.tsx#useSealing": "867a260c79d4",
-    "frontend/src/mailKeyList.tsx#MailKeysSection": "ba80c127d76a",
+    "frontend/src/mailKeyList.tsx#MailKeysSection": "b762d4d4c953",
     "backend/apps/mail/secured.py#sealed": "b80857a889ad",
     "backend/apps/mail/secured.py#unsealed": "b7474b1ec2d1",
     "backend/apps/mail/secured.py#keys": "73d6f2ecf59b",

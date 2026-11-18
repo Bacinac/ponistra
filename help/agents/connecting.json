@@ -5,8 +5,6 @@
     "setting:/settings/agents"
   ],
   "quiet": [
-    "agents.intro",
-    "agents.how",
     "agents.consent.asks",
     "agents.consent.read",
     "agents.consent.write",
@@ -16,7 +14,7 @@
     "agents.keyOnce"
   ],
   "describes": {
-    "frontend/src/agents.tsx#Agents": "558e033a83b5",
+    "frontend/src/agents.tsx#Agents": "7e6d049e7db8",
     "frontend/src/agents.tsx#ConsentPage": "0813d1caa59f",
     "backend/apps/agents/views.py#consent": "2cb09c2511f4",
     "backend/apps/agents/views.py#clients": "a9daca8ef331",

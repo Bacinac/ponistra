@@ -16,9 +16,10 @@ import {
   passkeySignIn,
   passkeysWork,
 } from './passkeys';
-import { button, field, primaryButton } from './styles';
+import { button, compactField, field, primaryButton } from './styles';
 import type { MessageKey } from './i18n/hr';
 import { errorMessage } from './tree';
+import { Headed, inline, inlineField } from './headed';
 
 export interface User {
   id: number;
@@ -176,7 +177,7 @@ function PasswordOrPasskey() {
   const [offers, setOffers] = useState(0);
   const [answered] = useState(answerOf);
   const providers = session?.providers ?? [];
-  const passkeys = passkeysWork && !!session?.passkeys;
+  const passkeys = passkeysWork && !!session?.passkeys && leading !== 'password';
   const offer = useRef<AbortController | null>(null);
   // The browser takes one passkey request at a time, so an offer being withdrawn must end before
   // the button's request begins.
@@ -341,14 +342,15 @@ export function SignInChoice() {
     onSuccess: (session) => queryClient.setQueryData(SESSION_KEY, session),
   });
   return (
-    <>
-      <label className="flex flex-col gap-1 text-sm sm:max-w-xs">
-        {t('signIn.choice')}
+    <Headed
+      heading={t('signIn.choice')}
+      action={
         <select
+          aria-label={t('signIn.choice')}
           value={chosen}
           disabled={choose.isPending}
           onChange={(event) => choose.mutate(event.target.value as SignIn | '')}
-          className={field}
+          className={compactField}
         >
           <option value="">{t('signIn.none')}</option>
           <option value="password">{t('password.title')}</option>
@@ -358,9 +360,10 @@ export function SignInChoice() {
             </option>
           )}
         </select>
-      </label>
+      }
+    >
       {choose.isError && <p className="text-sm text-danger">{errorMessage(choose.error, t)}</p>}
-    </>
+    </Headed>
   );
 }
 
@@ -599,12 +602,14 @@ export function SetupForm() {
 export function PasswordForm() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
   const [password, setPassword] = useState('');
   const change = useMutation({
     mutationFn: () => postJson<Session>('/api/auth/password', { password }),
     onSuccess: (session) => {
       queryClient.setQueryData(SESSION_KEY, session);
       setPassword('');
+      setOpen(false);
     },
   });
 
@@ -614,25 +619,55 @@ export function PasswordForm() {
   }
 
   return (
-    <form onSubmit={submit} className="flex w-full max-w-md flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        {t('password.new')}
-        <input
-          type="password"
-          autoComplete="new-password"
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className={field}
-        />
-      </label>
+    <Headed
+      heading={t('password.title')}
+      action={
+        !open && (
+          <button
+            type="button"
+            onClick={() => {
+              change.reset();
+              setOpen(true);
+            }}
+            className={button}
+          >
+            {t('password.change')}
+          </button>
+        )
+      }
+    >
+      {open && (
+        <form onSubmit={submit} className={inline}>
+          <label className={inlineField}>
+            {t('password.new')}
+            <input
+              type="password"
+              autoComplete="new-password"
+              required
+              autoFocus
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className={compactField}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setPassword('');
+              change.reset();
+            }}
+            className={button}
+          >
+            {t('tree.cancel')}
+          </button>
+          <button type="submit" disabled={change.isPending} className={primaryButton}>
+            {t('tree.save')}
+          </button>
+        </form>
+      )}
       {change.isError && <p className="text-sm text-danger">{errorMessage(change.error, t)}</p>}
       {change.isSuccess && <p className="text-sm text-muted">{t('password.changed')}</p>}
-      <div className="flex justify-end">
-        <button type="submit" disabled={change.isPending} className={primaryButton}>
-          {t('password.change')}
-        </button>
-      </div>
-    </form>
+    </Headed>
   );
 }

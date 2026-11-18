@@ -34,7 +34,8 @@ import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import { ActionsMenu, MenuItem, MenuSeparator } from './menu';
 import type { GroupRef } from './people';
-import { button, dangerButton, field, primaryButton } from './styles';
+import { Headed } from './headed';
+import { button, compactField, dangerButton, field, primaryButton } from './styles';
 import { errorMessage, TREE, type Role } from './tree';
 import { ProvidersSection } from './identityProviders';
 import { RecoverDialog, RecoverySection } from './vault/admin';
@@ -74,8 +75,7 @@ interface CompanyPlace {
   share?: FileServer | null;
 }
 
-type CompanyLabel =
-  'title' | 'note' | 'none' | 'new' | 'edit' | 'delete' | 'deleteTitle' | 'deleteWarning';
+type CompanyLabel = 'title' | 'none' | 'new' | 'edit' | 'delete' | 'deleteTitle' | 'deleteWarning';
 
 interface CompanyKind {
   path: string;
@@ -123,7 +123,6 @@ const FOLDERS: CompanyKind = {
   body: ({ name, confined, grants }) => ({ title: name, confined, grants }),
   labels: {
     title: 'company.title',
-    note: 'company.note',
     none: 'company.none',
     new: 'company.new',
     edit: 'company.edit',
@@ -143,7 +142,6 @@ const VAULT: CompanyKind = {
   body: ({ name, grants }) => ({ name, grants }),
   labels: {
     title: 'vault.company.title',
-    note: 'vault.company.note',
     none: 'vault.company.none',
     new: 'vault.company.new',
     edit: 'vault.company.edit',
@@ -476,15 +474,15 @@ function CompanySection({
       .join(' · ');
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <h2 className="flex-1 font-semibold">{t(kind.labels.title)}</h2>
+    <Headed
+      heading={t(kind.labels.title)}
+      action={
         <button type="button" className={button} onClick={() => onEdit()}>
           <FolderPlus size={16} aria-hidden />
           <span className="sr-only sm:not-sr-only">{t(kind.labels.new)}</span>
         </button>
-      </div>
-      <p className="text-sm text-muted">{t(kind.labels.note)}</p>
+      }
+    >
       {places.isError && <p className="text-sm text-danger">{errorMessage(places.error, t)}</p>}
       {places.data?.length === 0 && <p className="text-sm text-muted">{t(kind.labels.none)}</p>}
       {!!places.data?.length && (
@@ -536,7 +534,7 @@ function CompanySection({
           ))}
         </ul>
       )}
-    </section>
+    </Headed>
   );
 }
 
@@ -554,15 +552,14 @@ function OutsidePolicySection() {
   const failure = policy.error ?? change.error;
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="font-semibold">{t('policy.outside.title')}</h2>
-      <label className="flex flex-col gap-1 text-sm sm:max-w-xs">
+    <Headed heading={t('policy.outside.title')}>
+      <label className="flex flex-wrap items-center justify-between gap-2 text-sm">
         {t('policy.outside')}
         <select
           value={policy.data?.outside ?? ''}
           disabled={!policy.isSuccess || change.isPending}
           onChange={(event) => change.mutate(event.target.value as Outside)}
-          className={field}
+          className={compactField}
         >
           {OUTSIDE.map((option) => (
             <option key={option} value={option}>
@@ -572,7 +569,7 @@ function OutsidePolicySection() {
         </select>
       </label>
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-    </section>
+    </Headed>
   );
 }
 
@@ -590,15 +587,14 @@ function PolicySection() {
   const failure = policy.error ?? change.error;
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="font-semibold">{t('policy.title')}</h2>
-      <label className="flex flex-col gap-1 text-sm sm:max-w-xs">
+    <Headed heading={t('policy.title')}>
+      <label className="flex flex-wrap items-center justify-between gap-2 text-sm">
         {t('policy.passkeys')}
         <select
           value={policy.data?.passkeys ?? ''}
           disabled={!policy.isSuccess || change.isPending}
           onChange={(event) => change.mutate({ passkeys: event.target.value as Passkeys })}
-          className={field}
+          className={compactField}
         >
           {PASSKEYS.map((option) => (
             <option key={option} value={option}>
@@ -607,7 +603,6 @@ function PolicySection() {
           ))}
         </select>
       </label>
-      <p className="text-sm text-muted">{t('policy.note')}</p>
       <label className="flex items-center gap-2 text-sm">
         <input
           type="checkbox"
@@ -618,7 +613,7 @@ function PolicySection() {
         {t('policy.secondFactor')}
       </label>
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-    </section>
+    </Headed>
   );
 }
 
@@ -757,8 +752,7 @@ function Directory({ accounts }: { accounts: Accounts }) {
             ))}
           </tbody>
         </table>
-        <section className="flex flex-col gap-2">
-          <h2 className="font-semibold">{t('access.groups')}</h2>
+        <Headed heading={t('access.groups')}>
           {accounts.groups.length === 0 ? (
             <p className="text-sm text-muted">{t('users.noGroups')}</p>
           ) : (
@@ -793,7 +787,7 @@ function Directory({ accounts }: { accounts: Accounts }) {
               ))}
             </ul>
           )}
-        </section>
+        </Headed>
         {[FOLDERS, VAULT].map((kind) => (
           <CompanySection
             key={kind.path}

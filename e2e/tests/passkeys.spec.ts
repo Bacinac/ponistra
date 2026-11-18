@@ -26,14 +26,17 @@ test('a passkey added in the settings signs in where nobody is, without an email
   await page.goto('/settings/sign-in');
   const dialog = page.getByRole('main');
   await expect(dialog.getByText('Još nemate pristupnih ključeva.')).toBeVisible();
-  await dialog.getByLabel('Naziv novog ključa').fill('Laptop');
+  await expect(dialog.getByLabel('Naziv novog ključa')).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Dodaj pristupni ključ' }).click();
+  await dialog.getByLabel('Naziv novog ključa').fill('Laptop');
+  await dialog.getByRole('button', { name: 'Dodaj', exact: true }).click();
   await expect(dialog.getByRole('cell', { name: 'Laptop' })).toBeVisible();
   await expect(dialog.getByRole('cell', { name: 'Nikad' })).toBeVisible();
-  await expect(dialog.getByLabel('Naziv novog ključa')).toHaveValue('');
+  await expect(dialog.getByLabel('Naziv novog ključa')).toHaveCount(0);
 
-  await dialog.getByLabel('Naziv novog ključa').fill('Isti laptop');
   await dialog.getByRole('button', { name: 'Dodaj pristupni ključ' }).click();
+  await dialog.getByLabel('Naziv novog ključa').fill('Isti laptop');
+  await dialog.getByRole('button', { name: 'Dodaj', exact: true }).click();
   await expect(dialog.getByText('Ovaj uređaj već čuva vaš pristupni ključ.')).toBeVisible();
 
   const { credentials } = await here.cdp.send('WebAuthn.getCredentials', {
@@ -65,12 +68,13 @@ test('the sign-in method chosen in the settings leads the sign-in page, the othe
 }) => {
   const here = await device(page.context(), page);
   await page.goto('/settings/sign-in');
-  await page.getByRole('main').getByLabel('Naziv novog ključa').fill('Radni laptop');
   await page.getByRole('main').getByRole('button', { name: 'Dodaj pristupni ključ' }).click();
+  await page.getByRole('main').getByLabel('Naziv novog ključa').fill('Radni laptop');
+  await page.getByRole('main').getByRole('button', { name: 'Dodaj', exact: true }).click();
   await expect(page.getByRole('main').getByRole('cell', { name: 'Radni laptop' })).toBeVisible();
 
   await page.goto('/settings/sign-in');
-  const way = page.getByRole('main').getByLabel('Način prijave');
+  const way = page.getByRole('main').getByRole('combobox', { name: 'Način prijave' });
   await expect(way.getByRole('option', { name: 'Pristupni ključ' })).toBeEnabled();
   await way.selectOption('passkey');
   await expect

@@ -9,7 +9,7 @@
     "sources.deleteWarning"
   ],
   "describes": {
-    "frontend/src/identityProviders.tsx#ProvidersSection": "309c8e298432",
+    "frontend/src/identityProviders.tsx#ProvidersSection": "68bac1520e2d",
     "frontend/src/identityProviders.tsx#ProviderDialog": "0cc312fb0d65",
     "frontend/src/identityProviders.tsx#FIELDS": "4773db364122",
     "backend/apps/identity/providers.py#_settings": "eb919bc1ca4a",

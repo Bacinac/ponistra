@@ -295,8 +295,9 @@ test('a passkey with PRF unlocks the vault without its password', async ({ page 
   });
   await page.goto('/settings/sign-in');
   const keys = page.getByRole('main');
-  await keys.getByLabel('Naziv novog ključa').fill('Ključ sefa');
   await keys.getByRole('button', { name: 'Dodaj pristupni ključ' }).click();
+  await keys.getByLabel('Naziv novog ključa').fill('Ključ sefa');
+  await keys.getByRole('button', { name: 'Dodaj', exact: true }).click();
   await expect(keys.getByRole('cell', { name: 'Ključ sefa' })).toBeVisible();
 
   await made(page);

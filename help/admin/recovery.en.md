@@ -7,7 +7,7 @@ While vault recovery is on, an administrator can prepare a one-time code into th
 ### Turning it on
 
 1. Make and unlock your own vault.
-2. On the {t:users.title} page, in the {t:recovery.title} section, where it says {t:recovery.off} press {t:recovery.turnOn}.
+2. On the {t:users.title} page, in the {t:recovery.title} section, where it says {t:recovery.off} press {t:recovery.turnOn} at the right of the heading.
 3. Confirm another administrator who has a vault and stands under {t:recovery.waiting} with the {t:vault.confirm} button.
 
 ### Recovering a user's vault

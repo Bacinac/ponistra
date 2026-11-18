@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { FileUp } from 'lucide-react';
 import { deleteJson } from './api';
 import { useI18n } from './i18n';
+import { Headed } from './headed';
 import { KEYS, met, sealFailure, useMyKeys } from './mailKeys';
 import { RemoveButton } from './mailParts';
 import { button } from './styles';
@@ -63,8 +64,16 @@ export function MailKeysSection() {
   const failure = keys.error ?? brought.error ?? removed.error;
   const row = 'flex min-w-0 items-center gap-2 border-b border-line py-1 pl-2';
   return (
-    <section aria-label={t('mail.keys')} className="flex flex-col gap-2">
-      <h2 className="font-semibold">{t('mail.keys')}</h2>
+    <Headed
+      heading={t('mail.keys')}
+      action={
+        <button type="button" disabled={brought.isPending} onClick={picker.open} className={button}>
+          {picker.element}
+          <FileUp size={16} aria-hidden />
+          {t('mail.keysBring')}
+        </button>
+      }
+    >
       {failure && <p className="text-sm text-danger">{sealFailure(failure, t)}</p>}
       {keys.data?.length === 0 && <p className="text-sm text-muted">{t('mail.keysNone')}</p>}
       {(keys.data?.length ?? 0) > 0 && (
@@ -90,16 +99,6 @@ export function MailKeysSection() {
           ))}
         </ul>
       )}
-      <button
-        type="button"
-        disabled={brought.isPending}
-        onClick={picker.open}
-        className={`${button} self-start`}
-      >
-        {picker.element}
-        <FileUp size={16} aria-hidden />
-        {t('mail.keysBring')}
-      </button>
-    </section>
+    </Headed>
   );
 }

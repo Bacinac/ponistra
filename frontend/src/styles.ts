@@ -1,5 +1,7 @@
 export const field =
   'rounded border border-control bg-surface px-3 py-2 text-ink disabled:opacity-60';
+export const compactField =
+  'rounded border border-control bg-surface px-3 py-1.5 text-sm text-ink disabled:opacity-60';
 export const smallField =
   'rounded border border-control bg-surface px-2 py-0.5 text-sm text-ink disabled:opacity-60';
 export const button =

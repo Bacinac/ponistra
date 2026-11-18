@@ -15,7 +15,7 @@ Ponistra announces new mail, a message that did not leave at its set time, a mes
 ### The installed app
 
 1. Under {t:notifications.installTitle} press {t:notifications.install} if the browser offers it.
-2. If it does not, install the app from the browser's menu, as the page describes.
+2. If it does not, the page leaves {t:notifications.installTitle} out; install the app from the browser's menu: Chrome and Edge “Install app”, Safari “Share → Add to Dock” or “Add to Home Screen”.
 3. Once the app is installed, it says: {t:notifications.installed}
 
 ### Other browsers

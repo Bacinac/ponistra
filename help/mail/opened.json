@@ -4,8 +4,7 @@
   "covers": [],
   "quiet": [
     "mail.of",
-    "mail.openedEnabled",
-    "mail.openedNote"
+    "mail.openedEnabled"
   ],
   "describes": {
     "frontend/src/mail.tsx#OpenedMark": "1325eacfbf74",

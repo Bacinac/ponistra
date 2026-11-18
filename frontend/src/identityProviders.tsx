@@ -3,6 +3,7 @@ import { KeyRound, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { deleteJson, getJson, patchJson, postJson } from './api';
 import { Cancel, Close, ConfirmDialog, Modal, Picker } from './dialogs';
+import { Headed } from './headed';
 import { useI18n } from './i18n';
 import { ActionsMenu, MenuItem, MenuSeparator } from './menu';
 import { button, field, primaryButton } from './styles';
@@ -406,14 +407,15 @@ export function ProvidersSection() {
   const close = () => setDialog(null);
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <h2 className="flex-1 font-semibold">{t('sources.title')}</h2>
+    <Headed
+      heading={t('sources.title')}
+      action={
         <button type="button" className={button} onClick={() => setDialog({ type: 'edit' })}>
           <Plus size={16} aria-hidden />
           <span className="sr-only sm:not-sr-only">{t('sources.new')}</span>
         </button>
-      </div>
+      }
+    >
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
       {providers.isSuccess &&
         (providers.data.providers.length === 0 ? (
@@ -502,6 +504,6 @@ export function ProvidersSection() {
           <strong>{dialog.provider.name}</strong> {t('sources.deleteWarning')}
         </ConfirmDialog>
       )}
-    </section>
+    </Headed>
   );
 }

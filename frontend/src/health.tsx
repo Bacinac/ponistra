@@ -9,6 +9,7 @@ import { formatSize } from './explorer';
 import { Loaded } from './frame';
 import { AdminFrame } from './settings';
 import { useI18n } from './i18n';
+import { Headed } from './headed';
 import { problemText } from './problems';
 import type { MessageKey } from './i18n/hr';
 import { button, field, primaryButton } from './styles';
@@ -83,12 +84,19 @@ const QUEUES: Queue[] = ['jobs', 'ocr', 'text', 'unread', 'batches'];
 const cell = 'px-2 py-2';
 const value = `${cell} text-right tabular-nums`;
 
-export function Section({ heading, children }: { heading: string; children: ReactNode }) {
+export function Section({
+  heading,
+  action,
+  children,
+}: {
+  heading: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg">{heading}</h2>
+    <Headed heading={heading} action={action}>
       {children}
-    </section>
+    </Headed>
   );
 }
 
@@ -307,8 +315,21 @@ function OffsiteSection({ offsite }: { offsite: Health['offsite'] }) {
   });
   const { setting, locked } = offsite;
   return (
-    <Section heading={t('health.offsite')}>
-      <p className="text-sm text-muted">{t('health.offsite.note')}</p>
+    <Section
+      heading={t('health.offsite')}
+      action={
+        <div className="flex gap-2">
+          {setting && (
+            <button type="button" onClick={() => setRenewing(true)} className={button}>
+              {t('health.kit.renew')}
+            </button>
+          )}
+          <button type="button" onClick={() => setEditing(true)} className={button}>
+            {t(setting ? 'health.offsite.change' : 'health.offsite.set')}
+          </button>
+        </div>
+      }
+    >
       {setting === null ? (
         <p className="text-sm text-danger">{t('health.offsite.none')}</p>
       ) : (
@@ -378,16 +399,6 @@ function OffsiteSection({ offsite }: { offsite: Health['offsite'] }) {
         </>
       )}
       {renew.isError && <p className="text-sm text-danger">{errorMessage(renew.error, t)}</p>}
-      <div className="flex justify-end gap-2">
-        {setting && (
-          <button type="button" onClick={() => setRenewing(true)} className={button}>
-            {t('health.kit.renew')}
-          </button>
-        )}
-        <button type="button" onClick={() => setEditing(true)} className={primaryButton}>
-          {t(setting ? 'health.offsite.change' : 'health.offsite.set')}
-        </button>
-      </div>
       {editing && (
         <OffsiteForm
           setting={setting}
@@ -425,7 +436,7 @@ function Report({ health }: { health: Health }) {
   const { snapshots } = health;
   return (
     <AdminFrame title={t('health.title')}>
-      <div className="flex w-full max-w-3xl flex-col gap-8">
+      <div className="flex w-full max-w-2xl flex-col gap-8">
         <p className="text-sm text-muted">
           {t('status.version')} {health.version}
         </p>
@@ -454,7 +465,6 @@ function Report({ health }: { health: Health }) {
           />
         </Section>
         <Section heading={t('health.snapshots')}>
-          <p className="text-sm text-muted">{t('health.snapshots.note')}</p>
           {snapshots.error !== undefined ? (
             <p className="text-sm text-danger">
               {t('health.snapshots.error')} {snapshots.error}

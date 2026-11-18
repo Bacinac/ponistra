@@ -5,13 +5,12 @@
     "route:/health"
   ],
   "quiet": [
-    "health.snapshots.note",
     "health.snapshots.late",
     "health.snapshots.error",
     "health.disk.freeOf"
   ],
   "describes": {
-    "frontend/src/health.tsx#Report": "3ef42f802a50",
+    "frontend/src/health.tsx#Report": "a7fa5159bc5f",
     "frontend/src/health.tsx#HealthPage": "408808f1e03d",
     "frontend/src/health.tsx#diskLabel": "181e5161a019",
     "backend/apps/health/views.py#services": "cfad7c608957",

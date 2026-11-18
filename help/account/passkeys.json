@@ -4,11 +4,10 @@
   "covers": [],
   "quiet": [
     "passkeys.due",
-    "passkeys.note",
     "passkeys.deleteWarning"
   ],
   "describes": {
-    "frontend/src/passkeys.tsx#Passkeys": "400751111f06",
+    "frontend/src/passkeys.tsx#Passkeys": "c187720a10bd",
     "frontend/src/passkeys.tsx#makePasskey": "03489ef32741",
     "frontend/src/passkeys.tsx#passkeyMessage": "2765b651f845",
     "frontend/src/auth.tsx#Due": "2279fe51e317",

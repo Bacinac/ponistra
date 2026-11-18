@@ -72,10 +72,10 @@ test('with no choice the page offers both, the passkey also under the email fiel
   );
 });
 
-test('a chosen password leads, the passkey a click away and offered nowhere else', async () => {
+test('a chosen password is all the page offers', async () => {
   signIn('password');
   expect(screen.getByLabelText('E-pošta')).toHaveProperty('autocomplete', 'username');
-  expect(passkey()).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Prijavi se pristupnim ključem' })).toBeNull();
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(get).not.toHaveBeenCalled();
 });

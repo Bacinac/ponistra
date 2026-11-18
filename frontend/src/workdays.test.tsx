@@ -72,7 +72,7 @@ test('an administrator chooses the country and keeps the company days off', asyn
     { country: 'DE', subdivision: 'BY' },
   ]);
 
-  const hours = screen.getByRole('heading', { name: 'Radno vrijeme' }).parentElement!;
+  const hours = screen.getByRole('region', { name: 'Radno vrijeme' });
   const opens = within(hours).getByLabelText('Od');
   expect(opens).toHaveProperty('value', '08:00');
   await user.clear(opens);

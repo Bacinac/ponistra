@@ -9,7 +9,7 @@
     "authenticator.scan"
   ],
   "describes": {
-    "frontend/src/authenticator.tsx#Authenticator": "876868ea3f22",
+    "frontend/src/authenticator.tsx#Authenticator": "90d84ba2f81b",
     "frontend/src/auth.tsx#SecondFactor": "dd564413b9d8",
     "frontend/src/auth.tsx#Due": "2279fe51e317",
     "backend/apps/users/authenticator.py#authenticator": "e44463c11a22",

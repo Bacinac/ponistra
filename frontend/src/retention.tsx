@@ -6,6 +6,7 @@ import { deleteJson, getJson, patchJson, postJson } from './api';
 import { useSession } from './auth';
 import { Cancel, ConfirmDialog, FolderPickDialog, Modal, Picker } from './dialogs';
 import { Loaded, PrimaryAction } from './frame';
+import { Headed } from './headed';
 import { useI18n } from './i18n';
 import { AdminFrame } from './settings';
 import { button, field, iconButton, primaryButton } from './styles';
@@ -300,10 +301,9 @@ function Retention({
         />
       }
     >
-      <div className="flex w-full max-w-5xl flex-col gap-6">
+      <div className="flex w-full max-w-5xl flex-col gap-8">
         {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
-        <section className="flex flex-col gap-2">
-          <h2 className="font-semibold">{t('retention.rules')}</h2>
+        <Headed heading={t('retention.rules')}>
           {rules.length === 0 ? (
             <p className="text-sm text-muted">{t('retention.noRules')}</p>
           ) : (
@@ -353,15 +353,16 @@ function Retention({
               </table>
             </div>
           )}
-        </section>
-        <section className="flex flex-col gap-2">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-semibold">{t('retention.holds')}</h2>
+        </Headed>
+        <Headed
+          heading={t('retention.holds')}
+          action={
             <button type="button" className={button} onClick={() => setDialog({ type: 'hold' })}>
-              <ShieldCheck size={16} aria-hidden className="mr-1 inline" />
+              <ShieldCheck size={16} aria-hidden />
               {t('retention.newHold')}
             </button>
-          </div>
+          }
+        >
           {holds === undefined ? null : holds.length === 0 ? (
             <p className="text-sm text-muted">{t('retention.noHolds')}</p>
           ) : (
@@ -397,10 +398,9 @@ function Retention({
               </table>
             </div>
           )}
-        </section>
+        </Headed>
         {removals.length > 0 && (
-          <section className="flex flex-col gap-2">
-            <h2 className="font-semibold">{t('retention.removals')}</h2>
+          <Headed heading={t('retention.removals')}>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead className="text-left text-sm text-muted">
@@ -427,7 +427,7 @@ function Retention({
                 </tbody>
               </table>
             </div>
-          </section>
+          </Headed>
         )}
       </div>
       {dialog?.type === 'rule' && <RuleDialog rule={dialog.rule} onClose={close} />}

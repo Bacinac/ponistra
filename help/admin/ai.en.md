@@ -7,13 +7,14 @@ An administrator turns on Claude and speech to text for the whole installation, 
 ### Claude
 
 1. Open {t:admin.title} and choose {t:ai.title}.
-2. Type the {t:ai.key} and tick {t:ai.enabled}.
-3. Press {t:ai.save}.
+2. In the {t:ai.claude} section press {t:ai.keyAdd}, or {t:ai.keyChange} once a key is kept.
+3. Type the {t:ai.key} and press {t:ai.save}.
+4. Tick {t:ai.enabled}; the tick is saved at once.
 
 ### Speech to text
 
-1. In the {t:speech.heading} section type the {t:speech.key}.
-2. Tick {t:speech.enabled} and press {t:ai.save}.
+1. In the {t:speech.heading} section press {t:ai.keyAdd} and type the {t:speech.key}.
+2. Press {t:ai.save} and tick {t:speech.enabled}.
 
 ### Monthly limit
 
@@ -27,7 +28,7 @@ An administrator turns on Claude and speech to text for the whole installation, 
 
 ## How it works
 
-Actions with Claude send text to the model Claude by Anthropic in the USA, with this installation's API key. While AI is off, those actions are visible but disabled. The key is checked when saved, kept locked and no longer shown; it says only {t:ai.keyKept} and the last four characters. A new key typed into the same field replaces the previous one. Beside the setting also stands {t:ai.changed}.
+Actions with Claude send text to the model Claude by Anthropic in the USA, with this installation's API key. While AI is off, those actions are visible but disabled. The key is checked when saved, kept locked and no longer shown; it says only {t:ai.keyKept} and the last four characters. A new key typed after {t:ai.keyChange} replaces the previous one. Beside the setting also stands {t:ai.changed}.
 
 Speech to text sends what is said to a model by OpenAI, and while Claude is on, Claude turns the text it returns into an event, a task or a note. Each user gives their own consent before the first recording.
 
