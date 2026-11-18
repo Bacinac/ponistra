@@ -1788,11 +1788,10 @@ function Bubble({ said, pinned = false }: { said: Said; pinned?: boolean }) {
         {t(HARNESS[said.kind]).replace('{text}', said.text)}
       </li>
     );
+  if (said.role === 'user' && pinned) return <PinnedBubble said={said} />;
   if (said.role === 'user')
     return (
-      <li
-        className={`max-w-[85%] self-end rounded-lg bg-accent px-3 py-2 text-sm break-words whitespace-pre-wrap text-on-accent ${pinned ? 'sticky top-0 z-10 max-h-[30%] shrink-0 overflow-y-auto shadow-md' : ''}`}
-      >
+      <li className="max-w-[85%] self-end rounded-lg bg-accent px-3 py-2 text-sm break-words whitespace-pre-wrap text-on-accent">
         {said.images ? (
           <span className="flex items-center gap-1 text-xs opacity-80">
             <ImagePlus size={12} aria-hidden />
@@ -1810,6 +1809,54 @@ function Bubble({ said, pinned = false }: { said: Said; pinned?: boolean }) {
       <div className="-mr-1 -mb-1 flex justify-end">
         <CopyButton text={() => said.text} />
       </div>
+    </li>
+  );
+}
+
+/** The latest question held atop the chat as one line, opened in full by a click. */
+function PinnedBubble({ said }: { said: Exclude<Said, { role: 'harness' }> }) {
+  const { t, formatNumber } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [long, setLong] = useState(false);
+  const text = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const shown = text.current;
+    if (!shown || open) return;
+    const measure = () => setLong(shown.scrollHeight > shown.clientHeight + 1);
+    measure();
+    const watched = new ResizeObserver(measure);
+    watched.observe(shown);
+    return () => watched.disconnect();
+  }, [open, said.text]);
+  return (
+    <li
+      className={`sticky top-0 z-10 flex max-w-[85%] shrink-0 items-start gap-1 self-end rounded-lg bg-accent py-1 pr-1 pl-3 text-sm text-on-accent shadow-md ${open ? 'max-h-[30%] overflow-y-auto' : ''}`}
+    >
+      <div
+        ref={text}
+        onClick={long && !open ? () => setOpen(true) : undefined}
+        className={`min-w-0 flex-1 py-0.5 break-words whitespace-pre-wrap ${open ? '' : 'line-clamp-1'} ${long && !open ? 'cursor-pointer' : ''}`}
+      >
+        {said.images ? (
+          <span className="mr-1.5 inline-flex items-center gap-1 align-middle text-xs opacity-80">
+            <ImagePlus size={12} aria-hidden />
+            {t('workspace.imagesSent').replace('{count}', formatNumber(said.images))}
+          </span>
+        ) : null}
+        {said.text}
+      </div>
+      {long && (
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={t(open ? 'frame.collapse' : 'frame.expand')}
+          title={t(open ? 'frame.collapse' : 'frame.expand')}
+          onClick={() => setOpen(!open)}
+          className="sticky top-0 flex size-6 shrink-0 items-center justify-center rounded hover:bg-accent-hover"
+        >
+          <ChevronDown size={14} aria-hidden className={open ? 'rotate-180' : undefined} />
+        </button>
+      )}
     </li>
   );
 }

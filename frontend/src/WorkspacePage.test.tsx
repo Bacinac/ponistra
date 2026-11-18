@@ -966,10 +966,23 @@ test("a chat's earlier turns are read on from where its page begins, its latest 
       };
     },
   });
+  vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (
+    this: HTMLElement,
+  ) {
+    return this.textContent === 'nastavi: tablice' ? 60 : 0;
+  });
   const { user } = open('/workspace', OWNER);
   const chat = await screen.findByRole('region', { name: 'Razgovor' });
   const latest = await within(chat).findByText('nastavi: tablice');
   expect(latest.closest('li')?.className).toContain('sticky');
+  expect(latest.className).toContain('line-clamp-1');
+  await user.click(latest);
+  expect(latest.className).not.toContain('line-clamp-1');
+  await user.click(within(chat).getByRole('button', { name: 'Sažmi' }));
+  expect(latest.className).toContain('line-clamp-1');
+  expect(within(chat).getByRole('button', { name: 'Proširi' }).getAttribute('aria-expanded')).toBe(
+    'false',
+  );
   await user.click(within(chat).getByRole('button', { name: 'Ranije' }));
   const first = await within(chat).findByText('prvo pitanje');
   expect(first.closest('li')?.className).not.toContain('sticky');
