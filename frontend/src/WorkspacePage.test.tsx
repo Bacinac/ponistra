@@ -199,6 +199,39 @@ test('a new chat starts in its project with its first message, the editor left c
   expect(opened).not.toHaveBeenCalled();
 });
 
+test('a new chat pressed Enter twice, by a page too busy to show the first, is started once', async () => {
+  const touch = globalThis.matchMedia;
+  onTestFinished(() => void (globalThis.matchMedia = touch));
+  vi.spyOn(globalThis, 'matchMedia').mockImplementation((query) =>
+    query === '(pointer: fine)'
+      ? ({ ...touch(query), matches: true } as MediaQueryList)
+      : touch(query),
+  );
+  const asked: Asked[] = [];
+  let answer = () => {};
+  served({
+    'POST /api/workspace/commands': async (request) => {
+      const given = (await request.json()) as Asked;
+      asked.push(given);
+      await new Promise<void>((done) => (answer = done));
+      return { ...COMMAND, ...given, id: 1, session: 'busy', state: 'done' };
+    },
+  });
+  const { user } = open('/workspace', OWNER);
+  const alpha = await screen.findByRole('region', { name: 'Alpha' });
+  await user.click(within(alpha).getByRole('button', { name: 'Novi chat' }));
+  const field = screen.getByRole('textbox', { name: 'Prva poruka chatu' });
+  await user.keyboard('catchup');
+  fireEvent.keyDown(field, { key: 'Enter' });
+  fireEvent.keyDown(field, { key: 'Enter' });
+  await waitFor(() => expect(asked).toHaveLength(1));
+  await user.keyboard('{Enter}');
+  answer();
+  const chat = await screen.findByRole('region', { name: 'Razgovor' });
+  await within(chat).findByRole('heading', { name: /Nova tablica/ });
+  expect(asked).toEqual([{ kind: 'chat', folder: '/work/alpha', text: 'catchup' }]);
+});
+
 test('a project shows its chats in use, and the others once it is opened', async () => {
   served();
   const { user } = open('/workspace', OWNER);

@@ -15,6 +15,7 @@ import {
   ClipboardList,
   ExternalLink,
   ImagePlus,
+  LoaderCircle,
   Pencil,
   FileDiff,
   FolderInput,
@@ -346,6 +347,22 @@ function useCommand() {
     mutationFn: (asked: Asked) => postJson<Command>('/api/workspace/commands', asked),
     onSettled: () => client.invalidateQueries({ queryKey: COMMANDS }),
   });
+}
+
+/** A command sent once until it is answered: a page busy when Enter is pressed handles the
+    presses queued meanwhile before it renders the first as pending. */
+function useSentOnce() {
+  const command = useCommand();
+  const sending = useRef(false);
+  const send = (asked: Asked, after?: { onSuccess?: (command: Command) => void }) => {
+    if (sending.current) return;
+    sending.current = true;
+    command
+      .mutateAsync(asked)
+      .then(after?.onSuccess, () => {})
+      .finally(() => void (sending.current = false));
+  };
+  return { ...command, send };
 }
 
 const PROJECTS = ['workspace', 'projects'];
@@ -1185,14 +1202,14 @@ function NewChat({
   const typed = useRef<HTMLTextAreaElement>(null);
   useEffect(() => typed.current?.focus(), []);
   const pictures = usePictures();
-  const started = useCommand();
+  const started = useSentOnce();
   const rounds = useContext(OpenRounds);
   const [timing, setTiming] = useState(false);
   const failed = started.data?.state === 'failed' ? started.data.error : null;
   const start = (when?: When) => {
     const text = said.trim();
     if (!round && !text) return;
-    started.mutate(
+    started.send(
       {
         kind: 'chat',
         folder,
@@ -1275,7 +1292,13 @@ function NewChat({
             disabled={started.isPending || !pictures.ready || (!round && !said.trim())}
             className={primaryButton}
           >
-            {round ? <UsersRound size={16} aria-hidden /> : <Send size={16} aria-hidden />}
+            {started.isPending ? (
+              <LoaderCircle size={16} aria-hidden className="animate-spin" />
+            ) : round ? (
+              <UsersRound size={16} aria-hidden />
+            ) : (
+              <Send size={16} aria-hidden />
+            )}
             {t(round ? 'workspace.openRound' : 'workspace.startChat')}
           </button>
         </div>
@@ -1908,7 +1931,7 @@ function Conversation({
   const { t, formatNumber } = useI18n();
   const [text, setText] = useState('');
   const pictures = usePictures();
-  const sent = useCommand();
+  const sent = useSentOnce();
   const withdrawing = useCommand();
   const id = chat?.id;
   const [loaded, setLoaded] = useState<Older | null>(null);
@@ -1966,7 +1989,7 @@ function Conversation({
   const say = (words: string, images: string[] = []) => {
     const saying = words.trim();
     if (!saying || !pictures.ready) return;
-    sent.mutate(
+    sent.send(
       { kind: 'say', session: chat.id, text: saying, ...(images.length && { images }) },
       {
         onSuccess: () => {
@@ -2188,7 +2211,11 @@ function Conversation({
               disabled={sent.isPending || !text.trim() || !pictures.ready}
               className={primaryButton}
             >
-              <Send size={16} aria-hidden />
+              {sent.isPending ? (
+                <LoaderCircle size={16} aria-hidden className="animate-spin" />
+              ) : (
+                <Send size={16} aria-hidden />
+              )}
               {t('workspace.send')}
             </button>
           </div>
