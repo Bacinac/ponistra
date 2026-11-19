@@ -82,7 +82,6 @@ const GATE = {
     pushed: false,
     failed: null,
   },
-  running: [],
 };
 
 const IDLE = { sessions: 4, working: [], scripts: [] };
@@ -697,32 +696,14 @@ test('a new round starts a coordinator told what to divide, the editor left clos
   expect(opened).not.toHaveBeenCalled();
 });
 
-test('a project shows its gate folded under its first check, and what each chat holds and changed', async () => {
+test('a project shows only the run of its gate that failed, and what each chat holds and changed', async () => {
   served();
   const { user } = open('/workspace', OWNER);
   const alpha = await screen.findByRole('region', { name: 'Alpha' });
-  const status = within(alpha)
-    .getByText(/^Push /)
-    .closest('ul') as HTMLElement;
-  const lines = () =>
-    within(status)
-      .getAllByRole('listitem')
-      .map((line) => line.textContent);
-  expect(lines()).toEqual([expect.stringMatching(/^Push .*2$/)]);
-  const checks = within(status).getByRole('button', { name: 'Provjere', expanded: false });
-  expect(checks.className).toContain('text-danger');
-  await user.click(checks);
-  expect(lines()).toEqual([
-    expect.stringMatching(/^Push /),
-    expect.stringMatching(/^Preglednik /),
-    expect.stringMatching(/^Noćni run /),
-  ]);
-  expect(
-    within(alpha)
-      .getByText(/Preglednik/)
-      .closest('li')?.className,
-  ).toContain('text-danger');
-  within(alpha).getByText(/Noćni run prošao .* nije zadnji push/);
+  const failed = within(alpha).getByText(/^Preglednik pao /);
+  expect(failed.closest('ul')?.className).toContain('text-danger');
+  expect(within(alpha).queryByText(/^Push /)).toBeNull();
+  expect(within(alpha).queryByText(/Noćni run/)).toBeNull();
   await user.click(within(alpha).getByRole('button', { name: /Alpha/, expanded: false }));
   within(within(alpha).getByRole('button', { name: /Popravak izvoza/ })).getByText('81k');
   const large = within(within(alpha).getByRole('button', { name: /Kod → Krugovi/ })).getByText(

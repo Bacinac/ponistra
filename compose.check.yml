@@ -30,14 +30,16 @@ services:
       PONISTRA_MAP: ${PONISTRA_MAP:-}
     healthcheck:
       interval: 2s
-      # A fresh database takes every migration before the backend answers, which on a loaded
-      # host outlasts 20 s; it is healthy at its first answer all the same.
+      # On a loaded host (a fresh database's migrations, a release building beside the run) a
+      # service outlasts the installation's start period; each is healthy at its first answer all
+      # the same, so every service here has the long one.
       start_period: 180s
   converter:
     container_name: !reset null
     restart: "no"
     healthcheck:
       interval: 2s
+      start_period: 180s
   mox:
     container_name: !reset null
     restart: "no"
@@ -46,11 +48,13 @@ services:
     restart: "no"
     healthcheck:
       interval: 2s
+      start_period: 180s
   reader:
     container_name: !reset null
     restart: "no"
     healthcheck:
       interval: 2s
+      start_period: 180s
   printer:
     container_name: !reset null
     restart: "no"
@@ -59,6 +63,7 @@ services:
         condition: service_healthy
     healthcheck:
       interval: 2s
+      start_period: 180s
   frontend:
     # Only prettier, tsc and vitest run here; nothing loads the app from it.
     container_name: !reset null
@@ -112,6 +117,7 @@ services:
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173/"]
       interval: 2s
+      start_period: 180s
     security_opt:
       - no-new-privileges=true
     cap_drop:
@@ -129,6 +135,7 @@ services:
       - /recordings:mode=1777
     healthcheck:
       interval: 2s
+      start_period: 180s
   livekit:
     # On the check's own network, beside the installation's on the host: it offers the browser
     # its address there.
@@ -144,6 +151,7 @@ services:
           udp_port: 7882
     healthcheck:
       interval: 2s
+      start_period: 180s
   postgres:
     container_name: !reset null
     restart: "no"
@@ -153,6 +161,7 @@ services:
       - /var/lib/postgresql
     healthcheck:
       interval: 1s
+      start_period: 180s
   e2e:
     network_mode: service:site
     volumes:

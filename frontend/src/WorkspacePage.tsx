@@ -5,7 +5,6 @@ import {
   CalendarClock,
   Check,
   ChevronDown,
-  ChevronRight,
   Copy,
   Clock,
   Ellipsis,
@@ -181,7 +180,6 @@ interface Gate {
   pushed: { commit: string; tree: string; at: string } | null;
   browser: Run | null;
   night: (Run & { failed: number | null }) | null;
-  running: ('browser' | 'night')[];
 }
 
 interface Plan {
@@ -627,73 +625,37 @@ function Measures({ context, changes }: { context: number | null; changes: Chang
   );
 }
 
-/** A run of the gate as words: running, or how it went, when, and whether on the latest push. */
-function useRunText() {
-  const { t, formatNumber } = useI18n();
-  const when = useWhen();
-  return (label: MessageKey, run: Run | null, running: boolean): string | null => {
-    if (running) return `${t(label)} ${t('workspace.gate.running')}`;
-    if (!run) return null;
-    const failed = 'failed' in run && typeof run.failed === 'number' ? run.failed : null;
-    return [
-      t(label),
-      t(run.outcome === 'passed' ? 'workspace.gate.passed' : 'workspace.gate.failed'),
-      failed !== null && `(${formatNumber(failed)})`,
-      when(run.at),
-      !run.pushed && `· ${t('workspace.gate.older')}`,
-    ]
-      .filter(Boolean)
-      .join(' ');
-  };
-}
-
-type Status = { text: string; failed?: boolean };
-
-/** How the project's gate last went, the rest folded beneath the first until asked for. */
+/** A run of the gate that failed, as a red line under its project: what is green or still running
+    asks nothing of anyone. */
 function StatusLine({ project }: { project: Project }) {
   const { t, formatNumber } = useI18n();
   const when = useWhen();
-  const runText = useRunText();
-  const [open, setOpen] = useState(false);
   const { gate } = project;
-  const parts: Status[] = [];
-  if (gate?.checked)
-    parts.push({ text: `${t('workspace.gate.checked')} ${when(gate.checked.at)}` });
-  for (const [label, key] of [
-    ['workspace.gate.browser', 'browser'],
-    ['workspace.gate.night', 'night'],
-  ] as const) {
-    const text = gate && runText(label, gate[key], gate.running.includes(key));
-    if (text) parts.push({ text, failed: gate[key]?.outcome === 'failed' });
-  }
-  if (!parts.length) return null;
-  const [first, ...rest] = parts;
-  const failed = rest.some((part) => part.failed);
-  const item = (part: Status) => <span className="truncate">{part.text}</span>;
+  const failed = (
+    [
+      ['workspace.gate.browser', gate?.browser],
+      ['workspace.gate.night', gate?.night],
+    ] as const
+  ).filter(([, run]) => run?.outcome === 'failed');
+  if (!failed.length) return null;
   return (
-    <ul className="mt-0.5 px-2 text-xs text-muted">
-      <li className={`flex min-w-0 items-center gap-1 ${first.failed ? 'text-danger' : ''}`}>
-        {item(first)}
-        {rest.length > 0 && (
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-label={t('workspace.gate')}
-            title={t('workspace.gate')}
-            onClick={() => setOpen(!open)}
-            className={`flex shrink-0 items-center rounded hover:text-accent ${failed ? 'font-semibold text-danger' : ''}`}
-          >
-            <ChevronRight size={12} aria-hidden className={open ? 'rotate-90' : undefined} />
-            {formatNumber(rest.length)}
-          </button>
-        )}
-      </li>
-      {open &&
-        rest.map((part, at) => (
-          <li key={at} className={`flex min-w-0 ${part.failed ? 'text-danger' : ''}`}>
-            {item(part)}
-          </li>
-        ))}
+    <ul className="mt-0.5 px-2 text-xs text-danger">
+      {failed.map(([label, run]) => (
+        <li key={label} className="truncate">
+          {[
+            t(label),
+            t('workspace.gate.failed'),
+            run &&
+              'failed' in run &&
+              typeof run.failed === 'number' &&
+              `(${formatNumber(run.failed)})`,
+            when(run!.at),
+            !run!.pushed && `· ${t('workspace.gate.older')}`,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        </li>
+      ))}
     </ul>
   );
 }

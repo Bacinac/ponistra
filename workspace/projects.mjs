@@ -142,10 +142,8 @@ const TOOL = 120;
 // Claude Code's own cut of a session's title for the tab that holds it.
 const tabLabel = (title) => (title.length > 25 ? `${title.substring(0, 24)}…` : title);
 const CHECKS = join('.git', 'ponistra-check');
-// The files whose change moves what the page shows of a gate; its logs change all through a run.
+// The files whose change moves what the page shows of a gate.
 const GATE_FILES = new Set(['passed', 'pushed', 'browser', 'full', 'failed.json']);
-const LOGS = new Set(['full.log', 'browser.log']);
-const LAG = 5000;
 const OUTCOME = /^([0-9a-f]{40}) (passed|failed) (\d{4}-\d{2}-\d{2} \d{2}:\d{2})$/;
 const EDITS = new Set(['Edit', 'MultiEdit', 'Write', 'NotebookEdit']);
 const SCRIPTS = { 'check-full.sh': 'check-full', 'release.sh': 'release' };
@@ -766,22 +764,10 @@ const outcomeOf = (file) => {
   return null;
 };
 
-// Whoever runs a check holds its lock, also from outside the workspace, as the night's run does. A
-// shared lock tried and let go at once only delays a run that starts meanwhile.
-const held = (file) => {
-  if (!existsSync(file)) return false;
-  try {
-    execFileSync('flock', ['--nonblock', '--shared', file, 'true'], { stdio: 'ignore' });
-    return false;
-  } catch {
-    return true;
-  }
-};
-
 const changedAt = (file) => (existsSync(file) ? statSync(file).mtimeMs : 0);
 
 // How the project's gate last went: the check before a push, what was pushed, the browser's tests
-// after it and the night's run of everything, and which of the last two runs now.
+// after it and the night's run of everything.
 const gateOf = (path) => {
   const store = join(path, CHECKS);
   if (!existsSync(store)) return null;
@@ -816,9 +802,6 @@ const gateOf = (path) => {
     pushed,
     browser: ran('browser'),
     night,
-    running: held(join(store, 'full.lock'))
-      ? [changedAt(join(store, 'browser.log')) > changedAt(join(store, 'full.log')) ? 'browser' : 'night']
-      : [],
   };
 };
 
@@ -1688,16 +1671,9 @@ const follow = (directory, matters = () => true) =>
     if (matters(name)) waiting ??= setTimeout(tell, QUIET);
   });
 
-// A run's log is written all through it, and only its start and end matter here.
-let lagging = null;
 const followGate = (store) =>
   watch(store, (_event, name) => {
     if (GATE_FILES.has(name)) waiting ??= setTimeout(tell, QUIET);
-    else if (LOGS.has(name))
-      lagging ??= setTimeout(() => {
-        lagging = null;
-        void tell();
-      }, LAG);
   });
 
 mkdirSync(SESSIONS, { recursive: true });
