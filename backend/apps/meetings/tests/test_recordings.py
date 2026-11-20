@@ -1,6 +1,7 @@
 import json
 from contextlib import contextmanager
 from datetime import date
+from urllib.parse import urlsplit
 
 import pytest
 from django.test import Client
@@ -177,9 +178,10 @@ def test_the_recordings_are_listed_to_the_members_and_to_no_one_else(owner, meet
 
 
 @pytest.mark.django_db
-def test_the_recorder_ends_a_recording_with_its_key_once(owner, meeting, faked):
+def test_the_recorder_ends_a_recording_with_its_key_once(owner, meeting, faked, settings):
+    settings.ALLOWED_HOSTS = settings.SERVICE_HOSTS
     found = Recording.objects.create(meeting=meeting, started_by=owner)
-    outside = Client()
+    outside = Client(HTTP_HOST=urlsplit(recorder.CALLBACK).netloc)
     wrong = sent(outside, "post", "/api/meetings/recorded", id=str(found.pk), key="x")
     assert (wrong.status_code, wrong.json()) == (404, {"error": "no_recording"})
     unread = outside.post("/api/meetings/recorded", "{", content_type="application/json")

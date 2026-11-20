@@ -5,8 +5,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"math"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -176,5 +179,54 @@ func TestAManifestIsMadeOfTheNotedPartsOfARecordingCutOff(t *testing.T) {
 	}
 	if len(made.Utterances) != 1 || !made.names("0003-speech.webm") || made.names("parts.jsonl") {
 		t.Fatalf("utterances %+v", made.Utterances)
+	}
+}
+
+func TestARecordingTheBackendHasNotHeardOfIsToldAgainAfterARestart(t *testing.T) {
+	var lock sync.Mutex
+	heard := map[string]string{}
+	backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var told map[string]string
+		_ = json.NewDecoder(r.Body).Decode(&told)
+		lock.Lock()
+		heard[told["id"]] = told["key"]
+		lock.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer backend.Close()
+	from := t.TempDir()
+	ended := func(id string, told bool) string {
+		folder := filepath.Join(from, id)
+		if err := os.Mkdir(folder, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		asked := started{ID: id, Callback: backend.URL, Key: "key-" + id}
+		for name, value := range map[string]any{"start.json": asked, "manifest.json": manifest{}} {
+			if err := writeJSON(filepath.Join(folder, name), value); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if told {
+			if err := os.WriteFile(filepath.Join(folder, "told"), nil, 0o600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		return folder
+	}
+	untold := ended("0b0f3c1e-4b1f-4f3c-9b1e-3c1e4b1f4f3c", false)
+	ended("1b0f3c1e-4b1f-4f3c-9b1e-3c1e4b1f4f3c", true)
+	recover_(from)
+	for deadline := time.Now().Add(5 * time.Second); ; time.Sleep(20 * time.Millisecond) {
+		if _, err := os.Stat(filepath.Join(untold, "told")); err == nil {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("the backend's answer was not noted")
+		}
+	}
+	lock.Lock()
+	defer lock.Unlock()
+	if len(heard) != 1 || heard["0b0f3c1e-4b1f-4f3c-9b1e-3c1e4b1f4f3c"] != "key-0b0f3c1e-4b1f-4f3c-9b1e-3c1e4b1f4f3c" {
+		t.Fatalf("the backend heard %v", heard)
 	}
 }

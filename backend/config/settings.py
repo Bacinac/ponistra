@@ -26,14 +26,14 @@ SECRET_KEY = required("PONISTRA_SECRET_KEY")
 # What the first administrator enters in the browser; ponistra install writes it.
 SETUP_CODE = os.environ.get("PONISTRA_SETUP_CODE", "").strip()
 
+# The installation's own services reach the API by their service names: the printer through the
+# frontend, the recorder telling a recording ended straight at the backend.
+SERVICE_HOSTS = ["localhost", "127.0.0.1", "frontend", "backend"]
 if DEBUG:
     ALLOWED_HOSTS = ["*"]
 else:
     ALLOWED_HOSTS = [
-        "localhost",
-        "127.0.0.1",
-        # The printer reaches the API through the frontend, by its service name.
-        "frontend",
+        *SERVICE_HOSTS,
         *(host.strip() for host in required("PONISTRA_ALLOWED_HOSTS").split(",")),
     ]
 # Where the installation is reached from outside: what an outside agent, the code workspace's

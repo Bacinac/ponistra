@@ -43,7 +43,7 @@ func main() {
 		return
 	}
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
-	recover_()
+	recover_(root)
 	http.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -87,7 +87,7 @@ func start(w http.ResponseWriter, r *http.Request) {
 	}
 	session, err := record(asked, folder, func() {
 		running.Delete(asked.ID)
-		go tell(asked)
+		go tell(asked, folder)
 	})
 	if err != nil {
 		slog.Error("joining the room failed", "id", asked.ID, "error", err)
@@ -160,45 +160,49 @@ func remove(w http.ResponseWriter, r *http.Request) {
 }
 
 // recover_ ends each recording a crash or a restart cut off with what it had written, and
-// tells the backend.
-func recover_() {
-	entries, err := os.ReadDir(root)
+// tells the backend of every recording it has not yet heard of.
+func recover_(from string) {
+	entries, err := os.ReadDir(from)
 	if err != nil {
 		slog.Error("the recordings cannot be read", "error", err)
 		os.Exit(1)
 	}
 	for _, entry := range entries {
-		folder := filepath.Join(root, entry.Name())
-		if _, err := os.Stat(filepath.Join(folder, "manifest.json")); err == nil {
-			continue
-		}
+		folder := filepath.Join(from, entry.Name())
 		var asked started
 		data, err := os.ReadFile(filepath.Join(folder, "start.json"))
 		if err != nil || json.Unmarshal(data, &asked) != nil {
 			continue
 		}
-		if err := cutOff(folder); err != nil {
-			slog.Error("a recording cut off cannot be ended", "id", asked.ID, "error", err)
+		if _, err := os.Stat(filepath.Join(folder, "manifest.json")); err != nil {
+			if err := cutOff(folder); err != nil {
+				slog.Error("a recording cut off cannot be ended", "id", asked.ID, "error", err)
+				continue
+			}
+			slog.Warn("a recording cut off was ended with what it had", "id", asked.ID)
+		} else if _, err := os.Stat(filepath.Join(folder, "told")); err == nil {
 			continue
 		}
-		slog.Warn("a recording cut off was ended with what it had", "id", asked.ID)
-		go tell(asked)
+		go tell(asked, folder)
 	}
 }
 
-// tell lets the backend know the recording ended, until it answers.
-func tell(asked started) {
+// tell lets the backend know the recording ended, until it answers, and notes in the folder
+// that it did.
+func tell(asked started, folder string) {
 	body, _ := json.Marshal(map[string]string{"id": asked.ID, "key": asked.Key})
 	client := http.Client{Timeout: 10 * time.Second}
 	for wait := 5 * time.Second; ; wait = min(wait*2, 5*time.Minute) {
 		answer, err := client.Post(asked.Callback, "application/json", bytes.NewReader(body))
 		if err == nil {
 			answer.Body.Close()
-			if answer.StatusCode < 300 {
-				return
-			}
 			if answer.StatusCode == http.StatusNotFound {
 				slog.Warn("the backend knows no such recording", "id", asked.ID)
+			}
+			if answer.StatusCode < 300 || answer.StatusCode == http.StatusNotFound {
+				if err := os.WriteFile(filepath.Join(folder, "told"), nil, 0o600); err != nil {
+					slog.Error("the backend's answer was not noted", "id", asked.ID, "error", err)
+				}
 				return
 			}
 			err = fmt.Errorf("answered %d", answer.StatusCode)
