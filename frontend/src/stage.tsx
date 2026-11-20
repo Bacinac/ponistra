@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { RoomEvent, type Room } from 'livekit-client';
 import { csrfToken, deleteJson, postJson } from './api';
 import { useChanges } from './live';
-import { idIn } from './address';
-import { useBoards } from './tree';
 
 /** A board a member shows everyone in the meeting, as the server told the room. */
 export interface Staged {
@@ -107,18 +105,4 @@ export function BoardChanges({ meeting }: { meeting: string }) {
   );
   useChanges(told);
   return null;
-}
-
-/** The board an address of this installation opens, of those the user has, or null. */
-export function useBoardAt(): (address: string) => { id: string; title: string } | null {
-  const boards = useBoards();
-  const titles = new Map((boards.data?.children ?? []).map((board) => [board.id, board.title]));
-  return (address) => {
-    const at = new URL(address);
-    if (at.origin !== window.location.origin) return null;
-    const [, route, place] = at.pathname.split('/');
-    const id = route === 'p' ? idIn(place) : null;
-    const title = id ? titles.get(id) : undefined;
-    return id && title !== undefined ? { id, title } : null;
-  };
 }

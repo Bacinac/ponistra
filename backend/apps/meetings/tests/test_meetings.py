@@ -122,8 +122,9 @@ def test_its_people_prepare_the_tabs_they_will_share(signed_in, owner, client):
     at = f"/api/meetings/{meeting.id}"
     tabs = ["https://example.com/a", "http://intranet.local/b?x=1", "https://example.com/a"]
     shown = sent(signed_in, "patch", at, tabs=tabs)
-    assert (shown.status_code, shown.json()["tabs"]) == (200, tabs[:2])
-    assert signed_in.get(at).json()["tabs"] == tabs[:2]
+    unnamed = [{"address": tab, "title": None, "board": None} for tab in tabs[:2]]
+    assert (shown.status_code, shown.json()["tabs"]) == (200, unnamed)
+    assert signed_in.get(at).json()["tabs"] == unnamed
     for wrong in ("https://x", ["javascript:alert(1)"], ["mailto:"], ["/relative"], [7]):
         refused = sent(signed_in, "patch", at, tabs=wrong if isinstance(wrong, list) else wrong)
         assert (refused.status_code, refused.json()) == (400, {"error": "invalid_tabs"})
@@ -151,8 +152,10 @@ def test_the_tabs_of_the_users_meetings_are_offered_again_the_latest_first(
     later = Meeting.objects.made("Drugi", owner)
     Meeting.objects.filter(pk=later.pk).update(tabs=["https://e.hr/c", "https://e.hr/a"])
     Meeting.objects.made("Tuđi", None)
-    assert signed_in.get("/api/meetings/tabs").json() == {
-        "tabs": ["https://e.hr/c", "https://e.hr/a", "https://e.hr/b"]
-    }
+    assert [tab["address"] for tab in signed_in.get("/api/meetings/tabs").json()["tabs"]] == [
+        "https://e.hr/c",
+        "https://e.hr/a",
+        "https://e.hr/b",
+    ]
     client.force_login(User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-72"))
     assert client.get("/api/meetings/tabs").json() == {"tabs": []}

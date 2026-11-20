@@ -720,6 +720,7 @@ function Inside({
               meeting={meeting}
               blocked={tabsBlocked}
               onBlocked={setTabsBlocked}
+              staged={staged?.id ?? null}
               onBoard={(board) => staging.mutate(board)}
               onClose={() => setTabbing(false)}
             />
@@ -752,6 +753,7 @@ function Inside({
             meeting={guest ? undefined : meeting}
             sharing={local.isScreenShareEnabled || mine}
             taken={(!!staged && !mine) || (!!sharing && !ownShare)}
+            staged={staged?.id ?? null}
             onShare={canShare ? shareAs : undefined}
             onBoard={guest ? undefined : (board) => staging.mutate(board)}
             onStop={mine ? () => staging.mutate(null) : stopSharing}

@@ -19,8 +19,15 @@ export interface Shown extends Meeting {
   present: string[];
   /** Whether an event plans it, asking people through its attendees. */
   planned: boolean;
-  /** The addresses its people mean to share. */
-  tabs: string[];
+  /** What its people mean to share, named for this user where Ponistra knows the name. */
+  tabs: PreparedTab[];
+}
+
+export interface PreparedTab {
+  address: string;
+  title: string | null;
+  /** The board the address opens, which goes on the stage rather than into a tab. */
+  board: string | null;
 }
 
 /** A meeting's own page, the whole window: before joining, in the call, and after leaving. */

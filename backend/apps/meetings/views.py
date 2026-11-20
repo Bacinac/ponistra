@@ -29,6 +29,7 @@ from apps.users.models import User
 
 from . import livekit, lobby, recordings, rings, stage
 from .models import Guest, Meeting, Recording, Ring
+from .tabs import named
 
 log = getLogger(__name__)
 
@@ -117,13 +118,17 @@ def shared_before(request):
     tabs: list[str] = []
     for each in found.order_by("-created_at").values_list("tabs", flat=True)[:SHARED_BEFORE]:
         tabs.extend(tab for tab in each if tab not in tabs)
-    return JsonResponse({"tabs": tabs[:SHARED_BEFORE]})
+    return JsonResponse({"tabs": named(request.user, tabs[:SHARED_BEFORE])})
 
 
 def _shown(user, pk: uuid.UUID) -> dict:
     found = _found(pk)
     planned = Event.objects.filter(conference=found.link).exists()
-    return {**describe(found, _titled(user, found)), "planned": planned, "tabs": found.tabs}
+    return {
+        **describe(found, _titled(user, found)),
+        "planned": planned,
+        "tabs": named(user, found.tabs),
+    }
 
 
 def _tabs(given) -> list[str]:

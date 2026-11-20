@@ -129,7 +129,7 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
   problems,
 }) => {
   const plan = `Plan ${randomBytes(3).toString('hex')}`;
-  const planned = `${new URL(baseURL!).host}${await newDocument(page, plan)}`;
+  await newDocument(page, plan);
   await module(page, 'Razgovori');
   const meeting = await meetingNow(page);
   await meeting.getByRole('button', { name: 'Pridruži se' }).click();
@@ -152,8 +152,8 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
   await tabsOf(meeting)
     .getByRole('option', { name: new RegExp(plan) })
     .click();
-  const row = tabsOf(meeting).getByRole('listitem').filter({ hasText: planned });
-  await expect(row.getByRole('button', { name: planned })).toBeVisible();
+  const row = tabsOf(meeting).getByRole('listitem').filter({ hasText: plan });
+  await expect(row.getByRole('button', { name: plan })).toBeVisible();
   await row.getByRole('button', { name: 'Ukloni' }).click();
   await expect(row).toHaveCount(0);
 
@@ -382,7 +382,9 @@ test('a member shows everyone in the meeting one of their boards, guests too, li
   await expect(tabs.getByRole('button', { name: title })).toBeVisible();
   await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
   await meeting.getByRole('menuitem', { name: 'Pripremljeno', exact: true }).press('Enter');
-  await meeting.getByRole('menuitem', { name: title }).press('Enter');
+  await expect(meeting.getByRole('menuitemcheckbox', { name: title })).not.toBeChecked();
+  await meeting.getByRole('menuitemcheckbox', { name: title }).press('Enter');
+  await expect(tabs.getByRole('button', { name: title })).toHaveAttribute('aria-pressed', 'true');
 
   for (const each of [meeting, guest]) {
     const stage = each.getByRole('region', { name: title });
@@ -402,7 +404,12 @@ test('a member shows everyone in the meeting one of their boards, guests too, li
   }
 
   await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
+  await meeting.getByRole('menuitem', { name: 'Pripremljeno', exact: true }).press('Enter');
+  await expect(meeting.getByRole('menuitemcheckbox', { name: title })).toBeChecked();
+  await meeting.getByRole('menuitemcheckbox', { name: title }).press('Enter');
+  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
   await meeting.getByRole('menuitem', { name: 'Prestani dijeliti' }).click();
+  await expect(tabs.getByRole('button', { name: title })).toHaveAttribute('aria-pressed', 'false');
   for (const each of [meeting, guest]) {
     await expect(each.getByRole('region', { name: title })).toBeHidden();
   }

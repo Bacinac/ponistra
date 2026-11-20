@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { LocalTrack, ScreenShareCaptureOptions } from 'livekit-client';
 import {
   AppWindow,
+  Check,
   ChevronDown,
   ExternalLink,
   Globe,
@@ -27,9 +28,8 @@ import { createPortal } from 'react-dom';
 import { getJson, patchJson } from './api';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
-import type { Shown } from './MeetingPage';
+import type { PreparedTab, Shown } from './MeetingPage';
 import { Menu, MenuItem, MenuSeparator, MenuSub } from './menu';
-import { useBoardAt } from './stage';
 import { button, dangerButton, field, iconButton, primaryButton } from './styles';
 import { errorMessage, nodeHref, useBoards, useFavourites, useRecent } from './tree';
 import { useLinks } from './linksData';
@@ -186,6 +186,7 @@ export function ShareMenu({
   meeting,
   sharing,
   taken,
+  staged,
   onShare,
   onBoard,
   onStop,
@@ -195,6 +196,8 @@ export function ShareMenu({
   meeting?: Shown;
   sharing: boolean;
   taken: boolean;
+  /** The board on the stage now. */
+  staged: string | null;
   onShare?: (surface: Surface) => void;
   onBoard?: (board: string) => void;
   onStop: () => void;
@@ -231,6 +234,7 @@ export function ShareMenu({
           <Prepared
             tabs={tabs}
             taken={taken}
+            staged={staged}
             onBoard={onBoard}
             onBlocked={onBlocked}
             onTabs={onTabs}
@@ -246,42 +250,43 @@ export function ShareMenu({
 function Prepared({
   tabs,
   taken,
+  staged,
   onBoard,
   onBlocked,
   onTabs,
 }: {
-  tabs: string[];
+  tabs: PreparedTab[];
   taken: boolean;
+  staged: string | null;
   onBoard: (board: string) => void;
   onBlocked: () => void;
   onTabs: () => void;
 }) {
   const { t } = useI18n();
-  const boardAt = useBoardAt();
-  const opened = tabs.filter((tab) => !boardAt(tab));
+  const opened = tabs.filter((tab) => !tab.board).map((tab) => tab.address);
   return (
     <>
-      {tabs.map((tab) => {
-        const board = boardAt(tab);
-        return board ? (
+      {tabs.map(({ address, title, board }) =>
+        board ? (
           <MenuItem
-            key={tab}
+            key={address}
             icon={LayoutDashboard}
-            label={board.title}
+            label={title ?? shortened(address)}
             disabled={taken}
-            onSelect={() => onBoard(board.id)}
+            checked={board === staged}
+            onSelect={() => onBoard(board)}
           />
         ) : (
           <MenuItem
-            key={tab}
+            key={address}
             icon={ExternalLink}
-            label={shortened(tab)}
+            label={title ?? shortened(address)}
             onSelect={() => {
-              if (!openTab(tab)) onBlocked();
+              if (!openTab(address)) onBlocked();
             }}
           />
-        );
-      })}
+        ),
+      )}
       {!tabs.length && (
         <MenuItem
           icon={ListChecks}
@@ -314,26 +319,28 @@ function shortened(address: string): string {
 export function SharedTabs({
   meeting,
   blocked,
+  staged,
   onBlocked,
   onBoard,
   onClose,
 }: {
   meeting: Shown;
   blocked: boolean;
+  /** The board on the stage now. */
+  staged: string | null;
   onBlocked: (blocked: boolean) => void;
   onBoard: (board: string) => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
-  const boardAt = useBoardAt();
   const client = useQueryClient();
   const [address, setAddress] = useState('');
   const saved = useMutation({
     mutationFn: (tabs: string[]) => patchJson<Shown>(`/api/meetings/${meeting.id}`, { tabs }),
     onSuccess: (shown) => client.setQueryData(['meeting', meeting.id], shown),
   });
-  const tabs = meeting.tabs;
-  const opened = tabs.filter((tab) => !boardAt(tab));
+  const tabs = meeting.tabs.map((tab) => tab.address);
+  const opened = meeting.tabs.filter((tab) => !tab.board).map((tab) => tab.address);
   const added = (event: FormEvent) => {
     event.preventDefault();
     const given = address.trim();
@@ -370,31 +377,31 @@ export function SharedTabs({
         </p>
       )}
       <ul className="flex min-h-0 flex-col gap-1 overflow-y-auto">
-        {tabs.map((tab) => (
-          <li key={tab} className="flex items-center gap-1">
+        {meeting.tabs.map(({ address, title, board }) => (
+          <li key={address} className="flex items-center gap-1">
             <button
               type="button"
-              title={tab}
-              onClick={() => {
-                const board = boardAt(tab);
-                if (board) onBoard(board.id);
-                else onBlocked(!openTab(tab));
-              }}
-              className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-hover"
+              title={address}
+              aria-pressed={board ? board === staged : undefined}
+              onClick={() => (board ? onBoard(board) : onBlocked(!openTab(address)))}
+              className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-hover aria-pressed:bg-selected"
             >
-              {boardAt(tab) ? (
+              {board ? (
                 <LayoutDashboard size={14} aria-hidden className="shrink-0 text-muted" />
               ) : (
                 <ExternalLink size={14} aria-hidden className="shrink-0 text-muted" />
               )}
-              <span className="truncate">{boardAt(tab)?.title ?? shortened(tab)}</span>
+              <span className="min-w-0 flex-1 truncate">{title ?? shortened(address)}</span>
+              {board && board === staged && (
+                <Check size={14} aria-hidden className="shrink-0 text-accent" />
+              )}
             </button>
             <button
               type="button"
               aria-label={t('meeting.removeTab')}
               title={t('meeting.removeTab')}
               disabled={saved.isPending}
-              onClick={() => saved.mutate(tabs.filter((each) => each !== tab))}
+              onClick={() => saved.mutate(tabs.filter((each) => each !== address))}
               className={iconButton}
             >
               <X size={14} aria-hidden />
@@ -432,7 +439,7 @@ interface Offered {
 function useOffered(left: string[]): Offered[] {
   const before = useQuery({
     queryKey: ['meeting-tabs'],
-    queryFn: () => getJson<{ tabs: string[] }>('/api/meetings/tabs'),
+    queryFn: () => getJson<{ tabs: PreparedTab[] }>('/api/meetings/tabs'),
   });
   const boards = useBoards();
   const favourites = useFavourites();
@@ -443,7 +450,10 @@ function useOffered(left: string[]): Offered[] {
     return href && new URL(href, window.location.origin).href;
   };
   const offered = [
-    ...(before.data?.tabs ?? []).map((address) => ({ title: shortened(address), address })),
+    ...(before.data?.tabs ?? []).map(({ address, title }) => ({
+      title: title ?? shortened(address),
+      address,
+    })),
     ...(boards.data?.children ?? []).map((node) => ({ title: node.title, address: here(node) })),
     ...(favourites.data?.children ?? []).map((node) => ({
       title: node.title,

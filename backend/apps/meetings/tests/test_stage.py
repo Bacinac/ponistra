@@ -1,8 +1,11 @@
+import uuid
+
 import pytest
 
 from apps.blobs.tests.test_blobs import content
 from apps.documents import boards
 from apps.documents.models import BoardEntry, Node
+from apps.documents.printing import compact
 from apps.documents.tests.test_boards import PAGE
 from apps.documents.tests.test_views import create, to_trash
 from apps.meetings import livekit
@@ -112,3 +115,34 @@ def test_only_a_board_goes_on_the_stage(owner, meeting, present, staged):
     shown = sent(signed(owner), "post", f"/api/meetings/{meeting.id}/board", board=document)
     assert (shown.status_code, shown.json()) == (404, {"error": "not_found"})
     assert staged == []
+
+
+def test_the_tabs_prepared_are_named_for_whoever_reads_them_and_a_board_marked(owner, ana, meeting):
+    board = made_board(owner)
+    plan = create(signed(owner), "document", "Plan rada")
+    hers = create(signed(ana), "document", "Njezin")
+    link = sent(
+        signed(owner), "post", "/api/nodes", kind="link", href="https://e.hr/k", title="Katalog"
+    )
+    assert link.status_code == 201
+    here = "https://ured.example.com/p/"
+    tabs = [
+        f"{here}prodaja-{compact(uuid.UUID(board))}",
+        f"https://ured.example.com/d/plan-rada-{compact(uuid.UUID(plan))}",
+        f"{here}njezin-{compact(uuid.UUID(hers))}",
+        f"https://drugi.example.com/p/{compact(uuid.uuid4())}",
+        "https://e.hr/k",
+        "https://e.hr/x",
+    ]
+    shown = sent(signed(owner), "patch", f"/api/meetings/{meeting.id}", tabs=tabs)
+    assert [(each["title"], each["board"]) for each in shown.json()["tabs"]] == [
+        ("Prodaja", board),
+        ("Plan rada", None),
+        (None, None),
+        (None, None),
+        ("Katalog", None),
+        (None, None),
+    ]
+    assert [each["address"] for each in shown.json()["tabs"]] == tabs
+    theirs = signed(ana).get(f"/api/meetings/{meeting.id}").json()["tabs"]
+    assert [each["title"] for each in theirs] == [None, None, "Njezin", None, None, None]
