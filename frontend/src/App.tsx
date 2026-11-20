@@ -161,16 +161,21 @@ export default function App() {
       </Crash>
     );
   }
+  if (
+    (!session.data.user || session.data.user.visitor) &&
+    pathname.startsWith('/meet/') &&
+    pathname !== '/meet/new' &&
+    !session.data.setup
+  ) {
+    return (
+      <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
+        <Routes>
+          <Route path="/meet/:id" element={<GuestMeetingPage />} />
+        </Routes>
+      </Crash>
+    );
+  }
   if (!session.data.user) {
-    if (pathname.startsWith('/meet/') && pathname !== '/meet/new' && !session.data.setup) {
-      return (
-        <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
-          <Routes>
-            <Route path="/meet/:id" element={<GuestMeetingPage />} />
-          </Routes>
-        </Crash>
-      );
-    }
     const door = rememberedDoor();
     if (door && !session.data.setup) return <Navigate to={door} replace />;
     return <Lobby>{session.data.setup ? <SetupForm /> : <LoginForm />}</Lobby>;

@@ -1,6 +1,7 @@
 import type { Browser, Locator, Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { expect, sessions, test } from './fixtures';
+import { idIn, newDocument } from './helpers/nodes';
 
 // Chromium's own camera and microphone: a moving picture and a tone, granted without asking.
 const MEDIA = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'];
@@ -288,6 +289,43 @@ test('someone outside the installation comes by the link, is let in at the door 
   const written = mine.getByRole('listitem').filter({ hasText: answer });
   await expect(written).toContainText('Eva Kovač (gost)');
   await guest.context().close();
+});
+
+test('someone outside who was shared a document before comes to the meeting by its link, not to what was shared', async ({
+  page,
+  browser,
+  baseURL,
+  problems,
+}) => {
+  const address = await newDocument(page, 'Podijeljeno ranije');
+  const id = idIn(address.split('/')[2]);
+  const link = await page.evaluate(async (id) => {
+    const token = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] ?? '';
+    const made = await fetch(`/api/nodes/${id}/outside-links`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+      body: '{}',
+    });
+    return ((await made.json()) as { url: string }).url;
+  }, id);
+  const visitor = await device(browser, baseURL!, problems, null);
+  await visitor.goto(new URL(link).pathname);
+  await expect(visitor).toHaveURL(/\/d\//);
+
+  await module(page, 'Razgovori');
+  const meeting = await meetingNow(page);
+  await meeting.getByRole('button', { name: 'Pridruži se' }).click();
+  await expect(tiles(meeting)).toHaveCount(1);
+
+  await visitor.goto(new URL(meeting.url()).pathname);
+  await expect(visitor).toHaveURL(new URL(meeting.url()).pathname);
+  await expect(visitor.getByRole('heading', { name: 'Sastanak' })).toBeVisible();
+  await visitor.getByLabel('Vaše ime').fill('Iva Vanjska');
+  await visitor.getByRole('button', { name: 'Pridruži se' }).click();
+  const door = meeting.getByRole('list', { name: 'Čekaju ulaz' });
+  await door.getByRole('button', { name: 'Pusti' }).click();
+  for (const each of [meeting, visitor]) await expect(tiles(each)).toHaveCount(2);
+  await visitor.context().close();
 });
 
 test('the people in a meeting write to each other beside the call and keep the conversation', async ({
