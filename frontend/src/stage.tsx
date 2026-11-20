@@ -1,12 +1,9 @@
-import { Folder, LayoutDashboard } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { RoomEvent, type Room } from 'livekit-client';
 import { csrfToken, deleteJson, postJson } from './api';
-import { useI18n } from './i18n';
 import { useChanges } from './live';
-import { MenuItem, MenuSub } from './menu';
 import { idIn } from './address';
-import { boardGroups, useBoards } from './tree';
+import { useBoards } from './tree';
 
 /** A board a member shows everyone in the meeting, as the server told the room. */
 export interface Staged {
@@ -112,61 +109,16 @@ export function BoardChanges({ meeting }: { meeting: string }) {
   return null;
 }
 
-/** The user's boards by group, each shown on the stage once chosen. */
-export function BoardChoices({
-  disabled,
-  onBoard,
-}: {
-  disabled: boolean;
-  onBoard: (board: string) => void;
-}) {
-  const { t } = useI18n();
-  return (
-    <MenuSub icon={LayoutDashboard} label={t('meeting.shareBoard')} disabled={disabled}>
-      <Boards onBoard={onBoard} />
-    </MenuSub>
-  );
-}
-
-function Boards({ onBoard }: { onBoard: (board: string) => void }) {
-  const { t } = useI18n();
-  const boards = useBoards();
-  if (!boards.data)
-    return (
-      <MenuItem icon={LayoutDashboard} label={t('tree.loading')} disabled onSelect={() => {}} />
-    );
-  const groups = boardGroups(boards.data.children, t);
-  if (!groups.length)
-    return (
-      <MenuItem icon={LayoutDashboard} label={t('meeting.noBoards')} disabled onSelect={() => {}} />
-    );
-  return (
-    <>
-      {groups.map((group) => (
-        <MenuSub key={group.key} icon={Folder} label={group.title}>
-          {group.boards.map((board) => (
-            <MenuItem
-              key={board.id}
-              icon={LayoutDashboard}
-              label={board.title}
-              onSelect={() => onBoard(board.id)}
-            />
-          ))}
-        </MenuSub>
-      ))}
-    </>
-  );
-}
-
 /** The board an address of this installation opens, of those the user has, or null. */
-export function useBoardAt(): (address: string) => string | null {
+export function useBoardAt(): (address: string) => { id: string; title: string } | null {
   const boards = useBoards();
-  const ids = new Set((boards.data?.children ?? []).map((board) => board.id));
+  const titles = new Map((boards.data?.children ?? []).map((board) => [board.id, board.title]));
   return (address) => {
     const at = new URL(address);
     if (at.origin !== window.location.origin) return null;
     const [, route, place] = at.pathname.split('/');
     const id = route === 'p' ? idIn(place) : null;
-    return id && ids.has(id) ? id : null;
+    const title = id ? titles.get(id) : undefined;
+    return id && title !== undefined ? { id, title } : null;
   };
 }

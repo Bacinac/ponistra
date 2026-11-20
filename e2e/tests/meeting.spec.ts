@@ -1,7 +1,7 @@
 import type { Browser, Locator, Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { expect, sessions, test } from './fixtures';
-import { idIn, newBoard, newDocument, nodeHref } from './helpers/nodes';
+import { idIn, newBoard, newDocument } from './helpers/nodes';
 
 // Chromium's own camera and microphone: a moving picture and a tone, granted without asking.
 const MEDIA = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'];
@@ -57,6 +57,13 @@ async function back(meeting: Page) {
       if (!meeting.isClosed()) throw error;
     });
   await closed;
+}
+
+/** The panel of what the meeting's people prepare to share, opened from the share menu. */
+async function preparing(meeting: Page) {
+  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
+  await meeting.getByRole('menuitem', { name: 'Pripremljeno', exact: true }).press('Enter');
+  await meeting.getByRole('menuitem', { name: 'Uredi pripremljeno…' }).press('Enter');
 }
 
 const meetingNow = (page: Page) =>
@@ -132,12 +139,8 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
   await there.getByRole('button', { name: 'Pridruži se' }).click();
   await expect(tiles(there)).toHaveCount(2);
 
-  const tabsOf = (each: Page) => each.getByRole('region', { name: 'Kartice za dijeljenje' });
-  const chosen = async (each: Page, item: string) => {
-    await each.getByRole('button', { name: 'Dijeli', exact: true }).click();
-    await each.getByRole('menuitem', { name: item }).click();
-  };
-  await chosen(meeting, 'Uredi kartice…');
+  const tabsOf = (each: Page) => each.getByRole('region', { name: 'Pripremljeno za dijeljenje' });
+  await preparing(meeting);
   await tabsOf(meeting).getByRole('combobox', { name: 'Adresa' }).fill('example.com/plan');
   await tabsOf(meeting).getByRole('button', { name: 'Dodaj' }).click();
   await expect(tabsOf(meeting).getByRole('button', { name: 'example.com/plan' })).toBeVisible();
@@ -154,7 +157,7 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
   await row.getByRole('button', { name: 'Ukloni' }).click();
   await expect(row).toHaveCount(0);
 
-  await chosen(there, 'Uredi kartice…');
+  await preparing(there);
   await expect(tabsOf(there).getByRole('button', { name: /^example\./ })).toHaveText([
     'example.com/plan',
     'example.org',
@@ -168,15 +171,11 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
   await expect(tabsOf(meeting)).toHaveCount(0);
   await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
   const offered = meeting.getByRole('menuitem');
-  await expect(offered).toHaveText([
-    'Kartica preglednika',
-    'Prozor',
-    'Cijeli zaslon',
-    'Ploča',
-    'example.org',
-    'Uredi kartice…',
-  ]);
-  await meeting.getByRole('menuitem', { name: 'Kartica preglednika' }).click();
+  const surfaces = ['Kartica preglednika', 'Prozor', 'Cijeli zaslon', 'Pripremljeno'];
+  await expect(offered).toHaveText(surfaces);
+  await meeting.getByRole('menuitem', { name: 'Pripremljeno', exact: true }).press('Enter');
+  await expect(offered).toHaveText([...surfaces, 'example.org', 'Uredi pripremljeno…']);
+  await meeting.getByRole('menuitem', { name: 'Kartica preglednika' }).press('Enter');
   const own = meeting.getByRole('main').getByRole('region', {
     name: /^Dijelite (karticu|prozor|cijeli zaslon)$/,
   });
@@ -374,8 +373,15 @@ test('a member shows everyone in the meeting one of their boards, guests too, li
   for (const each of [meeting, guest]) await expect(tiles(each)).toHaveCount(2);
 
   await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
-  await meeting.getByRole('menuitem', { name: 'Ploča' }).press('Enter');
-  await meeting.getByRole('menuitem', { name: group }).press('Enter');
+  await meeting.getByRole('menuitem', { name: 'Pripremljeno', exact: true }).press('Enter');
+  await expect(meeting.getByRole('menuitem', { name: 'Ništa nije pripremljeno.' })).toBeDisabled();
+  await meeting.getByRole('menuitem', { name: 'Uredi pripremljeno…' }).press('Enter');
+  const tabs = meeting.getByRole('region', { name: 'Pripremljeno za dijeljenje' });
+  await tabs.getByRole('combobox', { name: 'Adresa' }).fill(title);
+  await tabs.getByRole('option', { name: new RegExp(title) }).click();
+  await expect(tabs.getByRole('button', { name: title })).toBeVisible();
+  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
+  await meeting.getByRole('menuitem', { name: 'Pripremljeno', exact: true }).press('Enter');
   await meeting.getByRole('menuitem', { name: title }).press('Enter');
 
   for (const each of [meeting, guest]) {
@@ -401,15 +407,9 @@ test('a member shows everyone in the meeting one of their boards, guests too, li
     await expect(each.getByRole('region', { name: title })).toBeHidden();
   }
 
-  const address = new URL(nodeHref({ id, kind: 'file', title }), baseURL).href;
-  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
-  await meeting.getByRole('menuitem', { name: 'Uredi kartice…' }).click();
-  const tabs = meeting.getByRole('region', { name: 'Kartice za dijeljenje' });
-  await tabs.getByRole('combobox', { name: 'Adresa' }).fill(address);
-  await tabs.getByRole('button', { name: 'Dodaj' }).click();
   const opened: Page[] = [];
   meeting.context().on('page', (each) => opened.push(each));
-  await tabs.getByRole('button', { name: new URL(address).host }).click();
+  await tabs.getByRole('button', { name: title }).click();
   for (const each of [meeting, guest]) {
     await expect(each.getByRole('region', { name: title })).toContainText(`${title} · `);
   }

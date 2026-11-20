@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Globe,
   LayoutDashboard,
+  ListChecks,
   Monitor,
   MonitorUp,
   Pencil,
@@ -27,10 +28,10 @@ import { getJson, patchJson } from './api';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import type { Shown } from './MeetingPage';
-import { Menu, MenuItem, MenuSeparator } from './menu';
-import { BoardChoices, useBoardAt } from './stage';
+import { Menu, MenuItem, MenuSeparator, MenuSub } from './menu';
+import { useBoardAt } from './stage';
 import { button, dangerButton, field, iconButton, primaryButton } from './styles';
-import { errorMessage, nodeHref, useFavourites, useRecent } from './tree';
+import { errorMessage, nodeHref, useBoards, useFavourites, useRecent } from './tree';
 import { useLinks } from './linksData';
 
 export type Surface = 'browser' | 'window' | 'monitor';
@@ -214,39 +215,35 @@ export function ShareMenu({
       {sharing ? (
         <MenuItem icon={Square} label={t('meeting.stopSharing')} onSelect={onStop} />
       ) : (
-        <>
-          {onShare &&
-            CHOSEN.map(({ surface, label, icon }) => (
-              <MenuItem
-                key={surface}
-                icon={icon}
-                label={t(label)}
-                disabled={taken}
-                onSelect={() => onShare(surface)}
-              />
-            ))}
-          {onBoard && <BoardChoices disabled={taken} onBoard={onBoard} />}
-        </>
+        onShare &&
+        CHOSEN.map(({ surface, label, icon }) => (
+          <MenuItem
+            key={surface}
+            icon={icon}
+            label={t(label)}
+            disabled={taken}
+            onSelect={() => onShare(surface)}
+          />
+        ))
       )}
-      {meeting && (
-        <>
-          <MenuSeparator />
-          <MeetingTabs
+      {meeting && onBoard && (
+        <MenuSub icon={ListChecks} label={t('meeting.prepared')}>
+          <Prepared
             tabs={tabs}
             taken={taken}
             onBoard={onBoard}
             onBlocked={onBlocked}
             onTabs={onTabs}
           />
-        </>
+        </MenuSub>
       )}
     </Menu>
   );
 }
 
-/** The meeting's tabs in the share menu: a board of the user's goes on the stage, any other
-    address opens as a tab of its own for the browser to share. */
-function MeetingTabs({
+/** What the meeting's people prepared to share: a board goes on the stage, any other address
+    opens as a tab of its own for the browser to share. */
+function Prepared({
   tabs,
   taken,
   onBoard,
@@ -255,7 +252,7 @@ function MeetingTabs({
 }: {
   tabs: string[];
   taken: boolean;
-  onBoard?: (board: string) => void;
+  onBoard: (board: string) => void;
   onBlocked: () => void;
   onTabs: () => void;
 }) {
@@ -266,13 +263,13 @@ function MeetingTabs({
     <>
       {tabs.map((tab) => {
         const board = boardAt(tab);
-        return board && onBoard ? (
+        return board ? (
           <MenuItem
             key={tab}
             icon={LayoutDashboard}
-            label={shortened(tab)}
+            label={board.title}
             disabled={taken}
-            onSelect={() => onBoard(board)}
+            onSelect={() => onBoard(board.id)}
           />
         ) : (
           <MenuItem
@@ -285,6 +282,14 @@ function MeetingTabs({
           />
         );
       })}
+      {!tabs.length && (
+        <MenuItem
+          icon={ListChecks}
+          label={t('meeting.nothingPrepared')}
+          disabled
+          onSelect={() => {}}
+        />
+      )}
       {opened.length > 1 && (
         <MenuItem
           icon={ExternalLink}
@@ -294,6 +299,7 @@ function MeetingTabs({
           }}
         />
       )}
+      <MenuSeparator />
       <MenuItem icon={Pencil} label={t('meeting.editTabs')} onSelect={onTabs} />
     </>
   );
@@ -371,12 +377,17 @@ export function SharedTabs({
               title={tab}
               onClick={() => {
                 const board = boardAt(tab);
-                if (board) onBoard(board);
+                if (board) onBoard(board.id);
                 else onBlocked(!openTab(tab));
               }}
-              className="min-w-0 flex-1 truncate rounded px-2 py-1 text-left text-sm hover:bg-hover"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-hover"
             >
-              {shortened(tab)}
+              {boardAt(tab) ? (
+                <LayoutDashboard size={14} aria-hidden className="shrink-0 text-muted" />
+              ) : (
+                <ExternalLink size={14} aria-hidden className="shrink-0 text-muted" />
+              )}
+              <span className="truncate">{boardAt(tab)?.title ?? shortened(tab)}</span>
             </button>
             <button
               type="button"
@@ -423,6 +434,7 @@ function useOffered(left: string[]): Offered[] {
     queryKey: ['meeting-tabs'],
     queryFn: () => getJson<{ tabs: string[] }>('/api/meetings/tabs'),
   });
+  const boards = useBoards();
   const favourites = useFavourites();
   const links = useLinks();
   const recent = useRecent();
@@ -432,6 +444,7 @@ function useOffered(left: string[]): Offered[] {
   };
   const offered = [
     ...(before.data?.tabs ?? []).map((address) => ({ title: shortened(address), address })),
+    ...(boards.data?.children ?? []).map((node) => ({ title: node.title, address: here(node) })),
     ...(favourites.data?.children ?? []).map((node) => ({
       title: node.title,
       address: here(node),
