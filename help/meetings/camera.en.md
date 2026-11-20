@@ -30,7 +30,7 @@ Your account keeps the processing you choose, so it holds on every device you si
 
 The browser shrinks a picture of your own to at most 1920 × 1080 pixels before sending it and keeps it with your account. Only you see it, and others see it only behind you in a call. It is part of the export of your data.
 
-{t:meeting.framing} looks for faces in the picture several times a second and moves the crop slowly so that the face stands in the upper part of the picture. With several people in the picture, the crop takes in them all. When no face is seen for more than 3 seconds, the picture returns to the whole frame. {t:meeting.light} measures the picture's brightness twice a second and brightens a dark picture at most twofold. A bright picture stays as it is.
+{t:meeting.framing} looks for faces in the picture several times a second and moves the crop slowly so that the face stands in the upper part of the picture. With several people in the picture, the crop takes in them all. When no face is seen for more than 3 seconds, the picture returns to the whole frame. {t:meeting.light} measures the picture's brightness twice a second and brightens a dark picture at most twofold. A bright picture stays as it is. You can choose the processing while the camera is off; it holds as soon as you turn the camera on.
 
 The browser itself processes the sound. A changed switch holds at once for the microphone in the meeting. A muted microphone stays muted.
 

@@ -267,6 +267,7 @@ export class Shaping {
   private dropped: Dropped | null = null;
   private shaped = new WeakMap<LocalVideoTrack, Shaped>();
   private queue = Promise.resolve();
+  private readonly again = () => this.apply();
 
   constructor(
     choices: CallChoices,
@@ -279,7 +280,9 @@ export class Shaping {
 
   follow(track: LocalVideoTrack | undefined) {
     if (track === this.track) return;
+    this.track?.off(TrackEvent.Unmuted, this.again);
     this.track = track;
+    track?.on(TrackEvent.Unmuted, this.again);
     this.apply();
   }
 
@@ -320,6 +323,8 @@ export class Shaping {
       await current.update(options);
       return;
     }
+    // A camera turned off has ended its track; turned on again, it is shaped as it unmutes.
+    if (track.mediaStreamTrack.readyState === 'ended') return;
     const transformer = new Shaped(
       { ...options, assetPaths: { tasksVisionFileSet: vision, modelAssetPath: segmenterModel } },
       () => this.strained(),

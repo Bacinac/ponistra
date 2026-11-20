@@ -668,7 +668,7 @@ async function chosen(meeting: Page, sub: string, item: string) {
   await kept;
 }
 
-test('the camera’s background, framing and light and the sound’s processing are chosen beside the devices and kept by the account', async ({
+test('the camera’s background is chosen beside the devices and seen by the others in the call', async ({
   page,
   browser,
   baseURL,
@@ -698,9 +698,21 @@ test('the camera’s background, framing and light and the sound’s processing 
   const seen = tiles(there).filter({ hasNotText: '(vi)' }).locator('video');
   await expect.poll(async () => lightWall(await meanColour(seen)), { timeout: 30_000 }).toBe(true);
   await there.context().close();
+});
 
-  // Chosen once the call is seen: every processing at once keeps the page's thread busy without a
-  // graphics card, past the time a busy host leaves a call to start.
+test('the camera’s background, framing and light and the sound’s processing are kept by the account for its other devices, and a picture of one’s own takes the background’s place', async ({
+  page,
+  browser,
+  baseURL,
+  problems,
+}) => {
+  test.slow();
+  await module(page, 'Razgovori');
+  const meeting = await meetingNow(page);
+  // Chosen with the camera off: the test's Chromium draws without a graphics card, too slowly for
+  // every processing at once on a busy host.
+  await meeting.getByRole('button', { name: 'Isključi kameru' }).click();
+  await chosen(meeting, 'Pozadina', 'Blago zamućenje');
   await meeting.getByRole('button', { name: 'Uređaji' }).click();
   let kept = meeting.waitForResponse('**/api/auth/preferences');
   await meeting.getByRole('menuitemcheckbox', { name: 'Prati lice' }).press('Enter');
@@ -717,28 +729,24 @@ test('the camera’s background, framing and light and the sound’s processing 
   await meeting.getByRole('menuitemcheckbox', { name: 'Prigušivanje šuma' }).press('Enter');
   await kept;
   await expect(meeting.getByRole('alert')).toHaveCount(0);
-
-  await meeting.getByRole('button', { name: 'Napusti' }).click();
-  await expect(meeting.getByText('Napustili ste sastanak.')).toBeVisible();
   await meeting.close();
 
   // Another device of the same account finds the same choices.
   const app = await device(browser, baseURL!, problems);
   await module(app, 'Razgovori');
   const other = await meetingNow(app);
-  await expect(other.getByRole('button', { name: 'Isključi kameru' })).toBeEnabled();
+  await other.getByRole('button', { name: 'Isključi kameru' }).click();
   await other.getByRole('button', { name: 'Uređaji' }).click();
   await expect(other.getByRole('menuitemcheckbox', { name: 'Prati lice' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
   await other.getByRole('menuitem', { name: 'Pozadina' }).press('Enter');
-  await expect(other.getByRole('menuitemradio', { name: 'Svijetli zid' })).toHaveAttribute(
+  await expect(other.getByRole('menuitemradio', { name: 'Blago zamućenje' })).toHaveAttribute(
     'aria-checked',
     'true',
   );
 
-  // The test's Chromium draws without a graphics card, too slowly for every processing at once.
   kept = other.waitForResponse('**/api/auth/preferences');
   await other.getByRole('menuitemcheckbox', { name: 'Prati lice' }).press('Enter');
   await kept;
@@ -746,6 +754,7 @@ test('the camera’s background, framing and light and the sound’s processing 
   kept = other.waitForResponse('**/api/auth/preferences');
   await other.getByRole('menuitemcheckbox', { name: 'Popravi slabo osvjetljenje' }).press('Enter');
   await kept;
+  await other.getByRole('button', { name: 'Uključi kameru' }).click();
   await other.getByRole('button', { name: 'Uređaji' }).click();
   await other.getByRole('menuitem', { name: 'Pozadina' }).press('Enter');
 

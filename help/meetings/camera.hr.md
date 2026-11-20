@@ -30,7 +30,7 @@ Izbor obrade pamti vaš račun, pa vrijedi na svakom uređaju na kojem se prijav
 
 Vlastitu sliku preglednik prije slanja smanji na najviše 1920 × 1080 točaka i spremi uz vaš račun. Vidite je samo vi, a drugi je vide samo iza vas u pozivu. Ulazi u izvoz vaših podataka.
 
-{t:meeting.framing} nekoliko puta u sekundi traži lica na slici i polako pomiče izrez tako da lice stoji u gornjem dijelu slike. Kad je na slici više osoba, izrez obuhvaća sve. Kad lica nema dulje od 3 sekunde, slika se vraća na cijeli kadar. {t:meeting.light} dvaput u sekundi mjeri svjetlinu slike i tamnu sliku posvijetli najviše dvostruko. Svijetla slika ostaje kakva jest.
+{t:meeting.framing} nekoliko puta u sekundi traži lica na slici i polako pomiče izrez tako da lice stoji u gornjem dijelu slike. Kad je na slici više osoba, izrez obuhvaća sve. Kad lica nema dulje od 3 sekunde, slika se vraća na cijeli kadar. {t:meeting.light} dvaput u sekundi mjeri svjetlinu slike i tamnu sliku posvijetli najviše dvostruko. Svijetla slika ostaje kakva jest. Obradu birate i dok je kamera isključena; vrijedi čim je uključite.
 
 Zvuk obrađuje sam preglednik. Promjena prekidača odmah vrijedi za mikrofon u sastanku. Isključen mikrofon ostaje isključen.
 

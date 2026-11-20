@@ -4,7 +4,7 @@
   "covers": [],
   "quiet": [],
   "describes": {
-    "frontend/src/camera.ts#Shaping": "dea6acc8ab46",
+    "frontend/src/camera.ts#Shaping": "0b931a534a99",
     "frontend/src/camera.ts#Shaped": "2e8ffde0b9b0",
     "frontend/src/camera.ts#soundOf": "5cc63948f5b2",
     "frontend/src/camera.ts#resound": "806fe9f9d56a",
