@@ -720,6 +720,7 @@ function Inside({
               meeting={meeting}
               blocked={tabsBlocked}
               onBlocked={setTabsBlocked}
+              onBoard={(board) => staging.mutate(board)}
               onClose={() => setTabbing(false)}
             />
           </aside>

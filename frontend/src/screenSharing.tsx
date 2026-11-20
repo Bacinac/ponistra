@@ -5,6 +5,7 @@ import {
   ChevronDown,
   ExternalLink,
   Globe,
+  LayoutDashboard,
   Monitor,
   MonitorUp,
   Pencil,
@@ -27,7 +28,7 @@ import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import type { Shown } from './MeetingPage';
 import { Menu, MenuItem, MenuSeparator } from './menu';
-import { BoardChoices } from './stage';
+import { BoardChoices, useBoardAt } from './stage';
 import { button, dangerButton, field, iconButton, primaryButton } from './styles';
 import { errorMessage, nodeHref, useFavourites, useRecent } from './tree';
 import { useLinks } from './linksData';
@@ -230,29 +231,71 @@ export function ShareMenu({
       {meeting && (
         <>
           <MenuSeparator />
-          {tabs.map((tab) => (
-            <MenuItem
-              key={tab}
-              icon={ExternalLink}
-              label={shortened(tab)}
-              onSelect={() => {
-                if (!openTab(tab)) onBlocked();
-              }}
-            />
-          ))}
-          {tabs.length > 1 && (
-            <MenuItem
-              icon={ExternalLink}
-              label={t('meeting.openTabs')}
-              onSelect={() => {
-                if (!tabs.map(openTab).every(Boolean)) onBlocked();
-              }}
-            />
-          )}
-          <MenuItem icon={Pencil} label={t('meeting.editTabs')} onSelect={onTabs} />
+          <MeetingTabs
+            tabs={tabs}
+            taken={taken}
+            onBoard={onBoard}
+            onBlocked={onBlocked}
+            onTabs={onTabs}
+          />
         </>
       )}
     </Menu>
+  );
+}
+
+/** The meeting's tabs in the share menu: a board of the user's goes on the stage, any other
+    address opens as a tab of its own for the browser to share. */
+function MeetingTabs({
+  tabs,
+  taken,
+  onBoard,
+  onBlocked,
+  onTabs,
+}: {
+  tabs: string[];
+  taken: boolean;
+  onBoard?: (board: string) => void;
+  onBlocked: () => void;
+  onTabs: () => void;
+}) {
+  const { t } = useI18n();
+  const boardAt = useBoardAt();
+  const opened = tabs.filter((tab) => !boardAt(tab));
+  return (
+    <>
+      {tabs.map((tab) => {
+        const board = boardAt(tab);
+        return board && onBoard ? (
+          <MenuItem
+            key={tab}
+            icon={LayoutDashboard}
+            label={shortened(tab)}
+            disabled={taken}
+            onSelect={() => onBoard(board)}
+          />
+        ) : (
+          <MenuItem
+            key={tab}
+            icon={ExternalLink}
+            label={shortened(tab)}
+            onSelect={() => {
+              if (!openTab(tab)) onBlocked();
+            }}
+          />
+        );
+      })}
+      {opened.length > 1 && (
+        <MenuItem
+          icon={ExternalLink}
+          label={t('meeting.openTabs')}
+          onSelect={() => {
+            if (!opened.map(openTab).every(Boolean)) onBlocked();
+          }}
+        />
+      )}
+      <MenuItem icon={Pencil} label={t('meeting.editTabs')} onSelect={onTabs} />
+    </>
   );
 }
 
@@ -266,14 +309,17 @@ export function SharedTabs({
   meeting,
   blocked,
   onBlocked,
+  onBoard,
   onClose,
 }: {
   meeting: Shown;
   blocked: boolean;
   onBlocked: (blocked: boolean) => void;
+  onBoard: (board: string) => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
+  const boardAt = useBoardAt();
   const client = useQueryClient();
   const [address, setAddress] = useState('');
   const saved = useMutation({
@@ -281,6 +327,7 @@ export function SharedTabs({
     onSuccess: (shown) => client.setQueryData(['meeting', meeting.id], shown),
   });
   const tabs = meeting.tabs;
+  const opened = tabs.filter((tab) => !boardAt(tab));
   const added = (event: FormEvent) => {
     event.preventDefault();
     const given = address.trim();
@@ -291,11 +338,11 @@ export function SharedTabs({
     <section aria-label={t('meeting.tabsTitle')} className="flex min-h-0 flex-1 flex-col gap-2">
       <div className="flex items-center gap-2">
         <h2 className="min-w-0 flex-1 truncate font-semibold">{t('meeting.tabsTitle')}</h2>
-        {tabs.length > 1 && (
+        {opened.length > 1 && (
           <button
             type="button"
             className={button}
-            onClick={() => onBlocked(!tabs.map(openTab).every(Boolean))}
+            onClick={() => onBlocked(!opened.map(openTab).every(Boolean))}
           >
             <ExternalLink size={16} aria-hidden />
             {t('meeting.openTabs')}
@@ -322,7 +369,11 @@ export function SharedTabs({
             <button
               type="button"
               title={tab}
-              onClick={() => onBlocked(!openTab(tab))}
+              onClick={() => {
+                const board = boardAt(tab);
+                if (board) onBoard(board);
+                else onBlocked(!openTab(tab));
+              }}
               className="min-w-0 flex-1 truncate rounded px-2 py-1 text-left text-sm hover:bg-hover"
             >
               {shortened(tab)}

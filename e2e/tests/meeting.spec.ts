@@ -1,7 +1,7 @@
 import type { Browser, Locator, Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { expect, sessions, test } from './fixtures';
-import { idIn, newBoard, newDocument } from './helpers/nodes';
+import { idIn, newBoard, newDocument, nodeHref } from './helpers/nodes';
 
 // Chromium's own camera and microphone: a moving picture and a tone, granted without asking.
 const MEDIA = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'];
@@ -400,6 +400,20 @@ test('a member shows everyone in the meeting one of their boards, guests too, li
   for (const each of [meeting, guest]) {
     await expect(each.getByRole('region', { name: title })).toBeHidden();
   }
+
+  const address = new URL(nodeHref({ id, kind: 'file', title }), baseURL).href;
+  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
+  await meeting.getByRole('menuitem', { name: 'Uredi kartice…' }).click();
+  const tabs = meeting.getByRole('region', { name: 'Kartice za dijeljenje' });
+  await tabs.getByRole('combobox', { name: 'Adresa' }).fill(address);
+  await tabs.getByRole('button', { name: 'Dodaj' }).click();
+  const opened: Page[] = [];
+  meeting.context().on('page', (each) => opened.push(each));
+  await tabs.getByRole('button', { name: new URL(address).host }).click();
+  for (const each of [meeting, guest]) {
+    await expect(each.getByRole('region', { name: title })).toContainText(`${title} · `);
+  }
+  expect(opened).toEqual([]);
   await guest.context().close();
 });
 

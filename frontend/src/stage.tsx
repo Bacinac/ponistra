@@ -5,6 +5,7 @@ import { csrfToken, deleteJson, postJson } from './api';
 import { useI18n } from './i18n';
 import { useChanges } from './live';
 import { MenuItem, MenuSub } from './menu';
+import { idIn } from './address';
 import { boardGroups, useBoards } from './tree';
 
 /** A board a member shows everyone in the meeting, as the server told the room. */
@@ -155,4 +156,17 @@ function Boards({ onBoard }: { onBoard: (board: string) => void }) {
       ))}
     </>
   );
+}
+
+/** The board an address of this installation opens, of those the user has, or null. */
+export function useBoardAt(): (address: string) => string | null {
+  const boards = useBoards();
+  const ids = new Set((boards.data?.children ?? []).map((board) => board.id));
+  return (address) => {
+    const at = new URL(address);
+    if (at.origin !== window.location.origin) return null;
+    const [, route, place] = at.pathname.split('/');
+    const id = route === 'p' ? idIn(place) : null;
+    return id && ids.has(id) ? id : null;
+  };
 }
