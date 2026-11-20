@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { LocalTrack, ScreenShareCaptureOptions } from 'livekit-client';
 import {
   AppWindow,
@@ -12,16 +12,25 @@ import {
   Square,
   X,
 } from 'lucide-react';
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
-import { patchJson } from './api';
+import { getJson, patchJson } from './api';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import type { Shown } from './MeetingPage';
 import { Menu, MenuItem, MenuSeparator } from './menu';
 import { BoardChoices } from './stage';
 import { button, dangerButton, field, iconButton, primaryButton } from './styles';
-import { errorMessage } from './tree';
+import { errorMessage, nodeHref, useFavourites, useRecent } from './tree';
+import { useLinks } from './linksData';
 
 export type Surface = 'browser' | 'window' | 'monitor';
 
@@ -332,12 +341,11 @@ export function SharedTabs({
         ))}
       </ul>
       <form onSubmit={added} className="flex gap-2">
-        <input
+        <TabAddress
           value={address}
-          onChange={(event) => setAddress(event.target.value)}
-          aria-label={t('meeting.tabAddress')}
-          placeholder={t('meeting.tabAddress')}
-          className={`${field} min-w-0 flex-1`}
+          left={tabs}
+          onChange={setAddress}
+          onChosen={(tab) => saved.mutate([...tabs, tab], { onSuccess: () => setAddress('') })}
         />
         <button
           type="submit"
@@ -349,5 +357,134 @@ export function SharedTabs({
       </form>
       {saved.error && <p className="text-sm text-danger">{errorMessage(saved.error, t)}</p>}
     </section>
+  );
+}
+
+interface Offered {
+  title: string;
+  address: string;
+}
+
+/** What the user may mean to share: the tabs of their meetings before, then their favourites,
+ * links and what they opened lately, each once. */
+function useOffered(left: string[]): Offered[] {
+  const before = useQuery({
+    queryKey: ['meeting-tabs'],
+    queryFn: () => getJson<{ tabs: string[] }>('/api/meetings/tabs'),
+  });
+  const favourites = useFavourites();
+  const links = useLinks();
+  const recent = useRecent();
+  const here = (node: Parameters<typeof nodeHref>[0]) => {
+    const href = nodeHref(node);
+    return href && new URL(href, window.location.origin).href;
+  };
+  const offered = [
+    ...(before.data?.tabs ?? []).map((address) => ({ title: shortened(address), address })),
+    ...(favourites.data?.children ?? []).map((node) => ({
+      title: node.title,
+      address: here(node),
+    })),
+    ...(links.data?.links ?? []).map((node) => ({ title: node.title, address: here(node) })),
+    ...(recent.data?.items ?? []).map((node) => ({ title: node.title, address: here(node) })),
+  ];
+  const seen = new Set(left);
+  return offered.filter(({ title, address }) => {
+    if (!/^https?:\/\//.test(address) || seen.has(address)) return false;
+    seen.add(address);
+    return Boolean(title);
+  });
+}
+
+/** The address of a tab to share, written or chosen from what the user may mean. */
+function TabAddress({
+  value,
+  left,
+  onChange,
+  onChosen,
+}: {
+  value: string;
+  left: string[];
+  onChange: (value: string) => void;
+  onChosen: (address: string) => void;
+}) {
+  const { t } = useI18n();
+  const list = useId();
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const typed = value.trim().toLowerCase();
+  const offered = useOffered(left).filter(
+    ({ title, address }) =>
+      !typed || title.toLowerCase().includes(typed) || address.toLowerCase().includes(typed),
+  );
+  const shown = open && offered.length > 0;
+  const chosen = (each: Offered) => {
+    onChosen(each.address);
+    setActive(-1);
+  };
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      if (!offered.length) return;
+      event.preventDefault();
+      setOpen(true);
+      const next = active + (event.key === 'ArrowDown' ? 1 : -1);
+      setActive(next >= offered.length ? -1 : next < -1 ? offered.length - 1 : next);
+    } else if (event.key === 'Enter' && shown && offered[active]) {
+      event.preventDefault();
+      chosen(offered[active]);
+    } else if (event.key === 'Escape' && shown) {
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    }
+  };
+  return (
+    <div className="relative min-w-0 flex-1">
+      <input
+        value={value}
+        role="combobox"
+        autoComplete="off"
+        spellCheck={false}
+        aria-autocomplete="list"
+        aria-expanded={shown}
+        aria-controls={list}
+        aria-activedescendant={shown && active >= 0 ? `${list}-${active}` : undefined}
+        aria-label={t('meeting.tabAddress')}
+        placeholder={t('meeting.tabAddress')}
+        onChange={(event) => {
+          onChange(event.target.value);
+          setActive(-1);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={onKeyDown}
+        className={`${field} w-full`}
+      />
+      {shown && (
+        <div
+          id={list}
+          role="listbox"
+          aria-label={t('meeting.tabAddress')}
+          onMouseDown={(event) => event.preventDefault()}
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-72 overflow-y-auto rounded border border-line bg-raised p-1 text-ink shadow-lg"
+        >
+          {offered.map((each, index) => (
+            <div
+              key={each.address}
+              id={`${list}-${index}`}
+              role="option"
+              aria-selected={index === active}
+              title={each.address}
+              onClick={() => chosen(each)}
+              className="flex cursor-pointer flex-col rounded px-2 py-1.5 text-sm hover:bg-hover aria-selected:bg-selected"
+            >
+              <span className="truncate">{each.title}</span>
+              <span className="truncate text-muted">{shortened(each.address)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

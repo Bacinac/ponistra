@@ -121,6 +121,8 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
   baseURL,
   problems,
 }) => {
+  const plan = `Plan ${randomBytes(3).toString('hex')}`;
+  const planned = `${new URL(baseURL!).host}${await newDocument(page, plan)}`;
   await module(page, 'Razgovori');
   const meeting = await meetingNow(page);
   await meeting.getByRole('button', { name: 'Pridruži se' }).click();
@@ -136,13 +138,21 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
     await each.getByRole('menuitem', { name: item }).click();
   };
   await chosen(meeting, 'Uredi kartice…');
-  await tabsOf(meeting).getByRole('textbox', { name: 'Adresa' }).fill('example.com/plan');
+  await tabsOf(meeting).getByRole('combobox', { name: 'Adresa' }).fill('example.com/plan');
   await tabsOf(meeting).getByRole('button', { name: 'Dodaj' }).click();
   await expect(tabsOf(meeting).getByRole('button', { name: 'example.com/plan' })).toBeVisible();
-  await expect(tabsOf(meeting).getByRole('textbox', { name: 'Adresa' })).toHaveValue('');
-  await tabsOf(meeting).getByRole('textbox', { name: 'Adresa' }).fill('https://example.org');
+  await expect(tabsOf(meeting).getByRole('combobox', { name: 'Adresa' })).toHaveValue('');
+  await tabsOf(meeting).getByRole('combobox', { name: 'Adresa' }).fill('https://example.org');
   await tabsOf(meeting).getByRole('button', { name: 'Dodaj' }).click();
   await expect(tabsOf(meeting).getByRole('button', { name: 'Otvori sve' })).toBeVisible();
+  await tabsOf(meeting).getByRole('combobox', { name: 'Adresa' }).fill(plan.slice(0, 7));
+  await tabsOf(meeting)
+    .getByRole('option', { name: new RegExp(plan) })
+    .click();
+  const row = tabsOf(meeting).getByRole('listitem').filter({ hasText: planned });
+  await expect(row.getByRole('button', { name: planned })).toBeVisible();
+  await row.getByRole('button', { name: 'Ukloni' }).click();
+  await expect(row).toHaveCount(0);
 
   await chosen(there, 'Uredi kartice…');
   await expect(tabsOf(there).getByRole('button', { name: /^example\./ })).toHaveText([

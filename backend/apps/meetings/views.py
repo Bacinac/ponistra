@@ -106,6 +106,20 @@ def meetings(request):
     return JsonResponse(describe(made, made.title), status=201)
 
 
+# As many as a list to choose from holds.
+SHARED_BEFORE = 50
+
+
+@api("GET")
+def shared_before(request):
+    """The tabs the user's meetings meant to share, the latest first, to choose from again."""
+    found = Meeting.objects.filter(conversation__members__user=request.user).exclude(tabs=[])
+    tabs: list[str] = []
+    for each in found.order_by("-created_at").values_list("tabs", flat=True)[:SHARED_BEFORE]:
+        tabs.extend(tab for tab in each if tab not in tabs)
+    return JsonResponse({"tabs": tabs[:SHARED_BEFORE]})
+
+
 def _shown(user, pk: uuid.UUID) -> dict:
     found = _found(pk)
     planned = Event.objects.filter(conference=found.link).exists()

@@ -141,3 +141,18 @@ def test_its_people_prepare_the_tabs_they_will_share(signed_in, owner, client):
     refused = sent(client, "patch", at, tabs=[])
     assert (refused.status_code, refused.json()) == (404, {"error": "no_meeting"})
     assert Meeting.objects.get().tabs == tabs[:2]
+
+
+def test_the_tabs_of_the_users_meetings_are_offered_again_the_latest_first(
+    signed_in, owner, client
+):
+    earlier = Meeting.objects.made("Prvi", owner)
+    Meeting.objects.filter(pk=earlier.pk).update(tabs=["https://e.hr/a", "https://e.hr/b"])
+    later = Meeting.objects.made("Drugi", owner)
+    Meeting.objects.filter(pk=later.pk).update(tabs=["https://e.hr/c", "https://e.hr/a"])
+    Meeting.objects.made("Tuđi", None)
+    assert signed_in.get("/api/meetings/tabs").json() == {
+        "tabs": ["https://e.hr/c", "https://e.hr/a", "https://e.hr/b"]
+    }
+    client.force_login(User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-72"))
+    assert client.get("/api/meetings/tabs").json() == {"tabs": []}

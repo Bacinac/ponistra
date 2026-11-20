@@ -140,6 +140,7 @@ urlpatterns = [
     path("api/conversations/<uuid:pk>/attachments/<int:aid>", chat.attachment),
     path("api/conversations/<uuid:pk>/attachments/<int:aid>/picture", chat.attachment_picture),
     path("api/meetings", meetings.meetings),
+    path("api/meetings/tabs", meetings.shared_before),
     path("api/meetings/<uuid:pk>", meetings.meeting),
     path("api/meetings/<uuid:pk>/join", meetings.join),
     path("api/meetings/<uuid:pk>/recording", meetings.recording),
