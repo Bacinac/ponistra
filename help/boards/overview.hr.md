@@ -41,3 +41,4 @@ Ploča je zatvorena u zasebnom okviru: ne vidi ništa drugo iz Ponistre, ne vodi
 - [Poveznica izvan instalacije](help:documents/outside)
 - [Što agent može](help:agents/tools)
 - [Slanje ploče agentu](help:boards/agent)
+- [Sastanci](help:meetings/overview)

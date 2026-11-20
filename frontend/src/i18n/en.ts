@@ -2249,6 +2249,8 @@ export const en: Record<MessageKey, string> = {
   'meeting.shareTab': 'Browser tab',
   'meeting.shareWindow': 'Window',
   'meeting.shareScreen': 'Entire screen',
+  'meeting.shareBoard': 'Board',
+  'meeting.noBoards': 'You have no boards.',
   'meeting.stopSharing': 'Stop sharing',
   'meeting.sharingTab': 'You share a tab',
   'meeting.sharingWindow': 'You share a window',

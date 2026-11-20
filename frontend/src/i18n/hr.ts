@@ -2239,6 +2239,8 @@ export const hr = {
   'meeting.shareTab': 'Kartica preglednika',
   'meeting.shareWindow': 'Prozor',
   'meeting.shareScreen': 'Cijeli zaslon',
+  'meeting.shareBoard': 'Ploča',
+  'meeting.noBoards': 'Nemate ploča.',
   'meeting.stopSharing': 'Prestani dijeliti',
   'meeting.sharingTab': 'Dijelite karticu',
   'meeting.sharingWindow': 'Dijelite prozor',

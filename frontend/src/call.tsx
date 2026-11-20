@@ -53,6 +53,7 @@ import { Menu, MenuChoices, MenuSub } from './menu';
 import { useReachable } from './live';
 import { initials } from './people';
 import { Recordings, useRecording } from './recording';
+import { BoardChanges, hideBoard, showBoard, StagedBoard, useShowing, useStaged } from './stage';
 import {
   OwnShare,
   sharedAs,
@@ -591,6 +592,17 @@ function Inside({
     switched(local.setScreenShareEnabled(true, sharedAs(surface)).then(() => floating.open()));
   const stopSharing = () => switched(local.setScreenShareEnabled(false));
   const ownShare = sharing === local;
+  const staged = useStaged(room);
+  const mine = !guest && !!staged && `${staged.user}` === local.identity.split('.')[0];
+  useShowing(meeting.id, mine);
+  const staging = useMutation({
+    mutationFn: (board: string | null) => {
+      if (board === null) return hideBoard(meeting.id);
+      if (local.isScreenShareEnabled) stopSharing();
+      return showBoard(meeting.id, board);
+    },
+  });
+  const presented = !!staged || (!!shared && !ownShare);
   const tabsShown = () => {
     setTabbing(true);
     setTalking(false);
@@ -624,6 +636,11 @@ function Inside({
       </header>
       {recording.question}
       <ShapingNotice state={notice} onRetry={() => shaping.retry()} />
+      {staging.error && (
+        <p role="alert" className="bg-panel px-4 py-1 text-sm text-danger">
+          {errorMessage(staging.error, t)}
+        </p>
+      )}
       {moving.error && (
         <p role="alert" className="bg-panel px-4 py-1 text-sm text-danger">
           {moving.error.name === 'NotAllowedError'
@@ -650,17 +667,33 @@ function Inside({
       )}
       <div className="flex min-h-0 flex-1">
         <main
-          className={`${(talking || tabbing) && !wide ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-1 gap-2 p-2 ${shared && !ownShare && wide ? 'flex-row' : 'flex-col'}`}
+          className={`${(talking || tabbing) && !wide ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-1 gap-2 p-2 ${presented && wide ? 'flex-row' : 'flex-col'}`}
         >
-          {shared?.track && !ownShare && (
-            <div className="relative min-h-0 flex-[3] overflow-hidden rounded-lg bg-panel">
-              <TrackView track={shared.track} contained />
-              <Label name={sharing ? named(sharing, t) : ''} />
-            </div>
+          {staged ? (
+            <section
+              aria-label={staged.title}
+              className="relative min-h-0 flex-[3] overflow-hidden rounded-lg bg-panel"
+            >
+              <StagedBoard
+                meeting={meeting.id}
+                guestKey={guest ? guestKey : undefined}
+                board={staged}
+              />
+              <Label name={staged.by ? `${staged.title} · ${staged.by}` : staged.title} />
+            </section>
+          ) : (
+            shared?.track &&
+            !ownShare && (
+              <div className="relative min-h-0 flex-[3] overflow-hidden rounded-lg bg-panel">
+                <TrackView track={shared.track} contained />
+                <Label name={sharing ? named(sharing, t) : ''} />
+              </div>
+            )
           )}
+          {mine && <BoardChanges meeting={meeting.id} />}
           <Tiles
             everyone={everyone}
-            beside={!!shared && !ownShare}
+            beside={presented}
             wide={wide}
             speakers={room.activeSpeakers}
           />
@@ -713,12 +746,14 @@ function Inside({
           onLabel="meeting.cameraOff"
           offLabel="meeting.cameraOn"
         />
-        {canShare && (
+        {(canShare || !guest) && (
           <ShareMenu
             meeting={guest ? undefined : meeting}
-            sharing={local.isScreenShareEnabled}
-            onShare={shareAs}
-            onStop={stopSharing}
+            sharing={local.isScreenShareEnabled || mine}
+            taken={(!!staged && !mine) || (!!sharing && !ownShare)}
+            onShare={canShare ? shareAs : undefined}
+            onBoard={guest ? undefined : (board) => staging.mutate(board)}
+            onStop={mine ? () => staging.mutate(null) : stopSharing}
             onBlocked={() => {
               setTabsBlocked(true);
               tabsShown();

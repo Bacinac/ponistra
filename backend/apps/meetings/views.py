@@ -5,6 +5,7 @@ from datetime import timedelta
 from logging import getLogger
 from urllib.parse import urlsplit
 
+from asgiref.sync import async_to_sync
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
@@ -17,13 +18,16 @@ from apps.calendar.models import Event
 from apps.chat import conversations
 from apps.chat.models import Conversation, Member
 from apps.core.api import Refused, api, body
-from apps.core.asyncdb import database, waited
+from apps.core.asyncdb import database, released, waited
+from apps.documents import board_data
+from apps.documents.models import Node
+from apps.documents.views import board_frame, board_page, file_name
 from apps.mail import sending
 from apps.mail.imap import Failed
 from apps.mail.models import Account
 from apps.users.models import User
 
-from . import livekit, lobby, recordings, rings
+from . import livekit, lobby, recordings, rings, stage
 from .models import Guest, Meeting, Recording, Ring
 
 log = getLogger(__name__)
@@ -436,6 +440,112 @@ def guest_recording(request, pk, key):
     if request.method == "POST":
         return _agreed(running, who, body(request))
     return JsonResponse({"recording": running is not None, "asks": recordings.asks(running, who)})
+
+
+def _board_shown(user, pk: uuid.UUID, data: dict) -> None:
+    stage.show(user, _member(user, pk), data.get("board"))
+
+
+def _board_hidden(user, pk: uuid.UUID) -> None:
+    stage.hide(_member(user, pk))
+
+
+def _board_retold(user, pk: uuid.UUID) -> None:
+    found = _member(user, pk)
+    if found.board_by_id == user.pk:
+        stage.announce(found)
+
+
+@api("POST", "DELETE")
+async def board(request, pk):
+    """A member in the call showing everyone one of their boards, or a member taking down what
+    is shown, as one leaving does."""
+    user = request.user
+    if request.method == "POST":
+        await _inside(pk, str(user.pk))
+        data = body(request)
+        await waited(lambda: _board_shown(user, pk, data))
+    else:
+        await waited(lambda: _board_hidden(user, pk))
+    return HttpResponse(status=204)
+
+
+@api("POST")
+async def board_changed(request, pk):
+    """The member who shows a board telling it changed, so that everyone draws it again."""
+    user = request.user
+    await waited(lambda: _board_retold(user, pk))
+    return HttpResponse(status=204)
+
+
+def _staged(found: Meeting, who: str) -> Node:
+    """The board on the stage, for whoever is in the call while the member who shows it is."""
+    node = stage.shown(found)
+    released()
+    try:
+        there = {recordings.person(each) for each in async_to_sync(livekit.inside)(str(found.pk))}
+    except livekit.Unavailable as unavailable:
+        log.warning("meetings: %s", unavailable)
+        raise Refused(503, "meetings_unavailable") from unavailable
+    if who not in there:
+        raise Refused(403, "not_in_call")
+    if str(found.board_by_id) not in there:
+        raise Refused(404, "no_board")
+    return node
+
+
+def _framed(request, node: Node) -> HttpResponse:
+    return board_frame(request, node.title, f"{request.path}/page", f"{request.path}/data", True)
+
+
+def _paged(request, node: Node) -> HttpResponse:
+    return board_page(request, node.blob, file_name(node))
+
+
+def _kept(request, node: Node) -> HttpResponse:
+    return JsonResponse(board_data.read(request, node))
+
+
+def _member_staged(request, pk) -> Node:
+    return _staged(_member(request.user, pk), str(request.user.pk))
+
+
+def _guest_staged(pk, key) -> Node:
+    found = _admitted(pk, key)
+    return _staged(found.meeting, livekit.guest_identity(found.pk))
+
+
+@api("GET")
+def board_shown(request, pk):
+    """The board on the stage, as a member in the call draws it: only to read, whatever their
+    rights."""
+    return _framed(request, _member_staged(request, pk))
+
+
+@api("GET")
+def board_shown_page(request, pk):
+    return _paged(request, _member_staged(request, pk))
+
+
+@api("GET")
+def board_shown_data(request, pk):
+    return _kept(request, _member_staged(request, pk))
+
+
+@api("GET", signed_in=False)
+def guest_board(request, pk, key):
+    """The board on the stage, for a guest let in, only to read and only while it is shown."""
+    return _framed(request, _guest_staged(pk, key))
+
+
+@api("GET", signed_in=False)
+def guest_board_page(request, pk, key):
+    return _paged(request, _guest_staged(pk, key))
+
+
+@api("GET", signed_in=False)
+def guest_board_data(request, pk, key):
+    return _kept(request, _guest_staged(pk, key))
 
 
 @api("GET")

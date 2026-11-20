@@ -10,37 +10,15 @@ from pycrdt import Doc
 from apps.access.models import Grant, Role
 from apps.ai import installation, model, speech
 from apps.ai.models import SpeechConsent
-from apps.chat import conversations
 from apps.chat.models import Conversation
 from apps.content.blocks import body_of
 from apps.documents.models import Node
 from apps.jobs.models import Job
 from apps.meetings import livekit, recorder, recordings
-from apps.meetings.models import Guest, Meeting, Recording
+from apps.meetings.models import Guest, Recording
 from apps.tasks.models import Task
 from apps.users.models import User
 from apps.versions import history
-
-
-@pytest.fixture
-def owner():
-    return User.objects.create_user(
-        "ivo@example.com", "Kamen-Most-Rijeka-71", first_name="Ivo", last_name="Bošković"
-    )
-
-
-@pytest.fixture
-def ana():
-    return User.objects.create_user(
-        "ana@example.com", "Kamen-Most-Rijeka-72", first_name="Ana", last_name="Horvat"
-    )
-
-
-@pytest.fixture
-def meeting(owner, ana):
-    made = Meeting.objects.made("Kolegij", owner)
-    conversations.added(made.conversation, [ana])
-    return made
 
 
 def signed(user) -> Client:
@@ -96,20 +74,11 @@ def faked(monkeypatch):
     for name in ("start", "stop", "made", "opened", "read", "forget"):
         monkeypatch.setattr(recorder, name, getattr(fake, name))
     told: list[tuple[str, bool]] = []
-    monkeypatch.setattr(livekit, "recorded", lambda room, on: told.append((room, on)))
+    monkeypatch.setattr(
+        livekit, "staged", lambda room, state: told.append((room, state["recording"]))
+    )
     fake.told = told
     return fake
-
-
-@pytest.fixture
-def present(monkeypatch):
-    there: list[str] = []
-
-    async def inside(room):
-        return there
-
-    monkeypatch.setattr(livekit, "inside", inside)
-    return there
 
 
 @pytest.mark.django_db(transaction=True)

@@ -73,6 +73,7 @@ import {
   nodeHref,
   NodeIcon,
   useBoards,
+  boardGroups,
   useFavourites,
   useCompany,
   useFolder,
@@ -969,41 +970,15 @@ function BoardGroup({
   );
 }
 
-/** The boards under their groups: the user's own by name, those without one after them, then
- * what others share, by where it comes from. */
 function boardSections(
   boards: (ListedNode & FoundNode)[],
   t: (key: MessageKey) => string,
 ): Section[] {
-  const found = new Map<
-    string,
-    { rank: number; title: string; group: FoundNode['path'][number] | null; holds: Set<string> }
-  >();
-  for (const board of boards) {
-    const key = `${board.root}:${board.path.at(-1)?.id ?? ''}`;
-    const held = found.get(key);
-    if (held) {
-      held.holds.add(board.id);
-      continue;
-    }
-    const own = board.root === 'mine';
-    const named = own ? board.path.slice(1) : [];
-    found.set(key, {
-      rank: !own ? 2 : named.length ? 0 : 1,
-      title: own
-        ? named.map((step) => step.title).join(' › ') || t('links.ungrouped')
-        : placeText(board, t),
-      group: named.at(-1) ?? null,
-      holds: new Set([board.id]),
-    });
-  }
-  return [...found.entries()]
-    .sort(([, one], [, other]) => one.rank - other.rank || one.title.localeCompare(other.title))
-    .map(([key, { title, group, holds }]) => ({
-      key,
-      holds,
-      heading: <BoardGroup title={title} count={holds.size} group={group} />,
-    }));
+  return boardGroups(boards, t).map(({ key, title, group, boards: held }) => ({
+    key,
+    holds: new Set(held.map((board) => board.id)),
+    heading: <BoardGroup title={title} count={held.length} group={group} />,
+  }));
 }
 
 export function BoardsPage() {

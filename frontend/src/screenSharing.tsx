@@ -19,6 +19,7 @@ import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import type { Shown } from './MeetingPage';
 import { Menu, MenuItem, MenuSeparator } from './menu';
+import { BoardChoices } from './stage';
 import { button, dangerButton, field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
 
@@ -173,14 +174,18 @@ function openTab(tab: string): boolean {
 export function ShareMenu({
   meeting,
   sharing,
+  taken,
   onShare,
+  onBoard,
   onStop,
   onBlocked,
   onTabs,
 }: {
   meeting?: Shown;
   sharing: boolean;
-  onShare: (surface: Surface) => void;
+  taken: boolean;
+  onShare?: (surface: Surface) => void;
+  onBoard?: (board: string) => void;
   onStop: () => void;
   onBlocked: () => void;
   onTabs: () => void;
@@ -199,9 +204,19 @@ export function ShareMenu({
       {sharing ? (
         <MenuItem icon={Square} label={t('meeting.stopSharing')} onSelect={onStop} />
       ) : (
-        CHOSEN.map(({ surface, label, icon }) => (
-          <MenuItem key={surface} icon={icon} label={t(label)} onSelect={() => onShare(surface)} />
-        ))
+        <>
+          {onShare &&
+            CHOSEN.map(({ surface, label, icon }) => (
+              <MenuItem
+                key={surface}
+                icon={icon}
+                label={t(label)}
+                disabled={taken}
+                onSelect={() => onShare(surface)}
+              />
+            ))}
+          {onBoard && <BoardChoices disabled={taken} onBoard={onBoard} />}
+        </>
       )}
       {meeting && (
         <>

@@ -1,7 +1,7 @@
 import type { Browser, Locator, Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { expect, sessions, test } from './fixtures';
-import { idIn, newDocument } from './helpers/nodes';
+import { idIn, newBoard, newDocument } from './helpers/nodes';
 
 // Chromium's own camera and microphone: a moving picture and a tone, granted without asking.
 const MEDIA = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'];
@@ -162,6 +162,7 @@ test('the tabs a meeting means to share are kept beside it for all its devices a
     'Kartica preglednika',
     'Prozor',
     'Cijeli zaslon',
+    'Ploča',
     'example.org',
     'Uredi kartice…',
   ]);
@@ -306,6 +307,89 @@ test('someone outside the installation comes by the link, is let in at the door 
   await theirs.getByRole('button', { name: 'Pošalji' }).click();
   const written = mine.getByRole('listitem').filter({ hasText: answer });
   await expect(written).toContainText('Eva Kovač (gost)');
+  await guest.context().close();
+});
+
+const SHOWN = `<!doctype html><html><body>
+<script src="/api/boards/runtime.js"></script>
+<h1>Prodaja po mjesecu</h1><p id="rows"></p><p id="can"></p>
+<script>
+window.ponistra.db.canWrite().then((can) => {
+  document.getElementById('can').textContent = can;
+});
+window.ponistra.db.collection('mjeseci').onSnapshot((rows) => {
+  document.getElementById('rows').textContent = rows.docs
+    .map((row) => row.id + '=' + row.data().n)
+    .join(',');
+});
+</script></body></html>`;
+
+test('a member shows everyone in the meeting one of their boards, guests too, live as it changes, until they stop', async ({
+  page,
+  browser,
+  baseURL,
+  problems,
+}) => {
+  const title = `Prodaja ${randomBytes(3).toString('hex')}`;
+  const group = `Sastanak ${randomBytes(3).toString('hex')}`;
+  await page.goto('/documents');
+  const id = await newBoard(page, title, SHOWN, group);
+  const written = (key: string, n: number) =>
+    page.evaluate(
+      async ({ id, key, n }) => {
+        const token = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] ?? '';
+        const sent = await fetch(`/api/nodes/${id}/board/data?collection=mjeseci&key=${key}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+          body: JSON.stringify({ data: { n } }),
+        });
+        return sent.status;
+      },
+      { id, key, n },
+    );
+  expect(await written('sijecanj', 12)).toBe(200);
+
+  await module(page, 'Razgovori');
+  const meeting = await meetingNow(page);
+  await meeting.getByRole('button', { name: 'Pridruži se' }).click();
+  await expect(tiles(meeting)).toHaveCount(1);
+  const guest = await device(browser, baseURL!, problems, null);
+  await guest.goto(new URL(meeting.url()).pathname);
+  await guest.getByLabel('Vaše ime').fill('Eva Kovač');
+  await guest.getByRole('button', { name: 'Pridruži se' }).click();
+  await meeting
+    .getByRole('list', { name: 'Čekaju ulaz' })
+    .getByRole('button', { name: 'Pusti' })
+    .click();
+  for (const each of [meeting, guest]) await expect(tiles(each)).toHaveCount(2);
+
+  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
+  await meeting.getByRole('menuitem', { name: 'Ploča' }).press('Enter');
+  await meeting.getByRole('menuitem', { name: group }).press('Enter');
+  await meeting.getByRole('menuitem', { name: title }).press('Enter');
+
+  for (const each of [meeting, guest]) {
+    const stage = each.getByRole('region', { name: title });
+    await expect(stage).toContainText(`${title} · `);
+    const board = stage.frameLocator(`iframe[title="${title}"]`).frameLocator('iframe');
+    await expect(board.getByRole('heading', { name: 'Prodaja po mjesecu' })).toBeVisible();
+    await expect(board.locator('#rows')).toHaveText('sijecanj=12');
+    await expect(board.locator('#can')).toHaveText('false');
+  }
+  expect(await written('veljaca', 15)).toBe(200);
+  for (const each of [meeting, guest]) {
+    const board = each
+      .getByRole('region', { name: title })
+      .frameLocator(`iframe[title="${title}"]`)
+      .frameLocator('iframe');
+    await expect(board.locator('#rows')).toHaveText('sijecanj=12,veljaca=15');
+  }
+
+  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
+  await meeting.getByRole('menuitem', { name: 'Prestani dijeliti' }).click();
+  for (const each of [meeting, guest]) {
+    await expect(each.getByRole('region', { name: title })).toBeHidden();
+  }
   await guest.context().close();
 });
 

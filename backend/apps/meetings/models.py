@@ -39,6 +39,12 @@ class Meeting(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     # The addresses its people mean to share, opened as tabs before the sharing picks them.
     tabs = models.JSONField(default=list)
+    board = models.ForeignKey(
+        "documents.Node", null=True, on_delete=models.DB_SET_NULL, related_name="+"
+    )
+    board_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.DB_SET_NULL, related_name="+"
+    )
 
     objects = Meetings()
 

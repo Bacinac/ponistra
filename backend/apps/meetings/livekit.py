@@ -109,20 +109,20 @@ def address() -> str:
     return "ws://" + settings.LIVEKIT_URL.removeprefix("http://")
 
 
-def recorded(room: str, recording: bool) -> None:
-    """Tells everyone in the room, guests too, whether it is being recorded, through the room's
-    metadata."""
+def staged(room: str, state: dict) -> None:
+    """Tells everyone in the room, guests too, what is on its stage: whether it is being recorded
+    and the board shown, through the room's metadata. A room no one is in keeps nothing."""
     key = _signed({"video": {"room": room, "roomAdmin": True}}, ASKING)
     try:
         with httpx2.Client(timeout=WAIT, trust_env=False) as client:
             answer = client.post(
                 f"{settings.LIVEKIT_URL}/twirp/livekit.RoomService/UpdateRoomMetadata",
-                json={"room": room, "metadata": json.dumps({"recording": recording})},
+                json={"room": room, "metadata": json.dumps(state, default=str)},
                 headers={"Authorization": f"Bearer {key}"},
             )
     except httpx2.HTTPError as error:
         raise Unavailable(f"LiveKit at {settings.LIVEKIT_URL}: {error!r}") from error
-    if answer.status_code == 404 and not recording:
+    if answer.status_code == 404 and not any(state.values()):
         return
     if answer.status_code != 200:
         raise Unavailable(f"LiveKit answered {answer.status_code}: {answer.text[:200]}")

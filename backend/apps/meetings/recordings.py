@@ -25,7 +25,7 @@ from apps.jobs.models import Job
 from apps.search import extraction
 from apps.users.models import User
 
-from . import livekit, recorder
+from . import livekit, recorder, stage
 from .models import Meeting, Recording
 
 log = getLogger(__name__)
@@ -90,7 +90,7 @@ def start(user, meeting: Meeting) -> Recording:
         _failed(made, "not_started")
         raise Refused(503, "recording_unavailable") from unavailable
     try:
-        livekit.recorded(room, True)
+        stage.told(meeting)
     except livekit.Unavailable as unavailable:
         log.warning("meetings: %s", unavailable)
         _stopped(made)
@@ -146,7 +146,7 @@ def _ended(found: Recording) -> Recording:
         elif changed:
             _failed(found, "no_owner")
     try:
-        livekit.recorded(str(found.meeting_id), False)
+        stage.told(found.meeting)
     except livekit.Unavailable as unavailable:
         log.warning("meetings: %s", unavailable)
     found.refresh_from_db()

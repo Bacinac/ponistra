@@ -41,3 +41,4 @@ A board is closed in a frame of its own: it sees nothing else of Ponistra, leads
 - [A link outside the installation](help:documents/outside)
 - [What an agent can do](help:agents/tools)
 - [Sending a board to an agent](help:boards/agent)
+- [Meetings](help:meetings/overview)
