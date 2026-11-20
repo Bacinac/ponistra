@@ -18,7 +18,7 @@
     "frontend/src/chat.tsx#lastConversation": "ba807c4cc89a",
     "backend/apps/chat/conversations.py#started": "2fb6ae05d319",
     "backend/apps/chat/conversations.py#added": "a574637c0f43",
-    "backend/apps/chat/conversations.py#left": "12e412e7c111",
+    "backend/apps/chat/conversations.py#left": "d5c7b3a5f2e8",
     "backend/apps/chat/conversations.py#summaries": "354466d95112",
     "backend/apps/chat/views.py#members": "23470aee70e5",
     "backend/apps/meetings/views.py#meetings": "cbda130723f8"

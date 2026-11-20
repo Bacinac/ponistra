@@ -15,12 +15,10 @@ import {
   VideoPresets,
 } from 'livekit-client';
 import {
-  AppWindow,
   MessageSquare,
   Mic,
   MicOff,
   Monitor,
-  MonitorUp,
   PhoneOff,
   Settings,
   Speaker,
@@ -55,7 +53,14 @@ import { Menu, MenuChoices, MenuSub } from './menu';
 import { useReachable } from './live';
 import { initials } from './people';
 import { Recordings, useRecording } from './recording';
-import { OwnShare, SHARED, SharedTabs, useFloating } from './screenSharing';
+import {
+  OwnShare,
+  sharedAs,
+  ShareMenu,
+  SharedTabs,
+  type Surface,
+  useFloating,
+} from './screenSharing';
 import { useHeldRelease } from './release';
 import { button, dangerButton, field, primaryButton } from './styles';
 import { errorMessage } from './tree';
@@ -559,6 +564,7 @@ function Inside({
   const recording = useRecording(room, meeting.id, guest ? (guestKey ?? null) : undefined);
   const [talking, setTalking] = useState(false);
   const [tabbing, setTabbing] = useState(false);
+  const [tabsBlocked, setTabsBlocked] = useState(false);
   const [, redraw] = useReducer((count: number) => count + 1, 0);
   useEffect(() => {
     const redrawn = () => redraw();
@@ -581,12 +587,14 @@ function Inside({
     });
   const canShare = !!navigator.mediaDevices?.getDisplayMedia;
   const floating = useFloating(local.isScreenShareEnabled);
-  const share = () =>
-    switched(
-      local.isScreenShareEnabled
-        ? local.setScreenShareEnabled(false)
-        : local.setScreenShareEnabled(true, SHARED).then(() => floating.open()),
-    );
+  const shareAs = (surface: Surface) =>
+    switched(local.setScreenShareEnabled(true, sharedAs(surface)).then(() => floating.open()));
+  const stopSharing = () => switched(local.setScreenShareEnabled(false));
+  const ownShare = sharing === local;
+  const tabsShown = () => {
+    setTabbing(true);
+    setTalking(false);
+  };
   const moving = useMutation({ mutationFn: toNextScreen });
 
   return (
@@ -642,26 +650,28 @@ function Inside({
       )}
       <div className="flex min-h-0 flex-1">
         <main
-          className={`${(talking || tabbing) && !wide ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-1 gap-2 p-2 ${shared && wide ? 'flex-row' : 'flex-col'}`}
+          className={`${(talking || tabbing) && !wide ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-1 gap-2 p-2 ${shared && !ownShare && wide ? 'flex-row' : 'flex-col'}`}
         >
-          {shared?.track && (
+          {shared?.track && !ownShare && (
             <div className="relative min-h-0 flex-[3] overflow-hidden rounded-lg bg-panel">
-              {sharing === local ? (
-                <OwnShare
-                  track={shared.track as LocalTrack}
-                  floating={floating}
-                  onFloat={() => void floating.open()}
-                  onStop={share}
-                />
-              ) : (
-                <>
-                  <TrackView track={shared.track} contained />
-                  <Label name={sharing ? named(sharing, t) : ''} />
-                </>
-              )}
+              <TrackView track={shared.track} contained />
+              <Label name={sharing ? named(sharing, t) : ''} />
             </div>
           )}
-          <Tiles everyone={everyone} beside={!!shared} wide={wide} speakers={room.activeSpeakers} />
+          <Tiles
+            everyone={everyone}
+            beside={!!shared && !ownShare}
+            wide={wide}
+            speakers={room.activeSpeakers}
+          />
+          {shared?.track && ownShare && (
+            <OwnShare
+              track={shared.track as LocalTrack}
+              floating={floating}
+              onFloat={() => void floating.open()}
+              onStop={stopSharing}
+            />
+          )}
         </main>
         {talking && (
           <aside
@@ -673,7 +683,12 @@ function Inside({
         )}
         {tabbing && !talking && (
           <aside className="flex min-h-0 w-full flex-col px-3 pb-2 md:w-80 md:border-l md:border-line">
-            <SharedTabs meeting={meeting} />
+            <SharedTabs
+              meeting={meeting}
+              blocked={tabsBlocked}
+              onBlocked={setTabsBlocked}
+              onClose={() => setTabbing(false)}
+            />
           </aside>
         )}
       </div>
@@ -699,31 +714,17 @@ function Inside({
           offLabel="meeting.cameraOn"
         />
         {canShare && (
-          <button
-            type="button"
-            onClick={share}
-            aria-pressed={local.isScreenShareEnabled}
-            className={local.isScreenShareEnabled ? primaryButton : button}
-          >
-            <MonitorUp size={16} aria-hidden />
-            <span className="sr-only sm:not-sr-only">
-              {t(local.isScreenShareEnabled ? 'meeting.stopSharing' : 'meeting.share')}
-            </span>
-          </button>
-        )}
-        {canShare && !guest && (
-          <button
-            type="button"
-            onClick={() => {
-              setTabbing(!tabbing);
-              setTalking(false);
+          <ShareMenu
+            meeting={guest ? undefined : meeting}
+            sharing={local.isScreenShareEnabled}
+            onShare={shareAs}
+            onStop={stopSharing}
+            onBlocked={() => {
+              setTabsBlocked(true);
+              tabsShown();
             }}
-            aria-pressed={tabbing}
-            className={tabbing ? primaryButton : button}
-          >
-            <AppWindow size={16} aria-hidden />
-            <span className="sr-only sm:not-sr-only">{t('meeting.tabs')}</span>
-          </button>
+            onTabs={tabsShown}
+          />
         )}
         <Messages
           unread={talk.unread}

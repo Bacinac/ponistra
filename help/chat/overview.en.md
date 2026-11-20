@@ -28,7 +28,7 @@ Conversations are short messages among the installation's users: with one collea
 
 A conversation between two people is always one: a new conversation with the same colleague opens the one you already have. A conversation with several colleagues is a group. Every meeting has its own conversation, which stays after the meeting; the meeting's guests write in it too.
 
-When you leave a conversation you no longer see its messages, and someone can add you again. When its last member leaves, the conversation is gone, unless its messages are within a retention period an administrator set. A conversation between two people is not left and gets no new members.
+When you leave a conversation you no longer see its messages, and someone can add you again. When its last member leaves, the conversation is gone, unless its messages are within a retention period an administrator set. A meeting's conversation whose recording is still being saved goes only once the recording is saved in the folder of whoever started it. A conversation between two people is not left and gets no new members.
 
 On a wide screen the page opens on the conversation you were last in. While you have no conversation the list says so, and a conversation without messages says {t:chat.empty}
 

@@ -115,7 +115,7 @@ test('a meeting made now is joined from two devices that see each other, and lef
   await expect(page).toHaveURL(/\/chat$/);
 });
 
-test('the tabs a meeting means to share are kept beside it for all its devices, and what is shared shows small with what it is', async ({
+test('the tabs a meeting means to share are kept beside it for all its devices and offered where sharing is chosen, and what one shares shows small below the people', async ({
   page,
   browser,
   baseURL,
@@ -131,7 +131,11 @@ test('the tabs a meeting means to share are kept beside it for all its devices, 
   await expect(tiles(there)).toHaveCount(2);
 
   const tabsOf = (each: Page) => each.getByRole('region', { name: 'Kartice za dijeljenje' });
-  await meeting.getByRole('button', { name: 'Kartice' }).click();
+  const chosen = async (each: Page, item: string) => {
+    await each.getByRole('button', { name: 'Dijeli', exact: true }).click();
+    await each.getByRole('menuitem', { name: item }).click();
+  };
+  await chosen(meeting, 'Uredi kartice…');
   await tabsOf(meeting).getByRole('textbox', { name: 'Adresa' }).fill('example.com/plan');
   await tabsOf(meeting).getByRole('button', { name: 'Dodaj' }).click();
   await expect(tabsOf(meeting).getByRole('button', { name: 'example.com/plan' })).toBeVisible();
@@ -140,7 +144,7 @@ test('the tabs a meeting means to share are kept beside it for all its devices, 
   await tabsOf(meeting).getByRole('button', { name: 'Dodaj' }).click();
   await expect(tabsOf(meeting).getByRole('button', { name: 'Otvori sve' })).toBeVisible();
 
-  await there.getByRole('button', { name: 'Kartice' }).click();
+  await chosen(there, 'Uredi kartice…');
   await expect(tabsOf(there).getByRole('button', { name: /^example\./ })).toHaveText([
     'example.com/plan',
     'example.org',
@@ -150,11 +154,29 @@ test('the tabs a meeting means to share are kept beside it for all its devices, 
     'example.org',
   ]);
 
-  await meeting.getByRole('button', { name: 'Kartice' }).click();
+  await tabsOf(meeting).getByRole('button', { name: 'Zatvori' }).click();
   await expect(tabsOf(meeting)).toHaveCount(0);
-  await meeting.getByRole('button', { name: 'Dijeli zaslon' }).click();
-  const own = meeting.getByRole('main');
-  await expect(own.getByText(/^Dijelite (karticu|prozor|cijeli zaslon)$/)).toBeVisible();
+  await meeting.getByRole('button', { name: 'Dijeli', exact: true }).click();
+  const offered = meeting.getByRole('menuitem');
+  await expect(offered).toHaveText([
+    'Kartica preglednika',
+    'Prozor',
+    'Cijeli zaslon',
+    'example.org',
+    'Uredi kartice…',
+  ]);
+  await meeting.getByRole('menuitem', { name: 'Kartica preglednika' }).click();
+  const own = meeting.getByRole('main').getByRole('region', {
+    name: /^Dijelite (karticu|prozor|cijeli zaslon)$/,
+  });
+  await expect(own).toBeVisible();
+  await expect(tiles(meeting)).toHaveCount(2);
+  const [people, shown] = await Promise.all([
+    tiles(meeting).first().boundingBox(),
+    own.boundingBox(),
+  ]);
+  expect(shown!.y).toBeGreaterThan(people!.y + people!.height - 1);
+  expect(shown!.height).toBeLessThan(people!.height);
   await expect
     .poll(() =>
       own
@@ -163,14 +185,10 @@ test('the tabs a meeting means to share are kept beside it for all its devices, 
         .evaluate((video: HTMLVideoElement) => video.videoWidth),
     )
     .toBeGreaterThan(0);
-  await expect(meeting.getByRole('button', { name: 'Prestani dijeliti' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
   await expect(there.getByRole('main').locator('video')).toHaveCount(3);
 
-  await meeting.getByRole('button', { name: 'Prestani dijeliti' }).click();
-  await expect(own.getByText(/^Dijelite /)).toHaveCount(0);
+  await own.getByRole('button', { name: 'Prestani dijeliti' }).click();
+  await expect(own).toHaveCount(0);
   await expect(there.getByRole('main').locator('video')).toHaveCount(2);
   await there.context().close();
 });

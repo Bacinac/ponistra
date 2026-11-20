@@ -14,8 +14,8 @@ Sastanak je video poziv unutar Ponistre: kolege ulaze poveznicom, a osobe izvan 
 ### U sastanku
 
 - {t:meeting.micOff} i {t:meeting.micOn}, {t:meeting.cameraOff} i {t:meeting.cameraOn} isključuju i uključuju mikrofon i kameru.
-- {t:meeting.share} dijeli karticu preglednika, prozor ili cijeli zaslon sa svima; preglednik najprije nudi kartice. {t:meeting.stopSharing} prekida dijeljenje.
-- {t:meeting.tabs} otvara {t:meeting.tabsTitle}: adrese koje namjeravate dijeliti, zajedničke svima u sastanku. {t:meeting.addTab} dodaje adresu, klik na nju otvara je u novoj kartici, {t:meeting.openTabs} otvara sve odjednom, a {t:meeting.removeTab} je briše s popisa.
+- {t:meeting.share} otvara izbornik: {t:meeting.shareTab}, {t:meeting.shareWindow} ili {t:meeting.shareScreen}, što preglednik zatim nudi prvo; dok dijelite, na tom je mjestu {t:meeting.stopSharing}. Ispod su adrese sastanka koje namjeravate dijeliti: klik otvara adresu u novoj kartici, {t:meeting.openTabs} otvara sve odjednom.
+- {t:meeting.editTabs} otvara {t:meeting.tabsTitle}, zajedničke svima u sastanku: {t:meeting.addTab} dodaje adresu, a {t:meeting.removeTab} je briše s popisa.
 - {t:meeting.float} otvara malen prozor iznad svih ostalih s crvenim okvirom, slikom onoga što dijelite i gumbom {t:meeting.stopSharing}.
 - {t:chat.messages} otvara razgovor sastanka uz sliku; broj na gumbu kaže koliko poruka niste pročitali.
 - {t:meeting.nextScreen} seli prozor sastanka na drugi zaslon, kad ga računalo ima.
@@ -27,7 +27,7 @@ Sastanak je video poziv unutar Ponistre: kolege ulaze poveznicom, a osobe izvan 
 
 Sastanak u Ponistri otvara se u zasebnom prozoru uz vaš rad. Ako preglednik ne dopusti zaseban prozor, sastanak se otvara na istoj kartici i iznad njega stoji upozorenje da dopustite skočne prozore za tu stranicu.
 
-Novi sastanak nastaje tek kad u njega uđete ili nekoga pozovete; zatvorite li ga prije toga, ne ostaje ništa. Svaki sastanak ima svoj razgovor, koji ostaje i nakon poziva. Dok dijelite, vidite što drugi vide i što dijelite ({t:meeting.sharingTab}, {t:meeting.sharingWindow} ili {t:meeting.sharingScreen}); cijeli zaslon prikazuje se umanjen, da se ne bi umnažao sam u sebi. Kartica sastanka ne nudi se za dijeljenje. Dok dijelite karticu, preglednik na njoj nudi da umjesto nje dijelite karticu na kojoj ste, pa se kartice izmjenjuju jednim klikom, bez prekida dijeljenja.
+Novi sastanak nastaje tek kad u njega uđete ili nekoga pozovete; zatvorite li ga prije toga, ne ostaje ništa. Svaki sastanak ima svoj razgovor, koji ostaje i nakon poziva. Dok dijelite, kamere ostaju na cijeloj pozornici, a ispod njih je umanjena slika onoga što dijelite ({t:meeting.sharingTab}, {t:meeting.sharingWindow} ili {t:meeting.sharingScreen}) s gumbom {t:meeting.stopSharing}. Kad dijeli netko drugi, njegovo dijeljenje zauzima pozornicu, a kamere su uz njega. Kartica sastanka ne nudi se za dijeljenje. Dok dijelite karticu, preglednik na njoj nudi da umjesto nje dijelite karticu na kojoj ste, pa se kartice izmjenjuju jednim klikom, bez prekida dijeljenja.
 
 Gosti, i oni pozvani izvana, nose oznaku {t:meeting.guest}, a vi {t:meeting.you}. Isključen mikrofon označen je uz ime ({t:meeting.muted}). Ako se veza prekine, piše {t:meeting.reconnecting} i Ponistra se sama spaja ponovno; ako ne uspije, piše {t:meeting.dropped}
 

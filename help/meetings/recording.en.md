@@ -30,7 +30,7 @@ Once it ends, a job in the background saves the recording into a new folder at t
 
 The minutes are written when speech to text is turned on in the installation. Only the speech of those who agreed is transcribed: colleagues who gave their consent in [Consents](help:ai/consents), unless they answered {t:recording.refuse} in the meeting, and participants, guests too, who answered {t:recording.agree}. Each utterance is transcribed on its own, so the transcript knows who said what and when. When the model is turned on too, it writes from the transcript the summary, the decisions and the tasks. It gives each task to the person the transcript names for it, otherwise to the person who started the recording, with a due date where one was said. The minutes are a document in the recording's folder. It holds the tasks as a checklist, the people present and the whole transcript, and the tasks are also in [Tasks](help:tasks/overview), linked to the minutes. Without the model, the minutes hold only the people present and the transcript.
 
-The recorder keeps the files until they are saved into the tree and the minutes are written, so saving again goes on from where it stopped.
+The recorder keeps the files until they are saved into the tree and the minutes are written, so saving again goes on from where it stopped. A recording is saved even when everyone leaves the meeting's conversation; the conversation then goes only once it is saved.
 
 ## Limits
 

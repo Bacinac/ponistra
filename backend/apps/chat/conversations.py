@@ -467,18 +467,34 @@ def renamed(conversation: Conversation, title: str) -> None:
 
 @transaction.atomic
 def left(member: Member) -> None:
-    """The member out of the conversation; the last one out takes it with them, but for an open
-    channel, whose history stays for whoever joins it next, and one whose messages are kept, which
-    stays until a rule removes the last of them."""
+    """The member out of the conversation; the last one out takes it with them (`vacated`)."""
     conversation = member.conversation
     user = member.user_id
     member.delete()
     files.granted(conversation.pk, member.user)
-    if conversation.open or _everyone(conversation.pk).exists():
+    if not vacated(conversation):
         _moved(conversation.pk)
-    elif not retention.chat_reason(conversation.messages.all()):
-        conversation.delete()
     live.tell(user)
+
+
+def vacated(conversation: Conversation) -> bool:
+    """Deletes the conversation where no one is left in it, but for an open channel, whose
+    history stays for whoever joins it next, one whose messages are kept, which stays until a
+    rule removes the last of them, and one whose meeting holds a recording not yet saved, which
+    stays until it is."""
+    from apps.meetings.models import Recording
+
+    if conversation.open or _everyone(conversation.pk).exists():
+        return False
+    if retention.chat_reason(conversation.messages.all()):
+        return False
+    unsaved = Recording.objects.filter(meeting__conversation=conversation).exclude(
+        state=Recording.State.DONE
+    )
+    if unsaved.exists():
+        return False
+    conversation.delete()
+    return True
 
 
 @transaction.atomic

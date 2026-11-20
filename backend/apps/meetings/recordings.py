@@ -15,6 +15,7 @@ from apps.ai import speech
 from apps.ai.installation import Unavailable
 from apps.ai.models import SpeechConsent
 from apps.blobs import previews, store
+from apps.chat import conversations
 from apps.core.api import Refused
 from apps.core.asyncdb import notify, released
 from apps.documents.models import Node
@@ -276,6 +277,8 @@ def saved(user, parameters: dict) -> dict:
     except Exception:
         _failed(found, "unsaved")
         raise
-    Recording.objects.filter(pk=found.pk).update(state=Recording.State.DONE)
-    found.state = Recording.State.DONE
+    with transaction.atomic():
+        Recording.objects.filter(pk=found.pk).update(state=Recording.State.DONE)
+        found.state = Recording.State.DONE
+        conversations.vacated(found.meeting.conversation)
     return describe(found)

@@ -28,7 +28,7 @@ Razgovori su kratke poruke među korisnicima instalacije: s jednim kolegom, u sk
 
 Razgovor između dvoje uvijek je jedan: novi razgovor s istim kolegom otvara onaj koji već imate. Razgovor s više kolega je skupina. Svaki sastanak ima svoj razgovor, koji ostaje i nakon sastanka; u njemu pišu i gosti sastanka.
 
-Kad napustite razgovor, njegove poruke više ne vidite, a netko vas može ponovno dodati. Kad ga napusti posljednji član, razgovor nestaje, osim ako su mu poruke u roku čuvanja koji je postavio administrator. Razgovor između dvoje ne napušta se i ne dobiva nove članove.
+Kad napustite razgovor, njegove poruke više ne vidite, a netko vas može ponovno dodati. Kad ga napusti posljednji član, razgovor nestaje, osim ako su mu poruke u roku čuvanja koji je postavio administrator. Razgovor sastanka čija se snimka još sprema nestaje tek kad je snimka spremljena u mapu onoga tko ju je pokrenuo. Razgovor između dvoje ne napušta se i ne dobiva nove članove.
 
 Na širokom zaslonu stranica se otvara na razgovoru u kojem ste zadnji put bili. Dok nemate nijednog razgovora, popis to kaže, a razgovor bez poruka piše {t:chat.empty}
 

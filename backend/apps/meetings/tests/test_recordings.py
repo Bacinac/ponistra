@@ -11,6 +11,7 @@ from apps.access.models import Grant, Role
 from apps.ai import installation, model, speech
 from apps.ai.models import SpeechConsent
 from apps.chat import conversations
+from apps.chat.models import Conversation
 from apps.content.blocks import body_of
 from apps.documents.models import Node
 from apps.jobs.models import Job
@@ -375,3 +376,24 @@ def test_a_saving_that_failed_keeps_the_files_and_its_starter_saves_it_again(
     assert [(each["id"], each["minutes"]) for each in listed] == [
         (str(found.pk), str(found.minutes_id))
     ]
+
+
+@pytest.mark.django_db
+def test_a_recording_outlives_its_people_leaving_the_conversation_until_it_is_saved(
+    owner, ana, meeting, faked, monkeypatch
+):
+    found = Recording.objects.create(
+        meeting=meeting, started_by=owner, state=Recording.State.SAVING, consents={}
+    )
+    faked.manifest = manifest(owner, ana, Guest.objects.create(meeting=meeting, name="Eva"))
+    monkeypatch.setattr(speech, "enabled", lambda: False)
+    for each in (ana, owner):
+        left = signed(each).delete(f"/api/conversations/{meeting.conversation_id}/members")
+        assert left.status_code == 204
+    assert Recording.objects.filter(pk=found.pk).exists()
+
+    assert recordings.saved(owner, {"recording": str(found.pk)})["state"] == "done"
+    assert not Conversation.objects.filter(pk=meeting.conversation_id).exists()
+    assert not Recording.objects.filter(pk=found.pk).exists()
+    folder = Node.objects.get(kind=Node.Kind.FOLDER, title__startswith="Kolegij ")
+    assert Node.objects.filter(parent=folder, kind=Node.Kind.FILE).count() == 4

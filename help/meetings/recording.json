@@ -12,7 +12,7 @@
     "frontend/src/recording.tsx#Player": "395cdc872f7c",
     "backend/apps/meetings/recordings.py#start": "bb0ba5244ddb",
     "backend/apps/meetings/recordings.py#agreed": "a002dc42365c",
-    "backend/apps/meetings/recordings.py#saved": "5b8e7fa14475",
+    "backend/apps/meetings/recordings.py#saved": "8806bd356fb9",
     "backend/apps/meetings/recordings.py#again": "7ddc68cc1769",
     "backend/apps/meetings/minutes.py#written": "7cca96115021",
     "backend/apps/meetings/views.py#recording": "3b50cf126018",

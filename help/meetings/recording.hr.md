@@ -30,7 +30,7 @@ Nakon kraja posao u pozadini sprema snimku u novu mapu na vrhu dokumenata osobe 
 
 Zapisnik nastaje kad je u instalaciji uključeno pretvaranje govora u tekst. Prepisuje se samo govor onih koji su pristali: kolege koji su pristanak dali u [Pristancima](help:ai/consents), osim ako su u sastanku odgovorili {t:recording.refuse}, i sudionici, gosti također, koji su odgovorili {t:recording.agree}. Svaki iskaz prepisuje se zasebno, pa prijepis zna tko je što rekao i kada. Kad je uključen i model, on iz prijepisa piše sažetak, odluke i zadatke. Svaki zadatak dodjeljuje osobi koju prijepis za njega imenuje, a kad je ne imenuje, osobi koja je pokrenula snimanje, s rokom kad je rečen. Zapisnik je dokument u mapi snimke. U njemu su zadaci kao popis za označavanje, prisutni i cijeli prijepis, a zadaci su i u [Zadacima](help:tasks/overview) s poveznicom na zapisnik. Bez modela zapisnik sadrži samo prisutne i prijepis.
 
-Snimač čuva datoteke dok se ne spreme u stablo i dok zapisnik ne bude napisan, pa ponovno spremanje nastavlja ondje gdje je zapelo.
+Snimač čuva datoteke dok se ne spreme u stablo i dok zapisnik ne bude napisan, pa ponovno spremanje nastavlja ondje gdje je zapelo. Snimka se sprema i kad svi napuste razgovor sastanka; razgovor tada nestaje tek nakon spremanja.
 
 ## Ograničenja
 

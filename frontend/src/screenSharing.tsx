@@ -1,24 +1,42 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { LocalTrack, ScreenShareCaptureOptions } from 'livekit-client';
-import { ExternalLink, MonitorUp, PictureInPicture2, X } from 'lucide-react';
+import {
+  AppWindow,
+  ChevronDown,
+  ExternalLink,
+  Globe,
+  Monitor,
+  MonitorUp,
+  Pencil,
+  PictureInPicture2,
+  Square,
+  X,
+} from 'lucide-react';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { patchJson } from './api';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import type { Shown } from './MeetingPage';
+import { Menu, MenuItem, MenuSeparator } from './menu';
 import { button, dangerButton, field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
 
-/** A tab first in the browser's picker, a window next and the whole screen last; a tab shared is
+export type Surface = 'browser' | 'window' | 'monitor';
+
+/** The kind chosen first in the browser's picker, which still offers the others; a tab shared is
     swapped for another from that tab's own bar, and the meeting's own tab is never offered. */
-export const SHARED: ScreenShareCaptureOptions = {
-  video: { displaySurface: 'browser' },
+export const sharedAs = (surface: Surface): ScreenShareCaptureOptions => ({
+  video: { displaySurface: surface },
   selfBrowserSurface: 'exclude',
   surfaceSwitching: 'include',
-};
+});
 
-type Surface = 'browser' | 'window' | 'monitor';
+const CHOSEN: { surface: Surface; label: MessageKey; icon: typeof Globe }[] = [
+  { surface: 'browser', label: 'meeting.shareTab', icon: Globe },
+  { surface: 'window', label: 'meeting.shareWindow', icon: AppWindow },
+  { surface: 'monitor', label: 'meeting.shareScreen', icon: Monitor },
+];
 
 const SURFACES: Record<Surface, MessageKey> = {
   browser: 'meeting.sharingTab',
@@ -84,7 +102,7 @@ function Preview({ track, className }: { track: LocalTrack; className: string })
   return <video ref={ref} muted playsInline autoPlay className={className} />;
 }
 
-/** What the user shares, as the others see it: a whole screen small, as it shows itself again. */
+/** What the user shares, as the others see it, small beside the stop: the people stay in view. */
 export function OwnShare({
   track,
   floating,
@@ -99,24 +117,28 @@ export function OwnShare({
   const { t } = useI18n();
   const surface = surfaceOf(track);
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 px-3 py-2">
-        <MonitorUp size={16} className="text-accent" aria-hidden />
-        <span className="min-w-0 flex-1 truncate text-sm">{t(SURFACES[surface])}</span>
-        {floating.can && (
-          <button type="button" onClick={onFloat} className={button}>
-            <PictureInPicture2 size={16} aria-hidden />
-            <span className="sr-only sm:not-sr-only">{t('meeting.float')}</span>
+    <section
+      aria-label={t(SURFACES[surface])}
+      className="flex shrink-0 items-center gap-3 rounded-lg bg-panel p-2 ring-2 ring-danger"
+    >
+      <Preview track={track} className="h-24 max-w-44 shrink-0 rounded object-contain" />
+      <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
+        <span className="flex max-w-full items-center gap-2 text-sm">
+          <MonitorUp size={16} className="shrink-0 text-accent" aria-hidden />
+          <span className="truncate">{t(SURFACES[surface])}</span>
+        </span>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onStop} className={dangerButton}>
+            <Square size={16} aria-hidden />
+            {t('meeting.stopSharing')}
           </button>
-        )}
-      </div>
-      <div className="flex min-h-0 flex-1 items-center justify-center p-2">
-        <Preview
-          track={track}
-          className={
-            surface === 'monitor' ? 'max-h-48 max-w-80 rounded' : 'size-full object-contain'
-          }
-        />
+          {floating.can && (
+            <button type="button" onClick={onFloat} className={button}>
+              <PictureInPicture2 size={16} aria-hidden />
+              <span className="sr-only sm:not-sr-only">{t('meeting.float')}</span>
+            </button>
+          )}
+        </div>
       </div>
       {floating.floating &&
         createPortal(
@@ -135,7 +157,78 @@ export function OwnShare({
           </div>,
           floating.floating.document.body,
         )}
-    </div>
+    </section>
+  );
+}
+
+/** Opens the tab apart from the meeting; false where the browser kept it from opening. */
+function openTab(tab: string): boolean {
+  const tabbed = window.open(tab, '_blank');
+  if (tabbed) tabbed.opener = null;
+  return !!tabbed;
+}
+
+/** What to share: a kind of surface while nothing is shared, the stop while it is, and the
+    meeting's tabs to open for sharing below. */
+export function ShareMenu({
+  meeting,
+  sharing,
+  onShare,
+  onStop,
+  onBlocked,
+  onTabs,
+}: {
+  meeting?: Shown;
+  sharing: boolean;
+  onShare: (surface: Surface) => void;
+  onStop: () => void;
+  onBlocked: () => void;
+  onTabs: () => void;
+}) {
+  const { t } = useI18n();
+  const tabs = meeting?.tabs ?? [];
+  const trigger = (
+    <button type="button" className={sharing ? primaryButton : button}>
+      <MonitorUp size={16} aria-hidden />
+      <span className="sr-only sm:not-sr-only">{t('meeting.share')}</span>
+      <ChevronDown size={14} aria-hidden />
+    </button>
+  );
+  return (
+    <Menu trigger={trigger} align="start">
+      {sharing ? (
+        <MenuItem icon={Square} label={t('meeting.stopSharing')} onSelect={onStop} />
+      ) : (
+        CHOSEN.map(({ surface, label, icon }) => (
+          <MenuItem key={surface} icon={icon} label={t(label)} onSelect={() => onShare(surface)} />
+        ))
+      )}
+      {meeting && (
+        <>
+          <MenuSeparator />
+          {tabs.map((tab) => (
+            <MenuItem
+              key={tab}
+              icon={ExternalLink}
+              label={shortened(tab)}
+              onSelect={() => {
+                if (!openTab(tab)) onBlocked();
+              }}
+            />
+          ))}
+          {tabs.length > 1 && (
+            <MenuItem
+              icon={ExternalLink}
+              label={t('meeting.openTabs')}
+              onSelect={() => {
+                if (!tabs.map(openTab).every(Boolean)) onBlocked();
+              }}
+            />
+          )}
+          <MenuItem icon={Pencil} label={t('meeting.editTabs')} onSelect={onTabs} />
+        </>
+      )}
+    </Menu>
   );
 }
 
@@ -145,21 +238,25 @@ function shortened(address: string): string {
 }
 
 /** The addresses a meeting's people mean to share, opened as tabs before the sharing picks them. */
-export function SharedTabs({ meeting }: { meeting: Shown }) {
+export function SharedTabs({
+  meeting,
+  blocked,
+  onBlocked,
+  onClose,
+}: {
+  meeting: Shown;
+  blocked: boolean;
+  onBlocked: (blocked: boolean) => void;
+  onClose: () => void;
+}) {
   const { t } = useI18n();
   const client = useQueryClient();
   const [address, setAddress] = useState('');
-  const [blocked, setBlocked] = useState(false);
   const saved = useMutation({
     mutationFn: (tabs: string[]) => patchJson<Shown>(`/api/meetings/${meeting.id}`, { tabs }),
     onSuccess: (shown) => client.setQueryData(['meeting', meeting.id], shown),
   });
   const tabs = meeting.tabs;
-  const opened = (tab: string) => {
-    const tabbed = window.open(tab, '_blank');
-    if (tabbed) tabbed.opener = null;
-    return !!tabbed;
-  };
   const added = (event: FormEvent) => {
     event.preventDefault();
     const given = address.trim();
@@ -174,12 +271,21 @@ export function SharedTabs({ meeting }: { meeting: Shown }) {
           <button
             type="button"
             className={button}
-            onClick={() => setBlocked(!tabs.map(opened).every(Boolean))}
+            onClick={() => onBlocked(!tabs.map(openTab).every(Boolean))}
           >
             <ExternalLink size={16} aria-hidden />
             {t('meeting.openTabs')}
           </button>
         )}
+        <button
+          type="button"
+          aria-label={t('frame.close')}
+          title={t('frame.close')}
+          onClick={onClose}
+          className={iconButton}
+        >
+          <X size={16} aria-hidden />
+        </button>
       </div>
       {blocked && (
         <p role="alert" className="text-sm text-danger">
@@ -192,7 +298,7 @@ export function SharedTabs({ meeting }: { meeting: Shown }) {
             <button
               type="button"
               title={tab}
-              onClick={() => setBlocked(!opened(tab))}
+              onClick={() => onBlocked(!openTab(tab))}
               className="min-w-0 flex-1 truncate rounded px-2 py-1 text-left text-sm hover:bg-hover"
             >
               {shortened(tab)}
