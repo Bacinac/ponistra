@@ -92,7 +92,10 @@ push)
   for kind in full browser; do
     last=$(tail -n 1 "$store/$kind" 2>/dev/null || true)
     case $last in
-    *" failed "*) echo "check: the last $kind run failed ($last): $store/$kind.log" >&2 ;;
+    *" failed "*)
+      [ "$kind" = full ] && grep -q '"stages": \[\]' "$store/failed.json" 2>/dev/null ||
+        echo "check: the last $kind run failed ($last): $store/$kind.log" >&2
+      ;;
     esac
   done
   if grep -q "^$tree " "$store/passed" 2>/dev/null; then
@@ -135,11 +138,23 @@ fi
 guard=$!
 
 selector() {
-  docker compose run --rm --no-deps -T --entrypoint python -v "$PWD:/tree:ro" backend /tree/scripts/select.py "$1"
+  docker compose run --rm --no-deps -T --entrypoint python -v "$PWD:/tree:ro" backend /tree/scripts/select.py "$@"
+}
+
+# The night's failures of one kind, once a check that ran them passed, no longer count against
+# the night (failed.json, read by the Projects page); a full run writing anew meanwhile wins.
+clear_night() {
+  [ -f "$run/failed.json" ] || return 0
+  selector cleared "$1"
+  [ -f "$run/failed.cleared.json" ] || return 0
+  if cmp -s "$run/failed.json" "$store/failed.json"; then
+    mv "$run/failed.cleared.json" "$store/failed.json"
+  fi
 }
 
 git ls-tree -r "$tree" -- e2e/tests >"$run/specs"
 git ls-tree -r "$tree" -- backend >"$run/blobs"
+[ ! -f "$store/failed.json" ] || cp "$store/failed.json" "$run/failed.json"
 [ ! -f "$store/corpus" ] || cp "$store/corpus" "$run/corpus.sealed"
 everything=
 if [ "$mode" = push ] || [ "$mode" = browser ]; then
@@ -275,6 +290,7 @@ browser)
       # shellcheck disable=SC2046
       timed browser browser $(cat "$run/e2e.txt")
     fi
+    clear_night e2e
   fi
   ;;
 push)
@@ -297,7 +313,7 @@ push)
   fi
   if [ "$FRONTEND" = 1 ]; then
     mkdir -p frontend/node_modules
-    # shellcheck disable=SC2046
+    # shellcheck disable=SC2046,SC2016
     timed frontend docker compose run --rm --no-deps -T --entrypoint sh frontend -c \
       'sh packages.sh && npx prettier --check src && npm run typecheck && if [ "$1" = all ]; then npm test; else shift; [ "$#" = 0 ] || npx vitest related --run --passWithNoTests "$@"; fi' \
       sh "$VITEST" $(cat "$run/vitest.txt")
@@ -316,6 +332,7 @@ push)
       backend pytest -q -n 3 --dist loadgroup $ignore || [ "$?" = 5 ]
     [ "$CORPUS" = 0 ] || [ "$FINGERPRINT" = - ] || echo "$FINGERPRINT $ICU $LANGUAGES $(now)" >>"$store/corpus"
   fi
+  clear_night pytest
   echo "$tree $(now)" >>"$store/passed"
   exit 0
   ;;

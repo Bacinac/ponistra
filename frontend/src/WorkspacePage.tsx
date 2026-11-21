@@ -170,7 +170,7 @@ interface Round {
 
 interface Run {
   tree: string;
-  outcome: 'passed' | 'failed';
+  outcome: 'passed' | 'failed' | 'cleared';
   at: string;
   pushed: boolean;
 }

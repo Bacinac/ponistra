@@ -50,7 +50,7 @@
     "frontend/src/WorkspacePage.tsx#Measures": "560e40ed59c4",
     "frontend/src/WorkspacePage.tsx#RestartButton": "34a05cac92de",
     "backend/apps/workspace/views.py#_plans": "c153401f6120",
-    "workspace/projects.mjs": "d62f01884027",
+    "workspace/projects.mjs": "b044cac5dcbd",
     "workspace/webview.mjs": "ab2c5a614673",
     "frontend/src/WorkspacePage.tsx#RoundCard": "32666faddb11",
     "frontend/src/WorkspacePage.tsx#Pult": "899a3d923f42",

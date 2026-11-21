@@ -429,6 +429,38 @@ def smoke() -> set[str]:
     return found
 
 
+def night_failures(moved: set[str]) -> tuple[set[str], set[str]]:
+    """The tests the last full run failed (failed.json) that are still in the tree, so that a
+    check passing them clears the night's red: a browser test by its line, or by its whole spec
+    where the spec changed since."""
+    night = RUN / "failed.json"
+    if not night.exists():
+        return set(), set()
+    failed = json.loads(night.read_text())
+    present = specs()
+    return (
+        {test for test in failed.get("pytest", []) if still_there(test)},
+        {
+            test.split(":")[0] if test.split(":")[0] in moved else test
+            for test in failed.get("e2e", [])
+            if test.split(":")[0] in present
+        },
+    )
+
+
+def cleared() -> None:
+    """failed.json without the night's failures of one kind, after a check that ran each of them
+    still in the tree passed: their stage leaves `stages` once nothing of it is left."""
+    kind = sys.argv[2]
+    stage = {"pytest": "pytest", "e2e": "browser"}[kind]
+    night = json.loads((RUN / "failed.json").read_text())
+    if not night.get(kind):
+        return
+    night[kind] = []
+    night["stages"] = [each for each in night["stages"] if each != stage]
+    (RUN / "failed.cleared.json").write_text(json.dumps(night, indent=1) + "\n")
+
+
 def every_model() -> set[str]:
     found = {f"{path}::{name}" for path, name in EVERY_MODEL.items()}
     for test in found:
@@ -694,6 +726,14 @@ def plan() -> None:
         ):
             languages = "all"
 
+    night_pytest, night_e2e = night_failures(moved)
+    night_corpus = {test for test in night_pytest if test.startswith(CORPUS)}
+    if night_corpus:
+        languages = "all"
+    corpus |= night_corpus
+    pytest |= night_pytest - night_corpus
+    e2e |= night_e2e
+
     shell = SHELL in e2e
     e2e.discard(SHELL)
     e2e = {test.split(":")[0] if test.split(":")[0] in moved else test for test in e2e} | edited
@@ -854,4 +894,4 @@ def merge() -> None:
 
 
 if __name__ == "__main__":
-    {"plan": plan, "merge": merge, "corpus": corpus}[sys.argv[1]]()
+    {"plan": plan, "merge": merge, "corpus": corpus, "cleared": cleared}[sys.argv[1]]()

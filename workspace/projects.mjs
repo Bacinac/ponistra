@@ -792,10 +792,10 @@ const gateOf = (path) => {
   const night = ran('full');
   if (night) {
     const failed = readJson(join(store, 'failed.json'));
-    night.failed =
-      failed?.tree === night.tree
-        ? new Set([...(failed.pytest ?? []), ...(failed.e2e ?? [])]).size
-        : null;
+    const same = failed?.tree === night.tree;
+    night.failed = same ? new Set([...(failed.pytest ?? []), ...(failed.e2e ?? [])]).size : null;
+    // A check since passed every test the night failed (scripts/check.sh, clear_night).
+    if (same && night.outcome === 'failed' && !failed.stages?.length) night.outcome = 'cleared';
   }
   return {
     checked: checked ? { tree: checked[1], at: zagreb(checked[2]) } : null,

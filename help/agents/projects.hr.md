@@ -164,7 +164,7 @@ Ispod njega, pod naslovom {t:workspace.limits}, stoje limiti pretplate Claude Co
 
 Plan projekta je ploča naslova „Plan <ime>” koju možete čitati. Plan „Plan OPUS” pripada i mapama `opus-library` i `opus-player`, jer se ime projekta poklapa i s početkom mape; takav projekt nosi ime svoje mape.
 
-Projekt s provjerama (mapa `.git/ponistra-check`) ispod imena, crveno, pokazuje provjeru koja je pala, uz {t:workspace.gate.failed} i vrijeme: {t:workspace.gate.browser} (testovi u pregledniku nakon pusha) ili {t:workspace.gate.night} (noćni run svih testova, uz broj palih testova). Pad za stablo koje nije zadnje pushano nosi dodatak {t:workspace.gate.older}. Dok sve prolazi, ondje ne stoji ništa.
+Projekt s provjerama (mapa `.git/ponistra-check`) ispod imena, crveno, pokazuje provjeru koja je pala, uz {t:workspace.gate.failed} i vrijeme: {t:workspace.gate.browser} (testovi u pregledniku nakon pusha) ili {t:workspace.gate.night} (noćni run svih testova, uz broj palih testova). Pad za stablo koje nije zadnje pushano nosi dodatak {t:workspace.gate.older}. Push ponovno pokreće testove koji su noću pali; čim ih provjera prođe sve, noćni pad više ne stoji crveno. Dok sve prolazi, ondje ne stoji ništa.
 
 Krug je skup razgovora u jednom projektu koje je koordinator otvorio odjednom, svakoga sa svojim zadatkom. Koordinator sam dobije ime kruga, cilj kruga u nekoliko riječi koji mu je dao pri podjeli („Kod: limiti i memorija”), u krugu i u popisu sesija; krug bez imena koordinator zove {t:workspace.coordinator}. Razgovor kojemu zadatak još nije poslan nosi naslov iz prvog retka zadatka. Uz svaki razgovor kruga stoji njegovo stanje i vrijeme zadnje promjene:
 
