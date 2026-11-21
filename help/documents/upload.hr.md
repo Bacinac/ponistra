@@ -17,7 +17,7 @@ Datoteke i cijele mape s računala učitavate među dokumente, a datoteke iz Off
 
 ## Kako radi
 
-Datoteke Worda, Excela i PowerPointa te OpenDocumenta (`.docx`, `.doc`, `.rtf`, `.odt`, `.xlsx`, `.xls`, `.ods`, `.pptx`, `.ppt`, `.odp` i srodne vrste s makronaredbama i predlošcima), `.csv` te `.ponx` uvoze se u dokument. U vrlo velikoj tablici prvi se reci vide čim stignu, a ostali pristižu dok uvoz još traje. Sve ostale ostaju datoteke kakve jesu i otvaraju se u pregledu. Oznake koje preglednik izveze kao HTML postaju mapa poveznica. Što uvoz nije mogao prenijeti, dokument pokazuje u [izvještaju o uvozu](help:documents/import).
+Datoteke Worda, Excela i PowerPointa te OpenDocumenta (`.docx`, `.doc`, `.rtf`, `.odt`, `.xlsx`, `.xls`, `.ods`, `.pptx`, `.ppt`, `.odp` i srodne vrste s makronaredbama i predlošcima), `.csv` te `.ponx` uvoze se u dokument. List Excela dobiva svoju stranicu kakvu mu zadaje postavka stranice (papir, položaj i margine); list bez zadanog položaja koji je širi od uspravne stranice leži na položenoj. U vrlo velikoj tablici prvi se reci vide čim stignu, a ostali pristižu dok uvoz još traje. Sve ostale ostaju datoteke kakve jesu i otvaraju se u pregledu. Oznake koje preglednik izveze kao HTML postaju mapa poveznica. Što uvoz nije mogao prenijeti, dokument pokazuje u [izvještaju o uvozu](help:documents/import).
 
 Učitana mapa zadržava svoje podmape. Datoteke i podmape čiji naziv počinje točkom preskaču se. Datum izmjene svake stavke preuzima se iz datoteke na računalu, a ne iz trenutka učitavanja.
 

@@ -9,7 +9,8 @@ as a node in the marks the Word import writes. ods and xls files arrive made xls
 What our engine computes is held to the value the file saved with each formula; the cells that
 differ, the functions the registry does not have and what a table cannot hold are reported. A
 sheet's charts follow its table, drawn over the cells their series refer to; a chart sheet, or a
-sheet of charts and no cells, is a tab of its charts."""
+sheet of charts and no cells, is a tab of its charts. A sheet's tab is printed on the page its
+page setup gives, across the page where it sets no orientation and its columns need the room."""
 
 import math
 import re
@@ -234,11 +235,13 @@ class Workbook:
             or (sheet.last_row, sheet.last_col) != (1, 1)
             or part not in after
         }
+        laid = dict(zip(parts, sheets, strict=False))
         tabs = []
         for name, _, part in listed:
             shown = [*([held[part]] if part in held else []), *after.get(part, [])]
             if shown:
-                tabs.append(Tab(name, [*shown, Block("paragraph")]))
+                page = page_of(laid[part]) if part in laid else None
+                tabs.append(Tab(name, [*shown, Block("paragraph")], page))
         report = {
             "fonts": fonts.substituted(self.fonts),
             "lost": {key: count for key, count in sorted(self.lost.items()) if count},
@@ -824,6 +827,79 @@ class Workbook:
                 if re.fullmatch(r"xl/(?:comments/)?comments?\d*\.xml", part):
                     comments += _elements(archive, part, "comment")
             self._count("cellComments", comments)
+
+
+# ECMA-376 Part 1, 18.18.43 ST_PaperSize: the sizes in use, in centimetres as the page stands.
+PAPERS = {
+    1: (21.59, 27.94),
+    3: (27.94, 43.18),
+    5: (21.59, 35.56),
+    8: (29.7, 42.0),
+    9: (21.0, 29.7),
+    11: (14.8, 21.0),
+    12: (25.7, 36.4),
+    13: (18.2, 25.7),
+}
+# Excel's margins of a sheet that sets none (Normal), in inches.
+MARGINS = {"left": 0.7, "right": 0.7, "top": 0.75, "bottom": 0.75, "header": 0.3, "footer": 0.3}
+UNITS = {"mm": 0.1, "cm": 1.0, "in": 2.54, "pt": 2.54 / 72, "pc": 2.54 / 6, "pi": 2.54 / 6}
+# The width of a character a column's width counts, as the editor draws it (CHARACTER_POINTS).
+CHARACTER_CM = 6.75 / 72 * 2.54
+
+
+def _length(text: str | None) -> float | None:
+    """A paper's side as the file writes it, a number and its unit, in centimetres."""
+    found = re.fullmatch(r"\s*([\d.]+)\s*(mm|cm|in|pt|pc|pi)\s*", text or "")
+    if not found or not sheetml.NUMBER.fullmatch(found[1]) or float(found[1]) <= 0:
+        return None
+    return float(found[1]) * UNITS[found[2]]
+
+
+def _across(sheet: Sheet) -> float:
+    """How wide the sheet's columns stand side by side, the hidden left out, in centimetres."""
+    total = 0.0
+    for col in range(1, sheet.last_col + 1):
+        if any(low <= col <= high for low, high, _ in sheet.hidden_cols):
+            continue
+        total += next(
+            (width for low, high, width in sheet.widths if low <= col <= high),
+            sheet.default_width,
+        )
+    return total * CHARACTER_CM
+
+
+def page_of(sheet: Sheet) -> dict | None:
+    """The page the sheet is printed on: its paper, orientation and margins as its page setup
+    gives them, Excel's where it gives none. A sheet that sets no orientation lies across the page
+    where its columns are wider than the page standing upright holds between its margins; one that
+    sets up no page and fits it upright takes the document's, as every file writes margins."""
+    setup, given = sheet.setup, sheet.margins
+
+    def margin(side: str) -> float:
+        text = given.get(side) or ""
+        inches = float(text) if sheetml.NUMBER.fullmatch(text) else MARGINS[side]
+        return round(inches * 2.54, 2)
+
+    code = setup.get("paperSize") or ""
+    width, height = PAPERS.get(int(code) if code.isdigit() else 9, PAPERS[9])
+    sides = _length(setup.get("paperWidth")), _length(setup.get("paperHeight"))
+    if sides[0] and sides[1]:
+        width, height = sorted(sides)
+    page = {
+        "width": round(width, 2),
+        "height": round(height, 2),
+        **{side: margin(side) for side in MARGINS},
+        "firstPage": False,
+    }
+    orientation = setup.get("orientation")
+    if orientation is None or orientation == "default":
+        upright = page["width"] - page["left"] - page["right"]
+        orientation = "landscape" if _across(sheet) > upright else "portrait"
+        if orientation == "portrait" and not {"paperSize", "paperWidth"} & setup.keys():
+            return None
+    if orientation == "landscape":
+        page["width"], page["height"] = page["height"], page["width"]
+    return page
 
 
 def _merges(sheet: Sheet) -> list[tuple[str, str, str]]:

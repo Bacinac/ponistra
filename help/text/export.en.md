@@ -16,7 +16,7 @@ The server makes the file. Before it does, the formulas in the tables are calcul
 
 - {t:save.docx}: each tab and each of its sections start on a new page, with their page setup, headers and footers. Styles, lists, tables, images, charts, notes, the contents, page fields, comments and proposals go over, the proposals as tracked changes in Word. The tabs' titles do not.
 - {t:save.pdf}: the pages are laid out as for printing, and the pages of PDF files inserted in the document go in as they are.
-- {t:save.xlsx}: each table becomes an Excel sheet, in order through the tabs, with its formulas, number formats, names, design and charts. The text around the tables does not go over. A table longer than an Excel sheet's 1,048,576 rows continues on the sheets after it.
+- {t:save.xlsx}: each table becomes an Excel sheet, in order through the tabs, with its formulas, number formats, names, design, charts and its tab's page (paper, orientation and margins). The text around the tables does not go over. A table longer than an Excel sheet's 1,048,576 rows continues on the sheets after it.
 - {t:save.csv}: the document's first table, each cell as it shows. Columns are separated by a semicolon where the document has a decimal comma, otherwise by a comma.
 - {t:save.pptx}: the slides of all tabs in order, each tab a section of the presentation. The slide template, speaker notes and hidden slides go over. Proposals do not: the file holds the text as it was before them.
 - {t:save.ponx}: Ponistra's own file, with nothing missing: tabs, styles, comments, proposals, images, PDF files and the file the document was uploaded from. {t:save.ponxVersions} also carries all the document's versions.

@@ -533,3 +533,58 @@ def test_an_excel_table_comes_as_a_design_over_its_range_and_a_bordered_cell_kee
             "bottom": {"line": "single", "width": 1.5},
         }
     }
+
+
+def test_each_sheet_is_printed_on_the_page_its_setup_gives(tmp_path):
+    set_up = (
+        '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>'
+        '<pageSetup paperSize="8" orientation="landscape"/>'
+    )
+    (tab,) = xlsx.read(book(tmp_path, {"Data": {"A1": "1"}}, rules=set_up), "hr").tabs
+    assert tab.page == {
+        "width": 42.0,
+        "height": 29.7,
+        "left": 0.64,
+        "right": 0.64,
+        "top": 1.27,
+        "bottom": 1.27,
+        "header": 0.51,
+        "footer": 0.51,
+        "firstPage": False,
+    }
+
+
+def test_a_sheet_that_sets_no_orientation_lies_across_the_page_where_its_columns_need_it(tmp_path):
+    narrow, wide = xlsx.read(
+        book(
+            tmp_path,
+            {
+                "Narrow": {"A1": "1", "B1": "2"},
+                "Wide": {f"{formulas.column_name(col)}1": "1" for col in range(1, 21)},
+            },
+        ),
+        "hr",
+    ).tabs
+    assert narrow.page is None
+    assert (wide.page["width"], wide.page["height"]) == (29.7, 21.0)
+    (tmp_path / "upright").mkdir()
+    (upright,) = xlsx.read(
+        book(
+            tmp_path / "upright",
+            {"Wide": {f"{formulas.column_name(c)}1": "1" for c in range(1, 21)}},
+            parts={"xl/worksheets/sheet1.xml": lambda xml: re.sub(r"<pageMargins[^>]*/>", "", xml)},
+            rules='<pageSetup paperWidth="210mm" paperHeight="297mm" orientation="portrait"/>',
+        ),
+        "hr",
+    ).tabs
+    assert upright.page == {
+        "width": 21.0,
+        "height": 29.7,
+        "left": 1.78,
+        "right": 1.78,
+        "top": 1.91,
+        "bottom": 1.91,
+        "header": 0.76,
+        "footer": 0.76,
+        "firstPage": False,
+    }

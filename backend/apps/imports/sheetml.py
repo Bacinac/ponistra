@@ -83,6 +83,8 @@ TAGS = tuple(
         "hyperlink",
         "conditionalFormatting",
         "dataValidation",
+        "pageMargins",
+        "pageSetup",
     )
 )
 TRUE = ("1", "true")
@@ -102,8 +104,9 @@ class Formatted:
 class Sheet:
     """A worksheet as read: its cells by place, its arrays, merges, the heights in points of the
     rows Excel was told, the rows it hides and the spans of columns it hides, the widths of its
-    spans of columns, the formats of its rows and columns, its links and the rows it freezes, its
-    last row and column, and the ids its table's rows and columns are given."""
+    spans of columns, the formats of its rows and columns, its links, its page setup and margins
+    as the file writes them, the rows it freezes, its last row and column, and the ids its table's
+    rows and columns are given."""
 
     index: int
     title: str
@@ -121,6 +124,8 @@ class Sheet:
     row_styles: dict[int, int] = field(default_factory=dict)
     col_styles: list[tuple[int, int, int]] = field(default_factory=list)
     links: dict[tuple[int, int], dict] = field(default_factory=dict)
+    setup: dict[str, str] = field(default_factory=dict)
+    margins: dict[str, str] = field(default_factory=dict)
     frozen: int = 0
     spills: int = 0
     rules: dict[str, int] = field(default_factory=dict)
@@ -575,6 +580,10 @@ class Source:
                     sheet.rules["conditionalFormats"] = sheet.rules.get("conditionalFormats", 0) + 1
                 case "dataValidation":
                     sheet.rules["validations"] = sheet.rules.get("validations", 0) + 1
+                case "pageSetup":
+                    sheet.setup = dict(element.attrib)
+                case "pageMargins":
+                    sheet.margins = dict(element.attrib)
             element.clear()
 
     def _cell(

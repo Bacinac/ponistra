@@ -17,7 +17,7 @@ You upload files and whole folders from your computer among your documents, and 
 
 ## How it works
 
-Word, Excel and PowerPoint files and OpenDocument files (`.docx`, `.doc`, `.rtf`, `.odt`, `.xlsx`, `.xls`, `.ods`, `.pptx`, `.ppt`, `.odp` and related kinds with macros and templates), `.csv` and `.ponx` are imported into a document. In a very large table the first rows show as soon as they arrive, and the rest keep coming while the import runs. All others stay the files they are and open in a preview. Bookmarks a browser exports as HTML become a folder of links. What the import could not carry, the document shows in an [import report](help:documents/import).
+Word, Excel and PowerPoint files and OpenDocument files (`.docx`, `.doc`, `.rtf`, `.odt`, `.xlsx`, `.xls`, `.ods`, `.pptx`, `.ppt`, `.odp` and related kinds with macros and templates), `.csv` and `.ponx` are imported into a document. An Excel sheet gets its own page as its page setup gives it (paper, orientation and margins); a sheet that sets no orientation and is wider than the upright page lies on a landscape one. In a very large table the first rows show as soon as they arrive, and the rest keep coming while the import runs. All others stay the files they are and open in a preview. Bookmarks a browser exports as HTML become a folder of links. What the import could not carry, the document shows in an [import report](help:documents/import).
 
 An uploaded folder keeps its subfolders. Files and subfolders whose name starts with a dot are skipped. Each item's modified date is taken from the file on your computer, not from the moment of the upload.
 

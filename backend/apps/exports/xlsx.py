@@ -43,7 +43,7 @@ from apps.content.models import Grid, GridRow
 from apps.documents.models import Node
 from apps.engine.registry import FUNCTIONS
 from apps.imports import excel
-from apps.imports.xlsx import TABLE_SWITCHES
+from apps.imports.xlsx import PAPERS, TABLE_SWITCHES
 from apps.versions.history import state_of
 
 from . import charts, office
@@ -165,6 +165,7 @@ class Computed:
     sheets: dict[str, compute.Sheet]
     titles: dict[str, str]
     across: dict[str, float]
+    paged: dict[str, dict]
     charted: dict[str, list[dict]]
     font: str
     size: float
@@ -195,6 +196,35 @@ class Computed:
         return found.getvalue()
 
 
+def _page_setup(page: dict) -> str:
+    """The tab's page as a sheet's margins and page setup, its paper by Excel's code where it has
+    one and by its sides otherwise."""
+    width, height = page["width"], page["height"]
+    upright = (min(width, height), max(width, height))
+    code = next(
+        (
+            code
+            for code, sides in PAPERS.items()
+            if all(abs(a - b) < 0.05 for a, b in zip(sides, upright, strict=True))
+        ),
+        None,
+    )
+    paper = (
+        f'paperSize="{code}"'
+        if code is not None
+        else " ".join(
+            f'paper{side}="{round(length * 10, 1):g}mm"'
+            for side, length in zip(("Width", "Height"), upright, strict=True)
+        )
+    )
+    margins = " ".join(
+        f'{side}="{round(page[side] / 2.54, 4):g}"'
+        for side in ("left", "right", "top", "bottom", "header", "footer")
+    )
+    orientation = "landscape" if width > height else "portrait"
+    return f'<pageMargins {margins}/><pageSetup {paper} orientation="{orientation}"/>'
+
+
 def computed(document: Node) -> Computed:
     own = doc_of(document.room)
     tables: dict[str, Block] = {}
@@ -205,19 +235,22 @@ def computed(document: Node) -> Computed:
         found = compute.tables_in(doc, held)
         page = pages.setup(own, str(tab.pk))
         tables |= found
-        read.append((tab, found, page["width"] - page["left"] - page["right"], _charts_in(doc)))
+        read.append((tab, found, page, _charts_in(doc)))
     if not tables:
         raise Empty
     sheets: dict[str, compute.Sheet] = {}
     across: dict[str, float] = {}
+    paged: dict[str, dict] = {}
     charted: dict[str, list[dict]] = {}
-    for tab, found, width, shown in read:
+    for tab, found, page, shown in read:
+        width = page["width"] - page["left"] - page["right"]
         for id, table in found.items():
             grid = table.grid or blocks.Grid([], [])
             sheets[id] = compute.Sheet(
                 grid.rows, grid.cols, compute.name_of(table) or tab.title or None
             )
             across[id] = width
+            paged[id] = page
         for attrs in shown:
             chart = drawn.chart_of(attrs)
             if chart is None or chart.table not in tables:
@@ -226,6 +259,7 @@ def computed(document: Node) -> Computed:
             if host not in sheets:
                 sheets[host] = compute.Sheet([], [], tab.title or None)
                 across[host] = width
+                paged[host] = page
             charted.setdefault(host, []).append(attrs)
     defined = [
         name
@@ -242,6 +276,7 @@ def computed(document: Node) -> Computed:
         sheets,
         compute.titles_of(sheets),
         across,
+        paged,
         charted,
         styles.family(theme, text["font"]),
         text["size"],
@@ -1048,6 +1083,7 @@ class _Writing:
                     relations.append((LINK, target, True))
                     links.append(f'<hyperlink ref="{place}" r:id="rId{len(relations)}"/>')
                 text += f"<hyperlinks>{''.join(links)}</hyperlinks>"
+        text += _page_setup(self.book.paged[host])
         if host in self.book.charted:
             relations.append((DRAWING, self._drawing(host, parts), False))
             text += f'<drawing r:id="rId{len(relations)}"/>'

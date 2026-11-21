@@ -59,9 +59,9 @@ class Tab:
 
 @dataclass
 class Imported:
-    """A file's tabs and what goes with them, its defined names by id among them; a file that
-    sets up no pages, a spreadsheet, has no page and its tabs take the document's, and one with
-    slides their template. The rows a large file's tables hold are written by `rest`, given the
+    """A file's tabs and what goes with them, its defined names by id among them; a spreadsheet
+    has no page of its own, each sheet's tab setting up its pages, and a file with slides takes
+    their template. The rows a large file's tables hold are written by `rest`, given the
     document once it stands, which says the tables it wrote them in; in the reader `rest` sends
     them, given where to."""
 

@@ -16,7 +16,7 @@ Datoteku izrađuje poslužitelj. Prije izrade izračunavaju se formule u tablica
 
 - {t:save.docx}: svaka kartica i svaki njezin odjeljak počinju na novoj stranici, s postavkama stranice, zaglavljima i podnožjima. Prenose se stilovi, popisi, tablice, slike, grafikoni, bilješke, sadržaj, polja stranice, komentari i prijedlozi, koji u Wordu postaju praćene promjene. Nazivi kartica ne prenose se.
 - {t:save.pdf}: stranice su složene kao za ispis, a stranice PDF datoteka umetnutih u dokument ulaze onakve kakve jesu.
-- {t:save.xlsx}: svaka tablica postaje list Excela, redom kroz kartice, s formulama, oblicima brojeva, nazivima, izgledom i grafikonima. Tekst oko tablica ne prenosi se. Tablica dulja od 1 048 576 redaka, koliko stane na list Excela, nastavlja se na sljedećim listovima.
+- {t:save.xlsx}: svaka tablica postaje list Excela, redom kroz kartice, s formulama, oblicima brojeva, nazivima, izgledom, grafikonima i stranicom kartice (papir, položaj i margine). Tekst oko tablica ne prenosi se. Tablica dulja od 1 048 576 redaka, koliko stane na list Excela, nastavlja se na sljedećim listovima.
 - {t:save.csv}: prva tablica dokumenta, u svakoj ćeliji ono što ćelija prikazuje. Stupci su odvojeni točkom sa zarezom ako dokument ima decimalni zarez, inače zarezom.
 - {t:save.pptx}: slajdovi svih kartica redom, a svaka kartica postaje odjeljak prezentacije. Prenose se predložak slajdova, bilješke govornika i skriveni slajdovi. Prijedlozi se ne prenose: datoteka sadrži tekst kakav je bio prije njih.
 - {t:save.ponx}: vlastita datoteka Ponistre, u kojoj ništa ne nedostaje: kartice, stilovi, komentari, prijedlozi, slike, PDF datoteke i datoteka iz koje je dokument učitan. {t:save.ponxVersions} uz to nosi i sve verzije dokumenta.

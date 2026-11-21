@@ -2,9 +2,10 @@ import { ChevronDown, Download, FileInput, RefreshCw, X } from 'lucide-react';
 import { useState } from 'react';
 import { deleteJson, upload } from './api';
 import { Close, Modal } from './dialogs';
+import { Panel } from './frame';
 import { isMessageKey, useI18n } from './i18n';
 import { runJob } from './jobs';
-import { button, iconButton } from './styles';
+import { button } from './styles';
 import {
   errorMessage,
   useTreeChange,
@@ -66,60 +67,55 @@ export function ImportedDialog({ report, onClose }: { report: Report; onClose: (
   );
 }
 
+/** Whether the import of a document left anything behind to tell its editors. */
+export function leftBehind(node: TreeNode): boolean {
+  return Boolean(node.imported) && !isComplete(node.imported!);
+}
+
+/** The header's mark that the import of the document left something behind, opening its report. */
+export function ImportButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      aria-label={t('import.report')}
+      title={t('import.report')}
+      aria-pressed={open}
+      onClick={onToggle}
+      className={`${button} relative aria-pressed:bg-selected`}
+    >
+      <FileInput size={16} aria-hidden />
+      <span aria-hidden className="absolute top-1 right-1 size-2 rounded-full bg-accent" />
+    </button>
+  );
+}
+
 /** What the import of an editor's document left behind, until one of them puts it away. */
-export function ImportReport({
+export function ImportPanel({
   node,
   confined,
   reimporting,
   onReimport,
+  onClose,
 }: {
   node: TreeNode;
   /** Whether a folder on the way keeps the document in the browser. */
   confined: boolean;
   reimporting: boolean;
   onReimport: () => void;
+  onClose: () => void;
 }) {
   const { t } = useI18n();
-  const [open, setOpen] = useState(false);
   const dismiss = useTreeChange(() => deleteJson(`/api/nodes/${node.id}/report`));
   const report = node.imported;
   if (!report) return null;
-  const complete = isComplete(report);
   return (
-    <section
-      aria-label={t('import.report')}
-      className="mx-auto flex w-full max-w-(--column) flex-col gap-2 rounded-lg border border-line bg-raised px-3 py-2 text-sm"
-    >
-      <div className="flex items-center gap-2">
-        <FileInput size={16} aria-hidden className="shrink-0 text-muted" />
-        <p className="flex-1">{t(complete ? 'import.complete' : 'import.partial')}</p>
-        <button
-          type="button"
-          aria-label={t('import.dismiss')}
-          title={t('import.dismiss')}
-          disabled={dismiss.isPending}
-          onClick={() => dismiss.mutate()}
-          className={iconButton}
-        >
-          <X size={16} aria-hidden />
-        </button>
+    <Panel title={t('import.report')} onClose={onClose}>
+      <p className="text-sm">{t('import.partial')}</p>
+      <div className="text-sm">
+        <ReportDetails report={report} />
       </div>
-      <div className="flex flex-wrap gap-2 pl-6">
-        {!complete && (
-          <button
-            type="button"
-            aria-expanded={open}
-            onClick={() => setOpen(!open)}
-            className={button}
-          >
-            <ChevronDown
-              size={16}
-              aria-hidden
-              className={open ? 'rotate-180 transition-transform' : 'transition-transform'}
-            />
-            {t('import.details')}
-          </button>
-        )}
+      <div className="flex flex-wrap gap-2">
         {confined ? (
           <button type="button" disabled title={t('confined.hint')} className={button}>
             <Download size={16} aria-hidden />
@@ -135,14 +131,18 @@ export function ImportReport({
           <RefreshCw size={16} aria-hidden />
           {t('import.again')}
         </button>
+        <button
+          type="button"
+          disabled={dismiss.isPending}
+          onClick={() => dismiss.mutate(undefined, { onSuccess: onClose })}
+          className={button}
+        >
+          <X size={16} aria-hidden />
+          {t('import.dismiss')}
+        </button>
       </div>
-      {open && (
-        <div className="pl-6">
-          <ReportDetails report={report} />
-        </div>
-      )}
-      {dismiss.error && <p className="text-danger">{errorMessage(dismiss.error, t)}</p>}
-    </section>
+      {dismiss.error && <p className="text-sm text-danger">{errorMessage(dismiss.error, t)}</p>}
+    </Panel>
   );
 }
 

@@ -3,7 +3,6 @@
   "audience": "everyone",
   "covers": [],
   "quiet": [
-    "import.complete",
     "import.partial",
     "import.intoComplete",
     "import.intoPartial",
@@ -57,12 +56,14 @@
     "import.lost.versions"
   ],
   "describes": {
-    "frontend/src/imported.tsx#ImportReport": "ae5b4eeed0ed",
     "frontend/src/imported.tsx#ReportDetails": "771fc84c6a1b",
-    "frontend/src/imported.tsx#ImportedDialog": "c636018945c6",
+    "frontend/src/imported.tsx#ImportedDialog": "afdf74c88eed",
     "frontend/src/imported.tsx#useImportInto": "cd5cd3d99f08",
     "frontend/src/imported.tsx#useReimport": "071742252d03",
     "frontend/src/imported.tsx#Macro": "00f7adef422f",
-    "frontend/src/DocumentPage.tsx#DocumentPage": "42f91ebf76cb"
+    "frontend/src/DocumentPage.tsx#DocumentPage": "42f91ebf76cb",
+    "frontend/src/imported.tsx#ImportPanel": "4a6a35ad9172",
+    "frontend/src/imported.tsx#ImportButton": "3767bb84043d",
+    "frontend/src/imported.tsx#leftBehind": "e8e87cf9f890"
   }
 }

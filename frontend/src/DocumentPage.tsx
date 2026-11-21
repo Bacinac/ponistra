@@ -41,7 +41,15 @@ import { CommentsPanel, DeskContext, useDeskState, useThreads } from './comments
 import { ConfirmDialog, CopyDialog, MoveDialog, NameDialog } from './dialogs';
 import { Addressed, Frame, Loading, Missing, SaveInto } from './frame';
 import { localeName, useI18n } from './i18n';
-import { ImportedDialog, ImportReport, sourceHref, useImportInto, useReimport } from './imported';
+import {
+  ImportButton,
+  ImportedDialog,
+  ImportPanel,
+  leftBehind,
+  sourceHref,
+  useImportInto,
+  useReimport,
+} from './imported';
 import { FavouriteButton } from './favourites';
 import { MenuChoices, MenuItem, MenuSeparator, MenuSub } from './menu';
 import { button } from './styles';
@@ -502,6 +510,9 @@ function OpenDocument({ nodeId }: { nodeId: string }) {
           <span className="sr-only sm:not-sr-only">{t('access.share')}</span>
         </button>
       )}
+      {writable && leftBehind(node) && (
+        <ImportButton open={panel === 'imported'} onToggle={() => togglePanel('imported')} />
+      )}
       <button
         type="button"
         aria-pressed={panel === 'versions'}
@@ -538,6 +549,15 @@ function OpenDocument({ nodeId }: { nodeId: string }) {
                 <VersionsPanel document={node} role={role} onClose={closePanel} />
               )) ||
               (panel === 'access' && <AccessPanel node={node} onClose={closePanel} />) ||
+              (panel === 'imported' && writable && (
+                <ImportPanel
+                  node={node}
+                  confined={confined}
+                  reimporting={reimport.isPending}
+                  onReimport={() => setDialog({ type: 'reimport' })}
+                  onClose={closePanel}
+                />
+              )) ||
               (panel === 'agent' && writable && !visitor && (
                 <AgentPanel tab={current?.id ?? null} onClose={closePanel} />
               ))
@@ -563,14 +583,6 @@ function OpenDocument({ nodeId }: { nodeId: string }) {
                 <p className="mx-auto w-full max-w-(--column) text-sm text-muted">
                   {t('import.importing')}
                 </p>
-              )}
-              {writable && (
-                <ImportReport
-                  node={node}
-                  confined={confined}
-                  reimporting={reimport.isPending}
-                  onReimport={() => setDialog({ type: 'reimport' })}
-                />
               )}
               <Suspense fallback={<Loading />}>
                 <DocumentEditor

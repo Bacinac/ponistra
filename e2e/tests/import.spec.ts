@@ -317,9 +317,10 @@ test('a Word file becomes a document, each section on paper of its own, with its
   await expect(markers.nth(1)).toHaveAttribute('data-marker', 'b)');
   await expect(editor.locator('.ponistra-comment')).toHaveText('100 €');
 
-  const report = page.getByRole('region', { name: 'Izvještaj o uvozu' });
+  const reported = page.getByRole('button', { name: 'Izvještaj o uvozu' });
+  const report = page.getByRole('complementary', { name: 'Izvještaj o uvozu' });
+  await reported.click();
   await expect(report).toContainText('dio sadržaja nije prenesen');
-  await report.getByRole('button', { name: 'Pojedinosti' }).click();
   await expect(report.getByRole('listitem')).toHaveText([/Skriven/]);
   const original = report.getByRole('link', { name: 'Preuzmi izvornu datoteku' });
   const download = await page.request.get((await original.getAttribute('href'))!);
@@ -332,11 +333,13 @@ test('a Word file becomes a document, each section on paper of its own, with its
   await expect(panel).toContainText('iz uvezene datoteke');
   await expect(panel).toContainText('Provjeriti iznos.');
 
+  await reported.click();
   await report.getByRole('button', { name: 'Zatvori izvještaj' }).click();
   await expect(report).toHaveCount(0);
+  await expect(reported).toHaveCount(0);
   await page.reload();
   await expect(editor.locator('h1')).toHaveText(['Ugovor o djelu', 'Prilog']);
-  await expect(report).toHaveCount(0);
+  await expect(reported).toHaveCount(0);
 
   await page.locator('header button[aria-current="page"]').click();
   await page.getByRole('menuitem', { name: 'Ponovno uvezi iz izvorne datoteke' }).click();
@@ -344,6 +347,7 @@ test('a Word file becomes a document, each section on paper of its own, with its
     .getByRole('alertdialog')
     .getByRole('button', { name: 'Ponovno uvezi iz izvorne datoteke' })
     .click();
+  await reported.click();
   await expect(report).toContainText('dio sadržaja nije prenesen');
   await expect(editor.locator('h1')).toHaveText(['Ugovor o djelu', 'Prilog']);
   await expect(editor.locator('.ponistra-comment')).toHaveText('100 €');
@@ -564,9 +568,9 @@ test('a spreadsheet becomes a document of a tab for each sheet, its table named 
     });
   expect(await spread(tables.first())).toEqual([true, true]);
 
-  const report = page.getByRole('region', { name: 'Izvještaj o uvozu' });
+  await page.getByRole('button', { name: 'Izvještaj o uvozu' }).click();
+  const report = page.getByRole('complementary', { name: 'Izvještaj o uvozu' });
   await expect(report).toContainText('dio sadržaja nije prenesen');
-  await report.getByRole('button', { name: 'Pojedinosti' }).click();
   await expect(report).toContainText('FOOBAR');
   const original = report.getByRole('link', { name: 'Preuzmi izvornu datoteku' });
   const download = await page.request.get((await original.getAttribute('href'))!);
@@ -725,7 +729,7 @@ test('a document goes into PONISTRA’s own file and comes back whole, and a cop
     await expect(editor.locator('.ponistra-comment')).toHaveText('100 €');
   };
   await whole();
-  await expect(page.getByRole('region', { name: 'Izvještaj o uvozu' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Izvještaj o uvozu' })).toHaveCount(0);
 
   await title.click();
   await page.getByRole('menuitem', { name: 'Napravi kopiju' }).click();

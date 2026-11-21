@@ -6,13 +6,13 @@ Dokument uvezen iz datoteke Officea ili LibreOfficea pamti izvornu datoteku i iz
 
 ### Izvještaj
 
-1. Otvorite uvezeni dokument. Iznad sadržaja stoji okvir {t:import.report} s porukom je li preneseno sve.
-2. Ako nije, pritisnite {t:import.details} za popis onoga što nedostaje.
-3. Kad ste izvještaj pregledali, pritisnite {t:import.dismiss} (križić u okviru).
+1. Otvorite uvezeni dokument. Ako uvoz nije prenio sve, u zaglavlju je gumb {t:import.report} s točkom; kad je preneseno sve, gumba nema.
+2. Pritisnite ga: panel sa strane navodi što nedostaje.
+3. Kad ste izvještaj pregledali, u panelu pritisnite {t:import.dismiss}, pa gumb nestaje.
 
 ### Izvorna datoteka
 
-1. U okviru izvještaja ili u izborniku dokumenta pritisnite {t:import.original} za datoteku kakva je učitana.
+1. U panelu izvještaja ili u izborniku dokumenta pritisnite {t:import.original} za datoteku kakva je učitana.
 2. Pritisnite {t:import.again} kad želite dokument pročitati iz izvorne datoteke iznova, pa potvrdite pitanje {t:import.againTitle}
 
 ### Uvoz u postojeći dokument

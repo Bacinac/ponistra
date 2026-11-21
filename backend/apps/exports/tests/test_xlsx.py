@@ -140,6 +140,18 @@ def test_a_sheet_comes_back_as_it_went_out(api, tmp_path):
     assert after.attrs["name"] == "Plan"
 
 
+def test_a_sheet_s_page_goes_out_and_comes_back(api, tmp_path):
+    set_up = (
+        '<pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>'
+        '<pageSetup paperSize="8" orientation="landscape"/>'
+    )
+    path = test_xlsx.book(tmp_path, {"Plan": {"A1": "1"}}, rules=set_up)
+    node = bring(api, path.read_bytes(), title="Plan")["id"]
+    again = tmp_path / "again.xlsx"
+    again.write_bytes(saved(api, node))
+    assert reader.read(again, "hr").tabs[0].page == reader.read(path, "hr").tabs[0].page
+
+
 def test_a_column_and_a_row_styled_whole_come_in_as_their_looks_and_go_back_so(api, tmp_path):
     def prepare(model):
         style = model.get_cell_style(0, 1, 1)

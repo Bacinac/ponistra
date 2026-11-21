@@ -6,13 +6,13 @@ A document imported from an Office or LibreOffice file keeps the original file a
 
 ### The report
 
-1. Open the imported document. Above its content stands the {t:import.report} box, saying whether everything was carried.
-2. If it was not, press {t:import.details} for a list of what is missing.
-3. Once you have looked through the report, press {t:import.dismiss} (the cross in the box).
+1. Open the imported document. If the import did not carry everything, the header has the {t:import.report} button with a dot; when everything was carried, there is no button.
+2. Press it: a side panel lists what is missing.
+3. Once you have looked through the report, press {t:import.dismiss} in the panel, and the button goes away.
 
 ### The original file
 
-1. In the report's box or in the document's menu, press {t:import.original} for the file as it was uploaded.
+1. In the report's panel or in the document's menu, press {t:import.original} for the file as it was uploaded.
 2. Press {t:import.again} when you want the document read from the original file anew, then confirm the question {t:import.againTitle}
 
 ### Importing into an existing document

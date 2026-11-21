@@ -775,7 +775,6 @@ export const hr = {
   'form.atLeast': 'Neispravna vrijednost: mora biti najmanje',
   'form.atMost': 'Neispravna vrijednost: mora biti najviše',
   'import.report': 'Izvještaj o uvozu',
-  'import.complete': 'Dokument je uvezen iz datoteke i sve je preneseno.',
   'import.partial':
     'Dokument je uvezen iz datoteke; dio sadržaja nije prenesen ili je prenesen drukčije.',
   'import.into': 'Uvezi u ovaj dokument…',
@@ -784,7 +783,6 @@ export const hr = {
     'Datoteka je uvezena u nove kartice na kraju dokumenta i sve je preneseno.',
   'import.intoPartial':
     'Datoteka je uvezena u nove kartice na kraju dokumenta; dio sadržaja nije prenesen ili je prenesen drukčije.',
-  'import.details': 'Pojedinosti',
   'import.original': 'Preuzmi izvornu datoteku',
   'import.again': 'Ponovno uvezi iz izvorne datoteke',
   'import.againTitle': 'Ponovno uvesti dokument iz izvorne datoteke?',

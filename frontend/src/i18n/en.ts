@@ -779,7 +779,6 @@ export const en: Record<MessageKey, string> = {
   'form.atLeast': 'Invalid value: must be at least',
   'form.atMost': 'Invalid value: must be at most',
   'import.report': 'Import report',
-  'import.complete': 'The document was imported from a file, and everything was carried over.',
   'import.partial':
     'The document was imported from a file; some content was not carried over or was carried over differently.',
   'import.into': 'Import into this document…',
@@ -788,7 +787,6 @@ export const en: Record<MessageKey, string> = {
     'The file was imported into new tabs at the end of the document, and everything was carried over.',
   'import.intoPartial':
     'The file was imported into new tabs at the end of the document; some content was not carried over or was carried over differently.',
-  'import.details': 'Details',
   'import.original': 'Download the original file',
   'import.again': 'Import again from the original file',
   'import.againTitle': 'Import the document again from its original file?',
