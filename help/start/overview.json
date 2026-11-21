@@ -8,7 +8,7 @@
     "chat.unread"
   ],
   "describes": {
-    "frontend/src/frame.tsx#Shell": "08eedfce1cae",
+    "frontend/src/frame.tsx#Shell": "5024cb9c06a5",
     "frontend/src/frame.tsx#Rail": "c545995c9869",
     "frontend/src/frame.tsx#NextUp": "8651bfd3ccee",
     "frontend/src/frame.tsx#UserMenu": "e001fe13bd95",

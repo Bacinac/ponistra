@@ -1016,7 +1016,7 @@ export function Shell({ children, alone = false }: { children: ReactNode; alone?
                     style={foldersStyle}
                     className="hidden w-(--folders) max-w-[30%] shrink-0 flex-col md:flex"
                   >
-                    <div ref={setSide} className="min-h-0 flex-1 overflow-y-auto px-2 pb-2" />
+                    <div ref={setSide} className="min-h-0 flex-1 overflow-y-auto px-2 pt-4 pb-2" />
                   </div>
                   <Splitter
                     column={FOLDERS}
