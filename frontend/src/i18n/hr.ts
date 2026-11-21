@@ -577,6 +577,8 @@ export const hr = {
   'tab.indent': 'Uvuci',
   'tab.outdent': 'Izvuci',
   'tab.headings': 'Naslovi',
+  'tab.headings.open': 'Prikaži podnaslove',
+  'tab.headings.close': 'Sakrij podnaslove',
   'contents.label': 'Sadržaj',
   'contents.empty': 'Dokument još nema naslova za sadržaj.',
   'tab.delete': 'Obriši karticu',

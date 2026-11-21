@@ -1,4 +1,12 @@
-import { useMemo, useState, useSyncExternalStore, type DragEvent, type ReactNode } from 'react';
+import { ChevronRight } from 'lucide-react';
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type DragEvent,
+  type ReactNode,
+} from 'react';
 import { Link } from 'react-router';
 import { segment } from './address';
 import { tableNameText } from './editor/formulas';
@@ -184,6 +192,59 @@ export function outlineStore() {
 
 export type OutlineStore = ReturnType<typeof outlineStore>;
 
+/** A heading as the side column lists it: whether it heads a branch, and whether that is open. */
+export interface Listed {
+  heading: Heading;
+  branch: boolean;
+  open: boolean;
+}
+
+/** The headings the side column shows: the top level, each branch open that holds the heading
+ * being read or was opened by hand (`chosen`, which also keeps one closed), and all of them where
+ * the list is `whole`. */
+export function listedHeadings(
+  headings: readonly Heading[],
+  current: string | null,
+  chosen: ReadonlyMap<string, boolean>,
+  whole: boolean,
+): Listed[] {
+  const above: (number | null)[] = [];
+  const stack: number[] = [];
+  headings.forEach(({ level }, index) => {
+    while (stack.length && headings[stack.at(-1)!].level >= level) stack.pop();
+    above.push(stack.at(-1) ?? null);
+    stack.push(index);
+  });
+  const read = new Set<number>();
+  for (
+    let at: number | null = headings.findIndex(({ id }) => id === current);
+    at !== null && at >= 0;
+    at = above[at]
+  ) {
+    read.add(at);
+  }
+  const branch = headings.map((_, index) => headings[index + 1] && above[index + 1] === index);
+  const open = headings.map(
+    (heading, index) => whole || (chosen.get(heading.id) ?? read.has(index)),
+  );
+  const shown = (index: number): boolean => {
+    const parent = above[index];
+    return parent === null || (open[parent] && shown(parent));
+  };
+  return headings.flatMap((heading, index) =>
+    shown(index) ? [{ heading, branch: Boolean(branch[index]), open: open[index] }] : [],
+  );
+}
+
+const ROW = 24;
+
+function scrollerOf(element: HTMLElement): HTMLElement | null {
+  for (let at = element.parentElement; at; at = at.parentElement) {
+    if (/auto|scroll/.test(getComputedStyle(at).overflowY)) return at;
+  }
+  return null;
+}
+
 export function Headings({
   store,
   href,
@@ -195,16 +256,59 @@ export function Headings({
 }) {
   const { t } = useI18n();
   const outline = useSyncExternalStore(store.subscribe, store.get);
+  const [chosen, setChosen] = useState<ReadonlyMap<string, boolean>>(new Map());
+  const [room, setRoom] = useState(Infinity);
+  const [list, setList] = useState<HTMLUListElement | null>(null);
+  const current = outline?.current ?? null;
+
+  useEffect(() => {
+    const scroller = list && scrollerOf(list);
+    if (!scroller) return;
+    const measure = () => setRoom(scroller.clientHeight);
+    measure();
+    const watcher = new ResizeObserver(measure);
+    watcher.observe(scroller);
+    return () => watcher.disconnect();
+  }, [list]);
+
+  useEffect(() => {
+    list?.querySelector('[aria-current="location"]')?.scrollIntoView({ block: 'nearest' });
+  }, [list, current]);
+
   if (!outline?.headings.length) return null;
+  const whole = outline.headings.length * ROW <= room;
+  const listed = listedHeadings(outline.headings, current, chosen, whole);
   const top = Math.min(...outline.headings.map(({ level }) => level));
   return (
-    <ul aria-label={t('tab.headings')} style={{ paddingLeft: `${indent}rem` }}>
-      {outline.headings.map((heading) => (
-        <li key={heading.id} style={{ paddingLeft: `${(heading.level - top) * 0.75}rem` }}>
+    <ul ref={setList} aria-label={t('tab.headings')} style={{ paddingLeft: `${indent}rem` }}>
+      {listed.map(({ heading, branch, open }) => (
+        <li
+          key={heading.id}
+          style={{ paddingLeft: `${(heading.level - top) * 0.75}rem` }}
+          className="flex items-center"
+        >
+          {!whole &&
+            (branch ? (
+              <button
+                type="button"
+                aria-expanded={open}
+                aria-label={`${t(open ? 'tab.headings.close' : 'tab.headings.open')}: ${heading.text}`}
+                onClick={() => setChosen((now) => new Map(now).set(heading.id, !open))}
+                className="flex size-5 shrink-0 items-center justify-center rounded text-muted hover:bg-hover hover:text-ink"
+              >
+                <ChevronRight
+                  size={14}
+                  aria-hidden
+                  className={`transition-transform ${open ? 'rotate-90' : ''}`}
+                />
+              </button>
+            ) : (
+              <span aria-hidden className="size-5 shrink-0" />
+            ))}
           <Link
             to={href(heading.id)}
-            aria-current={heading.id === outline.current ? 'location' : undefined}
-            className="block truncate rounded px-2 py-0.5 text-[0.8125rem] leading-5 text-muted hover:bg-hover hover:text-ink aria-[current=location]:font-medium aria-[current=location]:text-ink"
+            aria-current={heading.id === current ? 'location' : undefined}
+            className="block min-w-0 flex-1 truncate rounded px-2 py-0.5 text-[0.8125rem] leading-5 text-muted hover:bg-hover hover:text-ink aria-[current=location]:font-medium aria-[current=location]:text-ink"
           >
             {heading.number && <span className="tabular-nums">{heading.number} </span>}
             {heading.text}

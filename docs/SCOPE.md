@@ -4906,3 +4906,22 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     folder for as long as the socket lives. node-pty and ws come from code-server itself, so the
     image needs no build tools. Binary frames carry what is typed and shown, a text frame
     `{cols, rows}` resizes; the socket closes with 4000 once the shell exits.
+- **D53: a file opened from the computer is read first, placed only when asked — approved
+  2026-11-21** (Ivo: „dokument prvo otvoriti u full screenu … u ponistri to samo otvori kao recent
+  documents, i tek na save se spremi na odabrano mjesto … bez prijave da radi isto za sve
+  dokumente”). Every file the installed app is launched with, of every kind Ponistra imports,
+  opens alone in a window of its own across the screen; the main window stays where it was.
+  - *Signed in.* The file becomes a document with no place: in no folder, listed among the recent
+    documents and found by search. Its content is kept as every document's is, at once and
+    co-edited (D2, D45), since a Save of content only on this path would make one thing behave two
+    ways. *Spremi u…* chooses its folder, which is all saving means here. One left without a place
+    and unopened for 30 days goes to the trash, under the retention rules like any deletion.
+  - *Signed out.* Every kind is shown, read only, and nothing is kept: a PDF is read in the
+    browser (built 1.0.51–1.0.53), any other file is converted by the reader (D51) and handed back
+    for the page alone, never stored, throttled per address and bounded in size, and an
+    administrator may turn it off. *Spremi u…* asks to sign in, then places it. The browser does
+    not get an Office renderer of its own: the backend computes, and a second engine would show a
+    file otherwise than the document it becomes.
+  - *Headings* in a document's or a file's side column show the top level; the branch being read
+    opens by itself as the pages scroll and closes once left, a chevron opens one by hand and keeps
+    it open, and a list that fits its column is shown whole.

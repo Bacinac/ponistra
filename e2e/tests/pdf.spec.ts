@@ -226,3 +226,69 @@ test('a PDF the installed app opens while nobody is signed in is shown alone, re
   await expect(signIn).toBeVisible();
   await context.close();
 });
+
+test('a long list of headings shows the top level and opens the branch being read, or one opened by hand', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({ baseURL, locale: 'hr-HR' });
+  await context.addInitScript(() => {
+    Object.defineProperty(window, 'launchQueue', {
+      value: {
+        setConsumer(consumer: unknown) {
+          Object.assign(window, { launched: consumer });
+        },
+      },
+    });
+  });
+  const page = await context.newPage();
+  await page.goto('/');
+  await page.waitForFunction(() => 'launched' in window);
+  const pages = Array.from({ length: 40 }, (_, index) => [{ text: `Dio ${index + 1}`, top: 72 }]);
+  const bookmarks = Array.from({ length: 8 }, (_, part) => ({
+    title: `Poglavlje ${part + 1}`,
+    page: part * 5 + 1,
+    top: 60,
+    under: Array.from({ length: 4 }, (_, topic) => ({
+      title: `Tema ${part + 1}.${topic + 1}`,
+      page: part * 5 + topic + 2,
+      top: 60,
+    })),
+  }));
+  const data = pdfFile({ pages, bookmarks }).toString('base64');
+  await page.evaluate((data) => {
+    const file = new File([Uint8Array.from(atob(data), (c) => c.charCodeAt(0))], 'Prirucnik.pdf', {
+      type: 'application/pdf',
+    });
+    const launched = (window as unknown as { launched: (params: unknown) => void }).launched;
+    launched({ files: [{ getFile: async () => file }] });
+  }, data);
+  const headings = page.getByRole('list', { name: 'Naslovi' });
+  const titles = Array.from({ length: 8 }, (_, part) => `Poglavlje ${part + 1}`);
+  await expect(headings.getByRole('link')).toHaveText([
+    'Poglavlje 1',
+    'Tema 1.1',
+    'Tema 1.2',
+    'Tema 1.3',
+    'Tema 1.4',
+    ...titles.slice(1),
+  ]);
+
+  await shownPage(page).fill('13');
+  await shownPage(page).press('Enter');
+  await expect(headings.getByRole('link', { name: 'Tema 3.2' })).toHaveAttribute(
+    'aria-current',
+    'location',
+  );
+  await expect(headings.getByRole('link', { name: 'Tema 1.1' })).toHaveCount(0);
+
+  await headings.getByRole('button', { name: 'Prikaži podnaslove: Poglavlje 6' }).click();
+  await expect(headings.getByRole('link', { name: 'Tema 6.4' })).toBeVisible();
+  await headings.getByRole('link', { name: 'Tema 6.4' }).click();
+  await expect(shownPage(page)).toHaveValue('30');
+  await expect(headings.getByRole('link', { name: 'Tema 3.2' })).toHaveCount(0);
+  await expect(
+    headings.getByRole('button', { name: 'Sakrij podnaslove: Poglavlje 6' }),
+  ).toHaveAttribute('aria-expanded', 'true');
+  await context.close();
+});

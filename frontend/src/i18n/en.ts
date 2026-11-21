@@ -579,6 +579,8 @@ export const en: Record<MessageKey, string> = {
   'tab.indent': 'Indent',
   'tab.outdent': 'Outdent',
   'tab.headings': 'Headings',
+  'tab.headings.open': 'Show subheadings',
+  'tab.headings.close': 'Hide subheadings',
   'contents.label': 'Contents',
   'contents.empty': 'The document has no headings to list yet.',
   'tab.delete': 'Delete tab',

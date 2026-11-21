@@ -20,6 +20,7 @@ A document divides into tabs and subtabs, each with content of its own, and unde
 
 1. Under the open tab its {t:tab.headings} are listed, with numbers when the headings are numbered.
 2. Press a heading to jump to its place in the text.
+3. A long list that does not fit its column shows the top headings, and the branch you are reading opens by itself as you move through the text. The arrow beside a heading ({t:tab.headings.open}, {t:tab.headings.close}) opens or closes its branch, which then stays so.
 
 ### Deleting
 

@@ -20,6 +20,7 @@ Dokument se dijeli na kartice i podkartice, svaku sa svojim sadržajem, a ispod 
 
 1. Ispod otvorene kartice popisani su njezini {t:tab.headings}, s brojevima kad su naslovi numerirani.
 2. Pritisnite naslov da biste skočili na njegovo mjesto u tekstu.
+3. Dug popis koji ne stane u stupac pokazuje glavne naslove, a grana u kojoj čitate otvara se sama dok se pomičete kroz tekst. Strelica uz naslov ({t:tab.headings.open}, {t:tab.headings.close}) otvara ili zatvara njegovu granu, koja tako i ostaje.
 
 ### Brisanje
 

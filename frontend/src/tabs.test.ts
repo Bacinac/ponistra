@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { dropPlace, outlineStore, tabDepths, tabMoves } from './tabs';
+import { dropPlace, listedHeadings, outlineStore, tabDepths, tabMoves } from './tabs';
 import type { Tab } from './tree';
 
 function tab(id: string, parent: string | null = null): Tab {
@@ -101,5 +101,50 @@ describe('outlineStore', () => {
     store.set(null);
     expect(told).toHaveBeenCalledTimes(4);
     expect(store.get()).toBeNull();
+  });
+});
+
+describe('listedHeadings', () => {
+  const heading = (id: string, level: number) => ({ id, level, number: null, text: id });
+  const headings = [
+    heading('a', 1),
+    heading('a1', 2),
+    heading('a1x', 3),
+    heading('a2', 2),
+    heading('b', 1),
+    heading('b1', 2),
+    heading('c', 1),
+  ];
+  const ids = (listed: { heading: { id: string } }[]) => listed.map(({ heading }) => heading.id);
+
+  it('shows the top level and opens the branch being read down to it', () => {
+    expect(ids(listedHeadings(headings, null, new Map(), false))).toEqual(['a', 'b', 'c']);
+    expect(ids(listedHeadings(headings, 'a1', new Map(), false))).toEqual([
+      'a',
+      'a1',
+      'a1x',
+      'a2',
+      'b',
+      'c',
+    ]);
+    expect(ids(listedHeadings(headings, 'b1', new Map(), false))).toEqual(['a', 'b', 'b1', 'c']);
+  });
+
+  it('keeps a branch opened or closed by hand as it was chosen', () => {
+    const chosen = new Map([
+      ['b', true],
+      ['a', false],
+    ]);
+    expect(ids(listedHeadings(headings, 'a1', chosen, false))).toEqual(['a', 'b', 'b1', 'c']);
+  });
+
+  it('marks which headings head a branch and lists every one where the list is whole', () => {
+    const listed = listedHeadings(headings, null, new Map(), true);
+    expect(ids(listed)).toEqual(headings.map(({ id }) => id));
+    expect(listed.filter(({ branch }) => branch).map(({ heading }) => heading.id)).toEqual([
+      'a',
+      'a1',
+      'b',
+    ]);
   });
 });
