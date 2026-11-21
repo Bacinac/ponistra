@@ -28,7 +28,8 @@ const LEAD = 'ponistra-main';
 const LEADING = 'leading';
 
 const waiting: Launch[] = [];
-let taker: ((launch: Launch) => void) | null = null;
+/** Takes a launch, or declines it to leave it waiting. */
+let taker: ((launch: Launch) => boolean) | null = null;
 
 // Set once for the page: the browser hands a consumer each launch only once, and one that comes
 // while no window takes it, signed out or before the app has drawn, waits for the next that does.
@@ -37,16 +38,16 @@ window.launchQueue?.setConsumer(async ({ targetURL, files }) => {
     target: targetURL,
     files: await Promise.all(files.map((each) => each.getFile())),
   };
-  if (taker) taker(launch);
-  else waiting.push(launch);
+  if (!taker?.(launch)) waiting.push(launch);
 });
 
-function useLaunches(take: (launch: Launch) => void) {
+/** `take` returns false for a launch it leaves to wait for the next taker. */
+function useLaunches(take: (launch: Launch) => boolean | void) {
   const taken = useEffectEvent(take);
   useEffect(() => {
-    const mine = (launch: Launch) => taken(launch);
+    const mine = (launch: Launch) => taken(launch) !== false;
     taker = mine;
-    waiting.splice(0).forEach(mine);
+    waiting.push(...waiting.splice(0).filter((launch) => !mine(launch)));
     return () => {
       if (taker === mine) taker = null;
     };
@@ -61,6 +62,25 @@ function told(message: Launch | typeof LEADING) {
 
 async function led(): Promise<boolean> {
   return Boolean((await navigator.locks.query()).held?.some((lock) => lock.name === LEAD));
+}
+
+/** Whether a launch opens only PDF files, which the browser shows without the server. */
+export function onlyPdfs({ files }: Launch): boolean {
+  return (
+    files.length > 0 &&
+    files.every((file) => file.type === 'application/pdf' || /\.pdf$/i.test(file.name))
+  );
+}
+
+/** The PDF files a launch opens while nobody is signed in; any other launch waits for someone
+ * to sign in, as its files are placed among their documents. */
+export function useSignedOutPdfs(): [File[], () => void] {
+  const [files, setFiles] = useState<File[]>([]);
+  useLaunches((launch) => {
+    if (!onlyPdfs(launch)) return false;
+    setFiles(launch.files);
+  });
+  return [files, () => setFiles([])];
 }
 
 /** Where a launch leads the window at `here`: nowhere when the window is there already, or when

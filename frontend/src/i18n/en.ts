@@ -549,6 +549,8 @@ export const en: Record<MessageKey, string> = {
   'tree.cancel': 'Cancel',
   'copy.make': 'Make a copy',
   'copy.of': 'Copy of',
+  'device.close': 'Close',
+  'device.files': 'Opened files',
   'launch.elsewhere': 'A file or link is waiting for the main Ponistra window.',
   'launch.open': 'Open the main window',
   'share.title': 'Shared with Ponistra',

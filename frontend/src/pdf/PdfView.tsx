@@ -146,7 +146,8 @@ export default function PdfView({
   /** Changes with each arrival, which goes to its place again. */
   visit: string;
   outline: OutlineStore;
-  notes: { room: string; fileId: string; title: string; editable: boolean };
+  /** The file's room among the user's documents; a file opened from the device has none. */
+  notes?: { room: string; fileId: string; title: string; editable: boolean };
   onNoted: (noted: boolean) => void;
   /** Called once the file asks for its password, which notes are never written into, or is
    * found to forbid its pages being taken into another. */
@@ -177,7 +178,7 @@ export default function PdfView({
   const [unchangeable, setUnchangeable] = useState<Unchangeable | null>(null);
   const [signed, setSigned] = useState(false);
   const [saving, setSaving] = useState(false);
-  const room = useFileRoom(notes.room, notes.fileId);
+  const room = useFileRoom(notes?.room ?? null, notes?.fileId ?? '');
   const me = useSession().data?.user?.id ?? null;
   const navigate = useNavigate();
   const resumed = useRef<number | null>(null);
@@ -300,8 +301,8 @@ export default function PdfView({
 
   useEffect(() => {
     if (!opened) return;
-    opened.form.attach(room, notes.editable);
-  }, [opened, room, notes.editable]);
+    opened.form.attach(room, notes?.editable ?? false);
+  }, [opened, room, notes?.editable]);
 
   useEffect(() => {
     if (!room) return;
@@ -401,7 +402,7 @@ export default function PdfView({
   const blackOut = useMutation({
     mutationFn: (text: string) =>
       getJson<{ hits: { page: number; rects: PageRect[] }[] }>(
-        `/api/nodes/${notes.fileId}/found?${new URLSearchParams({ q: text })}`,
+        `/api/nodes/${notes!.fileId}/found?${new URLSearchParams({ q: text })}`,
       ),
     onSuccess: ({ hits }) => {
       const at = new Date().toISOString();
@@ -491,7 +492,7 @@ export default function PdfView({
                 >
                   {count}
                 </span>
-                {notes.editable && room && (
+                {notes?.editable && room && (
                   <button
                     type="button"
                     aria-label={t('pdf.redact.found')}
@@ -535,7 +536,7 @@ export default function PdfView({
               </div>
             ) : (
               <>
-                {notes.editable && (
+                {notes?.editable && (
                   <button
                     type="button"
                     aria-label={t('pdf.draw')}
@@ -548,7 +549,7 @@ export default function PdfView({
                     <PenLine size={16} aria-hidden />
                   </button>
                 )}
-                {notes.editable && (
+                {notes?.editable && (
                   <button
                     type="button"
                     aria-label={t('pdf.redact')}
@@ -561,17 +562,19 @@ export default function PdfView({
                     <EyeOff size={16} aria-hidden />
                   </button>
                 )}
-                <button
-                  type="button"
-                  aria-label={t('pdf.pin')}
-                  title={t('pdf.pin')}
-                  aria-pressed={tool === 'pin'}
-                  disabled={!opened}
-                  onClick={() => setTool(tool === 'pin' ? 'read' : 'pin')}
-                  className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink`}
-                >
-                  <MessageSquarePlus size={16} aria-hidden />
-                </button>
+                {notes && (
+                  <button
+                    type="button"
+                    aria-label={t('pdf.pin')}
+                    title={t('pdf.pin')}
+                    aria-pressed={tool === 'pin'}
+                    disabled={!opened}
+                    onClick={() => setTool(tool === 'pin' ? 'read' : 'pin')}
+                    className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink`}
+                  >
+                    <MessageSquarePlus size={16} aria-hidden />
+                  </button>
+                )}
                 <button
                   type="button"
                   aria-label={t('pdf.find')}
@@ -612,7 +615,7 @@ export default function PdfView({
         <div ref={box} className="ponistra-pdf absolute inset-0 overflow-auto">
           <div ref={pages} className="pdfViewer" />
         </div>
-        {opened && (
+        {opened && notes && (
           <FileNotes
             pages={opened.viewer}
             box={opened.box}
@@ -637,7 +640,7 @@ export default function PdfView({
           </div>
         )}
       </div>
-      {saving && (
+      {saving && notes && (
         <NameDialog
           heading={t('pdf.redact.save.heading')}
           submitLabel={t('tree.create')}

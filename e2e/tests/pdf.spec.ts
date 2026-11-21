@@ -153,3 +153,59 @@ test('a PDF locked by a password opens once it is given', async ({ page }) => {
   await expect(dialog).toHaveCount(0);
   await expect(pageAt(page, 1).locator('.textLayer')).toContainText('Povjerljivo');
 });
+
+test('a PDF the installed app opens while nobody is signed in is shown alone, read in the browser, and any other file waits for signing in', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({ baseURL, locale: 'hr-HR' });
+  await context.addInitScript(() => {
+    Object.defineProperty(window, 'launchQueue', {
+      value: {
+        setConsumer(consumer: unknown) {
+          Object.assign(window, { launched: consumer });
+        },
+      },
+    });
+  });
+  const page = await context.newPage();
+  const sent: string[] = [];
+  page.on('request', (request) => {
+    const { pathname } = new URL(request.url());
+    if (request.method() !== 'GET' && !pathname.startsWith('/api/auth/')) {
+      sent.push(`${request.method()} ${pathname}`);
+    }
+  });
+  const launch = (name: string, type: string, data: string) =>
+    page.evaluate(
+      ({ name, type, data }) => {
+        const file = new File([Uint8Array.from(atob(data), (c) => c.charCodeAt(0))], name, {
+          type,
+        });
+        const launched = (window as unknown as { launched: (params: unknown) => void }).launched;
+        launched({ files: [{ getFile: async () => file }] });
+      },
+      { name, type, data },
+    );
+  const signIn = page.getByRole('button', { name: 'Prijavi se pristupnim ključem' });
+  await page.goto('/');
+  await expect(signIn).toBeVisible();
+
+  await launch('Ponuda.docx', '', Buffer.from('PK').toString('base64'));
+  await expect(page.getByRole('heading', { name: 'Ponuda.docx' })).toHaveCount(0);
+  await expect(signIn).toBeVisible();
+
+  const file = pdfFile({ pages: [[{ text: 'Racun za studeni.', top: 72 }]] });
+  await launch('Racun.pdf', 'application/pdf', file.toString('base64'));
+  await expect(page.getByRole('heading', { name: 'Racun.pdf' })).toBeVisible();
+  await expect(pageAt(page, 1).locator('.textLayer')).toContainText('Racun za studeni.');
+  await expect(page).toHaveTitle(/Racun\.pdf/);
+  await expect(signIn).toHaveCount(0);
+  await expect(page.getByRole('navigation')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Komentar na stranici' })).toHaveCount(0);
+  expect(sent).toEqual([]);
+
+  await page.getByRole('button', { name: 'Zatvori', exact: true }).click();
+  await expect(signIn).toBeVisible();
+  await context.close();
+});

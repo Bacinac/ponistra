@@ -8,7 +8,7 @@
     "pdf.of"
   ],
   "describes": {
-    "frontend/src/pdf/PdfView.tsx#PdfView": "ed6e9bfa0f04",
+    "frontend/src/pdf/PdfView.tsx#PdfView": "c4c740114678",
     "frontend/src/pdf/PdfView.tsx#PasswordDialog": "85607ffce388",
     "frontend/src/pdf/words.ts": "1fdfb75a1243",
     "frontend/src/FilePage.tsx#OpenFile": "f81087aea505"

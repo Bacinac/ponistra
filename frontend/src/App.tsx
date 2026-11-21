@@ -13,7 +13,7 @@ import { useI18n } from './i18n';
 import { lazily } from './lazily';
 import { usePushBridge } from './notifications';
 import { JobBar } from './jobs';
-import { LaunchesElsewhere } from './launch';
+import { LaunchesElsewhere, useSignedOutPdfs } from './launch';
 import { recoverFromCrash, takeNewRelease } from './release';
 import { Ringing } from './ringing';
 import { VaultProvider } from './vault/state';
@@ -27,6 +27,7 @@ const CompanyPage = lazily(() => import('./FolderPage'), 'CompanyPage');
 const ConnectPage = lazily(() => import('./phoneApp'), 'ConnectPage');
 const ConsentPage = lazily(() => import('./agents'), 'ConsentPage');
 const ContactsPage = lazily(() => import('./contacts'), 'ContactsPage');
+const DevicePdfs = lazily(() => import('./pdf/Device'), 'DevicePdfs');
 const DocumentPage = lazily(() => import('./DocumentPage'), 'DocumentPage');
 const FilePage = lazily(() => import('./FilePage'), 'FilePage');
 const FolderPage = lazily(() => import('./FolderPage'), 'FolderPage');
@@ -114,6 +115,24 @@ function PushBridge() {
   return null;
 }
 
+function SignedOut({ setup }: { setup: boolean }) {
+  const { t } = useI18n();
+  const { pathname } = useLocation();
+  const [pdfs, closePdfs] = useSignedOutPdfs();
+  if (pdfs.length > 0) {
+    return (
+      <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
+        <Suspense fallback={<div className="min-h-dvh bg-surface" />}>
+          <DevicePdfs files={pdfs} onClose={closePdfs} />
+        </Suspense>
+      </Crash>
+    );
+  }
+  const door = rememberedDoor();
+  if (door && !setup) return <Navigate to={door} replace />;
+  return <Lobby>{setup ? <SetupForm /> : <LoginForm />}</Lobby>;
+}
+
 function Followed() {
   useFollowed();
   return null;
@@ -175,11 +194,7 @@ export default function App() {
       </Crash>
     );
   }
-  if (!session.data.user) {
-    const door = rememberedDoor();
-    if (door && !session.data.setup) return <Navigate to={door} replace />;
-    return <Lobby>{session.data.setup ? <SetupForm /> : <LoginForm />}</Lobby>;
-  }
+  if (!session.data.user) return <SignedOut setup={session.data.setup} />;
   if (!session.data.user.visitor) forgetDoor();
   if (session.data.due) {
     return (

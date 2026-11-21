@@ -14,7 +14,7 @@ Ikona aplikacije pokazuje broj nepročitanih poruka u ulaznim sandučićima vaš
 
 Aplikacija se drži jednog glavnog prozora: ponovno pokretanje dovodi otvoreni prozor naprijed, a poveznica ili datoteka otvorena izvana otvara se u njemu. Sastanak i prezentacija u zasebnom prozoru predaju takvo otvaranje glavnom prozoru; ako on nije otvoren, pokazuju poruku i gumb {t:launch.open}.
 
-Instalirana aplikacija može otvarati datoteke s računala, preko „Otvori pomoću”: dokumente koje Ponistra uvozi i PDF. Datoteka se sprema među vaše dokumente kao kod učitavanja, a jedna datoteka se i otvara. Poveznicu e-pošte (`mailto:`) koja stigne u Ponistru aplikacija otvara kao novu poruku sa zadanog računa, s primateljima, predmetom i tekstom iz poveznice.
+Instalirana aplikacija može otvarati datoteke s računala, preko „Otvori pomoću”: dokumente koje Ponistra uvozi i PDF. Datoteka se sprema među vaše dokumente kao kod učitavanja, a jedna datoteka se i otvara. Dok niste prijavljeni, PDF se otvara sam preko cijelog prozora, bez ostatka aplikacije, i ne šalje se poslužitelju; Više datoteka otvorenih odjednom stoji u traci {t:device.files} na vrhu, a {t:device.close} vodi na prijavu. Ostale datoteke čekaju prijavu. Poveznicu e-pošte (`mailto:`) koja stigne u Ponistru aplikacija otvara kao novu poruku sa zadanog računa, s primateljima, predmetom i tekstom iz poveznice.
 
 Sadržaj iz drugih aplikacija dijelite u Ponistru, kako opisuje [dijeljenje s Ponistrom](help:phone/share).
 

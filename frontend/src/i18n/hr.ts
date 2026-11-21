@@ -547,6 +547,8 @@ export const hr = {
   'tree.cancel': 'Odustani',
   'copy.make': 'Napravi kopiju',
   'copy.of': 'Kopija –',
+  'device.close': 'Zatvori',
+  'device.files': 'Otvorene datoteke',
   'launch.elsewhere': 'Datoteka ili poveznica čeka glavni prozor Ponistre.',
   'launch.open': 'Otvori glavni prozor',
   'share.title': 'Podijeljeno s Ponistrom',

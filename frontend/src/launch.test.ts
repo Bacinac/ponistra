@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { forTheServer, ledTo } from './launch';
+import { forTheServer, ledTo, onlyPdfs } from './launch';
 
 describe('ledTo', () => {
   it('leads to the address a launch asks for, with its query', () => {
@@ -28,5 +28,19 @@ describe('forTheServer', () => {
       expect(forTheServer(path)).toBe(true);
     for (const path of ['/', '/mail?mailto=x', '/agents/consent?request=x', '/api-notes', '/davor'])
       expect(forTheServer(path)).toBe(false);
+  });
+});
+
+describe('onlyPdfs', () => {
+  const file = (name: string, type: string) => new File(['%PDF'], name, { type });
+
+  it('takes a launch whose every file is a PDF, by its type or its name', () => {
+    expect(onlyPdfs({ files: [file('a.pdf', 'application/pdf')] })).toBe(true);
+    expect(onlyPdfs({ files: [file('B.PDF', ''), file('c.pdf', 'application/pdf')] })).toBe(true);
+  });
+
+  it('leaves a launch with any other file, or with none, to someone signed in', () => {
+    expect(onlyPdfs({ files: [file('a.pdf', 'application/pdf'), file('b.docx', '')] })).toBe(false);
+    expect(onlyPdfs({ files: [], target: 'https://ponistra.example/mail' })).toBe(false);
   });
 });

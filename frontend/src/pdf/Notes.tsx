@@ -56,12 +56,14 @@ export interface FileRoom {
   redactions: () => readonly [string, Redaction][];
 }
 
-/** Joins the file's room once it has synced; the room also tells when its comments change. */
-export function useFileRoom(room: string, fileId: string): FileRoom | null {
+/** Joins the file's room once it has synced, none for a file without one; the room also tells
+ * when its comments change. */
+export function useFileRoom(room: string | null, fileId: string): FileRoom | null {
   const recheck = useRecheck(fileId);
   const queryClient = useQueryClient();
   const [joined, setJoined] = useState<FileRoom | null>(null);
   useEffect(() => {
+    if (!room) return;
     const doc = new Y.Doc();
     const marks = marksOf(doc);
     const fields = fieldsIn(doc);

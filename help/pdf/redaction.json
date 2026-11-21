@@ -14,7 +14,7 @@
   ],
   "describes": {
     "frontend/src/pdf/Notes.tsx#FileNotes": "68ba5afed063",
-    "frontend/src/pdf/PdfView.tsx#PdfView": "ed6e9bfa0f04",
+    "frontend/src/pdf/PdfView.tsx#PdfView": "c4c740114678",
     "backend/apps/imports/redacted.py#redact": "108955b48aa6"
   }
 }
