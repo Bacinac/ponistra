@@ -122,6 +122,7 @@ LEFT: dict[tuple[str, str], str] = {
     ("users.User_user_permissions", "user"): "not used",
     ("versions.Version", "editors"): "through versions.VersionEditor",
     ("documents.Node", "updated_by"): "the last to change a node, replaced by the next",
+    ("meetings.Meeting", "board_by"): "who has a board on the stage, gone when it is taken down",
     ("blobs.Upload", "user"): "a file arriving, gone once it has",
     ("access.OutsideLink", "visitor"): "whom a link signs in, exported as the link's own",
     ("jobs.Job", "user"): "work under way, gone within the hour",

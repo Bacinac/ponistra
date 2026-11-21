@@ -78,6 +78,12 @@ SMOKE = {
     "tests/mail.spec.ts": "an account is connected through its server settings",
     "tests/import.spec.ts": "an imported workbook is listed as a spreadsheet",
 }
+# What reads every app's models at once, so that a migration in any app runs it: by file and test.
+EVERY_MODEL = {
+    "apps/users/tests/test_personal.py": (
+        "test_every_field_naming_a_user_is_exported_or_left_out_for_a_reason"
+    ),
+}
 SHELL = "@shell"
 # What every page loads without a test's coverage naming it: the entry, styles and assets.
 SHELL_FILES = re.compile(r"frontend/src/(main\.tsx|.*\.(css|svg|png|ico|txt|js|json))")
@@ -423,6 +429,14 @@ def smoke() -> set[str]:
     return found
 
 
+def every_model() -> set[str]:
+    found = {f"{path}::{name}" for path, name in EVERY_MODEL.items()}
+    for test in found:
+        if not still_there(test):
+            sys.exit(f"select: {test} is gone (EVERY_MODEL)")
+    return found
+
+
 def routes(changes) -> tuple[bool, dict[str, set[str]]]:
     """What a change to the root's routes touches: anything but its routes and imports as a
     whole, and the views of the routes it adds or takes out by the files defining them."""
@@ -595,7 +609,7 @@ def plan() -> None:
                     pytest.update(f"{inside}::{n}" for n in own)
                     pytest.update(reach(path, False, names - own, records["pytest"]) or ())
             elif "/migrations/" in path:
-                pytest.update(records["pytest"].under(app))
+                pytest.update(records["pytest"].under(app) | every_model())
                 e2e.update(records["e2e"].under(app))
             elif path.endswith(".py"):
                 for kind, chosen in (("pytest", pytest), ("e2e", e2e)):
