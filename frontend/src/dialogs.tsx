@@ -515,6 +515,7 @@ export function MoveDialog({
 }) {
   const { t } = useI18n();
   const origin = nodes[0].parent;
+  const saving = nodes.every((node) => node.unplaced);
   const browsing = useBrowsing(origin);
   const from = useFolder(origin).data;
   const move = useMove();
@@ -538,7 +539,7 @@ export function MoveDialog({
   const failure = browsing.error ?? move.error;
 
   return (
-    <Modal heading={t('tree.moveTitle')} onClose={onClose}>
+    <Modal heading={saving ? t('tree.saveTitle') : t('tree.moveTitle')} onClose={onClose}>
       <p className="truncate text-sm text-muted">{nodes.map((node) => node.title).join(', ')}</p>
       <Browser browsing={browsing} shown={folders} empty={t('tree.noSubfolders')} />
       {escapes && <p className="text-sm text-muted">{t('confined.hint')}</p>}
@@ -547,13 +548,13 @@ export function MoveDialog({
         <Cancel />
         <button
           type="button"
-          disabled={browsing.target === origin || !allowed || move.isPending}
+          disabled={(!saving && browsing.target === origin) || !allowed || move.isPending}
           onClick={() =>
             move.mutate({ ids: [...moving], parent: browsing.target }, { onSuccess: onClose })
           }
           className={primaryButton}
         >
-          {t('tree.moveHere')}
+          {saving ? t('tree.saveHere') : t('tree.moveHere')}
         </button>
       </div>
     </Modal>

@@ -30,6 +30,7 @@ function node(title: string, fields: Partial<TreeNode> = {}): TreeNode {
     boards: false,
     columns: null,
     agent_folder: null,
+    unplaced: false,
     ...fields,
   };
 }

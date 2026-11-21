@@ -39,7 +39,7 @@ import { idIn } from './address';
 import { deleteJson, patchJson, postJson } from './api';
 import { CommentsPanel, DeskContext, useDeskState, useThreads } from './comments';
 import { ConfirmDialog, CopyDialog, MoveDialog, NameDialog } from './dialogs';
-import { Addressed, Frame, Loading, Missing } from './frame';
+import { Addressed, Frame, Loading, Missing, SaveInto } from './frame';
 import { localeName, useI18n } from './i18n';
 import { ImportedDialog, ImportReport, sourceHref, useImportInto, useReimport } from './imported';
 import { FavouriteButton } from './favourites';
@@ -523,6 +523,7 @@ function OpenDocument({ nodeId }: { nodeId: string }) {
             root={root}
             menu={menu}
             actions={actions}
+            primary={<SaveInto node={node} role={role} />}
             side={side}
             panel={
               (panel === 'comments' && (

@@ -1,8 +1,8 @@
-import { useEffect, useEffectEvent, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useEffectEvent, useState, type ReactNode } from 'react';
+import { useNavigate, useParams } from 'react-router';
 import { useI18n } from './i18n';
 import { button } from './styles';
-import { nodeHref } from './tree';
+import { errorMessage, nodeHref } from './tree';
 import { loose, useUploads } from './upload';
 
 // The Launch Handler and File Handling APIs, which TypeScript's DOM library does not describe yet.
@@ -26,6 +26,19 @@ const CHANNEL = 'ponistra-launch';
 /** Held by the main window that takes what a launch into another window of the app asks. */
 const LEAD = 'ponistra-main';
 const LEADING = 'leading';
+
+/** The name of a window a file opened from the computer is read in, before its key, and the
+ * channel that window asks the one holding the file for it. */
+const OPENED = 'ponistra-opened:';
+
+/** Whether this window is one a file opened from the computer is read in, alone across it. */
+export function isAlone(): boolean {
+  return window.name.startsWith(OPENED);
+}
+
+/** The files this window holds for the windows it opened to read them in, by their keys. */
+const handing = new Map<string, File>();
+type Handing = { want: string } | { took: string } | { key: string; file: File };
 
 const waiting: Launch[] = [];
 /** Takes a launch, or declines it to leave it waiting. */
@@ -97,20 +110,122 @@ export function forTheServer(path: string): boolean {
   return /^\/(api|dav|android|\.well-known)(\/|$)/.test(path);
 }
 
-/** The main window's part: it opens what a launch asks, a file opened from the computer placed
- * among the user's documents like an upload, and takes what a launch into a meeting's or a
- * presenter's window hands it. */
-export function Launches() {
+function windowFor(key: string): boolean {
+  return window.open(`/opened/${key}`, OPENED + key) !== null;
+}
+
+/** Opens each file a launch brings in a window of its own, where it is read alone. A browser
+ * that refuses a window the user did not click for keeps the file here, with a button that
+ * opens it. */
+function useOpening(): [(files: File[]) => void, ReactNode] {
+  const { t } = useI18n();
+  const [held, setHeld] = useState<{ key: string; name: string }[]>([]);
+  useEffect(() => {
+    const channel = new BroadcastChannel(OPENED);
+    channel.onmessage = ({ data }: MessageEvent<Handing>) => {
+      if ('want' in data) {
+        const file = handing.get(data.want);
+        if (file) channel.postMessage({ key: data.want, file } satisfies Handing);
+      } else if ('took' in data) handing.delete(data.took);
+    };
+    return () => channel.close();
+  }, []);
+  const open = (files: File[]) => {
+    for (const file of files) {
+      const key = crypto.randomUUID();
+      handing.set(key, file);
+      if (!windowFor(key)) setHeld((now) => [...now, { key, name: file.name }]);
+    }
+  };
+  const rows = held.length > 0 && (
+    <div role="group" aria-label={t('launch.held')} className="flex flex-col gap-2">
+      {held.map(({ key, name }) => (
+        <div key={key} className="flex items-center gap-3">
+          <p className="min-w-0 flex-1 truncate">{name}</p>
+          <button
+            type="button"
+            onClick={() => {
+              if (windowFor(key)) setHeld((now) => now.filter((each) => each.key !== key));
+            }}
+            className={button}
+          >
+            {t('launch.window')}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+  return [open, rows];
+}
+
+function LaunchBar({ children }: { children: ReactNode }) {
+  return (
+    <div
+      role="status"
+      className="fixed right-4 bottom-4 z-40 flex max-w-[calc(100vw-2rem)] flex-col gap-2 rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink shadow-lg empty:hidden"
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The window a file opened from the computer is read in: it takes the file from the window
+ * that opened it and places it in no folder, then shows it. */
+export function OpenedPage() {
+  const { t } = useI18n();
+  const { key } = useParams();
   const navigate = useNavigate();
   const uploads = useUploads();
+  const [name, setName] = useState<string | null>(null);
+  const [lost, setLost] = useState(false);
+  const take = useEffectEvent((file: File) => {
+    setName(file.name);
+    uploads.start(
+      loose([file]),
+      null,
+      (placed) => {
+        if (placed[0]) void navigate(nodeHref(placed[0]), { replace: true });
+      },
+      true,
+    );
+  });
+  useEffect(() => {
+    if (!key) return;
+    const channel = new BroadcastChannel(OPENED);
+    // The window that opened this one answers at once while it is open; one closed meanwhile,
+    // or reloaded, no longer holds the file.
+    const gone = setTimeout(() => setLost(true), 10_000);
+    channel.onmessage = ({ data }: MessageEvent<Handing>) => {
+      if (!('key' in data) || data.key !== key) return;
+      clearTimeout(gone);
+      channel.postMessage({ took: key } satisfies Handing);
+      channel.close();
+      take(data.file);
+    };
+    channel.postMessage({ want: key } satisfies Handing);
+    return () => {
+      clearTimeout(gone);
+      channel.close();
+    };
+  }, [key]);
+  const failed = uploads.failed[0]?.error ?? uploads.error;
+  if (failed) return <p className="text-sm text-danger">{errorMessage(failed, t)}</p>;
+  if (lost && !name) return <p className="text-sm text-muted">{t('launch.lost')}</p>;
+  return (
+    <div className="flex flex-col gap-1 text-sm">
+      {name && <p className="font-medium">{name}</p>}
+      <p className="text-muted">{t('launch.receiving')}</p>
+    </div>
+  );
+}
+
+/** The main window's part: it opens what a launch asks, each file opened from the computer in a
+ * window of its own, and takes what a launch into another window of the app hands it. */
+export function Launches() {
+  const navigate = useNavigate();
+  const [open, held] = useOpening();
   function opened({ target, files }: Launch) {
-    if (files.length > 0) {
-      void navigate('/documents');
-      uploads.start(loose(files), null, (placed) => {
-        if (placed.length === 1) void navigate(nodeHref(placed[0]));
-      });
-      return;
-    }
+    if (files.length > 0) return open(files);
     const to = ledTo(target, location.pathname + location.search + location.hash);
     if (!to) return;
     if (forTheServer(to)) location.assign(to);
@@ -142,17 +257,20 @@ export function Launches() {
       });
     return () => leading.abort();
   }, []);
-  return null;
+  return <LaunchBar>{held}</LaunchBar>;
 }
 
-/** A meeting's or a presenter's window, which a launch never leads away: it hands the launch to
- * the main window, and while none is open says so and opens one. */
+/** A window a launch never leads away, a meeting's, a presenter's or a file's read alone: it
+ * opens the files a launch brings each in a window of its own, hands any other launch to the
+ * main window, and while none is open says so and opens one. */
 export function LaunchesElsewhere() {
   const { t } = useI18n();
   const [held, setHeld] = useState<Launch[]>([]);
+  const [open, opening] = useOpening();
   useLaunches((launch) => {
-    void led().then((open) => {
-      if (!open) return setHeld((now) => [...now, launch]);
+    if (launch.files.length > 0) return open(launch.files);
+    void led().then((leading) => {
+      if (!leading) return setHeld((now) => [...now, launch]);
       told(launch);
       window.opener?.focus();
     });
@@ -171,22 +289,23 @@ export function LaunchesElsewhere() {
       if (data === LEADING) hand();
     };
     // A main window that began to lead before this listened has told it already.
-    void led().then((open) => open && hand());
+    void led().then((leading) => leading && hand());
     return () => {
       handed = true;
       channel.close();
     };
   }, [held]);
-  if (held.length === 0) return null;
   return (
-    <div
-      role="status"
-      className="fixed right-4 bottom-4 z-40 flex max-w-[calc(100vw-2rem)] items-center gap-3 rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink shadow-lg"
-    >
-      <p className="min-w-0 flex-1">{t('launch.elsewhere')}</p>
-      <button type="button" onClick={() => window.open('/', '_blank')} className={button}>
-        {t('launch.open')}
-      </button>
-    </div>
+    <LaunchBar>
+      {opening}
+      {held.length > 0 && (
+        <div className="flex items-center gap-3">
+          <p className="min-w-0 flex-1">{t('launch.elsewhere')}</p>
+          <button type="button" onClick={() => window.open('/', '_blank')} className={button}>
+            {t('launch.open')}
+          </button>
+        </div>
+      )}
+    </LaunchBar>
   );
 }

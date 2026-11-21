@@ -119,6 +119,12 @@ def test_a_word_file_becomes_a_document_with_the_file_beside_it(api):
     assert content(served) == WORD
 
 
+def test_a_file_opened_from_the_computer_is_imported_into_no_folder(api):
+    made = bring(api, unplaced=True)
+    assert made["unplaced"] and made["parent"] is None
+    assert api.get("/api/nodes").json()["children"] == []
+
+
 def test_a_document_imported_was_last_changed_when_its_file_was(api):
     found = bring(api, modified="2024-05-03T10:11:12Z")
     node = Node.objects.get(pk=found["id"])

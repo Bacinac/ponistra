@@ -10,7 +10,7 @@
   ],
   "describes": {
     "frontend/src/FolderPage.tsx#Explorer": "43d0ac1d1031",
-    "frontend/src/dialogs.tsx#MoveDialog": "0b2f0b70d787",
+    "frontend/src/dialogs.tsx#MoveDialog": "d9fc2a9383aa",
     "frontend/src/dialogs.tsx#CopyDialog": "d185b4dc6396",
     "frontend/src/frame.tsx#FolderTree": "137803a89f9b",
     "frontend/src/choice.tsx": "4c36a2c48ed0",

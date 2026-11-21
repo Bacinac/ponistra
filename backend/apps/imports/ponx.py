@@ -364,9 +364,9 @@ def _opened(source: Blob):
         yield _checked(archive)
 
 
-def document(source: Blob, parent: Node | None, title: str, user) -> Node:
+def document(source: Blob, parent: Node | None, title: str, user, unplaced: bool = False) -> Node:
     with _opened(source) as reader:
-        return _made(reader, parent, title, user)
+        return _made(reader, parent, title, user, unplaced)
 
 
 def copy(document: Node, parent: Node | None, title: str, user) -> Node:
@@ -375,7 +375,7 @@ def copy(document: Node, parent: Node | None, title: str, user) -> Node:
         return _made(_checked(archive), parent, title, user)
 
 
-def _made(reader: _Reader, parent: Node | None, title: str, user) -> Node:
+def _made(reader: _Reader, parent: Node | None, title: str, user, unplaced: bool = False) -> Node:
     described = reader.described
     headed = reader.grids(saved.GRIDS)
     own = reader.state(saved.OWN, True, headed)
@@ -393,6 +393,7 @@ def _made(reader: _Reader, parent: Node | None, title: str, user) -> Node:
             title=title,
             locale=locale if locale in Node.Locale.values else Node.Locale.HR,
             source=None if original is None else reader.blob(original),
+            unplaced=unplaced,
             created_by=user,
             updated_by=user,
         )

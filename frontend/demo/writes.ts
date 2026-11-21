@@ -545,6 +545,7 @@ function nodeWrites(): Write[] {
           boards: false,
           columns: null,
           agent_folder: null,
+          unplaced: false,
         };
         const placing = { root: listing.root, role: listing.role, confined: listing.confined };
         const path = [...listing.path, node];

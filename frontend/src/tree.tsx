@@ -120,6 +120,8 @@ export interface TreeNode {
   columns: number | null;
   /** The folder of the code workspace a board's agent starts in, chosen by its owner. */
   agent_folder: string | null;
+  /** A document or file opened from the computer, in no folder until saved into one. */
+  unplaced: boolean;
 }
 
 /** A node listed away from its folder, with the path the user finds it along. */
@@ -146,6 +148,7 @@ export function stepTitle(
 }
 
 export function placeText(node: FoundNode, t: (key: MessageKey) => string): string {
+  if (node.unplaced) return t('tree.unplaced');
   const [top] = node.path;
   const titles = node.path.map((above) => stepTitle(above, t));
   return (
@@ -656,7 +659,9 @@ export function Breadcrumbs({
 }) {
   const { t } = useI18n();
   const way: Crumb[] = [
-    { key: 'root', title: t(ROOT_LABELS[root]), ...ROOT_CRUMBS[root] },
+    ...(path[0]?.unplaced
+      ? []
+      : [{ key: 'root', title: t(ROOT_LABELS[root]), ...ROOT_CRUMBS[root] }]),
     ...path.map((node) => ({
       key: node.id,
       title: stepTitle(node, t),

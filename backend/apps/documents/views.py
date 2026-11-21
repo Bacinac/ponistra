@@ -74,6 +74,7 @@ def describe(node: Node) -> dict:
         "boards": node.boards,
         "columns": node.columns,
         "agent_folder": node.agent_folder or None,
+        "unplaced": node.unplaced,
     }
 
 
@@ -280,7 +281,7 @@ def nodes(request):
     if request.method == "GET":
         parent, reach = folder(request.user, optional_id(request.GET.get("parent")))
         if parent is None:
-            children = rights.mine(request.user)
+            children = rights.mine(request.user).filter(unplaced=False)
             place = {"path": [], "root": "mine", "role": Role.OWN, "confined": False}
         else:
             children = Node.objects.filter(parent=parent, trashed_at=None)
@@ -301,6 +302,7 @@ def nodes(request):
         parent = beside(request.user, live(request.user, near)[0])
     else:
         parent, reach = folder(request.user, optional_id(data.get("parent")), Role.EDIT)
+    unplaced = unplaced_of(data, parent, kind)
     extension = extension_given(data) if kind == Node.Kind.FILE else ""
     modified = modified_of(data) if kind == Node.Kind.FILE else None
     if kind == Node.Kind.LINK:
@@ -308,13 +310,26 @@ def nodes(request):
         node = new_link(parent, address, title, request.user)
         links.wake()
     else:
-        node = dated(created(parent, kind, title_of(data), blob, request.user, extension), modified)
+        made = created(
+            parent, kind, title_of(data), blob, request.user, extension, unplaced=unplaced
+        )
+        node = dated(made, modified)
     if reach and reach.ancestry[0].links:
         arranged(parent, [node], None)
     if kind == Node.Kind.FILE:
         extraction.wake()
         previews.wake()
     return JsonResponse(describe(node), status=201)
+
+
+def unplaced_of(data: dict, parent: Node | None, kind: str = Node.Kind.DOCUMENT) -> bool:
+    """Whether what is made is left in no folder, as a file opened from the computer is (D53)."""
+    unplaced = data.get("unplaced", False)
+    if not isinstance(unplaced, bool) or (
+        unplaced and (parent is not None or kind not in (Node.Kind.DOCUMENT, Node.Kind.FILE))
+    ):
+        raise Refused(400, "invalid_unplaced")
+    return unplaced
 
 
 def created(
@@ -325,6 +340,7 @@ def created(
     user,
     extension: str = "",
     href: str = "",
+    unplaced: bool = False,
 ) -> Node:
     """A new node in the folder, or owned by the user at the top of their documents; a
     document with its styles and one empty tab."""
@@ -336,6 +352,7 @@ def created(
             blob=blob,
             extension=extension,
             href=href,
+            unplaced=unplaced,
             created_by=user,
             updated_by=user,
         )
@@ -591,6 +608,7 @@ def moved_into(
             if node.parent_id != (parent and parent.pk):
                 node.position = None
             node.parent = parent
+            node.unplaced = False
             node.updated_by = user
             node.save()
             if parent is None:

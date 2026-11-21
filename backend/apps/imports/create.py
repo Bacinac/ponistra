@@ -55,7 +55,12 @@ class Read(NamedTuple):
 
 
 def document(
-    source: Blob, parent: Node | None, title: str, user, opened: Callable | None = None
+    source: Blob,
+    parent: Node | None,
+    title: str,
+    user,
+    opened: Callable | None = None,
+    unplaced: bool = False,
 ) -> Node:
     """A new document of the file; `opened` is given it as soon as its first rows can be read,
     where the file is so large that they are written after the document stands."""
@@ -67,6 +72,7 @@ def document(
             title=title,
             source=source,
             imported=read.imported.report,
+            unplaced=unplaced,
             created_by=user,
             updated_by=user,
         )

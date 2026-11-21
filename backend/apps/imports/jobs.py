@@ -6,6 +6,7 @@ import logging
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import PurePosixPath
+from typing import NamedTuple
 
 from apps.access.models import Role
 from apps.blobs import store
@@ -25,6 +26,7 @@ from apps.documents.views import (
     live_pdf,
     modified_of,
     title_of,
+    unplaced_of,
 )
 from apps.exports import annotated
 from apps.jobs.kinds import Kind, answered, answered_before
@@ -73,36 +75,47 @@ def _reading(source: Blob):
         raise Refused(503, "converter_unavailable") from None
 
 
-def _new(user, data: dict) -> tuple[Blob, Node | None, str, datetime | None]:
+class _New(NamedTuple):
+    source: Blob
+    parent: Node | None
+    title: str
+    modified: datetime | None
+    unplaced: bool
+
+
+def _new(user, data: dict) -> _New:
     source = _source(data, also=frozenset({store.BOOKMARKS}))
     parent, _ = folder(user, optional_id(data.get("parent")), Role.EDIT)
-    return source, parent, title_of(data), modified_of(data)
+    kind = Node.Kind.FOLDER if source.media_type == store.BOOKMARKS else Node.Kind.DOCUMENT
+    unplaced = unplaced_of(data, parent, kind)
+    return _New(source, parent, title_of(data), modified_of(data), unplaced)
 
 
 def _new_asked(request, data: dict) -> dict:
-    source, parent, title, modified = _new(request.user, data)
+    new = _new(request.user, data)
     return {
-        "blob": source.sha256,
-        "parent": parent and str(parent.pk),
-        "title": title,
-        "modified": modified and modified.isoformat(),
+        "blob": new.source.sha256,
+        "parent": new.parent and str(new.parent.pk),
+        "title": new.title,
+        "modified": new.modified and new.modified.isoformat(),
+        "unplaced": new.unplaced,
     }
 
 
 def _new_done(user, parameters: dict) -> dict:
     """A new document from an uploaded text document, spreadsheet, presentation or PONISTRA
     file, or a folder of links from a browser's bookmarks, last changed when the file was."""
-    source, parent, title, modified = _new(user, parameters)
+    source, parent, title, modified, unplaced = _new(user, parameters)
     with _reading(source):
         if source.media_type == store.PONX:
-            made = ponx.document(source, parent, title, user)
+            made = ponx.document(source, parent, title, user, unplaced)
         elif source.media_type == store.BOOKMARKS:
             made = bookmarks.folder(source, parent, title, user)
         else:
             if (cut_off := answered_before()) is not None:
                 Node.objects.filter(pk=cut_off["id"]).delete()
             made = create.document(
-                source, parent, title, user, lambda node: answered(describe(node))
+                source, parent, title, user, lambda node: answered(describe(node)), unplaced
             )
         return describe(dated(made, modified))
 

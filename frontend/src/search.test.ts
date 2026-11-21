@@ -57,6 +57,7 @@ function result(fields: Partial<SearchResult>): SearchResult {
     boards: false,
     columns: null,
     agent_folder: null,
+    unplaced: false,
     path: [],
     root: 'mine',
     source: 'title',

@@ -4911,6 +4911,11 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
   documents, i tek na save se spremi na odabrano mjesto … bez prijave da radi isto za sve
   dokumente”). Every file the installed app is launched with, of every kind Ponistra imports,
   opens alone in a window of its own across the screen; the main window stays where it was.
+  - *The window.* A launch reaches the window already open (`focus-existing`), which opens one
+    window a file and hands each its file. Chromium gives that delivery no user activation before
+    160 (blink-dev PSA, 2026-11-11), so a browser blocking pop-ups refuses the window; the file then
+    waits in the main window behind a button that opens it (chosen 2026-11-21 over `navigate-new`,
+    which would give the icon, `mailto:` and captured links a new window each too).
   - *Signed in.* The file becomes a document with no place: in no folder, listed among the recent
     documents and found by search. Its content is kept as every document's is, at once and
     co-edited (D2, D45), since a Save of content only on this path would make one thing behave two

@@ -113,6 +113,9 @@ class Node(models.Model):
     # The folder of the code workspace a board's agent starts in (D34), chosen by its owner rather
     # than by the page, which could otherwise send the agent anywhere.
     agent_folder = models.CharField(max_length=500, blank=True, default="")
+    # A document or file opened from the computer (D53), in no folder until its owner saves it
+    # into one; the top of their own documents does not list it.
+    unplaced = models.BooleanField(default=False)
 
     class Meta:
         indexes = [
@@ -168,6 +171,11 @@ class Node(models.Model):
                 condition=models.Q(boards=False)
                 | models.Q(kind="folder", parent__isnull=True, notes=False, links=False),
                 name="a_boards_folder_is_at_the_top",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(unplaced=False)
+                | models.Q(kind__in=["document", "file"], parent__isnull=True),
+                name="an_unplaced_node_is_a_document_or_file_at_the_top",
             ),
             models.CheckConstraint(
                 condition=models.Q(follows_text=False) | models.Q(kind__in=["document", "link"]),

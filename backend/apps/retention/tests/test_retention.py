@@ -4,6 +4,7 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
+from apps.access.models import Access
 from apps.blobs import store
 from apps.chat.models import Conversation, Member
 from apps.chat.models import Message as Said
@@ -263,3 +264,24 @@ def test_the_sweep_removes_what_the_nearest_rule_says_but_never_what_is_kept(ivo
     assert Removal.objects.count() == 1
     shown = ivo.get("/api/retention/rules").json()["removals"]
     assert [(each["documents"], each["mail"], each["chat"]) for each in shown] == [(1, 1, 1)]
+
+
+def test_what_was_opened_from_the_computer_and_left_unplaced_goes_to_the_trash_after_30_days(
+    ivo,
+):
+    def unplaced(title: str, days: int) -> Node:
+        node = created(None, Node.Kind.DOCUMENT, title, None, ivo.user, unplaced=True)
+        then = timezone.now() - timedelta(days=days)
+        Node.objects.filter(pk=node.pk).update(created_at=then, updated_at=then)
+        return node
+
+    left = unplaced("Zaboravljen", 31)
+    young = unplaced("Jučer", 1)
+    read = unplaced("Čitan", 31)
+    Access.objects.create(node=read, user=ivo.user, kind=Access.Kind.OPENED)
+    placed = aged(created(None, Node.Kind.DOCUMENT, "Spremljen", None, ivo.user), 31)
+    assert sweep.abandoned() == 1
+    trashed = set(Node.objects.filter(trashed_at__isnull=False).values_list("pk", flat=True))
+    assert trashed == {left.pk}
+    assert not {young.pk, read.pk, placed.pk} & trashed
+    assert sweep.abandoned() == 0

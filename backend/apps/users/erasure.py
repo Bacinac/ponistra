@@ -71,7 +71,7 @@ def handed(user: User, heir: User, nodes: list[Node]) -> None:
     for node in own:
         node.parent = folder
         node.position = None
-        node.notes = node.links = node.boards = False
+        node.notes = node.links = node.boards = node.unplaced = False
         node.updated_by = heir
         node.save()
 

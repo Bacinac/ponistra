@@ -282,6 +282,36 @@ def test_move_several_at_once(api):
     assert titles(api) == ["Arhiva", "Nacrt"]
 
 
+def test_a_document_opened_from_the_computer_has_no_place_until_saved_into_one(api):
+    folder = create(api, "folder", "Arhiva")
+    opened = create(api, "document", "Dopis", unplaced=True)
+    assert titles(api) == ["Arhiva"]
+    shown = api.get(f"/api/nodes/{opened}").json()
+    assert shown["node"]["unplaced"] and shown["role"] == "own"
+    recent = api.get("/api/nodes/recent").json()["items"]
+    assert [(item["title"], item["unplaced"]) for item in recent] == [("Dopis", True)]
+    assert move(api, folder, opened).status_code == 200
+    assert titles(api, folder) == ["Dopis"]
+    assert not api.get(f"/api/nodes/{opened}").json()["node"]["unplaced"]
+
+
+def test_saved_at_the_top_a_document_opened_from_the_computer_joins_the_users_documents(api):
+    opened = create(api, "document", "Dopis", unplaced=True)
+    move(api, None, opened)
+    assert titles(api) == ["Dopis"]
+
+
+def test_only_a_document_or_file_made_at_the_top_is_left_unplaced(api):
+    folder = create(api, "folder", "Arhiva")
+    for fields in (
+        {"kind": "folder", "title": "Nova", "unplaced": True},
+        {"kind": "document", "title": "Dopis", "parent": folder, "unplaced": True},
+        {"kind": "document", "title": "Dopis", "unplaced": "yes"},
+    ):
+        response = api.post("/api/nodes", fields, content_type="application/json")
+        assert response.json() == {"error": "invalid_unplaced"}
+
+
 def test_a_folder_cannot_move_into_itself_or_below_and_nothing_moves_then(api):
     outer = create(api, "folder", "Ured")
     inner = create(api, "folder", "Ugovori", outer)

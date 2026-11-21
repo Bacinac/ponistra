@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CircleHelp,
   Folder,
+  FolderInput,
   Folders,
   Globe,
   Info,
@@ -53,11 +54,11 @@ import { Brand, BrandIcon, MARK_AXIS } from './Brand';
 import { endDrag, refuseStrayFiles, startDrag, useDropTarget } from './drag';
 import { LANGUAGE_NAMES, LANGUAGES, useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
-import { Launches } from './launch';
+import { Launches, LaunchesElsewhere } from './launch';
 import { useFollowed } from './followed';
 import { useLive, waitingIn } from './live';
 import { JoinLink } from './meeting';
-import { NameDialog } from './dialogs';
+import { MoveDialog, NameDialog } from './dialogs';
 import { ActionsMenu, ContextMenuArea, MenuChoices, MenuItem, MenuSub } from './menu';
 import { useMenuPress } from './press';
 import { useNoteShortcut } from './notes';
@@ -94,6 +95,7 @@ import {
   useToTrash,
   type ListedNode,
   type MoveTo,
+  type Role,
   type Root,
   type TreeNode,
 } from './tree';
@@ -683,6 +685,8 @@ interface Slots {
   panel: HTMLElement | null;
   drawer: HTMLElement | null;
   report: (chrome: Chrome) => void;
+  /** A window a file opened from the computer is read in, without the app's rail and folders. */
+  alone: boolean;
 }
 
 const SlotsContext = createContext<Slots | null>(null);
@@ -901,7 +905,7 @@ function Member() {
   return null;
 }
 
-export function Shell({ children }: { children: ReactNode }) {
+export function Shell({ children, alone = false }: { children: ReactNode; alone?: boolean }) {
   const { t } = useI18n();
   const visitor = useVisitor();
   useHelpKey();
@@ -927,9 +931,66 @@ export function Shell({ children }: { children: ReactNode }) {
     [],
   );
   const slots = useMemo(
-    () => ({ crumbs, actions, side, panel, drawer, report }),
-    [crumbs, actions, side, panel, drawer, report],
+    () => ({ crumbs, actions, side, panel, drawer, report, alone }),
+    [crumbs, actions, side, panel, drawer, report, alone],
   );
+
+  if (alone) {
+    return (
+      <ExpansionContext value={expansion}>
+        <PaletteProvider>
+          <UploadProvider>
+            <LaunchesElsewhere />
+            <Member />
+            <SlotsContext value={slots}>
+              <div
+                onDragOver={refuseStrayFiles}
+                className="relative flex h-dvh flex-col overflow-clip bg-panel text-ink md:flex-row"
+              >
+                <div
+                  style={foldersStyle}
+                  className="flex shrink-0 flex-col md:w-(--folders) md:max-w-[35%]"
+                >
+                  <header className="flex items-center gap-1 px-2 pt-2 pb-1">
+                    <div ref={setCrumbs} className="min-w-0 flex-1 px-1" />
+                    <button
+                      type="button"
+                      aria-label={t('device.close')}
+                      title={t('device.close')}
+                      onClick={() => window.close()}
+                      className={iconButton}
+                    >
+                      <X size={16} aria-hidden />
+                    </button>
+                  </header>
+                  <div
+                    ref={setActions}
+                    className="flex flex-wrap items-center gap-2 px-2 pb-2 empty:hidden"
+                  />
+                  <div
+                    ref={setSide}
+                    className="hidden min-h-0 flex-1 overflow-y-auto px-2 pb-2 md:block"
+                  />
+                </div>
+                <Splitter
+                  column={FOLDERS}
+                  width={folders}
+                  onWidth={setFolders}
+                  className={`hidden md:flex ${SIDE_SEPARATOR}`}
+                />
+                <div className="flex min-h-0 min-w-0 flex-1 md:py-2 md:pr-2">
+                  <main className="min-w-0 flex-1 overflow-y-auto bg-surface p-4 md:rounded-2xl md:shadow-sm">
+                    {children}
+                  </main>
+                  <div ref={setPanel} className="contents" />
+                </div>
+              </div>
+            </SlotsContext>
+          </UploadProvider>
+        </PaletteProvider>
+      </ExpansionContext>
+    );
+  }
 
   return (
     <ExpansionContext value={expansion}>
@@ -1028,6 +1089,25 @@ export function PrimaryAction({
   );
 }
 
+/** What saves a document or file opened from the computer into a folder, the one thing saving
+ * means for it: its content is kept as it changes. */
+export function SaveInto({ node, role }: { node: TreeNode; role: Role }) {
+  const { t } = useI18n();
+  const [choosing, setChoosing] = useState(false);
+  if (!node.unplaced) return null;
+  return (
+    <>
+      <PrimaryAction
+        icon={FolderInput}
+        label={t('tree.saveInto')}
+        disabled={!covers(role, 'own')}
+        onClick={() => setChoosing(true)}
+      />
+      {choosing && <MoveDialog nodes={[{ ...node, role }]} onClose={() => setChoosing(false)} />}
+    </>
+  );
+}
+
 /** A page's part of the shell: its title or path, actions, side column and panel. The header
     reads the same on every page: the page's other buttons, then its primary action, then its
     menu of the rest, then the account. */
@@ -1079,7 +1159,9 @@ export function Frame({
 
   const move = useMove();
   const moveTo: MoveTo = (parent) => (ids) => move.mutate({ ids, parent });
-  const tree = folders && <FolderTree path={path ?? []} moveTo={moveTo} moving={move.error} />;
+  const tree = folders && !slots.alone && (
+    <FolderTree path={path ?? []} moveTo={moveTo} moving={move.error} />
+  );
   const into = (slot: HTMLElement | null, content: ReactNode) =>
     slot && createPortal(content, slot);
   return (
@@ -1110,7 +1192,7 @@ export function Frame({
           path && (
             <Breadcrumbs
               compact
-              alone={wide && folders && !side}
+              alone={(wide && folders && !side) || slots.alone}
               path={path}
               root={root}
               after={after}

@@ -1,4 +1,5 @@
-"""Removes for good, every hour, what a rule of retention says is old enough to go (U4)."""
+"""Removes for good, every hour, what a rule of retention says is old enough to go (U4), and
+trashes what was opened from the computer and left in no folder (D53)."""
 
 from datetime import timedelta
 from logging import getLogger
@@ -8,6 +9,7 @@ from django.db import transaction
 from django.db.models import Count, Exists, OuterRef
 from django.utils import timezone
 
+from apps.access.models import Access
 from apps.blobs import store
 from apps.chat import files
 from apps.chat.models import Conversation, Member
@@ -25,6 +27,7 @@ log = getLogger(__name__)
 
 EVERY = timedelta(hours=1)
 PAGE = 500
+UNPLACED_FOR = timedelta(days=30)
 
 
 def _nodes(p: kept.Policy, removal: Removal) -> None:
@@ -91,8 +94,28 @@ def swept() -> Removal | None:
     return removal
 
 
+def abandoned() -> int:
+    """Trashes the documents and files opened from the computer that nobody saved into a folder,
+    opened or changed for `UNPLACED_FOR`."""
+    now = timezone.now()
+    since = now - UNPLACED_FOR
+    opened = Access.objects.filter(node=OuterRef("pk"), kind=Access.Kind.OPENED, at__gte=since)
+    left = Node.objects.filter(
+        unplaced=True, trashed_at=None, created_at__lt=since, updated_at__lt=since
+    ).exclude(Exists(opened))
+    trashed = left.update(trashed_at=now)
+    if trashed:
+        revoke()
+        log.info("retention trashed %d documents and files left unplaced", trashed)
+    return trashed
+
+
 async def sweeping() -> None:
     while True:
+        try:
+            await database(abandoned, own_thread=True)()
+        except Exception:
+            log.exception("retention: trashing what was left unplaced failed")
         try:
             await database(swept, own_thread=True)()
         except Exception:

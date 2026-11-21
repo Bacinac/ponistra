@@ -25,7 +25,7 @@ import { CommentsPanel, DeskContext, useDeskState, useThreads } from './comments
 import { Close, Modal, NameDialog } from './dialogs';
 import { formatSize } from './explorer';
 import { TranslateDialog, useFollowedRun, type Gathering } from './gather';
-import { Addressed, Frame, Loading, Missing } from './frame';
+import { Addressed, Frame, Loading, Missing, SaveInto } from './frame';
 import { useI18n } from './i18n';
 import { FavouriteButton } from './favourites';
 import { MenuItem } from './menu';
@@ -187,6 +187,7 @@ function OpenFile({ nodeId }: { nodeId: string }) {
         <Frame
           path={path}
           root={root}
+          primary={<SaveInto node={node} role={role} />}
           menu={
             <>
               <MenuItem
@@ -337,6 +338,7 @@ function Kept({ placement: { node, path, root, role, confined, room } }: { place
       <Frame
         path={path}
         root={root}
+        primary={<SaveInto node={node} role={role} />}
         menu={
           board ? (
             <>

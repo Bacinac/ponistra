@@ -19,7 +19,7 @@
     "backend/apps/users/accounts.py#handed_password": "591b9193fd21",
     "frontend/src/users.tsx#EraseDialog": "790d6e9f531a",
     "backend/apps/users/erasure.py#erase": "c85041015655",
-    "backend/apps/users/erasure.py#handed": "ddb8d63f134a",
+    "backend/apps/users/erasure.py#handed": "bbf8d1b16d4b",
     "backend/apps/users/personal.py#packed": "cee0353b48b5",
     "backend/apps/users/personal.py#asked": "9caf0c526693"
   }

@@ -51,15 +51,18 @@ export interface Placed {
 
 /** A stored file placed among the documents: made into a document, or bookmarks into a folder
  * of links, where PONISTRA imports its kind and can read it, else kept as the file it is; last
- * changed when the file was, where its disk tells. */
+ * changed when the file was, where its disk tells; one opened from the computer is left in no
+ * folder. */
 export async function placed(
   stored: { sha256: string; media_type: string },
   name: string,
   parent: string | null,
   lastModified?: number,
+  unplaced = false,
 ): Promise<Placed> {
   const { title, extension } = named(name);
   const modified = lastModified ? { modified: new Date(lastModified).toISOString() } : {};
+  const left = unplaced ? { unplaced } : {};
   const kept = () =>
     postJson<TreeNode>('/api/nodes', {
       kind: 'file',
@@ -68,6 +71,7 @@ export async function placed(
       title,
       extension,
       ...modified,
+      ...left,
     });
   const delimited = extension === 'csv' && stored.media_type === 'text/plain';
   if (!(stored.media_type in IMPORTED) && stored.media_type !== BOOKMARKS && !delimited)
@@ -76,7 +80,7 @@ export async function placed(
     return {
       node: await runJob<TreeNode>(
         'import',
-        { blob: stored.sha256, title, parent, ...modified },
+        { blob: stored.sha256, title, parent, ...modified, ...left },
         name,
       ),
     };
@@ -124,7 +128,15 @@ function useUpload() {
     size: number;
   } | null>(null);
   const create = useTreeChange(
-    async ({ picked, parent }: { picked: Promise<Picked[]>; parent: string | null }) => {
+    async ({
+      picked,
+      parent,
+      unplaced,
+    }: {
+      picked: Promise<Picked[]>;
+      parent: string | null;
+      unplaced: boolean;
+    }) => {
       const shown = (await picked).filter((each) => !isHidden(each));
       setUnimported([]);
       setFailed([]);
@@ -165,6 +177,7 @@ function useUpload() {
               each.file.name,
               parent,
               each.file.lastModified,
+              unplaced,
             );
             nodes.push(node);
             if (unimported)
@@ -184,7 +197,9 @@ function useUpload() {
     picked: Picked[] | Promise<Picked[]>,
     parent: string | null,
     onPlaced?: (nodes: TreeNode[]) => void,
-  ) => create.mutate({ picked: Promise.resolve(picked), parent }, { onSuccess: onPlaced });
+    unplaced = false,
+  ) =>
+    create.mutate({ picked: Promise.resolve(picked), parent, unplaced }, { onSuccess: onPlaced });
   useHeldRelease(create.isPending);
   return { start, unimported, failed, progress, pending: create.isPending, error: create.error };
 }

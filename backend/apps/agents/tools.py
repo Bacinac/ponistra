@@ -185,7 +185,10 @@ def _folder(user, given: str | None, root: str) -> dict[str, Any]:
             return {"folder": None, "children": _listed(rights.shared_with(user))}
         if root == "company":
             return {"folder": None, "children": _listed([[n] for n in rights.company(user)])}
-        return {"folder": None, "children": _listed([[n] for n in rights.mine(user)])}
+        return {
+            "folder": None,
+            "children": _listed([[n] for n in rights.mine(user).filter(unplaced=False)]),
+        }
     parent, reach = folder(user, _id(given))
     children = Node.objects.filter(parent=parent, trashed_at=None).order_by("kind", "title")
     return {
