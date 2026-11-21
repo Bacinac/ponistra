@@ -195,7 +195,17 @@ test('a PDF the installed app opens while nobody is signed in is shown alone, re
   await expect(page.getByRole('heading', { name: 'Ponuda.docx' })).toHaveCount(0);
   await expect(signIn).toBeVisible();
 
-  const file = pdfFile({ pages: [[{ text: 'Racun za studeni.', top: 72 }]] });
+  const file = pdfFile({
+    pages: [
+      [{ text: 'Racun za studeni.', top: 72 }],
+      [{ text: 'Stavke', top: 72 }],
+      [{ text: 'Placanje', top: 72 }],
+    ],
+    bookmarks: [
+      { title: 'Stavke', page: 2, top: 60 },
+      { title: 'Plaćanje', page: 3, top: 60 },
+    ],
+  });
   await launch('Racun.pdf', 'application/pdf', file.toString('base64'));
   await expect(page.getByRole('heading', { name: 'Racun.pdf' })).toBeVisible();
   await expect(pageAt(page, 1).locator('.textLayer')).toContainText('Racun za studeni.');
@@ -203,6 +213,13 @@ test('a PDF the installed app opens while nobody is signed in is shown alone, re
   await expect(signIn).toHaveCount(0);
   await expect(page.getByRole('navigation')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Komentar na stranici' })).toHaveCount(0);
+  const contents = page.getByRole('list', { name: 'Naslovi' });
+  await contents.getByRole('link', { name: 'Plaćanje' }).click();
+  await expect(shownPage(page)).toHaveValue('3');
+  await expect(contents.getByRole('link', { name: 'Plaćanje' })).toHaveAttribute(
+    'aria-current',
+    'location',
+  );
   expect(sent).toEqual([]);
 
   await page.getByRole('button', { name: 'Zatvori', exact: true }).click();
