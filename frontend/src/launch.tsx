@@ -1,5 +1,5 @@
-import { useEffect, useEffectEvent, useState, type ReactNode } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { useI18n } from './i18n';
 import { button } from './styles';
 import { errorMessage, nodeHref } from './tree';
@@ -217,6 +217,27 @@ export function OpenedPage() {
       <p className="text-muted">{t('launch.receiving')}</p>
     </div>
   );
+}
+
+/** Any other place of the app a window reading a file alone is led to, from its menus or a link,
+ * opens in the main window, or in a new one while none is open; the file stays in sight. */
+export function ToMain() {
+  const navigate = useNavigate();
+  const { pathname, search, hash } = useLocation();
+  const handed = useRef(false);
+  useEffect(() => {
+    if (handed.current) return;
+    handed.current = true;
+    const to = pathname + search + hash;
+    void led().then((leading) => {
+      if (!leading) return void window.open(to, '_blank');
+      told({ target: window.location.origin + to, files: [] });
+      window.opener?.focus();
+    });
+    if ((window.history.state as { idx?: number } | null)?.idx) void navigate(-1);
+    else window.close();
+  }, [navigate, pathname, search, hash]);
+  return null;
 }
 
 /** The main window's part: it opens what a launch asks, each file opened from the computer in a

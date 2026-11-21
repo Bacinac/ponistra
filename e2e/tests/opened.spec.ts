@@ -52,6 +52,12 @@ test('a file opened from the computer is read alone in a window of its own, in n
   await expect(dialog).toHaveCount(0);
   await expect(alone.getByRole('button', { name: 'Spremi u…' })).toHaveCount(0);
   await expect(page.getByText(title, { exact: true })).toBeVisible();
+
+  await alone.getByRole('button', { name: 'Moduli' }).click();
+  await alone.getByRole('menuitem', { name: 'Pošta' }).click();
+  await expect(page).toHaveURL(/\/mail$/);
+  await expect(alone).toHaveURL(/\/d\//);
+  await expect(alone.getByText('Prvi članak')).toBeVisible();
 });
 
 test('a window the browser refuses to open waits in the main window for a click', async ({

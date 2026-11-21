@@ -18,7 +18,7 @@
     "frontend/src/frame.tsx#useWaiting": "edfc4f8357f3",
     "frontend/src/title.ts#useTitle": "cdc79221ca05",
     "frontend/vite.config.ts#rooted": "5bac27026036",
-    "frontend/src/launch.tsx#OpenedPage": "6b3ceeb18256",
+    "frontend/src/launch.tsx#OpenedPage": "c065f7d4e4f2",
     "frontend/src/frame.tsx#SaveInto": "e63e4fd7b550",
     "backend/apps/retention/sweep.py#abandoned": "664326191625"
   }

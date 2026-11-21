@@ -4,7 +4,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router'
 import { unavailable } from './api';
 import { Due, LoginForm, SetupForm, useSession } from './auth';
 import { forgetDoor, rememberedDoor } from './door';
-import { Loading, Lobby, Missing, Shell } from './frame';
+import { Loading, Lobby, Shell } from './frame';
 import { START } from './linksWindow';
 import { BESIDE } from './workspace';
 import { queriesTrail, reportCrash } from './crashes';
@@ -13,7 +13,7 @@ import { useI18n } from './i18n';
 import { lazily } from './lazily';
 import { usePushBridge } from './notifications';
 import { JobBar } from './jobs';
-import { isAlone, LaunchesElsewhere, OpenedPage, useSignedOutPdfs } from './launch';
+import { isAlone, LaunchesElsewhere, OpenedPage, ToMain, useSignedOutPdfs } from './launch';
 import { recoverFromCrash, takeNewRelease } from './release';
 import { Ringing } from './ringing';
 import { VaultProvider } from './vault/state';
@@ -282,7 +282,7 @@ export default function App() {
                   <Route path="/d/:node/:tab" element={<DocumentPage />} />
                   <Route path="/d/:node/versions/:version/:tab?" element={<VersionPage />} />
                   <Route path="/p/:node" element={<FilePage />} />
-                  <Route path="*" element={<Missing />} />
+                  <Route path="*" element={<ToMain />} />
                 </Routes>
               </Suspense>
             </Crash>

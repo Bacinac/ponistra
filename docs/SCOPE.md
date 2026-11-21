@@ -4916,6 +4916,10 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     160 (blink-dev PSA, 2026-11-11), so a browser blocking pop-ups refuses the window; the file then
     waits in the main window behind a button that opens it (chosen 2026-11-21 over `navigate-new`,
     which would give the icon, `mailto:` and captured links a new window each too).
+    Its header is one thin bar across the top, as the app's own: the mark opens the rail's modules
+    as a menu, then the name, actions, help, the account menu and Close. Any place of the app chosen
+    there, a module, the settings or help, opens in the main window, the file staying in its own
+    (2026-11-21).
   - *Signed in.* The file becomes a document with no place: in no folder, listed among the recent
     documents and found by search. Its content is kept as every document's is, at once and
     co-edited (D2, D45), since a Save of content only on this path would make one thing behave two

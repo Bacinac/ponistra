@@ -12,6 +12,6 @@
     "frontend/src/places.tsx#usePlaces": "c69944d0fd01",
     "frontend/src/theme.ts#useThemeOf": "f4365249a463",
     "frontend/src/theme.ts#choosePageTheme": "25bea7d70675",
-    "frontend/src/frame.tsx#PageThemeMenu": "ccb9bee90101"
+    "frontend/src/frame.tsx#PageThemeMenu": "364217d581c6"
   }
 }

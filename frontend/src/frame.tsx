@@ -443,6 +443,40 @@ function PageThemeMenu({ page, icon }: { page: Page; icon: LucideIcon }) {
   );
 }
 
+/** The rail's modules as a menu behind the mark, where a window a file is read alone in has no
+    rail; each leads to the main window. */
+function ModulesMenu() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const owner = Boolean(useSession().data?.user?.workspace);
+  const goToProjects = useGoToProjects();
+  return (
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger asChild>
+        <button type="button" aria-label={t('rail.label')} className="shrink-0 rounded-lg">
+          <BrandIcon />
+        </button>
+      </DropdownMenu.Trigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.Content align="start" sideOffset={4} className={menu}>
+          {MODULES.map(({ id, icon: Icon, to }) => (
+            <DropdownMenu.Item key={id} className={menuItem} onSelect={() => navigate(to)}>
+              <Icon size={16} aria-hidden className="text-muted" />
+              {t(`rail.${id}`)}
+            </DropdownMenu.Item>
+          ))}
+          {owner && (
+            <DropdownMenu.Item className={menuItem} onSelect={goToProjects}>
+              <FolderKanban size={16} aria-hidden className="text-muted" />
+              {t('rail.projects')}
+            </DropdownMenu.Item>
+          )}
+        </DropdownMenu.Content>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Root>
+  );
+}
+
 function UserMenu() {
   const { language, setLanguage, t } = useI18n();
   const theme = useTheme();
@@ -945,45 +979,61 @@ export function Shell({ children, alone = false }: { children: ReactNode; alone?
             <SlotsContext value={slots}>
               <div
                 onDragOver={refuseStrayFiles}
-                className="relative flex h-dvh flex-col overflow-clip bg-panel text-ink md:flex-row"
+                className="relative flex h-dvh flex-col overflow-clip bg-panel text-ink"
               >
-                <div
-                  style={foldersStyle}
-                  className="flex shrink-0 flex-col md:w-(--folders) md:max-w-[35%]"
-                >
-                  <header className="flex items-center gap-1 px-2 pt-2 pb-1">
-                    <div ref={setCrumbs} className="min-w-0 flex-1 px-1" />
+                <header className="flex shrink-0 flex-wrap items-center gap-x-2 border-b border-line px-2 md:h-12 md:flex-nowrap md:border-b-0">
+                  <ModulesMenu />
+                  {chrome.drawn && (
                     <button
                       type="button"
-                      aria-label={t('device.close')}
-                      title={t('device.close')}
-                      onClick={() => window.close()}
-                      className={iconButton}
+                      aria-label={t('frame.folders')}
+                      onClick={() => setDrawerAt(key)}
+                      className={`${iconButton} md:hidden`}
                     >
-                      <X size={16} aria-hidden />
+                      <MenuIcon size={18} />
                     </button>
-                  </header>
+                  )}
+                  <div className="h-12 flex-1 md:hidden" />
                   <div
-                    ref={setActions}
-                    className="flex flex-wrap items-center gap-2 px-2 pb-2 empty:hidden"
+                    ref={setCrumbs}
+                    className="order-last min-w-0 basis-full px-1 pb-2 empty:hidden md:order-none md:basis-auto md:flex-1 md:px-0 md:pb-0"
                   />
+                  <div ref={setActions} className="flex shrink-0 items-center gap-2 empty:hidden" />
+                  <HelpButton />
+                  <UserMenu />
+                  <button
+                    type="button"
+                    aria-label={t('device.close')}
+                    title={t('device.close')}
+                    onClick={() => window.close()}
+                    className={`${iconButton} shrink-0`}
+                  >
+                    <X size={18} aria-hidden />
+                  </button>
+                </header>
+                <div className="flex min-h-0 flex-1">
                   <div
-                    ref={setSide}
-                    className="hidden min-h-0 flex-1 overflow-y-auto px-2 pb-2 md:block"
+                    style={foldersStyle}
+                    className="hidden w-(--folders) max-w-[30%] shrink-0 flex-col md:flex"
+                  >
+                    <div ref={setSide} className="min-h-0 flex-1 overflow-y-auto px-2 pb-2" />
+                  </div>
+                  <Splitter
+                    column={FOLDERS}
+                    width={folders}
+                    onWidth={setFolders}
+                    className={`hidden md:flex ${SIDE_SEPARATOR}`}
                   />
+                  <div className="flex min-h-0 min-w-0 flex-1 md:pr-2 md:pb-2">
+                    <main className="min-w-0 flex-1 overflow-y-auto bg-surface p-4 md:rounded-2xl md:shadow-sm">
+                      {children}
+                    </main>
+                    <div ref={setPanel} className="contents" />
+                  </div>
                 </div>
-                <Splitter
-                  column={FOLDERS}
-                  width={folders}
-                  onWidth={setFolders}
-                  className={`hidden md:flex ${SIDE_SEPARATOR}`}
-                />
-                <div className="flex min-h-0 min-w-0 flex-1 md:py-2 md:pr-2">
-                  <main className="min-w-0 flex-1 overflow-y-auto bg-surface p-4 md:rounded-2xl md:shadow-sm">
-                    {children}
-                  </main>
-                  <div ref={setPanel} className="contents" />
-                </div>
+                <Drawer open={drawerAt === key} onClose={() => setDrawerAt(null)}>
+                  <div ref={setDrawer} className="contents" />
+                </Drawer>
               </div>
             </SlotsContext>
           </UploadProvider>
@@ -1148,7 +1198,7 @@ export function Frame({
   const up = upOf(useLocation().pathname);
   const wide = useWide();
   const sided = Boolean(side) && folders;
-  const drawn = Boolean(side) || folders;
+  const drawn = Boolean(side) || (folders && !slots.alone);
   const here = path?.findLast((node) => node.kind === 'folder');
   useLayoutEffect(
     () => report({ searchable, sided, drawn, here }),
