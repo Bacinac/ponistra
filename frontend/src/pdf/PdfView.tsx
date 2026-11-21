@@ -30,6 +30,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router';
 import { getJson } from '../api';
 import { useSession } from '../auth';
@@ -138,6 +139,7 @@ export default function PdfView({
   onNoted,
   onSealed,
   status,
+  barIn,
 }: {
   file: string;
   page: number | null;
@@ -154,6 +156,9 @@ export default function PdfView({
   onSealed: (how: Sealed) => void;
   /** Said in the bar beside the page number, while nothing is being searched. */
   status: ReactNode;
+  /** Where the bar of pages, find and zoom goes when not above the pages; none while that place
+   * is not yet drawn. */
+  barIn?: HTMLElement | null;
 }) {
   const say = useI18n();
   const { t, formatNumber } = say;
@@ -436,164 +441,170 @@ export default function PdfView({
           : ''
       : '';
 
-  return (
-    <section className="flex h-full flex-col">
-      <div className="pb-3">
-        <div className="flex items-center gap-2 rounded-full bg-panel px-3 py-1">
-          {opened && (
-            <form
-              onSubmit={goTo}
-              className={`${query === null ? 'flex' : 'hidden sm:flex'} shrink-0 items-center gap-1.5 text-sm text-muted`}
+  // A bar beside the pages is as narrow as a phone's: the find field takes it whole.
+  const narrow = barIn === undefined ? 'hidden sm:flex' : 'hidden';
+  const bar = (
+    <div className="pb-3">
+      <div className="flex items-center gap-2 rounded-full bg-panel px-3 py-1">
+        {opened && (
+          <form
+            onSubmit={goTo}
+            className={`${query === null ? 'flex' : narrow} shrink-0 items-center gap-1.5 text-sm text-muted`}
+          >
+            <label htmlFor={pageField} className="sr-only sm:not-sr-only">
+              {t('pdf.page')}
+            </label>
+            <input
+              id={pageField}
+              inputMode="numeric"
+              value={typed ?? formatNumber(at)}
+              onChange={(event) => setTyped(event.target.value)}
+              onFocus={(event) => event.currentTarget.select()}
+              onBlur={() => setTyped(null)}
+              className={`${smallField} w-14 text-center tabular-nums`}
+            />
+            <span className="tabular-nums">
+              {t('pdf.of')} {formatNumber(opened.viewer.pagesCount)}
+            </span>
+          </form>
+        )}
+        <div role="status" className="flex min-w-0 items-center gap-1 text-sm text-muted">
+          {query === null && status}
+        </div>
+        <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-0.5">
+          {query !== null ? (
+            <div
+              role="search"
+              aria-label={t('pdf.find')}
+              className="flex min-w-0 flex-1 items-center justify-end gap-1"
             >
-              <label htmlFor={pageField} className="sr-only sm:not-sr-only">
-                {t('pdf.page')}
-              </label>
               <input
-                id={pageField}
-                inputMode="numeric"
-                value={typed ?? formatNumber(at)}
-                onChange={(event) => setTyped(event.target.value)}
-                onFocus={(event) => event.currentTarget.select()}
-                onBlur={() => setTyped(null)}
-                className={`${smallField} w-14 text-center tabular-nums`}
-              />
-              <span className="tabular-nums">
-                {t('pdf.of')} {formatNumber(opened.viewer.pagesCount)}
-              </span>
-            </form>
-          )}
-          <div role="status" className="flex min-w-0 items-center gap-1 text-sm text-muted">
-            {query === null && status}
-          </div>
-          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-0.5">
-            {query !== null ? (
-              <div
-                role="search"
+                ref={findField}
+                autoFocus
+                type="search"
                 aria-label={t('pdf.find')}
-                className="flex min-w-0 flex-1 items-center justify-end gap-1"
+                placeholder={t('pdf.find')}
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  if (opened) search(opened, event.target.value, '');
+                }}
+                onKeyDown={findKey}
+                className={`${smallField} min-w-0 flex-1 ${barIn === undefined ? 'sm:w-40 sm:flex-none' : ''} [&::-webkit-search-cancel-button]:hidden`}
+              />
+              <span
+                aria-live="polite"
+                className="text-sm whitespace-nowrap text-muted tabular-nums"
               >
-                <input
-                  ref={findField}
-                  autoFocus
-                  type="search"
-                  aria-label={t('pdf.find')}
-                  placeholder={t('pdf.find')}
-                  value={query}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    if (opened) search(opened, event.target.value, '');
-                  }}
-                  onKeyDown={findKey}
-                  className={`${smallField} min-w-0 flex-1 sm:w-40 sm:flex-none [&::-webkit-search-cancel-button]:hidden`}
-                />
-                <span
-                  aria-live="polite"
-                  className="text-sm whitespace-nowrap text-muted tabular-nums"
-                >
-                  {count}
-                </span>
-                {notes?.editable && room && (
-                  <button
-                    type="button"
-                    aria-label={t('pdf.redact.found')}
-                    title={refusal ?? t('pdf.redact.found')}
-                    disabled={!matches?.total || refusal !== null || blackOut.isPending}
-                    onClick={() => blackOut.mutate(query)}
-                    className={`${iconButton} disabled:opacity-40`}
-                  >
-                    <EyeOff size={16} aria-hidden />
-                  </button>
-                )}
+                {count}
+              </span>
+              {notes?.editable && room && (
                 <button
                   type="button"
-                  aria-label={t('pdf.find.previous')}
-                  title={t('pdf.find.previous')}
-                  disabled={!matches?.total}
-                  onClick={() => seek(true)}
+                  aria-label={t('pdf.redact.found')}
+                  title={refusal ?? t('pdf.redact.found')}
+                  disabled={!matches?.total || refusal !== null || blackOut.isPending}
+                  onClick={() => blackOut.mutate(query)}
                   className={`${iconButton} disabled:opacity-40`}
                 >
-                  <ChevronUp size={16} aria-hidden />
+                  <EyeOff size={16} aria-hidden />
                 </button>
-                <button
-                  type="button"
-                  aria-label={t('pdf.find.next')}
-                  title={t('pdf.find.next')}
-                  disabled={!matches?.total}
-                  onClick={() => seek(false)}
-                  className={`${iconButton} disabled:opacity-40`}
-                >
-                  <ChevronDown size={16} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  aria-label={t('pdf.find.close')}
-                  title={t('pdf.find.close')}
-                  onClick={closeFind}
-                  className={iconButton}
-                >
-                  <X size={16} aria-hidden />
-                </button>
-              </div>
-            ) : (
-              <>
-                {notes?.editable && (
-                  <button
-                    type="button"
-                    aria-label={t('pdf.draw')}
-                    title={t('pdf.draw')}
-                    aria-pressed={tool === 'draw'}
-                    disabled={!opened}
-                    onClick={() => setTool(tool === 'draw' ? 'read' : 'draw')}
-                    className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink`}
-                  >
-                    <PenLine size={16} aria-hidden />
-                  </button>
-                )}
-                {notes?.editable && (
-                  <button
-                    type="button"
-                    aria-label={t('pdf.redact')}
-                    title={refusal ?? t('pdf.redact')}
-                    aria-pressed={tool === 'redact'}
-                    disabled={!opened || refusal !== null}
-                    onClick={() => setTool(tool === 'redact' ? 'read' : 'redact')}
-                    className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink disabled:opacity-40`}
-                  >
-                    <EyeOff size={16} aria-hidden />
-                  </button>
-                )}
-                {notes && (
-                  <button
-                    type="button"
-                    aria-label={t('pdf.pin')}
-                    title={t('pdf.pin')}
-                    aria-pressed={tool === 'pin'}
-                    disabled={!opened}
-                    onClick={() => setTool(tool === 'pin' ? 'read' : 'pin')}
-                    className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink`}
-                  >
-                    <MessageSquarePlus size={16} aria-hidden />
-                  </button>
-                )}
-                <button
-                  type="button"
-                  aria-label={t('pdf.find')}
-                  title={t('pdf.find')}
-                  disabled={!opened}
-                  onClick={() => setQuery('')}
-                  className={iconButton}
-                >
-                  <Search size={16} aria-hidden />
-                </button>
-              </>
-            )}
-            <div className="hidden items-center sm:flex">
-              <span aria-hidden className="mx-1 h-5 w-px bg-line" />
-              <ZoomChoices zoom={zoom} onChoose={setZoom} />
+              )}
+              <button
+                type="button"
+                aria-label={t('pdf.find.previous')}
+                title={t('pdf.find.previous')}
+                disabled={!matches?.total}
+                onClick={() => seek(true)}
+                className={`${iconButton} disabled:opacity-40`}
+              >
+                <ChevronUp size={16} aria-hidden />
+              </button>
+              <button
+                type="button"
+                aria-label={t('pdf.find.next')}
+                title={t('pdf.find.next')}
+                disabled={!matches?.total}
+                onClick={() => seek(false)}
+                className={`${iconButton} disabled:opacity-40`}
+              >
+                <ChevronDown size={16} aria-hidden />
+              </button>
+              <button
+                type="button"
+                aria-label={t('pdf.find.close')}
+                title={t('pdf.find.close')}
+                onClick={closeFind}
+                className={iconButton}
+              >
+                <X size={16} aria-hidden />
+              </button>
             </div>
+          ) : (
+            <>
+              {notes?.editable && (
+                <button
+                  type="button"
+                  aria-label={t('pdf.draw')}
+                  title={t('pdf.draw')}
+                  aria-pressed={tool === 'draw'}
+                  disabled={!opened}
+                  onClick={() => setTool(tool === 'draw' ? 'read' : 'draw')}
+                  className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink`}
+                >
+                  <PenLine size={16} aria-hidden />
+                </button>
+              )}
+              {notes?.editable && (
+                <button
+                  type="button"
+                  aria-label={t('pdf.redact')}
+                  title={refusal ?? t('pdf.redact')}
+                  aria-pressed={tool === 'redact'}
+                  disabled={!opened || refusal !== null}
+                  onClick={() => setTool(tool === 'redact' ? 'read' : 'redact')}
+                  className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink disabled:opacity-40`}
+                >
+                  <EyeOff size={16} aria-hidden />
+                </button>
+              )}
+              {notes && (
+                <button
+                  type="button"
+                  aria-label={t('pdf.pin')}
+                  title={t('pdf.pin')}
+                  aria-pressed={tool === 'pin'}
+                  disabled={!opened}
+                  onClick={() => setTool(tool === 'pin' ? 'read' : 'pin')}
+                  className={`${iconButton} aria-pressed:bg-selected aria-pressed:text-ink`}
+                >
+                  <MessageSquarePlus size={16} aria-hidden />
+                </button>
+              )}
+              <button
+                type="button"
+                aria-label={t('pdf.find')}
+                title={t('pdf.find')}
+                disabled={!opened}
+                onClick={() => setQuery('')}
+                className={iconButton}
+              >
+                <Search size={16} aria-hidden />
+              </button>
+            </>
+          )}
+          <div className={`${query === null ? 'hidden sm:flex' : narrow} items-center`}>
+            <span aria-hidden className="mx-1 h-5 w-px bg-line" />
+            <ZoomChoices zoom={zoom} onChoose={setZoom} />
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <section className="flex h-full flex-col">
+      {barIn === undefined ? bar : barIn && createPortal(bar, barIn)}
       {notice && (
         <div
           role="alert"

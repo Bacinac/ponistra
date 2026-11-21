@@ -19,6 +19,7 @@ export function DevicePdfs({ files, onClose }: { files: File[]; onClose: () => v
   const [params, setParams] = useSearchParams();
   const { key } = useLocation();
   const [url, setUrl] = useState<string | null>(null);
+  const [bar, setBar] = useState<HTMLDivElement | null>(null);
   const file = files[Math.min(chosen, files.length - 1)];
   useTitle(file.name);
 
@@ -29,18 +30,9 @@ export function DevicePdfs({ files, onClose }: { files: File[]; onClose: () => v
   }, [file]);
 
   return (
-    <div className="flex h-dvh bg-panel text-ink">
-      {bookmarked && (
-        <div className="hidden w-72 max-w-[30%] shrink-0 overflow-y-auto px-2 pt-14 pb-2 md:block">
-          <Headings
-            store={outline}
-            indent={0}
-            href={(heading) => `?${new URLSearchParams({ heading })}`}
-          />
-        </div>
-      )}
-      <div className="flex min-w-0 flex-1 flex-col bg-surface p-4 pt-3">
-        <header className="flex items-center gap-2 pb-3">
+    <div className="flex h-dvh flex-col bg-panel text-ink md:flex-row">
+      <div className="flex shrink-0 flex-col md:w-80 md:max-w-[35%]">
+        <header className="flex items-center gap-1 px-2 pt-2 pb-1">
           {files.length > 1 ? (
             <nav
               className="flex min-w-0 flex-1 gap-1 overflow-x-auto"
@@ -55,14 +47,14 @@ export function DevicePdfs({ files, onClose }: { files: File[]; onClose: () => v
                     setChosen(index);
                     setParams({});
                   }}
-                  className="max-w-60 shrink-0 truncate rounded-full px-3 py-1 text-sm text-muted aria-pressed:bg-selected aria-pressed:text-ink"
+                  className="max-w-48 shrink-0 truncate rounded-full px-3 py-1 text-sm text-muted aria-pressed:bg-selected aria-pressed:text-ink"
                 >
                   {each.name}
                 </button>
               ))}
             </nav>
           ) : (
-            <h1 className="min-w-0 flex-1 truncate px-1 font-medium">{file.name}</h1>
+            <h1 className="min-w-0 flex-1 truncate px-2 text-sm font-medium">{file.name}</h1>
           )}
           <button
             type="button"
@@ -74,25 +66,36 @@ export function DevicePdfs({ files, onClose }: { files: File[]; onClose: () => v
             }}
             className={iconButton}
           >
-            <X size={18} aria-hidden />
+            <X size={16} aria-hidden />
           </button>
         </header>
-        <div className="min-h-0 flex-1">
-          {url && (
-            <PdfView
-              key={url}
-              file={url}
-              page={null}
-              heading={params.get('heading')}
-              find={null}
-              visit={key}
-              outline={outline}
-              onNoted={ignored}
-              onSealed={ignored}
-              status={null}
+        <div ref={setBar} className="px-1" />
+        {bookmarked && (
+          <div className="hidden min-h-0 flex-1 overflow-y-auto px-2 pb-2 md:block">
+            <Headings
+              store={outline}
+              indent={0}
+              href={(heading) => `?${new URLSearchParams({ heading })}`}
             />
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+      <div className="min-h-0 min-w-0 flex-1 bg-surface px-4 pb-4">
+        {url && (
+          <PdfView
+            key={url}
+            file={url}
+            page={null}
+            heading={params.get('heading')}
+            find={null}
+            visit={key}
+            outline={outline}
+            onNoted={ignored}
+            onSealed={ignored}
+            status={null}
+            barIn={bar}
+          />
+        )}
       </div>
     </div>
   );

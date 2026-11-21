@@ -204,7 +204,7 @@ export function Headings({
           <Link
             to={href(heading.id)}
             aria-current={heading.id === outline.current ? 'location' : undefined}
-            className="block truncate rounded px-2 py-1 text-sm text-muted hover:bg-hover hover:text-ink aria-[current=location]:font-medium aria-[current=location]:text-ink"
+            className="block truncate rounded px-2 py-0.5 text-[0.8125rem] leading-5 text-muted hover:bg-hover hover:text-ink aria-[current=location]:font-medium aria-[current=location]:text-ink"
           >
             {heading.number && <span className="tabular-nums">{heading.number} </span>}
             {heading.text}
