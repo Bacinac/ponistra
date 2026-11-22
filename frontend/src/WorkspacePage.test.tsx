@@ -1088,7 +1088,7 @@ test('a chat waiting on its owner is answered Yes or No atop the list', async ()
 
 const ASKED = [
   {
-    question: 'Pushati sada?',
+    question: 'Pushati [sada](https://example.org/p/1)?',
     header: 'Push',
     options: [
       { label: 'Pushaj', description: 'Cijeli tok do produkcije' },
@@ -1131,6 +1131,9 @@ test('a chat asking questions is marked atop the list and answered one question 
   const send = await within(chat).findByRole('button', { name: 'Pošalji odgovore' });
   expect(send).toHaveProperty('disabled', true);
   const push = within(chat).getByRole('group', { name: /Pushati sada\?/ });
+  expect(within(push).getByRole('link', { name: 'sada' }).getAttribute('href')).toBe(
+    'https://example.org/p/1',
+  );
   await user.click(within(push).getByRole('button', { name: /Samo commit/ }));
   await user.click(within(push).getByRole('button', { name: /Pushaj/ }));
   expect(
@@ -1148,7 +1151,10 @@ test('a chat asking questions is marked atop the list and answered one question 
       {
         kind: 'answer',
         session: 'two',
-        text: JSON.stringify({ 'Pushati sada?': 'Pushaj', 'Što još?': 'Pomoć, Plan' }),
+        text: JSON.stringify({
+          'Pushati [sada](https://example.org/p/1)?': 'Pushaj',
+          'Što još?': 'Pomoć, Plan',
+        }),
       },
     ]),
   );

@@ -23,6 +23,7 @@ from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database
 from apps.core.sealed import opened, seal
 from apps.imports.reading import TooLarge, Unreadable
+from apps.network.models import Tunnel
 from apps.reader import client
 from apps.shares import smb
 from apps.users.models import policy
@@ -57,6 +58,7 @@ def describe(found: Location, role: Role) -> dict:
         "address": _address(found),
         "role": role,
         "owner": {"id": owner.pk, "name": owner.get_full_name() or owner.email},
+        "tunnel": found.tunnel and {"id": found.tunnel.pk, "name": found.tunnel.name},
     }
     if role != Role.OWN:
         return shown
@@ -149,6 +151,11 @@ def _given(data: dict, found: Location) -> str | None:
                 secret, found.public_key = _made_key()
             switched = auth == Location.Auth.PASSWORD and found.auth != auth
             found.auth = auth
+    if "tunnel" in data:
+        tunnel = data["tunnel"]
+        if tunnel is not None and type(tunnel) is not int:
+            raise Refused(400, "invalid_tunnel")
+        found.tunnel_id = tunnel
     if "username" in data or adding:
         username = _text(data, "username", 320)
         if found.kind == Location.Kind.SFTP and not sftp.USER.fullmatch(username):
@@ -169,9 +176,24 @@ def _may_add(user) -> None:
         raise Refused(403, "locations_off")
 
 
+def _chosen(found: Location, data: dict) -> None:
+    """A tunnel the request chooses is one of the installation's switched on."""
+    if "tunnel" not in data or found.tunnel_id is None:
+        return
+    found.tunnel = Tunnel.objects.filter(pk=found.tunnel_id, enabled=True).first()
+    if found.tunnel is None:
+        raise Refused(400, "invalid_tunnel")
+
+
+def _tunnels() -> list[dict]:
+    """The tunnels a location may go through."""
+    found = Tunnel.objects.filter(enabled=True).order_by("name", "pk")
+    return [{"id": each.pk, "name": each.name} for each in found]
+
+
 def _listed(user) -> list[dict]:
     roles = reach.roles(user)
-    found = Location.objects.select_related("owner").filter(pk__in=roles).order_by("name")
+    found = Location.objects.select_related("owner", "tunnel").filter(pk__in=roles).order_by("name")
     return [describe(each, roles[each.pk]) for each in found]
 
 
@@ -184,7 +206,7 @@ def _saved(user, found: Location, secret: str | None, known_hosts: str | None) -
     return describe(found, reach.role_on(user, found))
 
 
-MOVED = {"host", "port", "address", "jump"}
+MOVED = {"host", "port", "address", "jump", "tunnel"}
 REACHING = MOVED | {"path", "username", "auth", "password"}
 
 
@@ -211,13 +233,15 @@ async def locations(request):
     if request.method == "GET":
         listed = await database(_listed)(user)
         adds = await database(lambda: policy().adds_locations(user))()
-        return JsonResponse({"locations": listed, "adds": adds})
+        tunnels = await database(_tunnels)() if adds else []
+        return JsonResponse({"locations": listed, "adds": adds, "tunnels": tunnels})
     await database(_may_add)(user)
     data = body(request)
     if data.get("kind") not in Location.Kind.values:
         raise Refused(400, "invalid_kind")
     found = Location(owner=user, kind=data["kind"], port=0)
     secret = await asyncio.to_thread(_given, data, found)
+    await database(_chosen)(found, data)
     known = await _tried(found, secret, data)
     return JsonResponse(await database(_saved)(user, found, secret, known), status=201)
 
@@ -235,6 +259,7 @@ async def location(request, pk):
         return HttpResponse(status=204)
     data = body(request)
     secret = await asyncio.to_thread(_given, data, found)
+    await database(_chosen)(found, data)
     known = await _tried(found, secret, data)
     described = await database(_saved)(user, found, secret, known)
     sftp.ended(f"{found.pk}:")

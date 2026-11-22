@@ -19,3 +19,9 @@ set by height carries the family's stroke weight.
 Colours: wordmark #4f7c6b, the deepest sage of the previous petrol-and-sage identity; on dark
 surfaces #a7c9b7, its light end. Tile #1e362f → #4a7766, letter #c4e2cf.
 No independently drawn icon, alternate geometry or alternate palette.
+
+File kinds (VD1, proposal A of the board "Ikone vrsta datoteka", chosen 22.11.2026): the sheet
+symbol, a page with a folded corner carrying the cut P at 0.6 and a badge in its lower right
+corner, filled with the kind's colour and holding its drawing in white (#kinds). PDF is the only
+lettered badge, drawn in the family's strokes. Archive, message, contact and event joined
+the eight in the same language once Ponistra showed them (22.11.2026).

@@ -95,6 +95,7 @@ def test_a_policy_holds_administrators_to_passkeys_from_their_next_sign_in(ana, 
         "second_factor": False,
         "outside": "everyone",
         "locations": "everyone",
+        "opening": True,
     }
     assert admin.patch("/api/policy", {"passkeys": "sometimes"}, JSON).status_code == 400
     assert admin.patch("/api/policy", {"passkeys": "administrators"}, JSON).json() == {
@@ -102,6 +103,7 @@ def test_a_policy_holds_administrators_to_passkeys_from_their_next_sign_in(ana, 
         "second_factor": False,
         "outside": "everyone",
         "locations": "everyone",
+        "opening": True,
     }
     assert admin.get("/api/nodes").status_code == 200
     assert signed_in().get("/api/auth/session").json()["due"] is None

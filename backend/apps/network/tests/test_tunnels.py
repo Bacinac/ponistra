@@ -1,6 +1,3 @@
-import socket
-import threading
-
 import pytest
 
 from apps.core import sealed
@@ -315,45 +312,3 @@ async def test_without_tunnels_the_service_is_not_asked(monkeypatch):
     monkeypatch.setattr(tunnels, "sleep", slept)
     with pytest.raises(_Stopped):
         await tunnels.follow()
-
-
-@pytest.fixture
-def socks(monkeypatch):
-    """A SOCKS5 server holding the tunnel 7, behind which every host answers `far side`."""
-    listener = socket.create_server(("127.0.0.1", 0))
-    asked = []
-
-    def serve():
-        while True:
-            try:
-                connection, _ = listener.accept()
-            except OSError:
-                return
-            with connection:
-                connection.recv(3)
-                connection.sendall(b"\x05\x02")
-                head = connection.recv(2)
-                user = connection.recv(head[1]).decode()
-                connection.recv(connection.recv(1)[0])
-                if user != "7":
-                    connection.sendall(b"\x01\x01")
-                    continue
-                connection.sendall(b"\x01\x00")
-                request = connection.recv(5)
-                name = connection.recv(request[4]).decode()
-                port = int.from_bytes(connection.recv(2))
-                asked.append((name, port))
-                connection.sendall(b"\x05\x00\x00\x01\x00\x00\x00\x00\x00\x00far side")
-
-    threading.Thread(target=serve, daemon=True).start()
-    monkeypatch.setattr(tunnels, "SOCKS", listener.getsockname())
-    yield asked
-    listener.close()
-
-
-def test_a_host_behind_a_tunnel_is_reached_through_the_service(socks):
-    with tunnels.opened(7, "nas.office", 445) as connection:
-        assert connection.recv(8) == b"far side"
-    assert socks == [("nas.office", 445)]
-    with pytest.raises(OSError, match="holds no tunnel 8"):
-        tunnels.opened(8, "nas.office", 445)

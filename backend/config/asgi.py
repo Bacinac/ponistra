@@ -29,6 +29,7 @@ from apps.content.elements import follow  # noqa: E402
 from apps.content.words import follow as words  # noqa: E402
 from apps.core.asyncdb import database  # noqa: E402
 from apps.documents import links  # noqa: E402
+from apps.documents.opened import forgetting  # noqa: E402
 from apps.documents.paging import paginate  # noqa: E402
 from apps.drive.sync import drives  # noqa: E402
 from apps.health.watch import watch as health  # noqa: E402
@@ -107,6 +108,7 @@ async def lifespan(receive, send) -> None:
             background.start_soon(draw)
             background.start_soon(collecting)
             background.start_soon(links.follow)
+            background.start_soon(forgetting)
             background.start_soon(edit)
             background.start_soon(follow)
             background.start_soon(words)

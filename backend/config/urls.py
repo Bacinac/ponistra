@@ -17,7 +17,7 @@ from apps.contacts import views as contacts
 from apps.content import views as content
 from apps.core import views
 from apps.dav import views as dav
-from apps.documents import boards_place, launcher, notes
+from apps.documents import boards_place, launcher, notes, opened
 from apps.documents import views as documents
 from apps.drive import views as drive
 from apps.exports import views as exports
@@ -35,6 +35,7 @@ from apps.meetings import views as meetings
 from apps.memory import views as memory
 from apps.network import views as network
 from apps.push import views as push
+from apps.reader import views as reader
 from apps.retention import views as retention
 from apps.search import views as search
 from apps.shares import views as shares
@@ -199,8 +200,11 @@ urlpatterns = [
     path("api/workspace/files", workspace.files),
     path("api/workspace/file", workspace.file),
     path("api/workspace/file/raw", workspace.file_raw),
-    path("api/workspace/hosts", workspace.hosts),
-    path("api/workspace/hosts/key", workspace.hosts_key),
+    path("api/workspace/file/picture", workspace.file_picture),
+    path("api/workspace/files/folder", workspace.files_folder),
+    path("api/workspace/files/rename", workspace.files_rename),
+    path("api/workspace/files/remove", workspace.files_remove),
+    path("api/workspace/files/put", workspace.files_put),
     path("api/workspace/changed", workspace.changed),
     path("api/workspace/agent", workspace.agent),
     path("api/workspace/worked", workspace.worked),
@@ -316,6 +320,9 @@ urlpatterns = [
     path("api/people", access.people),
     path("api/uploads", blobs.uploads),
     path("api/uploads/<uuid:pk>", blobs.upload),
+    path("api/opened", opened.opened),
+    path("api/opened/closed", opened.closed),
+    path("api/opened/taken", opened.taken),
     path("api/nodes", documents.nodes),
     path("api/notes", notes.notes),
     path("api/links", launcher.links),
@@ -348,6 +355,8 @@ urlpatterns = [
     path("api/outside/<str:token>/files", outside.files),
     path("api/nodes/<uuid:pk>/text", documents.node_text),
     path("api/nodes/<uuid:pk>/picture", documents.node_picture),
+    path("api/nodes/<uuid:pk>/shown", reader.node_shown),
+    path("api/nodes/<uuid:pk>/shown/<str:part>", reader.node_shown_part),
     path("api/nodes/<uuid:pk>/edited", documents.node_edited),
     path("api/nodes/<uuid:pk>/found", search.found_in),
     path("api/nodes/<uuid:pk>/original", documents.node_original),

@@ -756,137 +756,143 @@ def test_the_owner_downloads_a_file_as_the_workspace_sends_it(owner, settings, m
     assert response["Content-Length"] == str(len(sent))
 
 
-ON_HOST = {"host": "mlaka", "path": "srv/app.conf"}
-HOSTS = {
-    "hosts": [
-        {
-            "name": "mlaka",
-            "address": "192.0.2.11",
-            "port": 22,
-            "user": "root",
-            "path": "/srv",
-            "key": "ponistra_ed25519",
-        }
-    ],
-    "keys": [{"name": "ponistra_ed25519", "type": "ssh-ed25519", "comment": "", "public": "k"}],
-    "made": "ponistra_ed25519",
-}
-HOST = dict(HOSTS["hosts"][0])
-
-
-def test_a_hosts_folder_is_asked_by_its_name_beside_the_path(owner, workspace):
-    workspace.answer = (200, {"path": "srv", "entries": []})
-    response = owner.get("/api/workspace/files", {"host": "mlaka", "path": "srv"})
-    assert response.json() == {"path": "srv", "entries": []}
-    [asked] = workspace.asked
-    assert dict(asked.url.params) == {"host": "mlaka", "path": "srv"}
-
-
-def test_a_hosts_file_is_written_with_the_host_beside_the_path(owner, workspace):
-    workspace.answer = (200, {"hash": "b" * 64})
-    given = {**ON_HOST, "text": "x\n", "hash": HASHED}
-    assert owner.post("/api/workspace/file", given, JSON).json() == {"hash": "b" * 64}
-    [written] = workspace.asked
-    assert (written.method, written.url.path) == ("POST", "/ponistra/files/write")
-    assert dict(written.url.params) == {"host": "mlaka"}
-    assert json.loads(written.content) == {"path": "srv/app.conf", "text": "x\n", "hash": HASHED}
-
-
 @pytest.mark.parametrize(
-    "error", ["ssh_key_refused", "host_unreachable", "host_unknown", "host_key_changed"]
-)
-def test_a_host_that_cannot_be_reached_says_why(owner, workspace, error):
-    workspace.answer = (409, {"error": error})
-    response = owner.get("/api/workspace/files", {"host": "mlaka", "path": ""})
-    assert (response.status_code, response.json()) == (409, {"error": error})
-
-
-@pytest.mark.parametrize("host", ["", "-oProxyCommand=x", "a b", "a" * 64])
-def test_a_host_is_asked_only_by_a_name_its_config_can_hold(owner, workspace, host):
-    response = owner.get("/api/workspace/files", {"host": host, "path": ""})
-    assert (response.status_code, response.json()) == (400, {"error": "invalid_host"})
-    assert workspace.asked == []
-
-
-def test_the_owner_reads_the_hosts_and_the_keys(owner, workspace):
-    workspace.answer = (200, HOSTS)
-    assert owner.get("/api/workspace/hosts").json() == HOSTS
-    [asked] = workspace.asked
-    assert (asked.method, asked.url.path) == ("GET", "/ponistra/hosts")
-
-
-def test_a_host_is_saved_in_the_place_of_the_one_it_was(owner, workspace):
-    workspace.answer = (200, HOSTS)
-    given = {**HOST, "was": "old"}
-    assert owner.post("/api/workspace/hosts", given, JSON).json() == HOSTS
-    [asked] = workspace.asked
-    assert (asked.method, asked.url.path) == ("POST", "/ponistra/hosts")
-    assert json.loads(asked.content) == given
-
-
-@pytest.mark.parametrize(
-    "given, error",
+    "path, given, sent",
     [
-        ({**HOST, "name": "-x"}, "invalid_host"),
-        ({**HOST, "was": "a b"}, "invalid_host"),
-        ({**HOST, "address": "-oProxyCommand=x"}, "invalid_host_address"),
-        ({**HOST, "address": "a b"}, "invalid_host_address"),
-        ({**HOST, "port": 0}, "invalid_host_port"),
-        ({**HOST, "port": True}, "invalid_host_port"),
-        ({**HOST, "port": "22"}, "invalid_host_port"),
-        ({**HOST, "user": "root\nHost *"}, "invalid_host_user"),
-        ({**HOST, "path": "/srv\nProxyCommand x"}, "invalid_path"),
-        ({**HOST, "key": "../id"}, "invalid_host_key"),
+        (
+            "folder",
+            {"folder": "/work/ponistra", "path": "docs", "name": "nova"},
+            {"folder": "/work/ponistra", "path": "docs", "name": "nova"},
+        ),
+        (
+            "rename",
+            {"folder": "/work/ponistra", "path": "a.txt", "to": "docs/a.txt"},
+            {"folder": "/work/ponistra", "path": "a.txt", "to": "docs/a.txt"},
+        ),
+        (
+            "remove",
+            {"folder": "/work/ponistra", "paths": ["a.txt", "docs"]},
+            {"folder": "/work/ponistra", "paths": ["a.txt", "docs"]},
+        ),
     ],
 )
-def test_a_host_holds_only_what_its_entry_can_say(owner, workspace, given, error):
-    response = owner.post("/api/workspace/hosts", given, JSON)
-    assert (response.status_code, response.json()) == (400, {"error": error})
-    assert workspace.asked == []
-
-
-def test_a_host_is_removed_by_its_name(owner, workspace):
-    workspace.answer = (200, {**HOSTS, "hosts": []})
-    response = owner.delete("/api/workspace/hosts?name=mlaka")
-    assert response.json()["hosts"] == []
-    [asked] = workspace.asked
-    assert (asked.url.path, json.loads(asked.content)) == (
-        "/ponistra/hosts/remove",
-        {"name": "mlaka"},
-    )
-
-
-def test_the_workspace_makes_its_own_key(owner, workspace):
-    workspace.answer = (200, HOSTS)
-    assert owner.post("/api/workspace/hosts/key", {}, JSON).json() == HOSTS
-    workspace.answer = (409, {"error": "key_exists"})
-    response = owner.post("/api/workspace/hosts/key", {}, JSON)
-    assert (response.status_code, response.json()) == (409, {"error": "key_exists"})
-
-
-@pytest.mark.parametrize(
-    "method, path",
-    [
-        ("post", "/api/workspace/hosts"),
-        ("delete", "/api/workspace/hosts?name=mlaka"),
-        ("post", "/api/workspace/hosts/key"),
-    ],
-)
-def test_hosts_change_only_for_an_owner_who_confirmed_within_a_working_day(
-    owner, workspace, method, path
+def test_the_owner_changes_a_projects_files_through_the_workspace(
+    owner, workspace, path, given, sent
 ):
+    workspace.answer = (200, {"path": "x"})
+    response = owner.post(f"/api/workspace/files/{path}", given, JSON)
+    assert response.status_code in (200, 201, 204)
+    [asked] = workspace.asked
+    assert (asked.method, asked.url.path) == ("POST", f"/ponistra/files/{path}")
+    assert json.loads(asked.content) == sent
+
+
+@pytest.mark.parametrize(
+    "path, given, error",
+    [
+        ("remove", {"folder": "/work/ponistra", "paths": []}, "invalid_paths"),
+        ("remove", {"folder": "/work/ponistra", "paths": ["a\0b"]}, "invalid_path"),
+        ("remove", {"paths": ["a"]}, "invalid_folder"),
+        ("rename", {"folder": "/work/ponistra", "path": "a", "to": None}, "invalid_path"),
+        ("put", {"folder": "/work/ponistra", "path": "", "name": "a", "blob": "b" * 64}, None),
+    ],
+)
+def test_a_change_is_asked_only_what_it_knows(owner, workspace, path, given, error):
+    response = owner.post(f"/api/workspace/files/{path}", given, JSON)
+    assert (response.status_code, response.json()) == (400, {"error": error or "invalid_blob"})
+    assert workspace.asked == []
+
+
+def test_the_workspace_refusing_a_change_says_why(owner, workspace):
+    workspace.answer = (409, {"error": "file_exists"})
+    given = {"folder": "/work/ponistra", "path": "", "name": "docs"}
+    response = owner.post("/api/workspace/files/folder", given, JSON)
+    assert (response.status_code, response.json()) == (409, {"error": "file_exists"})
+
+
+def test_an_uploaded_file_reaches_the_workspace_whole(owner, settings, monkeypatch):
+    settings.WORKSPACE_TOKEN = "token"
+    data = bytes(range(256)) * 300
+    blob = uploaded(owner, data)["sha256"]
+    asked = []
+
+    async def answered(request):
+        asked.append((request, b"".join([part async for part in request.stream])))
+        return httpx2.Response(200, json={"path": "docs/a.bin", "size": len(data)})
+
+    monkeypatch.setattr(
+        "apps.workspace.views.httpx2.AsyncClient",
+        partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
+    )
+    given = {"folder": "/work/ponistra", "path": "docs", "name": "a.bin", "blob": blob}
+    response = owner.post("/api/workspace/files/put", given, JSON)
+    assert (response.status_code, response.json()["path"]) == (201, "docs/a.bin")
+    [(request, sent)] = asked
+    assert (request.method, request.url.path) == ("POST", "/ponistra/files/put")
+    assert dict(request.url.params) == {"folder": "/work/ponistra", "path": "docs", "name": "a.bin"}
+    assert sent == data
+
+
+def test_a_picture_is_shown_in_place_and_a_player_gets_its_range(owner, settings, monkeypatch):
+    settings.WORKSPACE_TOKEN = "token"
+    ranges = []
+
+    def answered(request):
+        ranges.append(request.headers.get("Range"))
+        if request.headers.get("Range") == "bytes=4-7":
+            headers = {"content-length": "4", "content-range": f"bytes 4-7/{len(PNG)}"}
+            return httpx2.Response(206, content=PNG[4:8], headers=headers)
+        return httpx2.Response(200, content=PNG, headers={"content-length": str(len(PNG))})
+
+    monkeypatch.setattr(
+        "apps.workspace.views.httpx2.AsyncClient",
+        partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
+    )
+    response = owner.get("/api/workspace/file/raw", FILE, headers={"Range": "bytes=4-7"})
+    assert (response.status_code, response["Content-Type"]) == (206, "image/png")
+    assert response["Content-Disposition"] == 'inline; filename="app.py"'
+    assert response["Content-Range"] == f"bytes 4-7/{len(PNG)}"
+    assert async_to_sync(collected)(response) == PNG[4:8]
+    assert ranges == ["bytes=0-1023", "bytes=4-7"]
+    response = owner.get("/api/workspace/file/raw", {**FILE, "download": "1"})
+    assert response["Content-Disposition"] == 'attachment; filename="app.py"'
+    assert async_to_sync(collected)(response) == PNG
+
+
+def test_a_picture_is_drawn_small_by_the_reader(owner, settings, monkeypatch):
+    settings.WORKSPACE_TOKEN = "token"
+    drawn = []
+
+    def answered(request):
+        return httpx2.Response(200, content=PNG, headers={"content-length": str(len(PNG))})
+
+    def ask(kind, path, **options):
+        drawn.append((kind, path.read_bytes(), options))
+        return b"webp"
+
+    monkeypatch.setattr(
+        "apps.workspace.views.httpx2.AsyncClient",
+        partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
+    )
+    monkeypatch.setattr("apps.workspace.views.reading.ask", ask)
+    response = owner.get("/api/workspace/file/picture", FILE)
+    assert (response.status_code, response.content) == (200, b"webp")
+    assert drawn == [("preview", PNG, {"pdf": False})]
+
+
+@pytest.mark.parametrize("path", ["folder", "rename", "remove", "put"])
+def test_files_change_only_for_an_owner_who_confirmed_within_a_working_day(owner, workspace, path):
     session = owner.session
     session[CONFIRMED] = (timezone.now() - CONFIRMED_FOR).isoformat()
     session.save()
-    response = getattr(owner, method)(path, HOST, JSON)
+    response = owner.post(f"/api/workspace/files/{path}", {**FILE, "paths": ["a"]}, JSON)
     assert (response.status_code, response.json()) == (403, {"error": "confirm_required"})
     assert workspace.asked == []
 
 
-def test_nobody_but_the_owner_reaches_the_hosts(api, settings, workspace):
+@pytest.mark.parametrize("path", ["folder", "rename", "remove", "put"])
+def test_nobody_but_the_owner_changes_the_files(api, settings, workspace, path):
     settings.WORKSPACE = "owner@example.com"
-    assert api.get("/api/workspace/hosts").status_code == 403
-    assert api.post("/api/workspace/hosts", HOST, JSON).status_code == 403
-    assert api.post("/api/workspace/hosts/key", {}, JSON).status_code == 403
-    assert api.get("/api/workspace/files", {"host": "mlaka"}).status_code == 403
+    assert api.post(f"/api/workspace/files/{path}", FILE, JSON).status_code == 403
+    assert api.get("/api/workspace/file/picture", FILE).status_code == 403
     assert workspace.asked == []

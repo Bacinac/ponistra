@@ -1,0 +1,22 @@
+{
+  "order": 20,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [
+    "shown.more"
+  ],
+  "describes": {
+    "frontend/src/kinds.tsx#heldKind": "2b7eb6b6823a",
+    "frontend/src/kinds.tsx#HeldView": "c47cfdb59daf",
+    "frontend/src/kinds.tsx#Locked": "2af4ff01221c",
+    "frontend/src/kinds.tsx#Archive": "d6431703e561",
+    "frontend/src/kinds.tsx#Message": "de987b28a92f",
+    "frontend/src/kinds.tsx#Cards": "abea0855dc81",
+    "frontend/src/kinds.tsx#Events": "4a8b537e60cf",
+    "backend/apps/reader/views.py#node_shown": "45a95558e2cf",
+    "backend/apps/reader/views.py#node_shown_part": "ccc84a5d9457",
+    "backend/apps/reader/shown.py#kind_of": "9fc86c5d74d8",
+    "backend/apps/reader/archives.py#listed": "50396d36fd77",
+    "converter/archives.py": "9f417c36822a"
+  }
+}

@@ -13,9 +13,20 @@ import { useI18n } from './i18n';
 import { lazily } from './lazily';
 import { usePushBridge } from './notifications';
 import { JobBar } from './jobs';
-import { isAlone, LaunchesElsewhere, OpenedPage, ToMain, useSignedOutPdfs } from './launch';
+import {
+  Claim,
+  isAlone,
+  LaunchesElsewhere,
+  OpenedPage,
+  opener,
+  OpenerLaunches,
+  ToMain,
+  useSignedOutLaunch,
+} from './launch';
 import { recoverFromCrash, takeNewRelease } from './release';
 import { Ringing } from './ringing';
+import { button } from './styles';
+import { errorMessage, nodeHref } from './tree';
 import { VaultProvider } from './vault/state';
 
 const AiPage = lazily(() => import('./ai'), 'AiPage');
@@ -119,7 +130,33 @@ function PushBridge() {
 function SignedOut({ setup }: { setup: boolean }) {
   const { t } = useI18n();
   const { pathname } = useLocation();
-  const [pdfs, closePdfs] = useSignedOutPdfs();
+  const { pdfs, closePdfs, opening, closeOpening } = useSignedOutLaunch();
+  if (opening) {
+    return (
+      <Lobby>
+        <div role="status" className="flex flex-col items-start gap-2 text-sm">
+          {opening.files.map((file, index) => (
+            <p key={`${index}:${file.name}`} className="font-medium">
+              {file.name}
+            </p>
+          ))}
+          {opening.error ? (
+            <>
+              <p className="text-danger">{errorMessage(opening.error, t)}</p>
+              <button type="button" onClick={closeOpening} className={button}>
+                {t('device.close')}
+              </button>
+            </>
+          ) : (
+            <p className="flex items-center gap-2 text-muted">
+              <LoaderCircle aria-hidden className="size-4 shrink-0 animate-spin" />
+              {t('launch.receiving')}
+            </p>
+          )}
+        </div>
+      </Lobby>
+    );
+  }
   if (pdfs.length > 0) {
     return (
       <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
@@ -132,6 +169,11 @@ function SignedOut({ setup }: { setup: boolean }) {
   const door = rememberedDoor();
   if (door && !setup) return <Navigate to={door} replace />;
   return <Lobby>{setup ? <SetupForm /> : <LoginForm />}</Lobby>;
+}
+
+function OpenedFirst() {
+  const first = opener()?.files[0];
+  return first ? <Navigate to={nodeHref(first)} replace /> : null;
 }
 
 function Followed() {
@@ -204,6 +246,27 @@ export default function App() {
       </Lobby>
     );
   }
+  if (session.data.user.visitor && isAlone() && opener()) {
+    return (
+      <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
+        <Shell alone>
+          <Crash at={pathname} message={t('error.unexpected')} className="h-full">
+            <Suspense fallback={<Loading />}>
+              <Routes>
+                <Route path="/d/:node" element={<DocumentPage />} />
+                <Route path="/d/:node/:tab" element={<DocumentPage />} />
+                <Route path="/p/:node" element={<FilePage />} />
+                <Route path="/help/:section?/:article?" element={<HelpPage />} />
+                <Route path="*" element={<OpenedFirst />} />
+              </Routes>
+            </Suspense>
+          </Crash>
+        </Shell>
+        <OpenerLaunches />
+        <JobBar />
+      </Crash>
+    );
+  }
   if (session.data.user.visitor) {
     return (
       <Crash at={pathname} message={t('error.unexpected')} className="min-h-dvh">
@@ -268,6 +331,13 @@ export default function App() {
         <PushBridge />
         <LaunchesElsewhere />
       </Crash>
+    );
+  }
+  if (opener()) {
+    return (
+      <Lobby>
+        <Claim />
+      </Lobby>
     );
   }
   if (isAlone()) {

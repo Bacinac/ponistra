@@ -246,6 +246,7 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
     'Poveznice',
     'Ploče',
     'Sef',
+    'Mreža',
     'Smeće',
   ]);
   await places.getByRole('link', { name: 'Bilješke' }).click();

@@ -33,13 +33,14 @@ def wake() -> None:
 
 def waiting():
     """The blobs whose text is still to be read: a PDF a file uses, a document shows or a message
-    carries, and an Office or text file a file keeps or a message carries."""
+    carries, an Office or text file a file keeps or a message carries, and a TIFF a file keeps."""
     carried = Exists(Attachment.objects.filter(blob=OuterRef("pk"), inline=False))
     filed = Exists(Node.objects.filter(blob=OuterRef("pk")))
     used = filed | Exists(DocumentBlob.objects.filter(blob=OuterRef("pk")))
     return Blob.objects.filter(text__isnull=True).filter(
         Q(media_type=store.PDF) & (used | carried)
         | (Q(media_type__in=EXTENSIONS) | Q(media_type__startswith="text/")) & (filed | carried)
+        | Q(media_type=store.TIFF) & filed
     )
 
 
@@ -64,6 +65,8 @@ def _text(blocks: list[Block]) -> str:
 def _read(blob: Blob) -> list[str]:
     if blob.media_type == store.PDF:
         return pdf.texts(store.path_of(blob.sha256))
+    if blob.media_type == store.TIFF:
+        return []
     if blob.media_type == store.HTML:
         return text.pages(text.seen(text.read(blob, SEARCHED).text), PAGE)
     if blob.media_type.startswith("text/"):
@@ -85,12 +88,10 @@ def _keep(blob: Blob) -> None:
         if text.strip()
     )
     if (
-        blob.media_type == store.PDF
-        and len(pages) < len(texts)
-        and (
-            Node.objects.filter(blob=blob).exists()
-            or Attachment.objects.filter(blob=blob, inline=False).exists()
-        )
+        blob.media_type == store.TIFF or blob.media_type == store.PDF and len(pages) < len(texts)
+    ) and (
+        Node.objects.filter(blob=blob).exists()
+        or Attachment.objects.filter(blob=blob, inline=False).exists()
     ):
         ocr.queue(blob)
 

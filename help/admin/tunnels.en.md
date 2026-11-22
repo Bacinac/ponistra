@@ -23,7 +23,7 @@ A tunnel opens a standing connection for the installation into another network, 
 
 ## How it works
 
-The tunnels are held by a service of the installation of its own, `tunnel`. The server hands them to it on every save and hands them again by itself when the service starts anew, so tunnels work after a restart of the server or an update without anything from you. Only connections Ponistra opens go through a tunnel; the server the installation runs on and its other networks are not routed through it.
+The tunnels are held by a service of the installation of its own, `tunnel`. The server hands them to it on every save and hands them again by itself when the service starts anew, so tunnels work after a restart of the server or an update without anything from you. Only connections Ponistra opens go through a tunnel, and those are the [network locations](help:documents/locations) a user chose the tunnel for; the server the installation runs on and its other networks are not routed through it.
 
 The WireGuard configuration and the SoftEther password are kept sealed with the installation's secret key and are never shown again. The tunnel's row shows its kind, the other side's address (the Endpoint for WireGuard, server and port for SoftEther) and, while the tunnel is up, the address the installation has in the other network.
 
@@ -61,8 +61,10 @@ The messages under a tunnel's name:
 - {t:network.tunnelError.failed}: any other reason; the text after the message is the service's answer.
 - {t:error.invalid_wireguard} The configuration lacks one [Interface] with PrivateKey and Address or at least one [Peer] with PublicKey and Endpoint, or a key is not a WireGuard key.
 - {t:error.tunnel_taken} Choose another name.
+- {t:error.tunnel_in_use} A tunnel is not removed while any location goes through it; switch it off, or the locations' owners choose another tunnel.
 
 ## Related
 
 - [Network](help:admin/network)
 - [Journal](help:admin/journal)
+- [Network locations](help:documents/locations)

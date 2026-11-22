@@ -1,11 +1,11 @@
 # Sign-in and sharing rules
 
-An administrator decides whether signing in with a passkey is allowed or required, whether a sign-in with a password asks for a second step, who may make a link for someone outside the installation, and who may add a network location.
+An administrator decides whether signing in with a passkey is allowed or required, whether a sign-in with a password asks for a second step, whether a file from the computer may be opened without signing in, who may make a link for someone outside the installation, and who may add a network location.
 
 ## How to use it
 
 1. On the {t:users.title} page, in the {t:policy.title} section, under {t:policy.passkeys} choose {t:policy.passkeys.off}, {t:policy.passkeys.nobody}, {t:policy.passkeys.administrators} or {t:policy.passkeys.everyone}.
-2. Turn {t:policy.secondFactor} on or off.
+2. Turn {t:policy.secondFactor} and {t:policy.opening} on or off.
 3. In the {t:policy.outside.title} section, under {t:policy.outside}, choose {t:policy.outside.nobody}, {t:policy.outside.administrators} or {t:policy.outside.everyone}.
 4. In the {t:policy.locations.title} section, under {t:policy.locations}, choose the same.
 
@@ -18,6 +18,8 @@ The passkey rule applies from the next sign-in. Whoever must have a passkey sign
 With {t:policy.secondFactor} a sign-in with a password also asks for a code from an [authenticator app](help:account/authenticator) or a passkey, where signing in with a passkey is not off. A user with neither first adds one of them after signing in with the password. A user who added the app themselves gives its code even when this is off. A sign-in at the organisation's provider asks for no second step in Ponistra, as the provider asks for it by its own rule.
 
 If such a user loses their device, an administrator sets a new password for them under {t:users.edit}; this deletes their authenticator app and, where a passkey is required of them or the second step is on, their passkeys, and they add new ones at their next sign-in.
+
+With {t:policy.opening} a file someone opens from the computer with the installed app while not signed in is shown read only, as a temporary document that goes when its window closes, an hour later at the latest; whoever signs in from that window takes it and saves it into a folder. A PDF is read in the browser even without this, and is not sent to the server. One address may open at most 30 files an hour this way, each up to 100 MB.
 
 The sharing rule decides who may make a link with which someone without an account in the installation opens a board. With {t:policy.outside.nobody} all links already made stop working too.
 

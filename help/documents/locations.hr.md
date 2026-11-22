@@ -10,7 +10,8 @@ Mrežna lokacija je mapa na poslužitelju, zajedno s računom kojim se Ponistra 
 2. Pod {t:explorer.kind} ostavite {t:locations.kind.smb}.
 3. Upišite {t:tree.name} i {t:locations.address} u obliku `\\poslužitelj\mapa`, po želji s podmapom.
 4. Upišite {t:locations.username} (za domenu `DOMENA\korisnik`) i {t:locations.auth.password}. {t:locations.port} upisujete samo ako nije 445.
-5. Pritisnite {t:tree.save} ili {t:tree.cancel}.
+5. Stoji li poslužitelj u drugoj mreži, pod {t:locations.tunnel} odaberite tunel kroz koji se do nje dolazi; {t:locations.tunnelNone} znači izravno.
+6. Pritisnite {t:tree.save} ili {t:tree.cancel}.
 
 ### SSH poslužitelj (SFTP)
 
@@ -19,8 +20,9 @@ Mrežna lokacija je mapa na poslužitelju, zajedno s računom kojim se Ponistra 
 3. Pod {t:locations.path} upišite mapu na poslužitelju od koje lokacija počinje; prazno znači početnu mapu računa.
 4. Upišite {t:locations.username} i pod {t:locations.auth} odaberite {t:locations.auth.password} ili {t:locations.auth.key}.
 5. Ako se do poslužitelja dolazi samo preko drugoga, upišite ga pod {t:locations.jump} u obliku `korisnik@poslužitelj:port`.
-6. Pritisnite {t:tree.save}.
-7. Uz prijavu ključem ispod lokacije se pojavljuje javni ključ. Pritisnite {t:locations.copyKey} i dodajte ga u `~/.ssh/authorized_keys` računa na poslužitelju, a ako lokacija ide preko drugog poslužitelja, i računa na njemu.
+6. Stoji li poslužitelj u drugoj mreži, pod {t:locations.tunnel} odaberite tunel kroz koji se do nje dolazi.
+7. Pritisnite {t:tree.save}.
+8. Uz prijavu ključem ispod lokacije se pojavljuje javni ključ. Pritisnite {t:locations.copyKey} i dodajte ga u `~/.ssh/authorized_keys` računa na poslužitelju, a ako lokacija ide preko drugog poslužitelja, i računa na njemu.
 
 ### Izmjena, dijeljenje i uklanjanje
 
@@ -37,7 +39,9 @@ Pri spremanju lokacije s lozinkom Ponistra se odmah prijavljuje na poslužitelj,
 
 Lozinka i privatni ključ čuvaju se šifrirani tajnim ključem instalacije i nikad se ne pokazuju, ni vlasniku. Ključ izrađuje Ponistra, za svaku lokaciju poseban, i njegov privatni dio ne napušta instalaciju.
 
-Pri prvoj prijavi na SSH poslužitelj Ponistra pamti ključ kojim se poslužitelj predstavio. Predstavi li se poslije drugim, veza se odbija dok vlasnik ne spremi lokaciju ponovno; izmjena poslužitelja, porta ili poslužitelja za prolaz pamti ključ iznova.
+Pri prvoj prijavi na SSH poslužitelj Ponistra pamti ključ kojim se poslužitelj predstavio. Predstavi li se poslije drugim, veza se odbija dok vlasnik ne spremi lokaciju ponovno; izmjena poslužitelja, porta, poslužitelja za prolaz ili tunela pamti ključ iznova.
+
+Lokacija s tunelom do poslužitelja dolazi samo kroz njega, nikad izravno, a ime poslužitelja razrješava se u mreži iza tunela. Uz poslužitelj za prolaz kroz tunel ide veza do tog poslužitelja, a on dalje vodi do lokacije. Tunele postavlja administrator; izbornik {t:locations.tunnel} nudi samo uključene i pojavljuje se tek kad postoji barem jedan. U popisu lokacija iza adrese stoji naziv tunela.
 
 Svi s kojima je lokacija podijeljena rade na poslužitelju istim računom, onim iz lokacije. Uloga u Ponistri određuje samo smiju li čitati ili i mijenjati, a postavke lokacije vidi i mijenja samo vlasnik. Kome je lokacija podijeljena, u ovom popisu umjesto izbornika vidi ime vlasnika.
 
@@ -51,6 +55,8 @@ Uklanjanjem lokacija nestaje svima, a datoteke na poslužitelju ostaju netaknute
 - {t:error.location_login} znači krivo korisničko ime ili lozinku, ili ključ koji još nije dodan na poslužitelj.
 - {t:error.location_sftp_missing} znači da SSH poslužitelj ne dopušta prijenos datoteka tom računu.
 - {t:error.location_not_found} znači da upisane mape na poslužitelju nema.
+- {t:error.location_tunnel_down} znači da tunel lokacije trenutno nije spojen ili ga je administrator isključio; lokacija radi čim se tunel ponovno spoji.
+- {t:error.invalid_tunnel} znači da odabrani tunel više nije uključen.
 - {t:error.invalid_jump} i {t:error.invalid_location_name} opisuju polje koje treba ispraviti.
 
 ## Povezano

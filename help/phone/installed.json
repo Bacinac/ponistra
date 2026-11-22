@@ -12,14 +12,24 @@
   ],
   "describes": {
     "frontend/src/launch.tsx#Launches": "05f6d42cdbb1",
-    "frontend/src/launch.tsx#LaunchesElsewhere": "68a85eaec9da",
+    "frontend/src/launch.tsx#LaunchesElsewhere": "c74d93966031",
     "frontend/src/launch.tsx#ledTo": "af9a1d80d044",
     "frontend/src/frame.tsx#useAppBadge": "bf6009492c30",
     "frontend/src/frame.tsx#useWaiting": "edfc4f8357f3",
     "frontend/src/title.ts#useTitle": "cdc79221ca05",
-    "frontend/vite.config.ts#rooted": "5bac27026036",
+    "frontend/vite.config.ts#rooted": "d01fe2a9e43e",
     "frontend/src/launch.tsx#OpenedPage": "c065f7d4e4f2",
-    "frontend/src/frame.tsx#SaveInto": "e63e4fd7b550",
-    "backend/apps/retention/sweep.py#abandoned": "664326191625"
+    "frontend/src/frame.tsx#SaveInto": "1a92c64c204e",
+    "backend/apps/retention/sweep.py#abandoned": "664326191625",
+    "frontend/src/launch.tsx#useSignedOutLaunch": "deebda55a870",
+    "frontend/src/launch.tsx#OpenerLaunches": "adcf00dde93c",
+    "frontend/src/launch.tsx#Claim": "ee9db96093e8",
+    "frontend/src/launch.tsx#closeOpened": "55383390830a",
+    "frontend/src/launch.tsx#signInToSave": "91c5fb014ad6",
+    "backend/apps/documents/opened.py#opened": "d0f6567a6373",
+    "backend/apps/documents/opened.py#closed": "e61b3374abbb",
+    "backend/apps/documents/opened.py#taken": "660e824f3537",
+    "backend/apps/documents/opened.py#forgotten": "2d21e72c877a",
+    "frontend/vite.config.ts#LAUNCHED": "bf434c8fade8"
   }
 }

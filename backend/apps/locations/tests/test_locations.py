@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 
 import pytest
 from asgiref.sync import async_to_sync, sync_to_async
@@ -13,6 +14,8 @@ from apps.documents.models import Node
 from apps.locations import jobs, reach, sftp, smbfiles
 from apps.locations.models import Location
 from apps.locations.remote import Entry, Failed
+from apps.network.models import Tunnel
+from apps.network.tests.far import HELD
 from apps.users.models import Policy, User
 
 pytestmark = pytest.mark.django_db
@@ -92,7 +95,11 @@ def test_a_location_is_added_once_its_account_signs_in_and_keeps_the_servers_key
     kept = Location.objects.get()
     assert kept.known_hosts.startswith("sftp ssh-")
     assert b"sftpsftp" not in bytes(kept.secret)
-    assert api.get("/api/locations").json() == {"locations": [location], "adds": True}
+    assert api.get("/api/locations").json() == {
+        "locations": [location],
+        "adds": True,
+        "tunnels": [],
+    }
 
 
 def test_an_account_the_server_refuses_adds_nothing(api, spot):
@@ -286,7 +293,7 @@ class Shelf:
 def test_an_smb_location_is_reached_by_its_address(api, monkeypatch):
     async def reached(*given):
         Shelf.reached.append(given)
-        if given[-1] != "lozinka":
+        if given[4] != "lozinka":
             raise Failed("location_login")
         return Shelf()
 
@@ -303,7 +310,88 @@ def test_an_smb_location_is_reached_by_its_address(api, monkeypatch):
     ).json()
     assert (location["address"], location["port"]) == ("\\\\nas\\dokumenti\\2026", 445)
     assert names(api, location) == ["Ugovori"]
-    assert Shelf.reached[-1] == ("nas", 445, "dokumenti\\2026", "TVRTKA\\ivo", "lozinka")
+    assert Shelf.reached[-1] == ("nas", 445, "dokumenti\\2026", "TVRTKA\\ivo", "lozinka", None)
+
+
+def tunnel(pk: int = HELD, **changed) -> Tunnel:
+    fields = {"pk": pk, "name": f"Ured {pk}", "kind": "wireguard", "state": "up"}
+    return Tunnel.objects.create(**(fields | changed))
+
+
+@pytest.mark.xdist_group("sftp")
+def test_a_location_behind_a_tunnel_is_reached_through_the_tunnel_service(api, spot, far):
+    through = tunnel()
+    location = added(api, spot, tunnel=through.pk)
+    assert location["tunnel"] == {"id": through.pk, "name": "Ured 7"}
+    assert far == [("sftp", 22)]
+    put(api, location, "", "ponuda.txt", b"Kroz tunel")
+    assert names(api, location) == ["ponuda.txt"]
+    listed = api.get("/api/locations").json()
+    assert listed["tunnels"] == [{"id": through.pk, "name": "Ured 7"}]
+    sftp.ended("")
+
+
+@pytest.mark.xdist_group("sftp")
+def test_the_first_hop_goes_through_the_tunnel_and_the_jump_takes_the_rest(api, spot, far):
+    location = added(api, spot, tunnel=tunnel().pk, jump="sftp@sftp:22")
+    assert names(api, location) == []
+    assert far[-1] == ("sftp", 22)
+    config = sftp._config(target(spot, jump="sftp@sftp:22", tunnel=7), Path("/x"))
+    jump = config.index("Host jump")
+    assert config.index("ProxyCommand") > jump
+    assert config.count("ProxyCommand") == 1
+    assert "ProxyUseFdpass yes" in config
+    sftp.ended("")
+
+
+def test_a_location_behind_a_tunnel_that_is_down_says_so(api, spot, far):
+    through = tunnel(state="connecting")
+    refused = post(
+        api,
+        "/api/locations",
+        {"kind": "sftp", "name": "Poslužitelj", "auth": "password", "path": spot}
+        | SERVER
+        | {"tunnel": through.pk},
+    )
+    assert (refused.status_code, refused.json()) == (409, {"error": "location_tunnel_down"})
+    assert far == []
+
+
+@pytest.mark.parametrize("chosen", ["7", 99, "off"])
+def test_a_location_goes_only_through_a_tunnel_switched_on(api, chosen):
+    off = tunnel(8, enabled=False, state="off")
+    chosen = off.pk if chosen == "off" else chosen
+    given = {"kind": "sftp", "name": "Poslužitelj", "auth": "password", "tunnel": chosen}
+    refused = post(api, "/api/locations", given | SERVER)
+    assert (refused.status_code, refused.json()) == (400, {"error": "invalid_tunnel"})
+    assert api.get("/api/locations").json()["tunnels"] == []
+
+
+@pytest.mark.xdist_group("sftp")
+def test_a_tunnel_a_location_goes_through_is_not_removed(api, client, spot, far):
+    through = tunnel()
+    added(api, spot, tunnel=through.pk)
+    client.force_login(User.objects.create_superuser("admin@example.com", "Kamen-Most-Rijeka-71"))
+    removed = client.delete(f"/api/network/tunnels/{through.pk}")
+    assert (removed.status_code, removed.json()) == (409, {"error": "tunnel_in_use"})
+    assert Tunnel.objects.filter(pk=through.pk).exists()
+    sftp.ended("")
+
+
+def test_smb_connects_through_the_tunnel_only_for_a_location_behind_one(far, answering):
+    routed = smbfiles.Routed("127.0.0.1", answering, 5)
+    smbfiles._through(HELD, routed.connect)
+    assert routed._sock.recv(8) == b"far side"
+    routed._sock.close()
+    assert far == [("127.0.0.1", answering)]
+    straight = smbfiles.Routed("127.0.0.1", answering, 5)
+    straight.connect()
+    assert straight._sock.recv(8) == b"far side"
+    straight._sock.close()
+    assert len(far) == 1
+    down = smbfiles.Routed("127.0.0.1", answering, 5)
+    with pytest.raises(ValueError, match="holds no tunnel 8"):
+        smbfiles._through(8, down.connect)
 
 
 @pytest.mark.anyio

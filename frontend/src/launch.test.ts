@@ -39,7 +39,7 @@ describe('onlyPdfs', () => {
     expect(onlyPdfs({ files: [file('B.PDF', ''), file('c.pdf', 'application/pdf')] })).toBe(true);
   });
 
-  it('leaves a launch with any other file, or with none, to someone signed in', () => {
+  it('leaves a launch with any other file, or with none, to the server', () => {
     expect(onlyPdfs({ files: [file('a.pdf', 'application/pdf'), file('b.docx', '')] })).toBe(false);
     expect(onlyPdfs({ files: [], target: 'https://ponistra.example/mail' })).toBe(false);
   });

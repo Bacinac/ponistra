@@ -37,6 +37,16 @@ class Location(models.Model):
     public_key = models.TextField(blank=True)
     # SFTP through another host first, as `user@host:port`, signed in to with the same secret.
     jump = models.CharField(max_length=600, blank=True)
+    # The installation's VPN tunnel the server stands behind; none reaches it straight. A tunnel
+    # some location goes through is not removed: the database refuses, rather than the location
+    # reaching for the same address on the installation's own network.
+    tunnel = models.ForeignKey(
+        "network.Tunnel",
+        null=True,
+        blank=True,
+        on_delete=models.DO_NOTHING,
+        related_name="locations",
+    )
     # The server's host keys as the first connection found them; another one later is refused.
     known_hosts = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -508,7 +508,7 @@ def node(request, pk):
             **placed(reach),
             "room": node.room,
             "tabs": [describe_tab(tab) for tab in node.tabs_in_order()],
-            "pdf": ocr.described(node.blob) if node.is_pdf else None,
+            "pdf": ocr.described(node.blob) if node.shows_pdf else None,
         }
     )
 
@@ -726,7 +726,7 @@ def node_file(request, pk):
     name = file_name(node)
     if request.GET.get("download") == "1":
         taken_out(request.user, node, reach, extension_of(node) or "file")
-    if not node.is_pdf:
+    if not node.shows_pdf or (request.GET.get("download") == "1" and not node.is_pdf):
         unknown = node.blob.media_type == store.UNKNOWN
         named = mimetypes.guess_type(name)[0] if unknown else None
         # Anything but a picture is saved, never shown: an HTML file would pass for a page of ours.
@@ -741,6 +741,8 @@ def node_file(request, pk):
         blob = node.blob
     elif asked != blob.sha256:
         raise Refused(404, "not_found")
+    if blob != node.blob and not node.is_pdf:
+        name = f"{node.title}.pdf"
     return serve(request, blob, name)
 
 
@@ -907,7 +909,9 @@ def node_original(request, pk):
 @api("POST")
 def node_ocr(request, pk):
     """Reads the file's pages without text once more, after the reading failed."""
-    node, _ = live_pdf(request.user, pk)
+    node, _ = live_file(request.user, pk)
+    if not node.shows_pdf:
+        raise Refused(400, "not_a_pdf")
     if not ocr.retry(node.blob):
         raise Refused(409, "not_failed")
     return JsonResponse(ocr.described(node.blob))

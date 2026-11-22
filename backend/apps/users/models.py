@@ -153,8 +153,8 @@ class Session(AbstractBaseSession):
 class Policy(models.Model):
     """How the installation's users sign in and share, in one row: whether the sign-in page offers
     passkeys and whom it holds to them, whether a sign-in with a password asks for a second factor,
-    who may make a link for someone outside it (D39) and who may add a location on the network
-    (D54)."""
+    who may make a link for someone outside it (D39), who may add a location on the network
+    (D54) and whether a file opened from the computer is shown to someone not signed in (D53)."""
 
     class Passkeys(models.TextChoices):
         OFF = "off"
@@ -176,6 +176,7 @@ class Policy(models.Model):
     locations = models.CharField(
         max_length=16, choices=Outside, default=Outside.EVERYONE, db_default=Outside.EVERYONE
     )
+    opening = models.BooleanField(default=True, db_default=True)
     changed_by = models.ForeignKey(User, null=True, on_delete=models.DB_SET_NULL, related_name="+")
     changed_at = models.DateTimeField(null=True)
 

@@ -1,16 +1,22 @@
 """A location over SMB, through D37's connector: a session of its own for each request, its
-blocking calls on a worker thread."""
+blocking calls on a worker thread. A location behind a tunnel opens its connections through the
+tunnel service: smbprotocol makes its own socket, so its transport is one that asks the worker
+thread which tunnel it reaches through, set around every call the location makes."""
 
 import asyncio
+import threading
 from collections.abc import AsyncIterator, Callable
 from datetime import UTC, datetime
 from functools import partial
 
 import smbclient
 import smbclient.shutil
+import smbprotocol.connection
 from smbprotocol import exceptions
 from smbprotocol.file_info import FileAttributes
+from smbprotocol.transport import Tcp
 
+from apps.network import socks
 from apps.shares import smb
 
 from .remote import CHUNK, Entry, Failed
@@ -45,9 +51,41 @@ def refused(error: BaseException) -> Failed | None:
     return Failed(SIGNED_IN.get(code, "location_failed")) if code else None
 
 
-async def _off[R](work: Callable[[], R]) -> R:
+_route = threading.local()
+
+
+class Routed(Tcp):
+    """smbprotocol's transport, through the tunnel the calling thread reaches through, if any."""
+
+    def connect(self):
+        tunnel = getattr(_route, "tunnel", None)
+        if tunnel is None:
+            return super().connect()
+        with self._sock_lock:
+            if not self.connected:
+                try:
+                    self._sock = socks.opened(tunnel, self.server, self.port, self.timeout or 20)
+                except OSError as err:
+                    raise ValueError(
+                        f"Failed to connect to '{self.server}:{self.port}': {err}"
+                    ) from err
+                self.connected = True
+
+
+smbprotocol.connection.Tcp = Routed
+
+
+def _through[R](tunnel: int | None, work: Callable[[], R]) -> R:
+    _route.tunnel = tunnel
     try:
-        return await asyncio.to_thread(work)
+        return work()
+    finally:
+        _route.tunnel = None
+
+
+async def _off[R](tunnel: int | None, work: Callable[[], R]) -> R:
+    try:
+        return await asyncio.to_thread(_through, tunnel, work)
     except Failed:
         raise
     except Exception as error:
@@ -66,17 +104,26 @@ def _entry(name: str, info) -> Entry:
     )
 
 
-async def reached(host: str, port: int, share: str, username: str, password: str) -> Smb:
+async def reached(
+    host: str, port: int, share: str, username: str, password: str, tunnel: int | None = None
+) -> Smb:
     server = smb.Server(smb.Address(host, share), username, password, port)
-    await _off(server.__enter__)
-    return Smb(server)
+    await _off(tunnel, server.__enter__)
+    return Smb(server, tunnel)
 
 
 class Smb:
     """A location over SMB; its paths below the share's folder."""
 
-    def __init__(self, server: smb.Server):
+    def __init__(self, server: smb.Server, tunnel: int | None = None):
         self.server = server
+        self.tunnel = tunnel
+
+    async def _off[R](self, work: Callable[[], R]) -> R:
+        return await _off(self.tunnel, work)
+
+    async def _closed(self, work: Callable[[], object]) -> None:
+        await asyncio.to_thread(_through, self.tunnel, work)
 
     def _full(self, path: str) -> str:
         return self.server.full(path)
@@ -91,11 +138,11 @@ class Smb:
                 found.append(_entry(entry.name, info))
             return found
 
-        if not await _off(
+        if not await self._off(
             lambda: smbclient.path.isdir(self._full(path), connection_cache=self.server.cache)
         ):
             raise Failed("not_a_folder", 400)
-        return await _off(scanned)
+        return await self._off(scanned)
 
     async def stat(self, path: str) -> Entry:
         def stated() -> Entry:
@@ -108,20 +155,20 @@ class Smb:
                 datetime.fromtimestamp(found.st_mtime, UTC),
             )
 
-        return await _off(stated)
+        return await self._off(stated)
 
     async def chunks(self, path: str, start: int, length: int) -> AsyncIterator[bytes]:
-        file = await _off(lambda: self.server.read(path))
+        file = await self._off(lambda: self.server.read(path))
         try:
-            await _off(lambda: file.seek(start))
+            await self._off(lambda: file.seek(start))
             while length > 0:
-                part = await _off(partial(file.read, min(CHUNK * 8, length)))
+                part = await self._off(partial(file.read, min(CHUNK * 8, length)))
                 if not part:
                     raise Failed("file_changed")
                 length -= len(part)
                 yield part
         finally:
-            await asyncio.to_thread(file.close)
+            await self._closed(file.close)
 
     async def whole(self, path: str, most: int) -> bytes | None:
         def read() -> bytes | None:
@@ -129,7 +176,7 @@ class Smb:
                 data = file.read(most + 1)
             return None if len(data) > most else data
 
-        return await _off(read)
+        return await self._off(read)
 
     async def write(self, path: str, data: bytes) -> None:
         def written() -> None:
@@ -138,10 +185,10 @@ class Smb:
             ) as file:
                 file.write(data)
 
-        await _off(written)
+        await self._off(written)
 
     async def put(self, path: str, parts: AsyncIterator[bytes]) -> None:
-        file = await _off(
+        file = await self._off(
             lambda: smbclient.open_file(
                 self._full(path), mode="xb", connection_cache=self.server.cache
             )
@@ -149,20 +196,22 @@ class Smb:
         done = False
         try:
             async for part in parts:
-                await _off(partial(file.write, part))
+                await self._off(partial(file.write, part))
             done = True
         finally:
-            await asyncio.to_thread(file.close)
+            await self._closed(file.close)
             if not done:
-                await asyncio.to_thread(
-                    smbclient.remove, self._full(path), connection_cache=self.server.cache
+                await self._closed(
+                    partial(smbclient.remove, self._full(path), connection_cache=self.server.cache)
                 )
 
     async def mkdir(self, path: str) -> None:
-        await _off(lambda: smbclient.mkdir(self._full(path), connection_cache=self.server.cache))
+        await self._off(
+            lambda: smbclient.mkdir(self._full(path), connection_cache=self.server.cache)
+        )
 
     async def rename(self, path: str, to: str) -> None:
-        await _off(
+        await self._off(
             lambda: smbclient.rename(
                 self._full(path), self._full(to), connection_cache=self.server.cache
             )
@@ -176,7 +225,7 @@ class Smb:
             else:
                 smbclient.remove(full, connection_cache=self.server.cache)
 
-        await _off(removed)
+        await self._off(removed)
 
     async def close(self) -> None:
-        await asyncio.to_thread(self.server.close)
+        await self._closed(self.server.close)

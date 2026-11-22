@@ -252,6 +252,11 @@ class Node(models.Model):
         """A file of a PDF; any other file is an image."""
         return self.kind == Node.Kind.FILE and self.blob.media_type == store.PDF
 
+    @property
+    def shows_pdf(self) -> bool:
+        """A file shown as a PDF: a PDF, or a TIFF, whose pages become one when they are read."""
+        return self.is_pdf or (self.kind == Node.Kind.FILE and self.blob.media_type == store.TIFF)
+
     def is_live(self, ancestry: list[Node] | None = None) -> bool:
         return all(node.trashed_at is None for node in ancestry or self.ancestry())
 
@@ -357,3 +362,21 @@ class BoardEntry(models.Model):
 
     def __str__(self) -> str:
         return f"{self.node_id}: {self.collection}/{self.key}"
+
+
+class Opening(models.Model):
+    """The visitor a browser not signed in becomes to read the files it opened from the computer
+    (D53): the address it came from, the files it opened, and the digest of the key that lets
+    whoever signs in from that browser take them."""
+
+    visitor = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.DB_CASCADE, related_name="opening"
+    )
+    key = models.CharField(max_length=64, unique=True)
+    address = models.GenericIPAddressField(null=True)
+    files = models.PositiveIntegerField(default=0)
+    bytes = models.BigIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    def __str__(self) -> str:
+        return f"opening {self.pk}"

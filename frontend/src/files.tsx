@@ -15,7 +15,14 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-react';
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 import { ChoiceBar, useChoice } from './choice';
 import { CodeEditor, type Opened, type Written } from './codeEditor';
 import { Cancel, ConfirmDialog, Modal, NameDialog } from './dialogs';
@@ -292,14 +299,25 @@ function FileView({
   source,
   path,
   onBack,
+  onDirty,
 }: {
   source: FileSource;
   path: string;
   onBack: () => void;
+  onDirty?: (dirty: boolean) => void;
 }) {
   const { t, formatNumber } = useI18n();
   const queryClient = useQueryClient();
-  const [dirty, setDirty] = useState(false);
+  const [dirty, setDirtyHere] = useState(false);
+  const told = useRef(onDirty);
+  useEffect(() => {
+    told.current = onDirty;
+  });
+  const setDirty = (now: boolean) => {
+    setDirtyHere(now);
+    told.current?.(now);
+  };
+  useEffect(() => () => told.current?.(false), []);
   const [leaving, setLeaving] = useState(false);
   const opened = useQuery({ queryKey: fileKey(source, path), queryFn: () => source.read(path) });
   return (
@@ -378,6 +396,7 @@ export function FileBrowser({
   path,
   file,
   onGo,
+  onDirty,
   frame,
 }: {
   source: FileSource;
@@ -385,6 +404,8 @@ export function FileBrowser({
   /** The file opened in the browser's place, none while it lists the folder. */
   file: string | null;
   onGo: (path: string, file?: string) => void;
+  /** Whether the file opened holds changes not yet saved, for a page that guards leaving it. */
+  onDirty?: (dirty: boolean) => void;
   frame: (parts: Framed) => ReactNode;
 }) {
   const { t, formatDate, formatNumber } = useI18n();
@@ -537,7 +558,15 @@ export function FileBrowser({
       actions: null,
       primary: null,
       panel: null,
-      children: <FileView key={file} source={source} path={file} onBack={() => onGo(path)} />,
+      children: (
+        <FileView
+          key={file}
+          source={source}
+          path={file}
+          onBack={() => onGo(path)}
+          onDirty={onDirty}
+        />
+      ),
     });
   return frame({
     title,

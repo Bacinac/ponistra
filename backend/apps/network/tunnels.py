@@ -1,13 +1,11 @@
 """The installation's VPN tunnels as the service `tunnel` keeps them (D54). The backend hands the
 service every enabled tunnel at once, as a tunnel is saved and whenever the service started again
 or holds other tunnels than the database, and writes back each tunnel's state as the service tells
-a change. What stands behind a tunnel is reached through the service's SOCKS5 port, the tunnel's
-id as the user name (`opened`); the backend never routes into another network itself."""
+a change. What stands behind a tunnel is reached through the service's SOCKS5 port (`socks`);
+the backend never routes into another network itself."""
 
 import hashlib
 import json
-import socket
-import struct
 import urllib.error
 import urllib.request
 from functools import partial
@@ -25,7 +23,6 @@ from .models import Tunnel
 log = getLogger(__name__)
 
 CONTROL = "http://tunnel:8090"
-SOCKS = ("tunnel", 1080)
 SEALED = {Tunnel.Kind.WIREGUARD: "network wireguard", Tunnel.Kind.SOFTETHER: "network softether"}
 # The service answers a look once a tunnel changes or after 25 seconds.
 LOOK = 35
@@ -161,40 +158,3 @@ async def follow() -> None:
             boot, answered = None, False
             await database(unreached, own_thread=True)()
             await sleep(AGAIN)
-
-
-def opened(tunnel: int, host: str, port: int, timeout: float = 20) -> socket.socket:
-    """A connection to host:port behind the tunnel, through the service's SOCKS5 port; the host
-    is named to the far side, which resolves it there. OSError where it cannot be made."""
-    connection = socket.create_connection(SOCKS, timeout=timeout)
-    try:
-        user = str(tunnel).encode()
-        connection.sendall(b"\x05\x01\x02")
-        if _read(connection, 2) != b"\x05\x02":
-            raise OSError("the tunnel service wants no user name")
-        connection.sendall(b"\x01" + bytes([len(user)]) + user + b"\x01-")
-        if _read(connection, 2) != b"\x01\x00":
-            raise OSError(f"the tunnel service holds no tunnel {tunnel}")
-        name = host.encode("idna")
-        connection.sendall(
-            b"\x05\x01\x00\x03" + bytes([len(name)]) + name + struct.pack("!H", port)
-        )
-        answer = _read(connection, 4)
-        if answer[1] != 0:
-            raise OSError(f"the tunnel could not reach {host}:{port} (SOCKS5 {answer[1]})")
-        _read(connection, {1: 4, 4: 16}.get(answer[3], 0) + 2)
-        connection.settimeout(None)
-        return connection
-    except BaseException:
-        connection.close()
-        raise
-
-
-def _read(connection: socket.socket, size: int) -> bytes:
-    read = b""
-    while len(read) < size:
-        more = connection.recv(size - len(read))
-        if not more:
-            raise OSError("the tunnel service closed the connection")
-        read += more
-    return read

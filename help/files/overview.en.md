@@ -16,6 +16,7 @@ What the page shows depends on the kind of file:
 - A PDF is shown page by page, with notes, comments and forms.
 - An image is shown whole, fitted to the window. PNG, JPEG, WebP and AVIF images can also be edited.
 - A text file is shown read-only, with line numbers and search.
+- An archive, a mail message, contacts, a calendar, Markdown and BMP, ICO, TIFF and PSD pictures show their content, as [File content by kind](help:files/held) describes.
 - Videos and sound recordings play in the browser. When the browser cannot play one, the page says so and advises downloading it.
 - Other kinds Ponistra keeps but does not show: the page gives the file's name, kind and size and advises downloading it.
 
@@ -31,4 +32,5 @@ A downloaded PDF carries its notes, comments and the values entered in its form,
 - [PDF files](help:pdf/viewer)
 - [Editing an image](help:files/image-editor)
 - [Text files](help:files/text)
+- [File content by kind](help:files/held)
 - [Uploading files](help:documents/upload)

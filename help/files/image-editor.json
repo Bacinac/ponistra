@@ -15,7 +15,7 @@
     "frontend/src/image/EditPanel.tsx#useUndoKeys": "f74f8970289b",
     "frontend/src/image/ImageView.tsx#ImageView": "245adc645672",
     "frontend/src/image/edits.ts#EDITABLE": "6125b00acf07",
-    "frontend/src/FilePage.tsx#Kept": "dea1815457ee",
+    "frontend/src/FilePage.tsx#Kept": "0ef16527d198",
     "backend/apps/documents/views.py#node_edited": "246cd328ff27"
   }
 }

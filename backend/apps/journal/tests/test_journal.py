@@ -116,6 +116,7 @@ def test_the_policy_is_written_only_when_it_changes(admin):
             "second_factor": False,
             "outside": Policy.Outside.NOBODY,
             "locations": Policy.Outside.EVERYONE,
+            "opening": True,
         }
     ]
 

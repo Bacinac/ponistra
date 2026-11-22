@@ -1,16 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, HardDrive, KeyRound, Pencil, Server, Share2, Trash2 } from 'lucide-react';
+import { Copy, KeyRound, Pencil, Share2, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { AddGrant } from './access';
 import { deleteJson, getJson, patchJson, postJson, upload } from './api';
 import type { Opened, Written } from './codeEditor';
 import { ConfirmDialog, FolderPickDialog, Modal } from './dialogs';
-import { FileBrowser, type FileEntry, type FileSource } from './files';
+import { FileBrowser, type FileSource } from './files';
 import { Frame, Loaded, Loading } from './frame';
 import { Headed, inline, inlineField } from './headed';
 import { useI18n } from './i18n';
 import { runJob } from './jobs';
+import {
+  asked,
+  listed,
+  LOCATION_ICONS,
+  LOCATIONS,
+  sourceKey,
+  useLocations,
+  type Auth,
+  type Kind,
+  type Location,
+} from './locationsData';
 import { RemoveButton } from './mailParts';
 import { ActionsMenu, MenuItem, MenuSeparator } from './menu';
 import { Badge, granteeName } from './people';
@@ -18,56 +29,22 @@ import { button, field, primaryButton } from './styles';
 import { errorMessage, type Grantee, type Role } from './tree';
 import { CopyButton } from './vault/parts';
 
-type Kind = 'smb' | 'sftp';
-type Auth = 'password' | 'key';
-
-export interface Location {
-  id: string;
-  name: string;
-  kind: Kind;
-  address: string;
-  role: Role;
-  owner: { id: number; name: string };
-  /** What only its owner is told. */
-  host?: string;
-  port?: number;
-  path?: string;
-  username?: string;
-  auth?: Auth;
-  public_key?: string;
-  jump?: string;
-}
-
-interface Locations {
-  locations: Location[];
-  /** Whether the user may add one, as the installation's policy has it. */
-  adds: boolean;
-}
-
 interface Grant {
   id: number;
   role: Role;
   grantee: Grantee;
 }
 
-const LOCATIONS = ['locations'];
 const ROLES: Role[] = ['read', 'edit', 'own'];
-const ICONS = { smb: HardDrive, sftp: Server };
-
-export const useLocations = () =>
-  useQuery({ queryKey: LOCATIONS, queryFn: () => getJson<Locations>('/api/locations') });
-
-const asked = (path: string, more: Record<string, string> = {}) =>
-  new URLSearchParams({ path, ...more }).toString();
 
 /** A location on the network as a file browser reads and changes it. */
 function sourceOf(location: Location, onCopy: (paths: string[]) => void, copy: string): FileSource {
   const at = `/api/locations/${location.id}`;
   return {
-    key: `location:${location.id}`,
+    key: sourceKey(location.id),
     name: location.name,
     writable: location.role !== 'read',
-    list: (path) => getJson<{ path: string; entries: FileEntry[] }>(`${at}/files?${asked(path)}`),
+    list: (path) => listed(location.id, path),
     rawHref: (path, download) => `${at}/raw?${asked(path, download ? { download: '1' } : {})}`,
     pictureHref: (path) => `${at}/picture?${asked(path)}`,
     read: (path) => getJson<Opened>(`${at}/text?${asked(path)}`),
@@ -167,7 +144,7 @@ export function LocationsPage() {
                   </thead>
                   <tbody>
                     {locations.map((each) => {
-                      const Icon = ICONS[each.kind];
+                      const Icon = LOCATION_ICONS[each.kind];
                       return (
                         <tr
                           key={each.id}
@@ -305,12 +282,16 @@ function LocationForm({
   const [auth, setAuth] = useState<Auth>(location?.auth ?? 'password');
   const [password, setPassword] = useState('');
   const [jump, setJump] = useState(location?.jump ?? '');
+  const was = location?.tunnel?.id ?? null;
+  const [tunnel, setTunnel] = useState<number | null>(was);
+  const tunnels = useLocations().data?.tunnels ?? [];
   const save = useLocationChange(() => {
     const shared = {
       name,
       username,
       ...(port ? { port: Number(port) } : {}),
       ...(password && auth === 'password' ? { password } : {}),
+      ...(tunnel !== was ? { tunnel } : {}),
     };
     const given = kind === 'smb' ? { ...shared, address } : { ...shared, host, path, auth, jump };
     return location
@@ -396,6 +377,28 @@ function LocationForm({
           })}
         {kind === 'sftp' &&
           text(t('locations.jump'), jump, setJump, { placeholder: 'user@host:22' })}
+        {(tunnels.length > 0 || was !== null) && (
+          <label className="flex flex-col gap-1 text-sm">
+            {t('locations.tunnel')}
+            <select
+              value={tunnel ?? ''}
+              onChange={(event) =>
+                setTunnel(event.target.value ? Number(event.target.value) : null)
+              }
+              className={field}
+            >
+              <option value="">{t('locations.tunnelNone')}</option>
+              {location?.tunnel && !tunnels.some((each) => each.id === was) && (
+                <option value={location.tunnel.id}>{location.tunnel.name}</option>
+              )}
+              {tunnels.map((each) => (
+                <option key={each.id} value={each.id}>
+                  {each.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <button type="submit" disabled={save.isPending} className={primaryButton}>
           {t('tree.save')}
         </button>
@@ -459,7 +462,7 @@ export function LocationSettings() {
       )}
       <ul className="flex flex-col">
         {locations.map((each) => {
-          const Icon = ICONS[each.kind];
+          const Icon = LOCATION_ICONS[each.kind];
           const mine = each.role === 'own';
           return (
             <li key={each.id} className="flex flex-col gap-2 border-b border-line py-2">
@@ -467,7 +470,9 @@ export function LocationSettings() {
                 <Icon size={18} aria-hidden className="shrink-0 text-muted" />
                 <Link to={`/locations/${each.id}`} className="min-w-0 flex-1 truncate">
                   {each.name}
-                  <span className="ml-2 text-sm text-muted">{each.address}</span>
+                  <span className="ml-2 text-sm text-muted">
+                    {each.tunnel ? `${each.address} · ${each.tunnel.name}` : each.address}
+                  </span>
                 </Link>
                 {!mine && <span className="text-sm text-muted">{each.owner.name}</span>}
                 {mine && (

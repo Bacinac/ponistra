@@ -128,6 +128,7 @@ LEFT: dict[tuple[str, str], str] = {
     ("blobs.Upload", "user"): "a file arriving, gone once it has",
     ("access.OutsideLink", "visitor"): "whom a link signs in, exported as the link's own",
     ("jobs.Job", "user"): "work under way, gone within the hour",
+    ("documents.Opening", "visitor"): "a browser not signed in, gone within the hour",
     ("identity.Code", "user"): "a sign-in code that lasts minutes",
     ("identity.Attempt", "confirming"): "a sign-in at a provider that lasts minutes",
     ("contacts.Gone", "owner"): "what a phone was told is gone",

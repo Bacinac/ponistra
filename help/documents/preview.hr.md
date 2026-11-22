@@ -11,7 +11,7 @@ Pregled uz popis mape prikazuje sadržaj i podatke odabrane stavke bez otvaranja
 
 ## Kako radi
 
-Za dokument se prikazuje njegov početak: naslovi, odlomci, tablice i slike. Prazan dokument javlja: {t:preview.empty} Slika i PDF prikazuju se umanjeno, PDF svojom prvom stranicom, tekstna datoteka svojim početkom, a video i zvuk mogu se pokrenuti u samom pregledu.
+Za dokument se prikazuje njegov početak: naslovi, odlomci, tablice i slike. Prazan dokument javlja: {t:preview.empty} Slika i PDF prikazuju se umanjeno, PDF svojom prvom stranicom, tekstna datoteka svojim početkom, a video i zvuk mogu se pokrenuti u samom pregledu. Arhiva, poruka e-pošte, kontakti, kalendar i Markdown prikazuju svoj sadržaj skraćeno, kako opisuje [Sadržaj datoteka po vrsti](help:files/held).
 
 Ispod sadržaja stoje {t:explorer.kind}, {t:explorer.size}, {t:explorer.updated}, {t:explorer.updatedBy} i {t:access.title}. Uvezeni dokument navodi i {t:preview.source} s gumbom {t:import.original}.
 
@@ -27,3 +27,4 @@ Je li pregled uključen pamti se u tom pregledniku. Kad nijedna stavka nije odab
 - [Pregled dokumenata](help:documents/overview)
 - [Datoteke](help:files/overview)
 - [Izvještaj o uvozu](help:documents/import)
+- [Sadržaj datoteka po vrsti](help:files/held)

@@ -28,7 +28,15 @@ def named(name: str) -> tuple[str, str]:
     return (title or name)[:200], extension.lower()
 
 
-def placed(blob: Blob, parent: Node, title: str, extension: str, user, old: Node | None):
+def placed(
+    blob: Blob,
+    parent: Node | None,
+    title: str,
+    extension: str,
+    user,
+    old: Node | None,
+    unplaced: bool = False,
+):
     """The file in the folder: a document where PONISTRA imports its kind and can read it, else
     the file it is, with why the import could not. A document read again keeps its place, its
     links and its versions. A converter that cannot be reached raises `convert.Unavailable`."""
@@ -41,7 +49,7 @@ def placed(blob: Blob, parent: Node, title: str, extension: str, user, old: Node
                 Node.objects.filter(pk=node.pk).update(source=blob)
                 return node, ""
             made = ponx.document if blob.media_type == store.PONX else create.document
-            node = made(blob, parent, title, user)
+            node = made(blob, parent, title, user, unplaced=unplaced)
         except tuple(KEPT) as refused:
             kept = KEPT[type(refused)]
         else:
@@ -52,7 +60,7 @@ def placed(blob: Blob, parent: Node, title: str, extension: str, user, old: Node
         old.blob, old.extension = blob, extension
         old.save(update_fields=["blob", "extension", "updated_at"])
         return old, kept
-    node = created(parent, Node.Kind.FILE, title, blob, user, extension)
+    node = created(parent, Node.Kind.FILE, title, blob, user, extension, unplaced=unplaced)
     if old is not None:
         old.delete()
     return node, kept

@@ -98,6 +98,117 @@ function visionData(): Plugin[] {
   ];
 }
 
+/** The kinds of file the installed app opens from the computer, each a handler of its own. */
+type Launchable =
+  | 'document'
+  | 'table'
+  | 'slides'
+  | 'pdf'
+  | 'image'
+  | 'text'
+  | 'audio'
+  | 'video'
+  | 'archive'
+  | 'message'
+  | 'contact'
+  | 'event';
+
+const importedAs = (extension: string): Launchable =>
+  /^\.(xls|xlt|ods)/.test(extension)
+    ? 'table'
+    : /^\.(ppt|pot|pps|odp)/.test(extension)
+      ? 'slides'
+      : 'document';
+
+function imported(kind: Launchable): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(IMPORTED)
+      .filter(([, extension]) => importedAs(extension) === kind)
+      .map(([type, extension]) => [type, [extension]]),
+  );
+}
+
+/** By kind, the media types and extensions the app is offered for: those Ponistra shows or
+ * plays, and so no WMV or AVI, which a browser does not play. */
+const LAUNCHED: Record<Launchable, Record<string, string[]>> = {
+  document: imported('document'),
+  table: {
+    ...imported('table'),
+    'text/csv': ['.csv'],
+  },
+  slides: imported('slides'),
+  pdf: { 'application/pdf': ['.pdf'] },
+  image: {
+    'image/png': ['.png'],
+    'image/jpeg': ['.jpg', '.jpeg', '.jfif'],
+    'image/gif': ['.gif'],
+    'image/webp': ['.webp'],
+    'image/avif': ['.avif'],
+    'image/svg+xml': ['.svg'],
+    'image/bmp': ['.bmp'],
+    'image/vnd.microsoft.icon': ['.ico'],
+    'image/tiff': ['.tif', '.tiff'],
+    'image/vnd.adobe.photoshop': ['.psd'],
+  },
+  text: {
+    'text/plain': ['.txt', '.log', '.ini', '.cfg', '.conf'],
+    'text/markdown': ['.md', '.markdown'],
+    'text/tab-separated-values': ['.tsv'],
+    'text/html': ['.html', '.htm'],
+    'text/css': ['.css'],
+    'text/javascript': ['.js', '.mjs'],
+    'text/x-typescript': ['.ts', '.tsx'],
+    'text/x-python': ['.py'],
+    'application/json': ['.json'],
+    'application/xml': ['.xml'],
+    'application/yaml': ['.yml', '.yaml'],
+    'application/toml': ['.toml'],
+    'application/sql': ['.sql'],
+    'application/x-sh': ['.sh'],
+    'text/x-powershell': ['.ps1'],
+    'application/x-bat': ['.bat', '.cmd'],
+  },
+  audio: {
+    'audio/mpeg': ['.mp3'],
+    'audio/wav': ['.wav'],
+    'audio/flac': ['.flac'],
+    'audio/ogg': ['.ogg', '.oga'],
+    'audio/opus': ['.opus'],
+    'audio/mp4': ['.m4a'],
+    'audio/aac': ['.aac'],
+    'audio/webm': ['.weba'],
+  },
+  video: {
+    'video/mp4': ['.mp4', '.m4v'],
+    'video/webm': ['.webm'],
+    'video/x-matroska': ['.mkv'],
+    'video/quicktime': ['.mov'],
+    'video/ogg': ['.ogv'],
+  },
+  archive: {
+    'application/zip': ['.zip'],
+    'application/x-7z-compressed': ['.7z'],
+    'application/vnd.rar': ['.rar'],
+    'application/x-tar': ['.tar'],
+    'application/gzip': ['.gz', '.tgz'],
+    'application/x-bzip2': ['.bz2'],
+    'application/x-xz': ['.xz'],
+    'application/zstd': ['.zst'],
+    'application/x-lz4': ['.lz4'],
+    'application/x-iso9660-image': ['.iso'],
+    'application/vnd.ms-cab-compressed': ['.cab'],
+    'application/x-lzh-compressed': ['.lzh'],
+    'application/x-xar': ['.xar'],
+  },
+  message: {
+    'message/rfc822': ['.eml'],
+    'multipart/related': ['.mht', '.mhtml'],
+    'application/vnd.ms-outlook': ['.msg'],
+  },
+  contact: { 'text/vcard': ['.vcf', '.vcard'] },
+  event: { 'text/calendar': ['.ics'] },
+};
+
 const BRAND = 'src/assets/brand';
 /** The icons the manifest and the service worker name at the root, from the brand folder. */
 const ICONS: [string, string, string][] = [
@@ -106,6 +217,9 @@ const ICONS: [string, string, string][] = [
   ['icon-maskable-512.png', '512x512', 'maskable'],
   ['badge-96.png', '96x96', 'monochrome'],
 ];
+/** The sizes `scripts/brand.mjs` draws each kind's file icon at. */
+const KIND_SIZES = [16, 32, 48, 256];
+const kindIcon = (kind: string, size: number) => `kinds/${kind}-${size}.png`;
 /** An installed app takes a changed icon only when the manifest gives it a new address, so each
  * icon's address carries a digest of its content. */
 function fingerprinted(file: string) {
@@ -135,17 +249,15 @@ async function manifest(language: 'hr' | 'en'): Promise<string> {
     background_color: '#f7faf6',
     theme_color: '#f7faf6',
     launch_handler: { client_mode: ['focus-existing', 'auto'] },
-    file_handlers: [
-      {
-        action: '/documents',
-        accept: Object.fromEntries(
-          Object.entries({ ...IMPORTED, 'application/pdf': '.pdf' }).map(([type, extension]) => [
-            type,
-            [extension],
-          ]),
-        ),
-      },
-    ],
+    file_handlers: Object.entries(LAUNCHED).map(([kind, accept]) => ({
+      action: '/documents',
+      accept,
+      icons: KIND_SIZES.map((size) => ({
+        src: fingerprinted(kindIcon(kind, size)),
+        sizes: `${size}x${size}`,
+        type: 'image/png',
+      })),
+    })),
     protocol_handlers: [{ protocol: 'mailto', url: '/mail?mailto=%s' }],
     shortcuts: [
       { name: said['notes.new'], short_name: said['app.noteShort'], url: '/notes?new' },
@@ -178,7 +290,10 @@ async function manifest(language: 'hr' | 'en'): Promise<string> {
  * the root in a build, a manifest in each language. The demo's worker stands in for the app's. */
 const rooted = (worker: string): [string, string, () => Buffer | string | Promise<string>][] => [
   ['sw.js', 'text/javascript', () => readFileSync(worker)],
-  ...ICONS.map(([file]): [string, string, () => Buffer] => [
+  ...[
+    ...ICONS.map(([file]) => file),
+    ...Object.keys(LAUNCHED).flatMap((kind) => KIND_SIZES.map((size) => kindIcon(kind, size))),
+  ].map((file): [string, string, () => Buffer] => [
     file,
     'image/png',
     () => readFileSync(join(BRAND, file)),

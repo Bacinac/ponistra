@@ -4,9 +4,10 @@
   "covers": [],
   "quiet": [],
   "describes": {
-    "frontend/src/users.tsx#PolicySection": "e60c92436e8a",
+    "frontend/src/users.tsx#PolicySection": "b46a70b5998d",
     "frontend/src/users.tsx#WhoPolicySection": "600fd4c9b1cd",
-    "backend/apps/users/accounts.py#sign_in_policy": "1f508e8e01fe",
-    "backend/apps/users/models.py#Policy": "4b4aee11175a"
+    "backend/apps/users/accounts.py#sign_in_policy": "7bf39962ed52",
+    "backend/apps/users/models.py#Policy": "202be09b7bf0",
+    "backend/apps/documents/opened.py#_admitted": "0fc50c7edb1f"
   }
 }

@@ -23,7 +23,7 @@ Tunel otvara instalaciji stalnu vezu u drugu mrežu, kroz WireGuard ili SoftEthe
 
 ## Kako radi
 
-Tunele drži zaseban servis instalacije, `tunnel`. Poslužitelj mu ih predaje pri svakom spremanju i sam ih ponovno predaje kad se servis pokrene iznova, pa tuneli nakon ponovnog pokretanja poslužitelja ili nadogradnje rade bez vaše radnje. Kroz tunel idu samo veze koje otvara Ponistra; poslužitelj na kojem je instalacija i njegove druge mreže ne usmjeravaju se kroz njega.
+Tunele drži zaseban servis instalacije, `tunnel`. Poslužitelj mu ih predaje pri svakom spremanju i sam ih ponovno predaje kad se servis pokrene iznova, pa tuneli nakon ponovnog pokretanja poslužitelja ili nadogradnje rade bez vaše radnje. Kroz tunel idu samo veze koje otvara Ponistra, a to su [mrežne lokacije](help:documents/locations) kojima je korisnik odabrao tunel; poslužitelj na kojem je instalacija i njegove druge mreže ne usmjeravaju se kroz njega.
 
 Konfiguracija WireGuarda i lozinka SoftEthera čuvaju se zapečaćene tajnim ključem instalacije i više se ne prikazuju. U retku tunela stoje vrsta, adresa druge strane (Endpoint za WireGuard, poslužitelj i port za SoftEther) i, dok je tunel spojen, adresa koju instalacija ima u drugoj mreži.
 
@@ -61,8 +61,10 @@ Poruke ispod naziva tunela:
 - {t:network.tunnelError.failed}: ostali razlozi; tekst iza poruke je odgovor servisa.
 - {t:error.invalid_wireguard} Konfiguracija nema jedno [Interface] s PrivateKey i Address ili barem jedan [Peer] s PublicKey i Endpoint, ili ključ nije ključ WireGuarda.
 - {t:error.tunnel_taken} Odaberite drugi naziv.
+- {t:error.tunnel_in_use} Tunel se ne uklanja dok kroz njega ide ijedna lokacija; isključite ga ili vlasnici lokacija odaberu drugi tunel.
 
 ## Povezano
 
 - [Mreža](help:admin/network)
 - [Dnevnik](help:admin/journal)
+- [Mrežne lokacije](help:documents/locations)

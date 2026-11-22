@@ -14,6 +14,7 @@
     "frontend/src/tunnels.tsx#TunnelDialog": "d9b67813b266",
     "backend/apps/network/views.py#_filled": "228f9749dfef",
     "backend/apps/network/tunnels.py#follow": "15a90cad8102",
-    "backend/apps/network/wireguard.py#parsed": "0945c911dcfa"
+    "backend/apps/network/wireguard.py#parsed": "0945c911dcfa",
+    "backend/apps/network/views.py#tunnel": "cd083232e22d"
   }
 }

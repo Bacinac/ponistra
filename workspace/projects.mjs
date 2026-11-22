@@ -83,7 +83,6 @@ import {
 } from './chats.mjs';
 import { hostOf } from './host.mjs';
 import { FILES, filesAnswered } from './files.mjs';
-import { HOSTS, hostFilesAnswered, hostsAnswered } from './hosts.mjs';
 import { followMemory, MEMORY, memoryAnswered } from './memory.mjs';
 import { TERMINAL, upgraded } from './terminal.mjs';
 import { followWork } from './worked.mjs';
@@ -1763,14 +1762,8 @@ createServer(async (request, response) => {
     }
     if (FILES.test(path)) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
-      const found = address.searchParams.has('host')
-        ? await hostFilesAnswered(request, path, address, bodyOf, response)
-        : await filesAnswered(request, path, address, bodyOf, projectFolders, response);
+      const found = await filesAnswered(request, path, address, bodyOf, projectFolders, response);
       return found === null ? undefined : answer(200, found);
-    }
-    if (HOSTS.test(path)) {
-      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
-      return answer(200, await hostsAnswered(request, path, bodyOf));
     }
     if (MEMORY.test(path)) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });

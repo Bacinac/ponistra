@@ -13,6 +13,12 @@ Stranica {t:locations.title} otvara mape na poslužiteljima organizacije, dijelj
 
 Dok nema nijedne lokacije, piše {t:locations.none} uz poveznicu na [postavke lokacija](help:documents/locations).
 
+### Kroz stablo mapa
+
+1. U bočnom stupcu Dokumenata pritisnite strelicu ({t:frame.expand}) uz {t:locations.title}; ispod se pojavljuju vaše lokacije.
+2. Strelica uz lokaciju ili mapu pokazuje mape u njoj, a ponovni pritisak ({t:frame.collapse}) ih skriva.
+3. Pritisak na naziv lokacije ili mape otvara je desno; redak otvorene mape u stablu je označen.
+
 ### Otvaranje i uređivanje datoteke
 
 1. Pritisnite datoteku. Tekstualna datoteka otvara se u uređivaču na mjestu popisa, a PDF, slika, zvuk i videozapis u novoj kartici preglednika.
@@ -42,6 +48,8 @@ Izbornik se otvara desnim pritiskom ili dugim pritiskom na redak. Više stavki o
 ## Kako radi
 
 Ponistra se na poslužitelj prijavljuje računom upisanim u lokaciji, pa na njemu smijete ono što smije taj račun, a ne vaš. Datoteke ostaju na poslužitelju: Ponistra ih ne indeksira, ne pretražuje i ne čuva im verzije, a popis mape čita svaki put kad je otvorite.
+
+Stablo mapa čita mape lokacije tek kad otvorite njezinu granu, i to samo mape, ne datoteke. Stablo i popis desno dijele isto čitanje, pa nova, preimenovana ili obrisana mapa odmah se vidi i u stablu. Lokacija čiji se poslužitelj ne može dosegnuti pokazuje grešku ispod svoje grane, a ostale lokacije rade dalje.
 
 Spremanje teksta provjerava je li datoteka na poslužitelju ista kao kad ste je otvorili. Ako ju je netko u međuvremenu promijenio, piše {t:workspace.files.changed} i birate {t:workspace.files.reload} ili {t:workspace.files.overwrite}.
 

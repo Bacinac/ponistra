@@ -1,12 +1,13 @@
 # LibreOffice turns the word processor files it reads into docx, the spreadsheets into xlsx
 # and the presentations into pptx, for the backend's import, on a network without the internet; the fonts are the
-# backend's, for the same metrics.
+# backend's, for the same metrics. libarchive lists and unpacks archives, 7-Zip (Debian's, without
+# the unRAR code) the 7z with a password libarchive refuses (D23).
 FROM debian:trixie-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui python3 \
+    && apt-get install -y --no-install-recommends libreoffice-writer-nogui libreoffice-calc-nogui libreoffice-impress-nogui python3 python3-libarchive-c 7zip \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=fonts . /usr/share/fonts/ponistra
-COPY serve.py /srv/serve.py
+COPY serve.py archives.py /srv/
 ENV HOME=/tmp
 USER nobody
 EXPOSE 8040

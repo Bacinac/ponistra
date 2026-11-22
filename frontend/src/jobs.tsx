@@ -26,7 +26,8 @@ export type JobKind =
   | 'links'
   | 'personal'
   | 'mail-move'
-  | 'network';
+  | 'network'
+  | 'opened';
 
 interface Job {
   id: string;
@@ -63,7 +64,11 @@ function subscribe(listener: () => void) {
 /** The job handed over and followed until it ends; it is shown only once it has taken longer
  * than a check, so that a quick one does not flash past. */
 async function followed(kind: JobKind, parameters: object, name: string): Promise<Job> {
-  let job = await postJson<Job>('/api/jobs', { kind, ...parameters });
+  return follow(await postJson<Job>('/api/jobs', { kind, ...parameters }), name);
+}
+
+async function follow(first: Job, name: string): Promise<Job> {
+  let job = first;
   try {
     while (UNDER_WAY.has(job.state) && job.answer === null) {
       await new Promise((resolve) => setTimeout(resolve, CHECK_EVERY));
@@ -85,6 +90,11 @@ async function followed(kind: JobKind, parameters: object, name: string): Promis
 /** What the job answered: the document, file or tab it made. */
 export async function runJob<T>(kind: JobKind, parameters: object, name: string): Promise<T> {
   return (await followed(kind, parameters, name)).answer as T;
+}
+
+/** What a job the server began itself answered. */
+export async function answerOf<T>(id: string, name: string): Promise<T> {
+  return (await follow(await getJson<Job>(`/api/jobs/${id}`), name)).answer as T;
 }
 
 /** The file the job made, which the browser saves as it downloads it. */
@@ -117,6 +127,7 @@ const DOING: Record<JobKind, MessageKey> = {
   personal: 'job.saving',
   'mail-move': 'job.mailMove',
   network: 'job.copy',
+  opened: 'job.import',
 };
 
 async function cancel(job: Job) {

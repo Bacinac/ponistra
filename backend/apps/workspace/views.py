@@ -2,17 +2,20 @@
 Vite ask before every request and WebSocket that reaches it. One elsewhere has a door of its own.
 The workspace lists its projects, chats and rounds of chats when asked, shows a chat's transcript,
 carries out what the owner asks of it from the page of code (each a `Command` it reports on as it
-goes, D52), shows and writes the files of its projects (PJ6) and of the hosts it reaches over SSH
-(PJ12), and says when what it lists changed,
-which reaches the owner's tabs as the area `workspace`. Each project it lists is matched here with
+goes, D52), shows and changes the files of its projects in the file browser Documents shows a
+network location in (PJ6, ML6), and says when what it lists changed, which reaches the owner's
+tabs as the area `workspace`. Each project it lists is matched here with
 the board of its plan, `Plan <name>`."""
 
+import asyncio
 import base64
 import hmac
 import json
 import logging
 import re
+import tempfile
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import httpx2
 import icu
@@ -29,9 +32,13 @@ from apps.agents import oauth
 from apps.agents.models import Grant, Token
 from apps.blobs import store
 from apps.blobs.models import Blob, Upload
+from apps.blobs.previews import DRAWN
 from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database
 from apps.core.sealed import seal
+from apps.imports.reading import TooLarge, Unreadable
+from apps.locations.views import SHOWN
+from apps.reader import client as reading
 from apps.users.sessions import CONFIRMED as CONFIRMED_AT
 from apps.users.sessions import fresh
 
@@ -51,13 +58,10 @@ AREA = "workspace"
 PASSED = {404, 409}
 FILES_PASSED = {400, 403, 404, 409, 413}
 FILE_PATH = 4096
-# A host of the workspace's own ssh config, and what its entry holds.
-HOST = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,62}")
-ADDRESS = re.compile(r"(?!-)[A-Za-z0-9._:-]{1,253}")
-HOST_USER = re.compile(r"[A-Za-z0-9._][A-Za-z0-9._-]{0,63}")
-KEY_NAME = re.compile(r"[A-Za-z0-9._-]{1,100}")
-# A host's files come over ssh, which connects first and asks a request or more of the host.
-HOST_WITHIN = 45
+REMOVED = 1000
+# A file drawn small is read whole first; a larger one is shown without its picture.
+DRAWN_UP_TO = 64 * 1024 * 1024
+SNIFFED = 1024
 ROUND = re.compile(r"[A-Za-z0-9._-]{1,100}")
 SESSION = re.compile(r"[0-9a-f-]{36}")
 PLACE = re.compile(r"\d{1,15}")
@@ -289,47 +293,32 @@ async def chat(request, session):
 
 
 def _placed(given) -> dict:
-    """A path within one of the workspace's projects, or from the folder a host of its own opens
-    at (`host`), as the workspace checks it again."""
-    folder, host, path = given.get("folder"), given.get("host"), given.get("path", "")
+    """A path within one of the workspace's projects, as the workspace checks it again."""
+    folder, path = given.get("folder"), given.get("path", "")
     if not isinstance(path, str) or len(path) > FILE_PATH or "\0" in path:
         raise Refused(400, "invalid_path")
-    if host is not None:
-        if not isinstance(host, str) or not HOST.fullmatch(host):
-            raise Refused(400, "invalid_host")
-        return {"host": host, "path": path}
     if not isinstance(folder, str) or not folder.startswith("/") or len(folder) > FILE_PATH:
         raise Refused(400, "invalid_folder")
     return {"folder": folder, "path": path}
 
 
-def _within(placed: dict) -> float:
-    return HOST_WITHIN if "host" in placed else ASKED_WITHIN
-
-
 @api("GET")
 async def files(request):
-    """A folder's entries within a project of the workspace or on a host, folders first."""
-    if not owns(request.user):
-        return JsonResponse({"error": "not_the_owner"}, status=403)
-    placed = _placed(request.GET)
+    """A folder's entries within a project of the workspace, folders first."""
+    _owner(request)
     return JsonResponse(
-        await _asked("GET", "files", params=placed, passed=FILES_PASSED, within=_within(placed))
+        await _asked("GET", "files", params=_placed(request.GET), passed=FILES_PASSED)
     )
 
 
 @api("GET", "POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
 async def file(request):
-    """A file of a project or a host with its text and its hash where it is text small enough to
-    edit, or its text written anew while the file is still what that hash says (PJ6, PJ12)."""
-    if not owns(request.user):
-        return JsonResponse({"error": "not_the_owner"}, status=403)
+    """A file of a project with its text and its hash where it is text small enough to edit, or
+    its text written anew while the file is still what that hash says (PJ6)."""
+    _owner(request)
     if request.method == "GET":
-        placed = _placed(request.GET)
         return JsonResponse(
-            await _asked(
-                "GET", "files/read", params=placed, passed=FILES_PASSED, within=_within(placed)
-            )
+            await _asked("GET", "files/read", params=_placed(request.GET), passed=FILES_PASSED)
         )
     given = body(request)
     placed = _placed(given)
@@ -338,42 +327,65 @@ async def file(request):
         raise Refused(400, "invalid_text")
     if not isinstance(hash, str) or not HASH.fullmatch(hash):
         raise Refused(400, "invalid_hash")
-    # The workspace finds a host where it finds it for every other request, beside the path.
-    host = {"host": placed.pop("host")} if "host" in placed else None
     payload = {**placed, "text": text, "hash": hash}
-    return JsonResponse(
-        await _asked(
-            "POST",
-            "files/write",
-            payload,
-            params=host,
-            passed=FILES_PASSED,
-            within=HOST_WITHIN if host else ASKED_WITHIN,
-        )
-    )
+    return JsonResponse(await _asked("POST", "files/write", payload, passed=FILES_PASSED))
 
 
-@api("GET")
-async def file_raw(request):
-    """A file of a project or a host as it is, downloaded."""
-    if not owns(request.user):
-        return JsonResponse({"error": "not_the_owner"}, status=403)
-    placed = _placed(request.GET)
-    url, headers = _address("files/raw")
-    client = httpx2.AsyncClient(timeout=httpx2.Timeout(_within(placed), read=None), trust_env=False)
+async def _streamed(placed: dict, headers: dict | None = None):
+    """The workspace's answer to a file's bytes, open for its body to be read as it comes, with
+    the client that must close after it."""
+    url, authorised = _address("files/raw")
+    client = httpx2.AsyncClient(timeout=httpx2.Timeout(ASKED_WITHIN, read=None), trust_env=False)
     try:
         answer = await client.send(
-            client.build_request("GET", url, headers=headers, params=placed), stream=True
+            client.build_request(
+                "GET", url, headers={**authorised, **(headers or {})}, params=placed
+            ),
+            stream=True,
         )
     except httpx2.HTTPError as error:
         await client.aclose()
         logger.warning("the code workspace did not send %s: %s", placed["path"], error)
         raise Refused(502, "workspace_unreachable") from error
-    if answer.status_code != 200:
+    if answer.status_code not in (200, 206):
         await answer.aread()
         await answer.aclose()
         await client.aclose()
+        if answer.status_code == 416:
+            raise Refused(416, "unsatisfiable")
         raise _refused("GET", "files/raw", answer, FILES_PASSED)
+    return client, answer
+
+
+async def _head(placed: dict) -> bytes:
+    client, answer = await _streamed(placed, {"Range": f"bytes=0-{SNIFFED - 1}"})
+    try:
+        return await answer.aread()
+    finally:
+        await answer.aclose()
+        await client.aclose()
+
+
+@api("GET")
+async def file_raw(request):
+    """A file of a project as it is, or the one range a player asks for; shown in place only
+    where it is a picture, sound, video or PDF, which runs nothing."""
+    _owner(request)
+    placed = _placed(request.GET)
+    media = "application/octet-stream"
+    if request.GET.get("download") != "1":
+        try:
+            media = _media(await _head(placed))
+        except Refused as refused:
+            if refused.status != 416:
+                raise
+    asked = {"Range": request.headers["Range"]} if "Range" in request.headers else None
+    try:
+        client, answer = await _streamed(placed, asked)
+    except Refused as refused:
+        if refused.status != 416:
+            raise
+        return HttpResponse(status=416)
 
     async def sent():
         try:
@@ -384,70 +396,134 @@ async def file_raw(request):
             await client.aclose()
 
     name = placed["path"].rstrip("/").rsplit("/", 1)[-1] or "file"
-    sized = (
-        {"Content-Length": answer.headers["content-length"]}
-        if "content-length" in answer.headers
-        else {}
-    )
+    passed = {
+        header.title(): answer.headers[header]
+        for header in ("content-length", "content-range")
+        if header in answer.headers
+    }
     return StreamingHttpResponse(
         sent(),
-        content_type="application/octet-stream",
+        status=answer.status_code,
+        content_type=media,
         headers={
-            "Content-Disposition": content_disposition_header(True, name),
+            "Accept-Ranges": "bytes",
+            "Content-Disposition": content_disposition_header(
+                media == "application/octet-stream", name
+            ),
             "Cache-Control": "private, no-store",
-            **sized,
+            **passed,
         },
     )
 
 
-def _host_of(given) -> dict:
-    """A host's entry as the owner set it, each field checked before it reaches the workspace."""
-    name, address, port = given.get("name"), given.get("address"), given.get("port")
-    user, key, was = given.get("user"), given.get("key"), given.get("was")
-    path = given.get("path", "")
-    if not isinstance(name, str) or not HOST.fullmatch(name):
-        raise Refused(400, "invalid_host")
-    if was is not None and (not isinstance(was, str) or not HOST.fullmatch(was)):
-        raise Refused(400, "invalid_host")
-    if not isinstance(address, str) or not ADDRESS.fullmatch(address):
-        raise Refused(400, "invalid_host_address")
-    if not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535:
-        raise Refused(400, "invalid_host_port")
-    if not isinstance(user, str) or not HOST_USER.fullmatch(user):
-        raise Refused(400, "invalid_host_user")
-    if not isinstance(path, str) or len(path) > FILE_PATH or re.search(r"[\0\r\n]", path):
-        raise Refused(400, "invalid_path")
-    if not isinstance(key, str) or not KEY_NAME.fullmatch(key):
-        raise Refused(400, "invalid_host_key")
-    host = {"name": name, "address": address, "port": port, "user": user, "path": path, "key": key}
-    return host if was is None else {**host, "was": was}
+def _media(head: bytes) -> str:
+    media = store.sniff(head)
+    return media if media in SHOWN else "application/octet-stream"
 
 
-@api("GET", "POST", "DELETE", confirmed=("POST", "DELETE"), confirmed_for=CONFIRMED_FOR)
-async def hosts(request):
-    """The hosts whose files the workspace reaches over SSH, entries of its own ssh config, with
-    the keys it signs in with (PJ12); a host saved, in the place of the one it was (`was`), or one
-    removed."""
-    if not owns(request.user):
-        return JsonResponse({"error": "not_the_owner"}, status=403)
-    if request.method == "GET":
-        return JsonResponse(await _asked("GET", "hosts", passed=FILES_PASSED))
-    if request.method == "DELETE":
-        name = request.GET.get("name")
-        if not isinstance(name, str) or not HOST.fullmatch(name):
-            raise Refused(400, "invalid_host")
-        return JsonResponse(
-            await _asked("POST", "hosts/remove", {"name": name}, passed=FILES_PASSED)
-        )
-    return JsonResponse(await _asked("POST", "hosts", _host_of(body(request)), passed=FILES_PASSED))
+@api("GET")
+async def file_picture(request):
+    """An image or a PDF's first page of a project drawn small by the reader (D51), which alone
+    reads what someone else made."""
+    _owner(request)
+    placed = _placed(request.GET)
+    client, answer = await _streamed(placed)
+    try:
+        if int(answer.headers.get("content-length", DRAWN_UP_TO + 1)) > DRAWN_UP_TO:
+            raise Refused(404, "not_found")
+        data = await answer.aread()
+    finally:
+        await answer.aclose()
+        await client.aclose()
+    media = data and store.sniff(data[:SNIFFED])
+    if media not in DRAWN:
+        raise Refused(404, "not_found")
+    with tempfile.NamedTemporaryFile() as kept:
+        kept.write(data)
+        kept.flush()
+        try:
+            drawn = await asyncio.to_thread(
+                reading.ask, "preview", Path(kept.name), pdf=media == store.PDF
+            )
+        except Unreadable, TooLarge:
+            raise Refused(404, "not_found") from None
+    return HttpResponse(drawn, content_type="image/webp", headers={"Cache-Control": "private"})
 
 
 @api("POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
-async def hosts_key(request):
-    """The workspace's own ed25519 key made, whose public half the owner gives each host."""
-    if not owns(request.user):
-        return JsonResponse({"error": "not_the_owner"}, status=403)
-    return JsonResponse(await _asked("POST", "hosts/key", passed=FILES_PASSED))
+async def files_folder(request):
+    """A new folder in a folder of a project."""
+    _owner(request)
+    given = body(request)
+    payload = {**_placed(given), "name": given.get("name")}
+    return JsonResponse(
+        await _asked("POST", "files/folder", payload, passed=FILES_PASSED), status=201
+    )
+
+
+@api("POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
+async def files_rename(request):
+    """A file or folder of a project renamed, or moved to another folder of it."""
+    _owner(request)
+    given = body(request)
+    placed = _placed(given)
+    to = _placed({"folder": placed["folder"], "path": given.get("to")})["path"]
+    payload = {**placed, "to": to}
+    return JsonResponse(await _asked("POST", "files/rename", payload, passed=FILES_PASSED))
+
+
+@api("POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
+async def files_remove(request):
+    """Files and folders of a project deleted, folders with all they hold; nothing keeps them."""
+    _owner(request)
+    given = body(request)
+    paths = given.get("paths")
+    if not isinstance(paths, list) or not 0 < len(paths) <= REMOVED:
+        raise Refused(400, "invalid_paths")
+    folder = given.get("folder")
+    checked = [_placed({"folder": folder, "path": path})["path"] for path in paths]
+    payload = {"folder": _placed({"folder": folder})["folder"], "paths": checked}
+    await _asked("POST", "files/remove", payload, passed=FILES_PASSED)
+    return HttpResponse(status=204)
+
+
+def _uploaded(user, sha256: object) -> Path:
+    if not isinstance(sha256, str) or not Upload.objects.filter(user=user, blob=sha256).exists():
+        raise Refused(400, "invalid_blob")
+    return store.path_of(sha256)
+
+
+@api("POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
+async def files_put(request):
+    """A file the owner uploaded to PONISTRA written into a folder of a project; one by its name
+    already there is refused."""
+    _owner(request)
+    given = body(request)
+    placed = _placed(given)
+    name = given.get("name")
+    if not isinstance(name, str):
+        raise Refused(400, "invalid_file_name")
+    source = await database(_uploaded)(request.user, given.get("blob"))
+    url, headers = _address("files/put")
+
+    async def parts():
+        with source.open("rb") as kept:
+            while part := await asyncio.to_thread(kept.read, store.CHUNK):
+                yield part
+
+    try:
+        async with httpx2.AsyncClient(
+            timeout=httpx2.Timeout(ASKED_WITHIN, write=None), trust_env=False
+        ) as client:
+            answer = await client.post(
+                url, headers=headers, params={**placed, "name": name}, content=parts()
+            )
+    except httpx2.HTTPError as error:
+        logger.warning("the code workspace did not take %s: %s", name, error)
+        raise Refused(502, "workspace_unreachable") from error
+    if answer.status_code != 200:
+        raise _refused("POST", "files/put", answer, FILES_PASSED)
+    return JsonResponse(answer.json(), status=201)
 
 
 def shown(command: Command) -> dict:

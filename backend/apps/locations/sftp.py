@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from apps.network import socks
+
 from .remote import CHUNK, Entry, Failed
 
 log = logging.getLogger(__name__)
@@ -50,6 +52,8 @@ JUMP = re.compile(
 
 # What ssh says when it cannot sign in, as the location's error; the first that matches wins.
 FAILURES = [
+    (re.compile(r"^tunnel down: ", re.M), "location_tunnel_down"),
+    (re.compile(r"^tunnel: ", re.M), "location_unreachable"),
     (re.compile(r"REMOTE HOST IDENTIFICATION HAS CHANGED"), "location_host_key_changed"),
     (re.compile(r"Host key verification failed"), "location_host_key_changed"),
     (re.compile(r"Load key .*: (invalid format|bad permissions)"), "location_key_unreadable"),
@@ -78,6 +82,7 @@ class Target:
     key: str | None
     jump: str
     known_hosts: str
+    tunnel: int | None = None
 
 
 def jump_of(given: str) -> tuple[str | None, str, int] | None:
@@ -96,10 +101,18 @@ def _config(target: Target, folder: Path) -> str:
             [f"  User {user}"] if user else []
         )
 
+    # The first hop reaches its host through the tunnel, the one after it through the first.
+    through = (
+        [f"  ProxyCommand {socks.proxy_command(target.tunnel)}", "  ProxyUseFdpass yes"]
+        if target.tunnel is not None
+        else []
+    )
     lines = entry("location", target.host, target.port, target.user)
     if target.jump:
         jump_user, jump_host, jump_port = jump_of(target.jump)
-        lines += ["  ProxyJump jump", *entry("jump", jump_host, jump_port, jump_user)]
+        lines += ["  ProxyJump jump", *entry("jump", jump_host, jump_port, jump_user), *through]
+    else:
+        lines += through
     lines += [
         "Host *",
         f"  UserKnownHostsFile {folder}/known_hosts",

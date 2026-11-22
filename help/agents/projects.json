@@ -34,9 +34,7 @@
     "workspace.waits.below",
     "workspace.waits.round",
     "workspace.waits.red",
-    "workspace.waits.pause",
-    "workspace.files.place",
-    "workspace.hosts.public"
+    "workspace.waits.pause"
   ],
   "describes": {
     "frontend/src/WorkspacePage.tsx#WorkspacePage": "8585ace9b638",
@@ -52,7 +50,7 @@
     "frontend/src/WorkspacePage.tsx#Measures": "560e40ed59c4",
     "frontend/src/WorkspacePage.tsx#RestartButton": "34a05cac92de",
     "backend/apps/workspace/views.py#_plans": "c153401f6120",
-    "workspace/projects.mjs": "c0ca554be2e9",
+    "workspace/projects.mjs": "f2253d7dabf1",
     "workspace/webview.mjs": "ab2c5a614673",
     "frontend/src/WorkspacePage.tsx#RoundCard": "32666faddb11",
     "frontend/src/WorkspacePage.tsx#Pult": "53a3fecd33b9",
@@ -85,17 +83,19 @@
     "workspace/claude": "86c492850ea1",
     "frontend/src/workspaceWhen.tsx#StartWhen": "3272858a1aba",
     "frontend/src/workspaceWhen.tsx#useWhenText": "3a6fcda156f3",
-    "frontend/src/workspaceFiles.tsx#FilesPanel": "3d613fbbaefc",
+    "frontend/src/workspaceFiles.tsx#FilesPanel": "fce7fd45ffb6",
     "frontend/src/codeEditor.tsx#CodeEditor": "2adca8592f6e",
-    "frontend/src/workspaceFiles.tsx#Entries": "7e5750a2c0bb",
-    "frontend/src/workspaceFiles.tsx#FileView": "a539040dd161",
-    "backend/apps/workspace/views.py#file": "776d374cd541",
-    "backend/apps/workspace/views.py#files": "e234e0545943",
-    "backend/apps/workspace/views.py#file_raw": "a0c4175b4eda",
-    "workspace/files.mjs": "a2aaa9b4edc2",
-    "frontend/src/workspaceFiles.tsx#HostsView": "5d09e383d36d",
-    "frontend/src/workspaceFiles.tsx#HostDialog": "f74c7838c47b",
-    "workspace/hosts.mjs": "1c14108e8cfb",
-    "backend/apps/workspace/views.py#hosts": "e22b4885ca79"
+    "backend/apps/workspace/views.py#file": "e86ca3a31cd1",
+    "backend/apps/workspace/views.py#files": "b0bb94184b20",
+    "backend/apps/workspace/views.py#file_raw": "6907ccc66bd2",
+    "workspace/files.mjs": "a5e9ddc23501",
+    "frontend/src/workspaceFiles.tsx#sourceOf": "d9980c31da15",
+    "frontend/src/files.tsx#FileBrowser": "b08c976af56a",
+    "frontend/src/files.tsx#FileView": "646dd8557be5",
+    "backend/apps/workspace/views.py#file_picture": "a51b6048a2ec",
+    "backend/apps/workspace/views.py#files_folder": "03c7a213fcc0",
+    "backend/apps/workspace/views.py#files_rename": "ed20da6fb562",
+    "backend/apps/workspace/views.py#files_remove": "6ae6cb2818d5",
+    "backend/apps/workspace/views.py#files_put": "09718d46bace"
   }
 }

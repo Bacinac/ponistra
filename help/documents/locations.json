@@ -8,16 +8,19 @@
     "locations.removeBody"
   ],
   "describes": {
-    "frontend/src/locations.tsx#LocationSettings": "9cd2a4abbe6e",
-    "frontend/src/locations.tsx#LocationForm": "791ee3ba29a0",
+    "frontend/src/locations.tsx#LocationSettings": "8149a3685a2b",
+    "frontend/src/locations.tsx#LocationForm": "8cf404369045",
     "frontend/src/locations.tsx#SharingDialog": "8b6fe2acdd8e",
     "frontend/src/locations.tsx#PublicKey": "4339596c4020",
-    "backend/apps/locations/views.py#locations": "c29008534321",
-    "backend/apps/locations/views.py#location": "ff96fe053a1a",
-    "backend/apps/locations/views.py#_given": "6d4bcbfc3bd3",
+    "backend/apps/locations/views.py#locations": "07cd764d2d11",
+    "backend/apps/locations/views.py#location": "895c2d6e10c3",
+    "backend/apps/locations/views.py#_given": "9f549f0b87f1",
     "backend/apps/locations/views.py#_tried": "7224f5dbf762",
     "backend/apps/locations/views.py#_granted": "0e52dd3db1d7",
-    "backend/apps/locations/reach.py#reached": "e7844ff5944e",
-    "backend/apps/locations/reach.py#role_on": "57e73778b1c4"
+    "backend/apps/locations/reach.py#reached": "81d1a9ab50ae",
+    "backend/apps/locations/reach.py#role_on": "57e73778b1c4",
+    "backend/apps/locations/views.py#_chosen": "65bf753304c6",
+    "backend/apps/locations/reach.py#_through": "a2edc6f3ee82",
+    "backend/apps/locations/sftp.py#_config": "8772979ceb6a"
   }
 }

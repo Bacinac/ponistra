@@ -8,17 +8,19 @@
     "files.deleteBody"
   ],
   "describes": {
-    "frontend/src/locations.tsx#LocationsPage": "e001f9ee7095",
+    "frontend/src/locations.tsx#LocationsPage": "d57dbc9483cb",
     "frontend/src/locations.tsx#Browsed": "eebb5c0bc043",
-    "frontend/src/locations.tsx#sourceOf": "bca29e6aa1f3",
-    "frontend/src/files.tsx#FileBrowser": "8437a51ab138",
-    "frontend/src/files.tsx#FileView": "669ac5587ce9",
+    "frontend/src/locations.tsx#sourceOf": "e92ca83a0194",
+    "frontend/src/files.tsx#FileBrowser": "b08c976af56a",
+    "frontend/src/files.tsx#FileView": "646dd8557be5",
     "backend/apps/locations/views.py#files": "79c81f482f09",
     "backend/apps/locations/views.py#raw": "3e9488b90b5b",
     "backend/apps/locations/views.py#text": "c60ed2e19cf5",
     "backend/apps/locations/views.py#rename": "45a3956e2394",
     "backend/apps/locations/views.py#remove": "5c31966fe821",
     "backend/apps/locations/views.py#put": "7a1f48bdc966",
-    "backend/apps/locations/jobs.py#_copied": "584410ea1e70"
+    "backend/apps/locations/jobs.py#_copied": "584410ea1e70",
+    "frontend/src/frame.tsx#NetworkBranch": "1760e47e2bf5",
+    "frontend/src/frame.tsx#NetworkFolder": "f453d65421fb"
   }
 }

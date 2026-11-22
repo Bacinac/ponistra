@@ -124,29 +124,21 @@ Kad se veza prekine, na primjer dok se Ponistra ažurira, mreža zastane ili tel
 ### Datoteke
 
 1. Na stranici {t:rail.projects} pritisnite ikonu {t:workspace.files.open} desno od imena projekta.
-2. Datoteke se otvaraju na mjestu razgovora: lijevo stablo mape projekta, desno odabrana datoteka. Mape stoje prije datoteka; klik na mapu otvara je ispod nje, drugi klik je zatvara.
-3. Pritisnite datoteku. Tekst se otvara u uređivaču s brojevima redaka i bojama po vrsti datoteke; {k:Mod-f} traži u njoj, {k:Mod-z} poništava izmjenu.
-4. Uredite tekst. Iznad njega piše {t:workspace.files.unsaved}.
+2. Datoteke se otvaraju na mjestu razgovora, u istom pregledniku kao [datoteke na mreži](help:documents/network): mapa projekta kao popis, mape prije datoteka, a putanja iznad njega vodi natrag. Mapa se otvara pritiskom na njezin redak; {t:files.refresh} je ponovno čita.
+3. Pritisnite datoteku. Tekst se otvara u uređivaču s brojevima redaka i bojama po vrsti datoteke; {k:Mod-f} traži u njoj, {k:Mod-z} poništava izmjenu. PDF, slika, zvuk i videozapis otvaraju se u novoj kartici preglednika; ostale datoteke nude samo {t:file.download}.
+4. Uredite tekst. Uz naziv piše {t:workspace.files.unsaved}.
 5. Pritisnite {t:workspace.files.save} ili {k:Mod-s}. Kad je datoteka zapisana, piše {t:workspace.files.saved}.
-6. Gumb {t:workspace.view.files} na vrhu (na telefonu u izborniku {t:workspace.view.more}) vraća datoteke dok gledate razgovor ili terminal; nespremljene izmjene za to vrijeme ostaju.
-7. {t:workspace.files.close} desno iznad datoteka zatvara ih.
+6. {t:workspace.files.back} vraća na mapu.
+7. Gumb {t:workspace.view.files} na vrhu (na telefonu u izborniku {t:workspace.view.more}) vraća datoteke dok gledate razgovor ili terminal; nespremljene izmjene za to vrijeme ostaju.
+8. {t:workspace.files.close} desno iznad datoteka zatvara ih.
 
-Datoteka koja nije tekst ili je veća od 1 MB ne otvara se u uređivaču: uz njezinu veličinu piše {t:workspace.files.binary} ili {t:workspace.files.large} Gumb {t:workspace.files.download} je preuzima. Dok nijedna datoteka nije odabrana, desno piše {t:workspace.files.none} Mapa bez ičega u sebi u stablu kaže {t:workspace.files.empty} Na telefonu je stablo preko cijelog zaslona; odabrana datoteka zamjenjuje ga, a strelica {t:workspace.files.back} lijevo od imena projekta vraća stablo.
+Uz uključen {t:preview.title} na širokom zaslonu prvi pritisak pokazuje stavku u ploči sa strane, sliku ili PDF umanjeno, a otvara je dvostruki pritisak.
 
-Ako ste izmijenili datoteku pa odaberete drugu, zatvorite datoteke ili ih otvorite za drugi projekt, Ponistra pita {t:workspace.files.discard} uz napomenu {t:workspace.files.discardBody} {t:workspace.files.discardConfirm} odbacuje izmjene, a odustajanjem ostajete u datoteci.
+{t:create.new} nudi {t:create.folder}, koja izrađuje mapu u onoj koja je otvorena, a {t:create.upload} šalje datoteke s uređaja u nju; isto čini povlačenje datoteka ili mapa na popis. Desni ili dugi pritisak na redak otvara njegov izbornik: {t:tree.open}, {t:file.download}, {t:tree.rename}, {t:tree.move} (u odredišnoj mapi pritisnite {t:tree.moveHere}) i {t:files.delete}, koje prvo pita {t:files.deleteHeading} Više stavki odabire se dugim pritiskom ili pritiskom uz Ctrl, a radnje su tada u traci iznad popisa.
 
-### Datoteke na hostovima
+Datoteka koja nije tekst ili je veća od 1 MB ne otvara se u uređivaču: uz njezinu veličinu piše {t:workspace.files.binary} ili {t:workspace.files.large} Mapa bez ičega u sebi kaže {t:workspace.files.empty}
 
-Isti prikaz datoteka otvara i mape na drugim strojevima koje radni prostor doseže preko SSH-a.
-
-1. U datotekama pritisnite ime projekta lijevo iznad stabla. Izbornik nudi projekt, svaki postavljeni host i {t:workspace.hosts.title}.
-2. Pritisnite {t:workspace.hosts.title}. Na mjestu stabla stoje dva odjeljka: {t:workspace.hosts.title} i {t:workspace.hosts.keys}; bez ijednog hosta piše {t:workspace.hosts.none}
-3. Nema li radni prostor još ključa, u odjeljku {t:workspace.hosts.keys} pritisnite {t:workspace.hosts.makeKey}. Radni prostor stvara ključ ed25519, a odjeljak pokazuje njegov javni dio. {t:workspace.hosts.copy} ga kopira; dodajte ga u `~/.ssh/authorized_keys` korisnika na hostu.
-4. Pritisnite {t:workspace.hosts.add}. U dijalogu upišite {t:workspace.hosts.name} (ime pod kojim host stoji u izborniku, u terminalu i za agente), {t:workspace.hosts.address}, {t:workspace.hosts.port}, {t:workspace.hosts.user}, po želji {t:workspace.hosts.path} i odaberite {t:workspace.hosts.key}; nema li ključa, dijalog nudi {t:workspace.hosts.makeKey}. Pritisnite {t:workspace.hosts.add}.
-5. Pritisnite host na popisu ili {t:workspace.hosts.open} u izborniku njegova retka. Stablo pokazuje početnu mapu hosta, a datoteke se čitaju, preuzimaju i uređuju kao u projektu.
-6. Drugi host ili natrag projekt birate istim izbornikom iznad stabla.
-
-{t:workspace.hosts.edit} u izborniku retka otvara isti dijalog s upisanim vrijednostima. {t:workspace.hosts.remove} pita {t:workspace.hosts.removeTitle} uz napomenu {t:workspace.hosts.removeBody} Datoteke na hostu ostaju netaknute. Postavljanje i uklanjanje hosta te stvaranje ključa traže potvrdu identiteta kao spremanje datoteke.
+Ako ste izmijenili datoteku pa se vratite na mapu, zatvorite datoteke ili ih otvorite za drugi projekt, Ponistra pita {t:workspace.files.discard} uz napomenu {t:workspace.files.discardBody} {t:workspace.files.discardConfirm} odbacuje izmjene, a odustajanjem ostajete u datoteci.
 
 ### Vrijeme rada
 
@@ -202,9 +194,7 @@ Restart ponovno stvara radni prostor iz njegove Docker Compose definicije, s nje
 
 Terminal je ljuska bash vlasnika radnog prostora, ista kao u terminalu uređivača: vidi iste datoteke, Git, Docker i alate. Svaki projekt ima svoju ljusku u radnom prostoru. Ona živi dok sama ne završi ili dok je ne zatvorite gumbom {t:workspace.terminal.close}; prelazak na drugu stranicu, terminal drugog projekta, zatvaranje preglednika ili prekid veze ostavljaju je da radi, a ikona {t:workspace.terminal.open} vraća vas u nju sa svime što je u međuvremenu ispisala. Ponovno pokretanje radnog prostora završava sve ljuske. Ono što ljuska ispiše ide kroz Ponistru do preglednika; radni prostor pamti samo zadnja dva megabajta ispisa svake ljuske, u memoriji, za povratak u nju. Boje terminala prate temu sučelja. Na računalu je terminal visok koliko i stranica, a na telefonu tri petine zaslona. Istodobno može biti otvoreno najviše osam terminala.
 
-Datoteke čita i piše sam radni prostor, a Ponistra ih samo prenosi i ne sprema. Svaka putanja vrijedi samo unutar mape projekta: simbolička veza koja vodi van stoji u stablu sivo i nosi opis {t:workspace.files.outside} Veza koja ne vodi nikamo nosi opis {t:workspace.files.broken} Ni jedna se ne otvara, kao ni stavka koja nije ni datoteka ni mapa ({t:workspace.files.other}). Mapa `.git` u korijenu projekta ne prikazuje se. Spremanje zapisuje cijelu datoteku odjednom, s istim dopuštenjima, i samo ako je na disku još ono što je uređivač učitao: razgovor ili druga sesija mogu pisati u isto stablo. Ako se datoteka u međuvremenu promijenila, piše {t:workspace.files.changed} {t:workspace.files.reload} učitava ono što je sada na disku i odbacuje vaše izmjene, a {t:workspace.files.overwrite} zapisuje vaše preko toga. Dok izmjena nije spremljena, a datoteka se na disku promijeni, uređivač zadržava vaš tekst; inače prikazuje novi sadržaj kad ga stranica ponovno pročita.
-
-Host je unos u `~/.ssh/config` radnog prostora, a ključ datoteka u `~/.ssh` uz njega: isti host pod istim imenom dosežu i terminal i agenti radnog prostora, a vlastiti unosi u toj datoteci ostaju kakvi jesu. Stranica popisuje samo unose koje je sama postavila, a svaki nosi `IdentitiesOnly` i prihvaća ključ hosta pri prvoj vezi; poslije radni prostor odbija host čiji se ključ promijenio. Datoteke hosta čita i piše radni prostor preko SFTP-a, kroz OpenSSH, pa vrijedi i ono što ostali unosi kažu, primjerice skok preko drugog hosta. Početna mapa je mjesto otvaranja, ne granica: što korisnik na hostu smije, to stranica pokazuje, a prazna početna mapa je njegova kućna mapa. Spremanje i na hostu piše samo ako je ondje još ono što je uređivač učitao. Gdje može, zapisuje kopiju uz datoteku i zamjenjuje je odjednom, s istim vlasnikom, grupom i dopuštenjima; gdje korisnik na hostu ne smije pisati u mapu ili datoteci dati njezina vlasnika, zapisuje preko same datoteke, koja tako zadržava vlasnika. Veza s hostom ostaje otvorena dvije minute nakon zadnjeg zahtjeva. Na hostu se ništa ne briše, ne preimenuje i ne učitava.
+Datoteke čita i piše sam radni prostor, a Ponistra ih samo prenosi i ne sprema. Svaka putanja vrijedi samo unutar mape projekta: simbolička veza koja vodi van, veza koja ne vodi nikamo i stavka koja nije ni datoteka ni mapa stoje na popisu, ali se ne otvaraju. Preimenuje se, premješta i briše sama stavka, veza, a nikad ono na što pokazuje. Mapa `.git` u korijenu projekta ne prikazuje se i u njoj se ništa ne mijenja. Spremanje zapisuje cijelu datoteku odjednom, s istim dopuštenjima, i samo ako je na disku još ono što je uređivač učitao: razgovor ili druga sesija mogu pisati u isto stablo. Ako se datoteka u međuvremenu promijenila, piše {t:workspace.files.changed} {t:workspace.files.reload} učitava ono što je sada na disku i odbacuje vaše izmjene, a {t:workspace.files.overwrite} zapisuje vaše preko toga. Dok izmjena nije spremljena, a datoteka se na disku promijeni, uređivač zadržava vaš tekst; inače prikazuje novi sadržaj kad ga stranica ponovno pročita. Učitana datoteka pojavljuje se cijela ili nikako, a ona čije ime već postoji u mapi odbija se. Brisanje je trajno: koš Ponistre ga ne čuva, a mapa odlazi sa svime u sebi.
 
 Vrijeme rada radni prostor mjeri sam iz zapisa razgovora koje već čita: svakog razgovora, i onih u uređivaču, svaki trenutak koji je razgovor zapisao, poruku, odgovor ili alat. Trenuci jednog projekta, iz svih njegovih razgovora, čine blok rada dok između dva ne prođe više od 15 minuta; blok traje barem 2 minute i broji se na dan kad je počeo, po hrvatskom vremenu. Projekti na kojima se radilo istodobno broje se svaki puno vrijeme, pa {t:workspace.hours.total} dana smije prijeći 24 sata; {t:workspace.hours.wall} je vrijeme u kojemu se radilo na bilo kojem projektu, bez preklapanja. Projekt je mapa u korijenu radnog prostora u kojoj je razgovor počeo, i kad je počeo u njezinoj podmapi; razgovor u samom korijenu broji se pod {t:workspace.general}. Radni prostor svake minute pročita što je u zapisima novo i javi to Ponistri, koja vrijeme drži u svojoj bazi s oznakom dokle je koji zapis pročitan; ono što je jednom zapisano ostaje i kad se zapis razgovora obriše, a ponovno čitanje istog zapisa ništa ne broji dvaput. Stranica se osvježi sama kad stigne novo vrijeme.
 
@@ -229,24 +219,11 @@ Stranica postoji samo za vlasnika radnog prostora za kod.
 - {t:error.unknown_folder} Projekt više nije u radnom prostoru. Zatvorite datoteke i otvorite ih iz projekta na popisu.
 - {t:error.outside} Putanja kroz simboličku vezu vodi izvan mape projekta; datoteke izvan projekta otvarate u terminalu ili uređivaču radnog prostora.
 - {t:error.invalid_path} Putanja nije valjana.
-- {t:error.not_found} Datoteka ili mapa je u međuvremenu obrisana ili preimenovana.
+- {t:error.not_found} {t:error.file_missing} Datoteka ili mapa je u međuvremenu obrisana ili preimenovana; osvježite popis.
+- {t:error.file_exists} U mapi već stoji stavka tog naziva.
+- {t:error.invalid_file_name} Naziv nema kose crte i dug je najviše 255 bajtova.
 - {t:error.not_permitted} Korisnik pod kojim radi radni prostor ne smije čitati ili pisati tu datoteku ili mapu.
 - {t:error.too_large} Tekst je narastao preko 1 MB, pa se ne sprema iz uređivača.
-- {t:error.unknown_host} Host je u međuvremenu uklonjen ili preimenovan. Izaberite ga ponovno iz izbornika iznad stabla.
-- {t:error.ssh_key_refused} Javni ključ odabran za host nije u `authorized_keys` korisnika na hostu, ili je korisnik pogrešan.
-- {t:error.ssh_key_unreadable} Datoteka ključa u `~/.ssh` radnog prostora oštećena je ili su joj dopuštenja preširoka.
-- {t:error.host_unreachable} Host ne odgovara na adresi i portu, ili je veza pala usred zahtjeva.
-- {t:error.host_unknown} Ime u adresi ne razrješava se ni u jednu IP adresu.
-- {t:error.host_key_changed} Host se predstavlja drugim ključem nego pri prvoj vezi; ako je to očekivano (ponovno instaliran host), uklonite stari ključ iz `~/.ssh/known_hosts` radnog prostora u terminalu.
-- {t:error.host_key_unknown} Vlastiti unos hosta u SSH postavkama traži poznat ključ hosta, a radni prostor ga nema.
-- {t:error.ssh_config_invalid} SSH ne prihvaća `~/.ssh/config` radnog prostora; ispravite datoteku u terminalu ili uređivaču.
-- {t:error.sftp_missing} Na hostu nije uključen SFTP poslužitelj.
-- {t:error.sftp_garbled} Ljuska korisnika na hostu ispisuje tekst i kad nije interaktivna, pa SFTP ne može raditi.
-- {t:error.host_failed} Host je odbio radnju bez razloga koji SFTP imenuje; poruka stoji u logu radnog prostora.
-- {t:error.host_closed} Host je uklonjen ili promijenjen dok je zahtjev čekao.
-- {t:error.host_exists} U `~/.ssh/config` radnog prostora već postoji unos tog imena.
-- {t:error.key_exists} Ključ radnog prostora već postoji; novi se ne stvara preko njega.
-- {t:error.invalid_host} {t:error.invalid_host_address} {t:error.invalid_host_port} {t:error.invalid_host_user} {t:error.invalid_host_key} Unos hosta prima samo ono što SSH postavke mogu zapisati.
 - {t:error.asked} Koordinatoru je već poslana riječ koju još nije uzeo.
 - {t:error.not_waiting} Razgovor je u međuvremenu dobio odgovor.
 - {t:error.chat_working} Razgovor je počeo raditi ili pitati između pritiska i predaje, pa nije otvoren u uređivaču.

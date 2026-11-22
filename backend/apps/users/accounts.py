@@ -333,6 +333,7 @@ def describe_policy(found: Policy) -> dict:
         "second_factor": found.second_factor,
         "outside": found.outside,
         "locations": found.locations,
+        "opening": found.opening,
     }
 
 
@@ -340,7 +341,8 @@ def describe_policy(found: Policy) -> dict:
 def sign_in_policy(request):
     """Whether the sign-in page offers passkeys and whom the installation holds to them, whether
     a sign-in with a password asks for a second factor, each from the user's next sign-in, who
-    may make a link for someone outside it and who may add a location on the network."""
+    may make a link for someone outside it, who may add a location on the network and whether a
+    file opened from the computer is shown to someone not signed in."""
     administrator(request)
     found = policy()
     if request.method == "PATCH":
@@ -352,6 +354,7 @@ def sign_in_policy(request):
             or changed["outside"] not in Policy.Outside.values
             or changed["locations"] not in Policy.Outside.values
             or not isinstance(changed["second_factor"], bool)
+            or not isinstance(changed["opening"], bool)
         ):
             raise Refused(400, "invalid_policy")
         if changed != was:
@@ -360,6 +363,7 @@ def sign_in_policy(request):
         found.second_factor = changed["second_factor"]
         found.outside = changed["outside"]
         found.locations = changed["locations"]
+        found.opening = changed["opening"]
         found.changed_by = request.user
         found.changed_at = timezone.now()
         found.save()

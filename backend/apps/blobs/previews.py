@@ -22,7 +22,10 @@ log = getLogger(__name__)
 CHANNEL = "previews"
 # The longest side in pixels: twice what a folder's pane shows, for a screen of two pixels a point.
 SIDE = 800
+# The longest side of a picture the browser cannot show, drawn whole for the file's page.
+WHOLE = 4096
 DRAWN = {media for media in store.IMAGES if media != "image/svg+xml"} | {store.PDF}
+DRAWN |= set(store.PICTURES)
 
 
 def wake() -> None:
@@ -46,13 +49,24 @@ def _page(file) -> Image.Image:
         pdf.close()
 
 
-def _image(file) -> Image.Image:
+def _image(file, side: int = SIDE) -> Image.Image:
     with Image.open(file) as opened:
-        # A JPEG is decoded at the smallest scale that still covers SIDE, not whole.
-        opened.draft("RGB", (SIDE, SIDE))
+        # A JPEG is decoded at the smallest scale that still covers the side, not whole.
+        opened.draft("RGB", (side, side))
         image = ImageOps.exif_transpose(opened)
-    image.thumbnail((SIDE, SIDE))
+    image.thumbnail((side, side))
     return image
+
+
+def whole(path: Path) -> bytes:
+    """A picture the browser cannot show, as PNG, at most WHOLE pixels a side; in the reader."""
+    with path.open("rb") as file:
+        image = _image(file, WHOLE)
+    if image.mode not in ("RGB", "RGBA"):
+        image = image.convert("RGBA" if image.has_transparency_data else "RGB")
+    out = io.BytesIO()
+    image.save(out, "PNG", compress_level=1)
+    return out.getvalue()
 
 
 def picture(path: Path, pdf: bool) -> bytes:

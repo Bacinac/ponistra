@@ -1,7 +1,7 @@
-"""Text Tesseract reads in the pages of a PDF that carry none, in the ocr service, which
-reaches nothing but the backend. The file stays as it came: the copy with the text laid over
-its pages is a blob of its own, read once for the same bytes, and it is what the file is shown,
-searched, written and taken apart from."""
+"""Text Tesseract reads in the pages of a PDF that carry none, and in a TIFF's, in the ocr
+service, which reaches nothing but the backend. The file stays as it came: the copy with the
+text laid over its pages is a blob of its own, read once for the same bytes, and it is what the
+file is shown, searched, written and taken apart from."""
 
 import tempfile
 from datetime import timedelta
@@ -145,10 +145,15 @@ def settle(claimed: PdfOcr, read: Path) -> None:
         if held is None:
             return
         text = BlobText.objects.get(blob_id=held.blob_id)
-        if len(texts) != text.page_count:
+        # A TIFF's pages are shown only from the PDF they became.
+        pictured = held.blob.media_type == store.TIFF
+        if pictured:
+            text.page_count = len(texts)
+            text.save(update_fields=["page_count"])
+        elif len(texts) != text.page_count:
             raise Failed(f"the answer has {len(texts)} pages of {text.page_count}")
         found = [(number, page) for number, page in enumerate(texts, start=1) if page.strip()]
-        if len(found) > text.pages.count():
+        if pictured or len(found) > text.pages.count():
             try:
                 with read.open("rb") as stream:
                     held.readable = store.put(stream)

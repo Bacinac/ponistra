@@ -1,7 +1,7 @@
-"""POST /ocr with a PDF as the body answers with it, the text Tesseract reads in its pages that
-carry none laid over them; 409 with "encrypted" or "signed" when reading it would break what
-protects the file; GET /health answers when the server is up. One file at a time, killed whole
-when it overruns or when the backend stops waiting for it."""
+"""POST /ocr with a PDF or a TIFF as the body answers with it as a PDF, the text Tesseract
+reads in its pages that carry none laid over them; 409 with "encrypted" or "signed" when reading
+it would break what protects the file; GET /health answers when the server is up. One file at a
+time, killed whole when it overruns or when the backend stops waiting for it."""
 
 import os
 import select
@@ -32,7 +32,7 @@ def gone(connection: socket.socket) -> bool:
 
 def read(data: bytes, connection: socket.socket) -> tuple[HTTPStatus, bytes]:
     with RUNNING, tempfile.TemporaryDirectory() as work:
-        source, target = Path(work) / "in.pdf", Path(work) / "out.pdf"
+        source, target = Path(work) / "in", Path(work) / "out.pdf"
         source.write_bytes(data)
         # ocrmypdf starts Tesseract in processes of its own; a session lets them all go at once.
         process = subprocess.Popen(

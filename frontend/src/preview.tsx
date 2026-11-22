@@ -9,6 +9,7 @@ import { Loading, Panel } from './frame';
 import type { Column } from './split';
 import { useI18n } from './i18n';
 import { sourceHref } from './imported';
+import { heldKind, HeldView } from './kinds';
 import { iconButton } from './styles';
 import { Failure, kindLabel, kindOf, nodeKey, NodeIcon, type ListedNode } from './tree';
 import { savedName } from './upload';
@@ -136,6 +137,9 @@ function Glance({ node, kept }: { node: ListedNode; kept: boolean }) {
 
 export function Shown({ node }: { node: ListedNode }) {
   const file = `/api/nodes/${node.id}/file`;
+  const held = node.kind === 'file' ? heldKind(node.media_type, node.extension) : null;
+  if (held && held !== 'picture')
+    return <HeldView base={`/api/nodes/${node.id}`} kind={held} title={node.title} compact />;
   switch (kindOf(node)) {
     case 'document':
     case 'table':

@@ -172,3 +172,60 @@ def test_pages_taken_from_a_file_carry_what_was_read_in_them(api, service):
     done(api, "compose", title="Izdvojeno", beside=file, pages=[{"file": file, "page": 2}])
     extract_all()
     assert {result["title"] for result in search(api, "procitano")} == {"Sken", "Izdvojeno"}
+
+
+def tiff_bytes(pages: int) -> bytes:
+    from io import BytesIO
+
+    from PIL import Image
+
+    drawn = [Image.new("L", (40, 20), 255) for _ in range(pages)]
+    out = BytesIO()
+    drawn[0].save(out, "TIFF", save_all=True, append_images=drawn[1:])
+    return out.getvalue()
+
+
+def test_a_tiff_is_shown_as_the_pdf_its_pages_became_and_saved_as_it_came(api, service):
+    scan = tiff_bytes(2)
+    file = upload_file(api, "Faks", scan)
+    extract_all()
+    assert described(api, file)["ocr"] == "waiting"
+    service.append((200, READ))
+    assert recognise()
+
+    assert described(api, file) == {
+        "served": sha(READ),
+        "recognised": True,
+        "ocr": "done",
+        "reason": None,
+        "language": "hr",
+    }
+    [result] = search(api, "procitano")
+    assert (result["id"], result["page"]) == (file, 2)
+    shown = api.get(f"/api/nodes/{file}/file", {"v": sha(READ)})
+    assert content(shown) == READ
+    assert 'filename="Faks.pdf"' in shown["Content-Disposition"]
+    saved = api.get(f"/api/nodes/{file}/file", {"download": "1"})
+    assert content(saved) == scan
+    assert saved["Content-Type"] == store.TIFF
+
+
+def test_a_tiff_read_without_text_is_still_shown_as_its_pdf(api, service):
+    file = upload_file(api, "Prazno", tiff_bytes(1))
+    extract_all()
+    blank = pdf_bytes(" ")
+    service.append((200, blank))
+    assert recognise()
+    assert described(api, file)["served"] == sha(blank)
+
+
+def test_a_tiff_whose_reading_failed_is_read_again_on_request(api, service, caplog):
+    file = upload_file(api, "Faks", tiff_bytes(1))
+    extract_all()
+    service.append((422, b"Tesseract stopped"))
+    assert recognise()
+    assert described(api, file)["ocr"] == "failed"
+    assert api.post(f"/api/nodes/{file}/ocr").json()["ocr"] == "waiting"
+    service.append((200, READ))
+    assert recognise()
+    assert described(api, file)["served"] == sha(READ)

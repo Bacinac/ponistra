@@ -20,7 +20,9 @@ try {
     const cut = source.querySelector('mask#cut');
     const fill = source.querySelector('linearGradient#tile-fill');
     const tile = source.querySelector('symbol#tile');
-    if (!wordmark || !mark || !cut || !fill || !tile) throw new Error('Incomplete brand master');
+    const sheet = source.querySelector('symbol#sheet');
+    const kinds = source.querySelector('#kinds');
+    if (!wordmark || !mark || !cut || !fill || !tile || !sheet || !kinds) throw new Error('Incomplete brand master');
     const serialize = (node) => new XMLSerializer().serializeToString(node);
     const strip = (node) => serialize(node).replace(/ xmlns(:\w+)?="[^"]*"/g, '');
     const ink = wordmark.getAttribute('stroke');
@@ -99,6 +101,27 @@ try {
       return drawing('0 0 96 96', strip(cut) + strip(fill), strip(background) + inside);
     };
 
+    const onSheet = sheet.querySelector('use').parentNode;
+    const plate = sheet.querySelector('rect');
+    const paper = [...sheet.children]
+      .filter((node) => node !== onSheet && node !== plate)
+      .map(strip)
+      .join('');
+    const kindPen = ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin']
+      .map((name) => `${name}="${kinds.getAttribute(name)}"`)
+      .join(' ');
+    const filed = Object.fromEntries(
+      [...kinds.children].map((kind) => {
+        const back = plate.cloneNode();
+        back.setAttribute('fill', kind.getAttribute('data-fill'));
+        const drawn = kind.cloneNode(true);
+        drawn.removeAttribute('id');
+        drawn.removeAttribute('data-fill');
+        const body = `${paper}<g transform="${onSheet.getAttribute('transform')}">${glyph(onSheet.getAttribute('stroke'))}</g>${strip(back)}<g ${kindPen}>${strip(drawn)}</g>`;
+        return [kind.id.replace(/^kind-/, ''), drawing('0 0 96 96', strip(cut), body)];
+      }),
+    );
+
     // VectorDrawable has no mask: the cut becomes a clip, its two edges run on to the top of the glyph box,
     // above the stroke's ink.
     const corners = cut
@@ -127,6 +150,7 @@ try {
       square: tiled({ rounded: false }),
       // A launcher keeps the centred circle of 80 % of a maskable icon's side; the glyph's corner would touch it.
       maskable: tiled({ rounded: false, content: 0.9 }),
+      filed,
       vector: {
         glyph: mark.getAttribute('d'),
         pen: Object.fromEntries(['stroke-width', 'stroke-linecap', 'stroke-linejoin'].map((name) => [name, wordmark.getAttribute(name)])),
@@ -152,6 +176,11 @@ try {
   await writeFile(resolve(output, 'icon-maskable-512.png'), await png(brand.maskable, 512));
   // Android paints a notification badge in one colour from its alpha alone.
   await writeFile(resolve(output, 'badge-96.png'), await png(brand.badge, 96));
+  // Windows draws a file's icon from these four, at the size of its view.
+  await mkdir(resolve(output, 'kinds'), { recursive: true });
+  for (const [kind, svg] of Object.entries(brand.filed)) {
+    for (const size of [16, 32, 48, 256]) await writeFile(resolve(output, `kinds/${kind}-${size}.png`), await png(svg, size));
+  }
   const sizes = [16, 32, 48, 64];
   const images = [];
   for (const size of sizes) images.push(await png(brand.favicon, size));

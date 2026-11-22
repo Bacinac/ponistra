@@ -180,6 +180,8 @@ def tunnel(request, pk: int):
     if found is None:
         raise Refused(404, "not_found")
     if request.method == "DELETE":
+        if found.locations.exists():
+            raise Refused(409, "tunnel_in_use")
         found.delete()
         entries.wrote(
             Kind.SETTING_CHANGED,

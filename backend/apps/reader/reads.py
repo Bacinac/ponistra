@@ -148,6 +148,24 @@ def _redact(paths: list[Path], head: dict, out):
     return redacted.blacked(paths[0], head["boxes"], out)
 
 
+def _shown(paths: list[Path], head: dict, out):
+    from . import shown
+
+    return shown.read(paths[0], head["shape"], head["prefix"])
+
+
+def _shown_part(paths: list[Path], head: dict, out):
+    from . import shown
+
+    return shown.taken(paths[0], head["shape"], head["part"])
+
+
+def _whole(paths: list[Path], head: dict, out):
+    from apps.blobs import previews
+
+    return previews.whole(paths[0])
+
+
 def _scan_corners(paths: list[Path], head: dict, out):
     from apps.imports import scanned
 
@@ -183,6 +201,9 @@ READS: dict[str, Read] = {
     "redact": Read(_redact, 600),
     "scan_corners": Read(_scan_corners, 30),
     "scan": Read(_scan, 600),
+    "shown": Read(_shown, 60),
+    "shown_part": Read(_shown_part, 60),
+    "whole": Read(_whole, 60),
 }
 
 # The first that a failure is an instance of names it; the backend raises the class named.

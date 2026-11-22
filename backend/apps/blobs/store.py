@@ -82,6 +82,31 @@ IMAGES = {
     "image/avif": "avif",
     "image/svg+xml": "svg",
 }
+TIFF = "image/tiff"
+# Pictures Pillow reads that a browser does not show, or that documents do not take.
+PICTURES = {
+    "image/bmp": "bmp",
+    "image/vnd.microsoft.icon": "ico",
+    TIFF: "tif",
+    "image/vnd.adobe.photoshop": "psd",
+}
+ZIP = "application/zip"
+ARCHIVES = {
+    ZIP: "zip",
+    "application/x-tar": "tar",
+    "application/gzip": "gz",
+    "application/x-bzip2": "bz2",
+    "application/x-xz": "xz",
+    "application/zstd": "zst",
+    "application/x-lz4": "lz4",
+    "application/x-7z-compressed": "7z",
+    "application/vnd.rar": "rar",
+    "application/x-iso9660-image": "iso",
+    "application/vnd.ms-cab-compressed": "cab",
+    "application/x-lzh-compressed": "lzh",
+    "application/x-xar": "xar",
+}
+OUTLOOK = "application/vnd.ms-outlook"
 VARIANTS = {
     "application/vnd.ms-word.document.macroEnabled.main+xml": DOCM,
     "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml": DOTX,
@@ -151,6 +176,8 @@ def sniff(sample: bytes) -> str:
         return "image/avif"
     if media := sniff_media(head):
         return media
+    if media := sniff_picture(head) or sniff_archive(sample):
+        return media
     if b"%PDF-" in head:
         return PDF
     if head.startswith(b"{\\rtf"):
@@ -201,6 +228,46 @@ def sniff_media(head: bytes) -> str | None:
             and head[2] & 0x0C != 0x0C
         ):
             return "audio/mpeg"
+    return None
+
+
+def sniff_picture(head: bytes) -> str | None:
+    if head.startswith(b"BM") and len(head) > 18 and head[6:10] == b"\0\0\0\0":
+        return "image/bmp"
+    if head.startswith((b"II*\0", b"MM\0*")):
+        return "image/tiff"
+    if head.startswith(b"8BPS\0\x01"):
+        return "image/vnd.adobe.photoshop"
+    # An icon directory: reserved, type 1, a count of images, each entry's reserved byte zero.
+    if head.startswith(b"\0\0\x01\0") and len(head) > 22 and 0 < head[4] and head[5] == 0:
+        return "image/vnd.microsoft.icon" if head[9] == 0 else None
+    return None
+
+
+def sniff_archive(sample: bytes) -> str | None:
+    """An archive by the signature its format opens with; an ISO image's sits 32 kB in."""
+    head = sample[:1024]
+    if head.startswith((b"PK\x03\x04", b"PK\x05\x06")):
+        return ZIP
+    for signature, media in (
+        (b"\x1f\x8b", "application/gzip"),
+        (b"BZh", "application/x-bzip2"),
+        (b"\xfd7zXZ\0", "application/x-xz"),
+        (b"\x28\xb5\x2f\xfd", "application/zstd"),
+        (b"\x04\x22\x4d\x18", "application/x-lz4"),
+        (b"7z\xbc\xaf\x27\x1c", "application/x-7z-compressed"),
+        (b"Rar!\x1a\x07", "application/vnd.rar"),
+        (b"MSCF\0\0\0\0", "application/vnd.ms-cab-compressed"),
+        (b"xar!", "application/x-xar"),
+    ):
+        if head.startswith(signature):
+            return media
+    if head[257:262] == b"ustar":
+        return "application/x-tar"
+    if head[2:4] == b"-l" and head[6:7] == b"-" and head[4:6] in (b"h0", b"h5", b"h6", b"h7"):
+        return "application/x-lzh-compressed"
+    if sample[32769:32774] == b"CD001":
+        return "application/x-iso9660-image"
     return None
 
 
@@ -269,14 +336,16 @@ def typed(path: Path, part: str) -> str | None:
 def sniff_ole(path: Path) -> str | None:
     """Word 97–2003 keeps its text in a stream of that name, Excel 97–2003 its sheets in
     one named Workbook, Excel 5 in Book, PowerPoint 97–2003 its slides in one named PowerPoint
-    Document."""
+    Document, an Outlook message its properties in one of their own."""
     try:
         with olefile.OleFileIO(path) as container:
             if container.exists("WordDocument"):
                 return DOC
             if container.exists("PowerPoint Document"):
                 return PPT
-            return XLS if container.exists("Workbook") or container.exists("Book") else None
+            if container.exists("Workbook") or container.exists("Book"):
+                return XLS
+            return OUTLOOK if container.exists("__properties_version1.0") else None
     except OSError:
         return None
 
@@ -360,7 +429,7 @@ def kept(path: Path, sha256: str, size: int, head: bytes) -> Blob:
     # row whose bytes are gone.
     fsync_dir(target.parent)
     media_type = sniff(head)
-    if head.startswith(b"PK\x03\x04"):
+    if media_type == ZIP:
         media_type = sniff_zip(target) or media_type
     elif head.startswith(OLE):
         media_type = sniff_ole(target) or media_type

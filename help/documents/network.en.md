@@ -13,6 +13,12 @@ The {t:locations.title} page opens folders on the organisation's servers, shared
 
 While there is no location, the page says {t:locations.none} beside a link to the [location settings](help:documents/locations).
 
+### Through the folder tree
+
+1. In the side column of Documents press the arrow ({t:frame.expand}) beside {t:locations.title}; your locations appear below it.
+2. The arrow beside a location or a folder shows the folders in it, and pressing it again ({t:frame.collapse}) hides them.
+3. Pressing the name of a location or a folder opens it on the right; the open folder's row in the tree is marked.
+
 ### Opening and editing a file
 
 1. Press a file. A text file opens in the editor in place of the list, and a PDF, a picture, sound and video in a new browser tab.
@@ -42,6 +48,8 @@ The menu opens with a right press or a long press on a row. Several items are se
 ## How it works
 
 Ponistra signs in to the server with the account entered in the location, so on it you may do what that account may, not your own. The files stay on the server: Ponistra does not index them, search them or keep their versions, and reads a folder's list each time you open it.
+
+The folder tree reads a location's folders only once you open its branch, and only folders, not files. The tree and the list on the right share one reading, so a new, renamed or deleted folder shows in the tree at once. A location whose server cannot be reached shows the error below its branch, and the other locations go on working.
 
 Saving text checks that the file on the server is the same as when you opened it. If someone changed it in the meantime, it says {t:workspace.files.changed} and you choose {t:workspace.files.reload} or {t:workspace.files.overwrite}.
 

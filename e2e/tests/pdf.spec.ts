@@ -154,7 +154,7 @@ test('a PDF locked by a password opens once it is given', async ({ page }) => {
   await expect(pageAt(page, 1).locator('.textLayer')).toContainText('Povjerljivo');
 });
 
-test('a PDF the installed app opens while nobody is signed in is shown alone, read in the browser, and any other file waits for signing in', async ({
+test('a PDF the installed app opens while nobody is signed in is shown alone, read in the browser', async ({
   browser,
   baseURL,
 }) => {
@@ -189,10 +189,6 @@ test('a PDF the installed app opens while nobody is signed in is shown alone, re
     );
   const signIn = page.getByRole('button', { name: 'Prijavi se pristupnim ključem' });
   await page.goto('/');
-  await expect(signIn).toBeVisible();
-
-  await launch('Ponuda.docx', '', Buffer.from('PK').toString('base64'));
-  await expect(page.getByRole('heading', { name: 'Ponuda.docx' })).toHaveCount(0);
   await expect(signIn).toBeVisible();
 
   const file = pdfFile({

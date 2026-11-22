@@ -11,7 +11,7 @@ The preview beside a folder's list shows the content and details of the chosen i
 
 ## How it works
 
-For a document its beginning is shown: headings, paragraphs, tables and pictures. An empty document says: {t:preview.empty} A picture and a PDF show small, a PDF by its first page, a text file by its beginning, and video and sound can be played in the preview itself.
+For a document its beginning is shown: headings, paragraphs, tables and pictures. An empty document says: {t:preview.empty} A picture and a PDF show small, a PDF by its first page, a text file by its beginning, and video and sound can be played in the preview itself. An archive, a mail message, contacts, a calendar and Markdown show their content shortened, as [File content by kind](help:files/held) describes.
 
 Under the content stand {t:explorer.kind}, {t:explorer.size}, {t:explorer.updated}, {t:explorer.updatedBy} and {t:access.title}. An imported document also gives {t:preview.source} with the {t:import.original} button.
 
@@ -27,3 +27,4 @@ Whether the preview is on is remembered in that browser. When no item is chosen,
 - [Documents overview](help:documents/overview)
 - [Files](help:files/overview)
 - [Import report](help:documents/import)
+- [File content by kind](help:files/held)

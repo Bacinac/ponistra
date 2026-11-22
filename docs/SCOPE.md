@@ -162,7 +162,9 @@ document from its folder through the editor's Image dialog, beside one from the
 computer. What only a PDF has (pages, notes, comments, text read, joining, the
 actions over files) is not offered for it. Every other file is kept too, whatever
 its kind (2026-10-27): it is shared and moved as any file is. A text file shows
-as its text and a recording plays in the browser's player (D23); anything else
+as its text, a recording plays in the browser's player, and an archive, a message,
+contacts, a calendar, Markdown and a picture the browser cannot show show what they
+hold (D23); anything else
 is only downloaded, never shown in the browser. A file's name is kept as Windows shows it,
 the title apart from the extension it came with (2026-10-27). The bytes decide what
 PONISTRA does with a file (shows it as a PDF or an image, imports it, saves it only);
@@ -3611,6 +3613,18 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
   - *Only downloaded*: PCM without a header, EPS (Ghostscript is AGPL), DWG
     (LibreDWG is GPL, ODA commercial), OneNote, PST, installers. CAD viewers
     stay out while DWG, the common one, has no permitted reader.
+  - *Built (VD3, VD9, 2026-11-22).* The reader (`apps/reader/shown.py`, D51)
+    reads a path and a name, not a node, so the network and Projects show the
+    same (VD4); `api/nodes/<id>/shown` answers what a file holds and
+    `shown/<part>` one part, saved as a download is and logged. BMP, ICO, TIFF
+    and PSD draw as a PNG of at most 4096 px; a TIFF also goes through the OCR
+    queue and, once read, shows as the PDF it became (always kept, as nothing
+    else shows its pages), downloading as the TIFF it was. An archive shows as a
+    list, read per request by the `converter` (up to 1 GiB, its tmpfs, and
+    10 000 entries), the password sent in a header and kept nowhere. eml stays
+    `text/plain` for search and is told by its name or its headers; msg by its
+    OLE streams (MS-OXMSG). Unpacking, contacts and calendar from a file, the
+    names in archives searched and a folder as one ZIP are VD5 to VD8.
   - *Order*: D23-1 text and code, audio and video, uploads in chunks; D23-2
     images and archives; D23-3 mail, contacts and calendars in files, the
     converter's formats, Markdown and HTML; D23-4 the `media` service.
@@ -4911,18 +4925,11 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     folder for as long as the socket lives. node-pty and ws come from code-server itself, so the
     image needs no build tools. Binary frames carry what is typed and shown, a text frame
     `{cols, rows}` resizes; the socket closes with 4000 once the shell exits.
-  - *Files on hosts* (PJ12, 2026-11-22). The Files tab opens the project's folder or a host's,
-    chosen in the place menu, with the same actions: browse, read, download, and edit text under a
-    fresh D33 confirmation and a sha256 check; nothing is deleted, renamed or uploaded. A host is a
-    managed block of the workspace's `~/.ssh/config` (marked `# Ponistra files:`, the owner's own
-    entries left as they are), its key an ed25519 made there (`~/.ssh/ponistra_ed25519`), whose
-    public line the hosts view shows for the host's `authorized_keys`. The workspace speaks SFTP v3
-    itself over OpenSSH's `ssh -s sftp` from the image (`workspace/hosts.mjs`, no new dependency),
-    one connection per host closed after two idle minutes; a save writes a copy beside the file and
-    renames it over (`posix-rename@openssh.com`), keeping owner and mode, and where that cannot keep
-    them writes the file in place, as vim does. An unreachable host, a refused or unreadable key, a
-    changed host key or a missing SFTP server each has an error of its own. The starting folder is
-    where the files open, not a fence: the host's user's rights are the limit.
+  - *Files* (ML6, 2026-11-22). The Files tab is the shared file browser of D54 (`FileBrowser` in
+    `files.tsx`) over the workspace's project folder as its source: browse, preview with a picture
+    and ranged reads, download, upload, new folder, rename, move, delete and edit text, each change
+    under a fresh D33 confirmation. PJ12's hosts left with ML3: other machines are SFTP locations
+    in the backend (D54).
 - **D53: a file opened from the computer is read first, placed only when asked — approved
   2026-11-21** (Ivo: „dokument prvo otvoriti u full screenu … u ponistri to samo otvori kao recent
   documents, i tek na save se spremi na odabrano mjesto … bez prijave da radi isto za sve
@@ -4942,12 +4949,16 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     co-edited (D2, D45), since a Save of content only on this path would make one thing behave two
     ways. *Spremi u…* chooses its folder, which is all saving means here. One left without a place
     and unopened for 30 days goes to the trash, under the retention rules like any deletion.
-  - *Signed out.* Every kind is shown, read only, and nothing is kept: a PDF is read in the
-    browser (built 1.0.51–1.0.53), any other file is converted by the reader (D51) and handed back
-    for the page alone, never stored, throttled per address and bounded in size, and an
-    administrator may turn it off. *Spremi u…* asks to sign in, then places it. The browser does
-    not get an Office renderer of its own: the backend computes, and a second engine would show a
-    file otherwise than the document it becomes.
+  - *Signed out.* Every kind is shown, read only: a PDF is read in the browser, never sent (built
+    1.0.51–1.0.53); any other file is placed as a signed-in launch places it, for a visitor (D39)
+    the browser becomes, who only reads it, so it shows as a member would see it. The visitor and
+    its files go when the window closes, an hour after it came at the latest (Ivo 2026-11-22, over
+    converting to PDF and over rendering in memory, which would show a file otherwise than the
+    document it becomes). Openings are bounded per address (30 files an hour) and in size
+    (100 MB), and an administrator may turn them off (*Prijava* in the settings). *Spremi u…* asks
+    to sign in; whoever signs in from that window takes the files, by a key only the window held,
+    and places them. The browser does not get an Office renderer of its own: the backend computes.
+    Built 2026-11-22 (OR5): `apps/documents/opened.py`, `Policy.opening`.
   - *Headings* in a document's or a file's side column show the top level; the branch being read
     opens by itself as the pages scroll and closes once left, a chevron opens one by hand and keeps
     it open, and a list that fits its column is shown whole.
@@ -4987,9 +4998,16 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     location is the first source (`locations.tsx#sourceOf`, where *Copy to Ponistra* comes in
     through `more`); the Files tab of Projects becomes the second (ml-6) and keeps nothing of
     its own but its source.
-    A tunnel plugs in at two points, neither built here: `sftp.Target` gets a `ProxyCommand`
-    through the service's SOCKS5 port, and `smbfiles.reached` a socket opened by
-    `tunnels.opened`; `Location` gets the tunnel as a nullable key.
+    A location may go through a tunnel (ml-7, 2026-11-22): `Location.tunnel` is a nullable key,
+    SFTP reaches its host by a `ProxyCommand` through `apps/network/socks.py` with
+    `ProxyUseFdpass`, SMB through `smbfiles.Routed` over a socket `socks.opened` gives; a location
+    whose tunnel is not up answers `location_tunnel_down` rather than reaching for the same
+    address on the installation's own network, and a tunnel a location goes through is not
+    deleted (409 `tunnel_in_use`).
+    Network stands in the Documents side column as a tree (ml-9, 2026-11-22): its locations below
+    it, their folders read only when a branch opens (`frame.tsx#NetworkBranch`, `#NetworkFolder`),
+    under the `FileBrowser`'s own query key, so the tree and the browser share one listing; a
+    location that cannot be reached shows its error on its own branch.
   - *VPN* is a step of its own after the locations: one service `tunnel`, WireGuard (wireguard-go,
     MIT) and SoftEther (Apache 2.0), a location choosing the tunnel it goes through. OpenVPN,
     openfortivpn and strongSwan are GPL and stay out.
@@ -5000,7 +5018,7 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     whenever the service restarted or holds other tunnels, and long-polls it for states, which
     reach the page as live changes (`tunnels.follow`). What stands behind a tunnel is reached
     through the service's SOCKS5 port, `tunnel:1080`, the tunnel's id as the user name and the
-    host named to the far side (`tunnels.opened(tunnel, host, port)`), so the backend has no
+    host named to the far side (`socks.opened(tunnel, host, port)`), so the backend has no
     `NET_ADMIN` and routes nothing. WireGuard runs on wireguard-go's netstack (gVisor) inside the
     service: no device, no capability, overlapping networks apart by construction. SoftEther is
     its client built from source against libedit (not GNU readline), driven through `vpncmd`;

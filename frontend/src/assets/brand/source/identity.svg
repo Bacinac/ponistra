@@ -8,6 +8,26 @@
       <path d="M10 17C31 2 65 2 86 17" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="2"/>
       <g transform="translate(13.5 12) scale(.76)" fill="none" stroke="#c4e2cf" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><use xlink:href="#mark"/></g>
     </symbol>
+    <symbol id="sheet" viewBox="0 0 96 96">
+      <path d="M20 6H58L80 28V84a6 6 0 0 1-6 6H20a6 6 0 0 1-6-6V12a6 6 0 0 1 6-6Z" fill="#fbfdfb" stroke="#b5c8be" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M58 6V22a6 6 0 0 0 6 6H80" fill="#e3ede7" stroke="#b5c8be" stroke-width="2" stroke-linejoin="round"/>
+      <g transform="translate(17 14) scale(.6)" fill="none" stroke="#4f7c6b" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><use xlink:href="#mark"/></g>
+      <rect x="44" y="52" width="44" height="40" rx="9"/>
+    </symbol>
+    <g id="kinds" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+      <g id="kind-document" data-fill="#2f6f86"><path d="M55 64H77M55 72H77M55 80H69"/></g>
+      <g id="kind-table" data-fill="#3d7a57"><rect x="54" y="62" width="24" height="20" rx="2"/><path d="M54 72H78M66 62V82"/></g>
+      <g id="kind-slides" data-fill="#b45f38"><rect x="54" y="62" width="24" height="15" rx="2"/><path d="M66 77V82M60 82H72"/></g>
+      <g id="kind-pdf" data-fill="#a33b3b" stroke-width="2.6"><path d="M49.5 78V66H54c3.6 0 5.5 1.3 5.5 3.6S57.6 73.2 54 73.2H49.5M62.5 78V66h3c4.5 0 7 2.4 7 6s-2.5 6-7 6ZM76 78V66h7M76 72h5.5"/></g>
+      <g id="kind-image" data-fill="#9c7419"><rect x="54" y="62" width="24" height="20" rx="2"/><path d="M56 80L63 71L68 76L71 73L77 80"/><circle cx="71.5" cy="67.5" r="1.8" fill="#fff" stroke="none"/></g>
+      <g id="kind-text" data-fill="#4a5767"><path d="M60 64L54 72L60 80M72 64L78 72L72 80"/></g>
+      <g id="kind-audio" data-fill="#774c84"><path d="M62.5 79V64.5L76 61.5V76"/><circle cx="59.5" cy="79" r="3" fill="#fff" stroke="none"/><circle cx="73" cy="76" r="3" fill="#fff" stroke="none"/></g>
+      <g id="kind-video" data-fill="#46569a"><rect x="54" y="64" width="16" height="16" rx="2.5"/><path d="M70 70L78 65.5V78.5L70 74Z" fill="#fff"/></g>
+      <g id="kind-archive" data-fill="#6e5b3c"><rect x="54" y="66" width="24" height="16" rx="2"/><path d="M53 61H79V66H53ZM62 71H70"/></g>
+      <g id="kind-message" data-fill="#2f7d6e"><rect x="54" y="63" width="24" height="18" rx="2"/><path d="M55 65L66 73L77 65"/></g>
+      <g id="kind-contact" data-fill="#5c6a2c"><circle cx="66" cy="67" r="4.5"/><path d="M57 81c1.5-5 5-7.5 9-7.5s7.5 2.5 9 7.5"/></g>
+      <g id="kind-event" data-fill="#8a3c5c"><rect x="54" y="64" width="24" height="18" rx="2"/><path d="M54 70H78M60 61V66M72 61V66"/></g>
+    </g>
   </defs>
   <g id="wordmark" fill="none" stroke="#4f7c6b" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" data-inverse="#a7c9b7">
     <path id="mark" mask="url(#cut)" d="M18 83V13h24c20 0 31 7 31 20S62 53 42 53H18"/>

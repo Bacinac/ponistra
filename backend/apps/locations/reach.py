@@ -7,6 +7,7 @@ from apps.access.models import RANK, Role
 from apps.core.api import Refused
 from apps.core.asyncdb import database
 from apps.core.sealed import opened
+from apps.network.models import Tunnel
 
 from . import sftp, smbfiles
 from .models import Grant, Location
@@ -43,7 +44,7 @@ def role_on(user, location: Location) -> Role | None:
 
 def location(user, pk, needs: Role = Role.READ) -> tuple[Location, Role]:
     """The location the request names, where the user's role covers what it does."""
-    found = Location.objects.select_related("owner").filter(pk=pk).first()
+    found = Location.objects.select_related("owner", "tunnel").filter(pk=pk).first()
     role = found and role_on(user, found)
     if role is None:
         raise Refused(404, "not_found")
@@ -63,6 +64,7 @@ def target(found: Location, secret: str) -> sftp.Target:
         key=secret if key else None,
         jump=found.jump,
         known_hosts=found.known_hosts,
+        tunnel=found.tunnel_id,
     )
 
 
@@ -74,14 +76,30 @@ def key_of(found: Location) -> str:
     return f"{found.pk}:{found.changed_at.timestamp()}"
 
 
+def _through(found: Location) -> None:
+    """A location behind a tunnel is reached only while the tunnel is up."""
+    if found.tunnel_id is None:
+        return
+    state = Tunnel.objects.filter(pk=found.tunnel_id).values_list("state", flat=True).first()
+    if state != Tunnel.State.UP:
+        raise Failed("location_tunnel_down")
+
+
+async def _smb(found: Location, secret: str) -> smbfiles.Smb:
+    return await smbfiles.reached(
+        found.host, found.port, found.path, found.username, secret, found.tunnel_id
+    )
+
+
 async def reached(found: Location) -> Remote:
     """The location signed in to on its server; an SFTP server's host keys first found are kept,
     so that another one later is refused as the server's identity changed."""
     secret = opened(SEALED, found.secret)
     if secret is None:
         raise Failed("location_secret_lost")
+    await database(_through)(found)
     if found.kind == Location.Kind.SMB:
-        return await smbfiles.reached(found.host, found.port, found.path, found.username, secret)
+        return await _smb(found, secret)
     link = await sftp.connection(key_of(found), target(found, secret))
     if (known := link.known_hosts()) != found.known_hosts:
         await database(_known)(found.pk, known)
@@ -90,8 +108,9 @@ async def reached(found: Location) -> Remote:
 
 async def tried(found: Location, secret: str) -> str:
     """Signs in with a secret not yet kept, and gives the host keys the server showed."""
+    await database(_through)(found)
     if found.kind == Location.Kind.SMB:
-        remote = await smbfiles.reached(found.host, found.port, found.path, found.username, secret)
+        remote = await _smb(found, secret)
         await remote.close()
         return ""
     link = sftp.Connection(target(found, secret))

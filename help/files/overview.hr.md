@@ -16,6 +16,7 @@ Datoteka koja nije dokument Ponistre, poput PDF-a, slike, tekstne datoteke, vide
 - PDF se prikazuje stranicu po stranicu, s bilješkama, komentarima i obrascima.
 - Slika se prikazuje cijela, uklopljena u prozor. Slike PNG, JPEG, WebP i AVIF mogu se i urediti.
 - Tekstna datoteka prikazuje se samo za čitanje, s brojevima redaka i pretragom.
+- Arhiva, poruka e-pošte, kontakti, kalendar, Markdown i slike BMP, ICO, TIFF i PSD prikazuju svoj sadržaj, kako opisuje [Sadržaj datoteka po vrsti](help:files/held).
 - Videozapis i zvučni zapis reproduciraju se u pregledniku. Kad ga preglednik ne može reproducirati, stranica to javlja i savjetuje preuzimanje.
 - Ostale vrste Ponistra čuva, ali ne prikazuje: stranica pokazuje naziv, vrstu i veličinu datoteke te savjetuje preuzimanje.
 
@@ -31,4 +32,5 @@ Preuzeti PDF sadrži bilješke, komentare i upisane vrijednosti obrasca, a tekst
 - [PDF datoteke](help:pdf/viewer)
 - [Uređivanje slike](help:files/image-editor)
 - [Tekstne datoteke](help:files/text)
+- [Sadržaj datoteka po vrsti](help:files/held)
 - [Učitavanje datoteka](help:documents/upload)

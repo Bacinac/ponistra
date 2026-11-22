@@ -27,6 +27,7 @@ import { formatSize } from './explorer';
 import { TranslateDialog, useFollowedRun, type Gathering } from './gather';
 import { Addressed, Frame, Loading, Missing, SaveInto } from './frame';
 import { useI18n } from './i18n';
+import { heldKind, HeldView } from './kinds';
 import { FavouriteButton } from './favourites';
 import { MenuItem } from './menu';
 import type { Pen } from './pen';
@@ -289,12 +290,18 @@ function OpenFile({ nodeId }: { nodeId: string }) {
 
 /** A file other than a PDF: an image or a text is shown, an image its edits drawn in, audio and
  * video are played, anything else is only saved. */
-function Kept({ placement: { node, path, root, role, confined, room } }: { placement: Placement }) {
+function Kept({
+  placement: { node, path, root, role, confined, room, pdf },
+}: {
+  placement: Placement;
+}) {
   const { t } = useI18n();
   const visitor = useVisitor();
   const [params, setParams] = useSearchParams();
   const panel = params.get('panel');
   const kind = kindOf(node);
+  const held = heldKind(node.media_type, node.extension);
+  const [outline] = useState(outlineStore);
   const image = kind === 'image';
   const board = kind === 'board';
   const source = board && params.get('view') === 'source';
@@ -481,6 +488,33 @@ function Kept({ placement: { node, path, root, role, confined, room } }: { place
           ) : (
             <Loading />
           )
+        ) : held === 'picture' && pdf?.recognised ? (
+          <Suspense fallback={<Loading />}>
+            <PdfView
+              file={`/api/nodes/${node.id}/file?v=${pdf.served}`}
+              page={Number(params.get('page')) || null}
+              heading={null}
+              find={params.get('find')}
+              visit={node.id}
+              outline={outline}
+              onNoted={() => {}}
+              onSealed={() => {}}
+              status={<Reading nodeId={node.id} bytes={pdf} />}
+            />
+          </Suspense>
+        ) : held === 'picture' ? (
+          <div className="flex h-full flex-col items-center justify-center gap-3 overflow-auto p-6">
+            <HeldView base={`/api/nodes/${node.id}`} kind={held} title={node.title} />
+            {pdf && (
+              <div className="flex items-center gap-2 text-sm text-muted">
+                <Reading nodeId={node.id} bytes={pdf} />
+              </div>
+            )}
+          </div>
+        ) : held ? (
+          <div className="h-full overflow-auto p-4">
+            <HeldView base={`/api/nodes/${node.id}`} kind={held} title={node.title} />
+          </div>
         ) : image ? (
           <div className="flex h-full items-center justify-center overflow-auto p-6">
             <img src={file} alt={node.title} className="max-h-full max-w-full object-contain" />

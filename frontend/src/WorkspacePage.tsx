@@ -1583,7 +1583,11 @@ function Questions({ session, questions }: { session: string; questions: Questio
                 {asked.header}
               </span>
             )}
-            <span className="font-medium">{asked.question}</span>
+            <span className="font-medium">
+              <Markdown remarkPlugins={[remarkGfm]} components={INLINE}>
+                {asked.question}
+              </Markdown>
+            </span>
           </legend>
           <div className="flex flex-col gap-1.5">
             {asked.options.map((option) => {
@@ -1780,6 +1784,8 @@ const MARKDOWN: Components = {
   td: ({ node: _, ...props }) => <td {...props} className="border border-line px-2 py-1" />,
   hr: () => <hr className="my-2 border-line" />,
 };
+
+const INLINE: Components = { a: MARKDOWN.a, p: ({ node: _, ...props }) => <span {...props} /> };
 
 function Bubble({ said, pinned = false }: { said: Said; pinned?: boolean }) {
   const { t, formatNumber } = useI18n();

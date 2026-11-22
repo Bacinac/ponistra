@@ -106,6 +106,7 @@ interface Policy {
   second_factor: boolean;
   outside: Outside;
   locations: Outside;
+  opening: boolean;
 }
 const OUTSIDE: Outside[] = ['nobody', 'administrators', 'everyone'];
 const COMPANY = ['company'];
@@ -614,6 +615,15 @@ function PolicySection() {
           onChange={(event) => change.mutate({ second_factor: event.target.checked })}
         />
         {t('policy.secondFactor')}
+      </label>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={policy.data?.opening ?? false}
+          disabled={!policy.isSuccess || change.isPending}
+          onChange={(event) => change.mutate({ opening: event.target.checked })}
+        />
+        {t('policy.opening')}
       </label>
       {failure && <p className="text-sm text-danger">{errorMessage(failure, t)}</p>}
     </Headed>

@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { type UseQueryResult } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import {
   Building2,
   ChevronRight,
@@ -55,7 +55,7 @@ import { Brand, BrandIcon, MARK_AXIS } from './Brand';
 import { endDrag, refuseStrayFiles, startDrag, useDropTarget } from './drag';
 import { LANGUAGE_NAMES, LANGUAGES, useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
-import { Launches, LaunchesElsewhere } from './launch';
+import { closeOpened, Launches, LaunchesElsewhere, signInToSave } from './launch';
 import { useFollowed } from './followed';
 import { useLive, waitingIn } from './live';
 import { JoinLink } from './meeting';
@@ -103,6 +103,7 @@ import {
 import { useTitle } from './title';
 import { UploadProvider, useUploads, type Picked } from './upload';
 import { useAccounts } from './mailData';
+import { folderHref, listed, LOCATION_ICONS, sourceKey, useLocations } from './locationsData';
 
 type Expansion = [Record<string, boolean>, Dispatch<SetStateAction<Record<string, boolean>>>];
 
@@ -323,14 +324,174 @@ const KEPT_APART: { to: string; end: boolean; icon: LucideIcon; label: MessageKe
   { to: '/links', end: true, icon: Globe, label: 'links.title' },
   { to: '/boards', end: true, icon: LayoutDashboard, label: 'boards.title' },
   { to: '/vault', end: false, icon: Vault, label: 'vault.title' },
-  { to: '/locations', end: false, icon: Network, label: 'locations.title' },
 ];
 
 const PHONE_PLACES: { to: string; icon: LucideIcon; label: MessageKey }[] = [
   { to: '/favourites', icon: Star, label: 'favourites.title' },
   ...KEPT_APART,
+  { to: '/locations', icon: Network, label: 'locations.title' },
   { to: '/trash', icon: Trash2, label: 'trash.title' },
 ];
+
+/** The location and folders the page shows, as the network's branches the tree keeps open. */
+function useNetworkAlong(): { along: Set<string>; at: string | null } {
+  const { pathname, search } = useLocation();
+  return useMemo(() => {
+    const [, root, id] = pathname.split('/');
+    if (root !== 'locations') return { along: new Set(), at: null };
+    const along = new Set(['network']);
+    if (!id) return { along, at: null };
+    const path = new URLSearchParams(search).get('path') ?? '';
+    const parts = path.split('/').filter(Boolean);
+    along.add(sourceKey(id));
+    parts.forEach((_, index) =>
+      along.add(`${sourceKey(id)}/${parts.slice(0, index + 1).join('/')}`),
+    );
+    return { along, at: parts.length ? `${sourceKey(id)}/${parts.join('/')}` : sourceKey(id) };
+  }, [pathname, search]);
+}
+
+/** A row of the network's branches, opened and closed as a folder of the tree is. */
+function NetworkRow({
+  id,
+  to,
+  icon: Icon,
+  label,
+  depth,
+  expanded,
+  empty,
+  current,
+}: {
+  id: string;
+  to: string;
+  icon: LucideIcon;
+  label: string;
+  depth: number;
+  expanded: boolean;
+  empty: boolean;
+  current: boolean;
+}) {
+  const { t } = useI18n();
+  const [, setOpen] = useContext(ExpansionContext)!;
+  return (
+    <div style={{ paddingLeft: `${depth * 0.75}rem` }} className="flex items-center">
+      {empty ? (
+        <span aria-hidden className="w-6 shrink-0" />
+      ) : (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-label={t(expanded ? 'frame.collapse' : 'frame.expand')}
+          onClick={() => setOpen((state) => ({ ...state, [id]: !expanded }))}
+          className="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-ink"
+        >
+          <ChevronRight size={16} className={expanded ? 'rotate-90' : undefined} />
+        </button>
+      )}
+      <Link to={to} aria-current={current ? 'page' : undefined} className={`${sideRow} flex-1`}>
+        <Icon size={16} aria-hidden className="shrink-0 text-muted" />
+        <span className="truncate">{label}</span>
+      </Link>
+    </div>
+  );
+}
+
+type NetworkLevel = { depth: number; along: Set<string>; at: string | null };
+
+/** A folder of a location, with its folders read from the server once it is opened. */
+function NetworkFolder({
+  location,
+  path,
+  name,
+  icon,
+  ...level
+}: NetworkLevel & { location: string; path: string; name: string; icon: LucideIcon }) {
+  const { t } = useI18n();
+  const [open] = useContext(ExpansionContext)!;
+  const id = path ? `${sourceKey(location)}/${path}` : sourceKey(location);
+  const expanded = open[id] ?? level.along.has(id);
+  const listing = useQuery({
+    queryKey: ['files', sourceKey(location), 'list', path],
+    queryFn: () => listed(location, path),
+    enabled: expanded,
+  });
+  const folders = listing.data?.entries.filter((entry) => entry.kind === 'folder');
+  return (
+    <>
+      <NetworkRow
+        id={id}
+        to={folderHref(location, path)}
+        icon={icon}
+        label={name}
+        depth={level.depth}
+        expanded={expanded}
+        empty={folders?.length === 0}
+        current={level.at === id}
+      />
+      {expanded && listing.isError && (
+        <p
+          style={{ paddingLeft: `${(level.depth + 1) * 0.75}rem` }}
+          className="px-2 py-1 text-sm text-danger"
+        >
+          {errorMessage(listing.error, t)}
+        </p>
+      )}
+      {expanded &&
+        folders?.map((entry) => (
+          <NetworkFolder
+            key={entry.name}
+            location={location}
+            path={path ? `${path}/${entry.name}` : entry.name}
+            name={entry.name}
+            icon={Folder}
+            {...level}
+            depth={level.depth + 1}
+          />
+        ))}
+    </>
+  );
+}
+
+/** Documents → Network as a folder of the tree: the locations the user reaches below it, and
+    each location's folders below it. */
+function NetworkBranch() {
+  const { t } = useI18n();
+  const [open] = useContext(ExpansionContext)!;
+  const { along, at } = useNetworkAlong();
+  const expanded = open.network ?? along.has('network');
+  const found = useLocations({ enabled: expanded });
+  const locations = found.data?.locations;
+  return (
+    <>
+      <NetworkRow
+        id="network"
+        to="/locations"
+        icon={Network}
+        label={t('locations.title')}
+        depth={0}
+        expanded={expanded}
+        empty={locations?.length === 0}
+        current={along.has('network') && at === null}
+      />
+      {expanded && found.isError && (
+        <p className="px-2 py-1 text-sm text-danger">{errorMessage(found.error, t)}</p>
+      )}
+      {expanded &&
+        locations?.map((each) => (
+          <NetworkFolder
+            key={each.id}
+            location={each.id}
+            path=""
+            name={each.name}
+            icon={LOCATION_ICONS[each.kind]}
+            depth={1}
+            along={along}
+            at={at}
+          />
+        ))}
+    </>
+  );
+}
 
 function FolderTree({
   path,
@@ -387,6 +548,7 @@ function FolderTree({
           {t(label)}
         </NavLink>
       ))}
+      <NetworkBranch />
       <div className="my-2 h-px bg-line" />
       <DropLink to="/trash" onNodes={(ids) => toTrash.mutate(ids)}>
         <Trash2 size={16} aria-hidden className="shrink-0 text-muted" />
@@ -976,15 +1138,15 @@ export function Shell({ children, alone = false }: { children: ReactNode; alone?
       <ExpansionContext value={expansion}>
         <PaletteProvider>
           <UploadProvider>
-            <LaunchesElsewhere />
-            <Member />
+            {!visitor && <LaunchesElsewhere />}
+            {!visitor && <Member />}
             <SlotsContext value={slots}>
               <div
                 onDragOver={refuseStrayFiles}
                 className="relative flex h-dvh flex-col overflow-clip bg-panel text-ink"
               >
                 <header className="flex shrink-0 flex-wrap items-center gap-x-2 border-b border-line px-2 md:h-12 md:flex-nowrap md:border-b-0">
-                  <ModulesMenu />
+                  {visitor ? <BrandIcon /> : <ModulesMenu />}
                   {chrome.drawn && (
                     <button
                       type="button"
@@ -1007,7 +1169,7 @@ export function Shell({ children, alone = false }: { children: ReactNode; alone?
                     type="button"
                     aria-label={t('device.close')}
                     title={t('device.close')}
-                    onClick={() => window.close()}
+                    onClick={visitor ? () => void closeOpened() : () => window.close()}
                     className={`${iconButton} shrink-0`}
                   >
                     <X size={18} aria-hidden />
@@ -1145,6 +1307,7 @@ export function PrimaryAction({
  * means for it: its content is kept as it changes. */
 export function SaveInto({ node, role }: { node: TreeNode; role: Role }) {
   const { t } = useI18n();
+  const visitor = useVisitor();
   const [choosing, setChoosing] = useState(false);
   if (!node.unplaced) return null;
   return (
@@ -1152,8 +1315,8 @@ export function SaveInto({ node, role }: { node: TreeNode; role: Role }) {
       <PrimaryAction
         icon={FolderInput}
         label={t('tree.saveInto')}
-        disabled={!covers(role, 'own')}
-        onClick={() => setChoosing(true)}
+        disabled={!visitor && !covers(role, 'own')}
+        onClick={() => (visitor ? void signInToSave() : setChoosing(true))}
       />
       {choosing && <MoveDialog nodes={[{ ...node, role }]} onClose={() => setChoosing(false)} />}
     </>

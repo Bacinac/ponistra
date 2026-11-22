@@ -1,8 +1,10 @@
 import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
+import { csrfToken, postBytes, postJson } from './api';
 import { useI18n } from './i18n';
+import { answerOf } from './jobs';
 import { button } from './styles';
-import { errorMessage, nodeHref } from './tree';
+import { errorMessage, nodeHref, type TreeNode } from './tree';
 import { loose, useUploads } from './upload';
 
 // The Launch Handler and File Handling APIs, which TypeScript's DOM library does not describe yet.
@@ -85,15 +87,71 @@ export function onlyPdfs({ files }: Launch): boolean {
   );
 }
 
-/** The PDF files a launch opens while nobody is signed in; any other launch waits for someone
- * to sign in, as its files are placed among their documents. */
-export function useSignedOutPdfs(): [File[], () => void] {
-  const [files, setFiles] = useState<File[]>([]);
-  useLaunches((launch) => {
-    if (!onlyPdfs(launch)) return false;
-    setFiles(launch.files);
+/** What a browser that opened files while nobody was signed in keeps of them: the key that gives
+ * them to whoever signs in from it, and the files. */
+const OPENER = 'ponistra-opener';
+type Opened = Pick<TreeNode, 'id' | 'kind' | 'title'>;
+interface Opener {
+  key: string;
+  files: Opened[];
+}
+
+export function opener(): Opener | null {
+  const kept = sessionStorage.getItem(OPENER);
+  return kept ? (JSON.parse(kept) as Opener) : null;
+}
+
+export function forgetOpener() {
+  sessionStorage.removeItem(OPENER);
+}
+
+/** Places each file on the server for a visitor this browser becomes, then reads the first in
+ * this window, alone. */
+async function openedSignedOut(files: File[]): Promise<void> {
+  const kept = opener();
+  let key = kept?.key ?? '';
+  const placed: Opened[] = [...(kept?.files ?? [])];
+  for (const file of files) {
+    const sent = await postBytes<{ job: string; key?: string }>(
+      `/api/opened?${new URLSearchParams({ name: file.name })}`,
+      file,
+    );
+    key = sent.key ?? key;
+    const { id, kind, title } = await answerOf<TreeNode>(sent.job, file.name);
+    placed.push({ id, kind, title });
+  }
+  sessionStorage.setItem(OPENER, JSON.stringify({ key, files: placed } satisfies Opener));
+  window.name = `${OPENED}signed-out`;
+  location.assign(nodeHref(placed[kept?.files.length ?? 0]));
+}
+
+interface SignedOutLaunch {
+  pdfs: File[];
+  closePdfs: () => void;
+  /** The files placed on the server meanwhile, and what refused them. */
+  opening: { files: File[]; error: Error | null } | null;
+  closeOpening: () => void;
+}
+
+/** What a launch opens while nobody is signed in: PDF files the browser shows itself, without
+ * the server; any other file is placed for a visitor of its own, who only reads it. */
+export function useSignedOutLaunch(): SignedOutLaunch {
+  const [pdfs, setPdfs] = useState<File[]>([]);
+  const [opening, setOpening] = useState<SignedOutLaunch['opening']>(null);
+  useLaunches(({ files }) => {
+    if (files.length === 0) return false;
+    if (onlyPdfs({ files })) return setPdfs(files);
+    setOpening({ files, error: null });
+    openedSignedOut(files).catch((error: unknown) =>
+      setOpening({ files, error: error instanceof Error ? error : new Error(String(error)) }),
+    );
   });
-  return [files, () => setFiles([])];
+  return {
+    pdfs,
+    closePdfs: () => setPdfs([]),
+    opening,
+    closeOpening: () => setOpening(null),
+  };
 }
 
 /** Where a launch leads the window at `here`: nowhere when the window is there already, or when
@@ -328,5 +386,112 @@ export function LaunchesElsewhere() {
         </div>
       )}
     </LaunchBar>
+  );
+}
+
+/** Whether this window's page has been told where it goes: to a sign-in, which keeps the files
+ * for whoever signs in, or closed, which removed them already. */
+let leaving = false;
+
+function sendClosed(): Promise<Response> {
+  return fetch('/api/opened/closed', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': csrfToken() },
+    keepalive: true,
+  });
+}
+
+/** Closes the window of files opened while nobody was signed in, once they are removed. */
+export async function closeOpened() {
+  leaving = true;
+  forgetOpener();
+  window.name = '';
+  await sendClosed();
+  window.close();
+  location.assign('/');
+}
+
+/** Leads to the sign-in, after which whoever signed in takes the files and saves them. */
+export async function signInToSave() {
+  leaving = true;
+  await postJson('/api/auth/logout');
+  location.assign('/');
+}
+
+/** The part of a window reading files opened while nobody was signed in: another launch's files
+ * join them, the others are a click away, and the window that goes removes them. */
+export function OpenerLaunches() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [failed, setFailed] = useState<Error | null>(null);
+  useLaunches(({ files }) => {
+    if (files.length === 0) return false;
+    openedSignedOut(files).catch((error: unknown) =>
+      setFailed(error instanceof Error ? error : new Error(String(error))),
+    );
+  });
+  useEffect(() => {
+    const gone = (event: PageTransitionEvent) => {
+      if (event.persisted || leaving) return;
+      forgetOpener();
+      void sendClosed();
+    };
+    window.addEventListener('pagehide', gone);
+    return () => window.removeEventListener('pagehide', gone);
+  }, []);
+  const files = opener()?.files ?? [];
+  return (
+    <LaunchBar>
+      {failed && <p className="text-danger">{errorMessage(failed, t)}</p>}
+      {files.length > 1 && (
+        <nav aria-label={t('device.files')} className="flex flex-wrap gap-1">
+          {files.map((file) => (
+            <button
+              key={file.id}
+              type="button"
+              aria-current={pathname === nodeHref(file) ? 'page' : undefined}
+              onClick={() => void navigate(nodeHref(file))}
+              className="max-w-48 truncate rounded-full px-3 py-1 text-muted aria-[current=page]:bg-selected aria-[current=page]:text-ink"
+            >
+              {file.title}
+            </button>
+          ))}
+        </nav>
+      )}
+    </LaunchBar>
+  );
+}
+
+/** Gives whoever just signed in the files their browser opened before, then reads the first
+ * alone, where they save it. */
+export function Claim() {
+  const { t } = useI18n();
+  const [failed, setFailed] = useState<Error | null>(null);
+  const claimed = useRef(false);
+  useEffect(() => {
+    const kept = opener();
+    if (claimed.current || !kept) return;
+    claimed.current = true;
+    postJson<{ nodes: TreeNode[] }>('/api/opened/taken', { key: kept.key })
+      .then(({ nodes }) => {
+        forgetOpener();
+        if (nodes[0]) location.assign(nodeHref(nodes[0]));
+        else location.assign('/');
+      })
+      .catch((error: unknown) => {
+        forgetOpener();
+        window.name = '';
+        setFailed(error instanceof Error ? error : new Error(String(error)));
+      });
+  }, []);
+  if (!failed) return <p className="text-sm text-muted">{t('launch.receiving')}</p>;
+  return (
+    <div className="flex flex-col items-start gap-2 text-sm">
+      <p className="text-danger">{errorMessage(failed, t)}</p>
+      <button type="button" onClick={() => location.assign('/')} className={button}>
+        {t('launch.open')}
+      </button>
+    </div>
   );
 }
