@@ -1329,7 +1329,7 @@ export function Shell({ children, alone = false }: { children: ReactNode; alone?
                   <div className="h-12 flex-1 md:hidden" />
                   <div
                     ref={setCrumbs}
-                    className="order-last min-w-0 basis-full px-1 pb-2 empty:hidden md:order-none md:basis-auto md:flex-1 md:px-0 md:pb-0"
+                    className="order-last min-w-0 basis-full px-1 pb-2 empty:hidden md:order-none md:basis-auto md:flex-1 md:px-0 md:pb-0 md:empty:block"
                   />
                   <div ref={setActions} className="flex shrink-0 items-center gap-2 empty:hidden" />
                   <HelpButton />
@@ -1425,7 +1425,7 @@ export function Shell({ children, alone = false }: { children: ReactNode; alone?
                   <div className="h-12 flex-1 md:hidden" />
                   <div
                     ref={setCrumbs}
-                    className="order-last min-w-0 basis-full px-1 pb-2 empty:hidden md:order-none md:basis-auto md:flex-1 md:px-0 md:pb-0"
+                    className="order-last min-w-0 basis-full px-1 pb-2 empty:hidden md:order-none md:basis-auto md:flex-1 md:px-0 md:pb-0 md:empty:block"
                   />
                   <div ref={setActions} className="flex shrink-0 items-center gap-2 empty:hidden" />
                   {chrome.searchable && !visitor && <SearchBox here={chrome.here} />}

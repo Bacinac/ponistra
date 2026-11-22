@@ -79,6 +79,7 @@ test('a window the browser refuses to open waits in the main window for a click'
   const opening = context.waitForEvent('page');
   await held.getByRole('button', { name: 'Otvori' }).click();
   const alone = await opening;
+  await expect(alone).toHaveURL(/\/d\//);
   await expect(alone.getByText('Prvi članak')).toBeVisible();
   await expect(held).toHaveCount(0);
 });
