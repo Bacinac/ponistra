@@ -435,7 +435,7 @@ function BoardsBranch({ source }: { source: TreeSource<ListedNode> }) {
   );
 }
 
-/** My documents, Company and Shared with me: the roots of the documents' tree, each with its
+/** My documents, Company and Shared: the roots of the documents' tree, each with its
  * folders below it. */
 interface Place {
   place: Root;

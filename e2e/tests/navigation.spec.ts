@@ -242,7 +242,7 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   const places = page.getByRole('navigation', { name: 'Mjesta' });
   await expect(places.getByRole('link')).toHaveText([
     'Omiljeno',
-    'Podijeljeno sa mnom',
+    'Dijeljeno',
     'Mreža',
     'Bilješke',
     'Poveznice',
@@ -444,7 +444,7 @@ test('the side column holds the places as roots of one tree, then the collection
     .toEqual([
       'Omiljeno',
       'Moji dokumenti',
-      'Podijeljeno sa mnom',
+      'Dijeljeno',
       'Mreža',
       'Bilješke',
       'Poveznice',
@@ -468,7 +468,7 @@ test('the side column holds the places as roots of one tree, then the collection
   await tree.getByRole('link', { name: 'Korijen e2e' }).click();
   await tree.getByRole('link', { name: 'Omiljeno' }).click();
   await expect(tree.getByRole('link', { name: 'Korijen e2e' })).toBeVisible();
-  await tree.getByRole('link', { name: 'Podijeljeno sa mnom' }).click();
+  await tree.getByRole('link', { name: 'Dijeljeno' }).click();
   await expect(page).toHaveURL(/\/shared$/);
-  await expect(page.getByRole('navigation', { name: 'Putanja' })).toHaveText('Podijeljeno sa mnom');
+  await expect(page.getByRole('navigation', { name: 'Putanja' })).toHaveText('Dijeljeno');
 });

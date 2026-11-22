@@ -1036,7 +1036,7 @@ export const hr = {
   'error.undone': 'Ono što je akcija promijenila već je uklonjeno.',
   'error.no_proposal': 'Prijedlog više ne postoji: netko ga je u međuvremenu prihvatio ili odbio.',
   'error.unknown_file': 'Prenesena datoteka više ne postoji; odaberite je ponovno.',
-  'tree.shared': 'Podijeljeno sa mnom',
+  'tree.shared': 'Dijeljeno',
   'tree.sharedWithMe': 'Sa mnom',
   'tree.sharedByMe': 'Ja dijelim',
   'tree.sharedEmpty': 'Nitko s vama još nije ništa podijelio.',

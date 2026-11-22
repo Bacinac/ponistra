@@ -21,5 +21,5 @@ The {t:tree.company} item in the left column appears only once you have access t
 ## Related
 
 - [Sharing](help:documents/sharing)
-- [Shared with me](help:documents/shared)
+- [Shared](help:documents/shared)
 - [Documents overview](help:documents/overview)

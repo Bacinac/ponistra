@@ -1,4 +1,4 @@
-# Podijeljeno sa mnom
+# Podijeljeno
 
 Stranica {t:tree.shared} skuplja dokumente i mape koje su drugi podijelili s vama, a na drugoj kartici one koje ste vi podijelili s drugima.
 

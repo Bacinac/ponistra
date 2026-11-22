@@ -311,9 +311,9 @@ test('the shared page switches between what others share with me and what I shar
   });
   const { user, router, settled } = open('/documents');
   await settled();
-  await user.click(screen.getByRole('link', { name: 'Podijeljeno sa mnom' }));
+  await user.click(screen.getByRole('link', { name: 'Dijeljeno' }));
   await settled();
-  const views = await screen.findByRole('group', { name: 'Podijeljeno sa mnom' });
+  const views = await screen.findByRole('group', { name: 'Dijeljeno' });
   expect(within(views).getByRole('button', { name: 'Sa mnom' }).getAttribute('aria-pressed')).toBe(
     'true',
   );

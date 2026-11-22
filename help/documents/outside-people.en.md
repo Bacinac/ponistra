@@ -44,4 +44,4 @@ Being signed in in the browser lasts at most 30 days, and opening the same link 
 - [Sharing](help:documents/sharing)
 - [A link outside the installation](help:documents/outside)
 - [Documents in mail as links](help:mail/shared-links)
-- [Shared with me](help:documents/shared)
+- [Shared](help:documents/shared)

@@ -46,7 +46,7 @@ Dnevnik bilježi {t:log.kind.opened}, {t:log.openedThroughLink}, {t:log.kind.dow
 
 ## Povezano
 
-- [Podijeljeno sa mnom](help:documents/shared)
+- [Podijeljeno](help:documents/shared)
 - [Poveznica izvan instalacije](help:documents/outside)
 - [Dijeljenje s osobom izvana](help:documents/outside-people)
 - [Zatražene datoteke](help:documents/asked-files)

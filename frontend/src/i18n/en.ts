@@ -1038,7 +1038,7 @@ export const en: Record<MessageKey, string> = {
   'error.undone': 'What the action changed is already gone.',
   'error.no_proposal': 'The proposal is gone: someone has accepted or rejected it in the meantime.',
   'error.unknown_file': 'The uploaded file is gone; choose it again.',
-  'tree.shared': 'Shared with me',
+  'tree.shared': 'Shared',
   'tree.sharedWithMe': 'With me',
   'tree.sharedByMe': 'By me',
   'tree.sharedEmpty': 'Nobody has shared anything with you yet.',

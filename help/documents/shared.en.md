@@ -1,4 +1,4 @@
-# Shared with me
+# Shared
 
 The {t:tree.shared} page gathers the documents and folders others have shared with you, and on a second tab those you have shared with others.
 
