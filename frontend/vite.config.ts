@@ -129,7 +129,9 @@ function imported(kind: Launchable): Record<string, string[]> {
 }
 
 /** By kind, the media types and extensions the app is offered for: those Ponistra shows or
- * plays, and so no WMV or AVI, which a browser does not play. */
+ * plays, and so no WMV or AVI, which a browser does not play. No type Windows reserves for the
+ * system (.bat, .cmd, .ps1, .js, .py, .cab and the like): offered one, Windows refuses to register
+ * the installed app at all, its file handlers and taskbar icon with it. */
 const LAUNCHED: Record<Launchable, Record<string, string[]>> = {
   document: imported('document'),
   table: {
@@ -156,17 +158,14 @@ const LAUNCHED: Record<Launchable, Record<string, string[]>> = {
     'text/tab-separated-values': ['.tsv'],
     'text/html': ['.html', '.htm'],
     'text/css': ['.css'],
-    'text/javascript': ['.js', '.mjs'],
+    'text/javascript': ['.mjs'],
     'text/x-typescript': ['.ts', '.tsx'],
-    'text/x-python': ['.py'],
     'application/json': ['.json'],
     'application/xml': ['.xml'],
     'application/yaml': ['.yml', '.yaml'],
     'application/toml': ['.toml'],
     'application/sql': ['.sql'],
     'application/x-sh': ['.sh'],
-    'text/x-powershell': ['.ps1'],
-    'application/x-bat': ['.bat', '.cmd'],
   },
   audio: {
     'audio/mpeg': ['.mp3'],
@@ -196,7 +195,6 @@ const LAUNCHED: Record<Launchable, Record<string, string[]>> = {
     'application/zstd': ['.zst'],
     'application/x-lz4': ['.lz4'],
     'application/x-iso9660-image': ['.iso'],
-    'application/vnd.ms-cab-compressed': ['.cab'],
     'application/x-lzh-compressed': ['.lzh'],
     'application/x-xar': ['.xar'],
   },

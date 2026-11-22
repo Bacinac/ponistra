@@ -26,6 +26,7 @@ Sadržaj iz drugih aplikacija dijelite u Ponistru, kako opisuje [dijeljenje s Po
 
 - Broj na ikoni i otvaranje datoteka ovise o tome podržavaju li ih preglednik i sustav.
 - Izbor na ikoni dobiva jezik vašeg računa, a sustav nove vrste datoteka i njihove ikone, tek kad preglednik osvježi instaliranu aplikaciju, što može potrajati nekoliko dana.
+- Windows skripte (.bat, .cmd, .ps1, .js, .py) i datoteke .cab zadržava za sebe, pa se ne otvaraju s računala; učitajte ih u Dokumente.
 - Na Androidu Ponistra ima i [vlastitu aplikaciju](help:phone/android), koja uz to drži kontakte i kalendare u telefonu.
 
 ## Povezano

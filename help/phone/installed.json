@@ -30,6 +30,6 @@
     "backend/apps/documents/opened.py#closed": "e61b3374abbb",
     "backend/apps/documents/opened.py#taken": "660e824f3537",
     "backend/apps/documents/opened.py#forgotten": "2d21e72c877a",
-    "frontend/vite.config.ts#LAUNCHED": "bf434c8fade8"
+    "frontend/vite.config.ts#LAUNCHED": "ea663ba94533"
   }
 }

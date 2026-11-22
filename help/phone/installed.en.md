@@ -26,6 +26,7 @@ You share content from other apps into Ponistra as [sharing with Ponistra](help:
 
 - The number on the icon and opening files depend on whether the browser and the system support them.
 - The icon's menu takes your account's language, and the system new kinds of file and their icons, only once the browser refreshes the installed app, which can take a few days.
+- Windows keeps scripts (.bat, .cmd, .ps1, .js, .py) and .cab files to itself, so they do not open from the computer; upload them into Documents instead.
 - On Android, Ponistra also has [an app of its own](help:phone/android), which in addition keeps contacts and calendars in the phone.
 
 ## Related
