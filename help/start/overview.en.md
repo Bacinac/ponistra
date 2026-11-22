@@ -16,8 +16,8 @@ Every page of Ponistra has the same frame: the bar of modules, the header with t
 ### The left column
 
 1. The left column holds what belongs to the page: the folders of documents, the calendars, the list of conversations or the contents of the help.
-2. Beside the documents the column offers {t:favourites.title}, {t:tree.root}, {t:tree.shared}, {t:notes.title}, {t:links.title}, {t:boards.title}, {t:vault.title}, {t:locations.title} and {t:trash.title}. {t:tree.company} shows when the company has shared folders.
-3. Open a folder with subfolders by the arrow before its name ({t:frame.expand}), and close it by the same arrow ({t:frame.collapse}).
+2. Beside the documents the column offers {t:favourites.title} at the top, then the places {t:tree.root}, {t:tree.company} (when the company has shared folders), {t:tree.shared} and {t:locations.title}. Below a line are the collections {t:notes.title}, {t:links.title}, {t:boards.title} and {t:vault.title}, and below the next line {t:trash.title}.
+3. Open a place, a folder with subfolders or {t:boards.title} with its groups by the arrow before its name ({t:frame.expand}), and close it by the same arrow ({t:frame.collapse}). Pressing the name shows its contents on the right.
 4. Change the column's width by dragging its right edge ({t:frame.width}). A double click on the edge brings back the default width.
 5. With the edge chosen by {k:Tab}, the {k:ArrowLeft} and {k:ArrowRight} keys change the width, and {k:Home} and {k:End} give the narrowest and the widest.
 6. On a phone, and on pages that hold something of their own in the column, the {t:frame.folders} button in the header opens the folders of documents.

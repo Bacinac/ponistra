@@ -1,6 +1,6 @@
 import type { Page, WebSocketRoute } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { addTabs, idIn, newDocument } from './helpers/nodes';
+import { addTabs, idIn, newBoard, newDocument } from './helpers/nodes';
 
 /** The document's tabs as the server orders them: title, then its parent's title. */
 async function tabsOf(page: Page, address: string): Promise<[string, string | null][]> {
@@ -242,11 +242,12 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   const places = page.getByRole('navigation', { name: 'Mjesta' });
   await expect(places.getByRole('link')).toHaveText([
     'Omiljeno',
+    'Podijeljeno sa mnom',
+    'Mreža',
     'Bilješke',
     'Poveznice',
     'Ploče',
     'Sef',
-    'Mreža',
     'Smeće',
   ]);
   await places.getByRole('link', { name: 'Bilješke' }).click();
@@ -372,4 +373,102 @@ test('a page that outlives its release takes the new one at the next page it goe
   await main.getByRole('link', { name: 'Pošta' }).click();
   await expect.poll(() => reloaded).toBe(true);
   await expect(page).toHaveURL(/\/mail/);
+});
+
+test('the groups of boards open in the tree as folders, each showing its boards, a board dropped onto one filed in it', async ({
+  page,
+}) => {
+  const shows = (name: string) => `<!doctype html><html><body><h1>${name}</h1></body></html>`;
+  await page.goto('/documents');
+  await newBoard(page, 'Ploča Alfe', shows('Alfa'), 'Alfa stablo e2e');
+  await newBoard(page, 'Ploča Bete', shows('Beta'), 'Beta stablo e2e');
+  await newBoard(page, 'Ploča bez grupe', shows('Bez grupe'));
+  await page.reload();
+
+  const tree = page.getByRole('navigation', { name: 'Mape' }).filter({ visible: true });
+  const boards = tree.getByRole('link', { name: 'Ploče', exact: true });
+  await expect(tree.getByRole('link', { name: 'Alfa stablo e2e' })).toHaveCount(0);
+  await boards.locator('..').getByRole('button', { name: 'Proširi' }).click();
+  await tree.getByRole('link', { name: 'Alfa stablo e2e' }).click();
+
+  await expect(page).toHaveURL(/\/boards\/alfa-stablo-e2e-/);
+  await expect(tree.getByRole('link', { name: 'Alfa stablo e2e' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  const main = page.getByRole('main');
+  await expect(main.getByRole('row', { name: /Ploča Alfe/ })).toBeVisible();
+  await expect(main.getByRole('row', { name: /Ploča Bete/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Novo' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Novi dokument' })).toBeDisabled();
+  await page.keyboard.press('Escape');
+
+  await boards.click();
+  await expect(page).toHaveURL(/\/boards$/);
+  await expect(boards).toHaveAttribute('aria-current', 'page');
+  await expect(main.getByRole('row', { name: /Ploča bez grupe/ })).toHaveCount(0);
+
+  await tree.getByRole('link', { name: 'Moji dokumenti', exact: true }).click();
+  await main
+    .getByRole('row', { name: /Ploča bez grupe/ })
+    .getByText('Ploča bez grupe', { exact: true })
+    .dragTo(tree.getByRole('link', { name: 'Beta stablo e2e' }));
+  await expect(main.getByRole('row', { name: /Ploča bez grupe/ })).toHaveCount(0);
+  await tree.getByRole('link', { name: 'Beta stablo e2e' }).click();
+  await expect(main.getByRole('row', { name: /Ploča bez grupe/ })).toBeVisible();
+  await expect(main.getByRole('row', { name: /Ploča Bete/ })).toBeVisible();
+
+  await page.goto('/documents');
+  await expect(tree.getByRole('link', { name: 'Beta stablo e2e' })).toHaveCount(0);
+});
+
+test('the side column holds the places as roots of one tree, then the collections, then the trash', async ({
+  page,
+}) => {
+  await page.goto('/favourites');
+  await page.evaluate(async () => {
+    const token = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] ?? '';
+    const made = await fetch('/api/nodes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+      body: JSON.stringify({ kind: 'folder', title: 'Korijen e2e', parent: null }),
+    });
+    if (!made.ok) throw new Error(`POST /api/nodes: ${made.status}`);
+  });
+  await page.reload();
+  const tree = page.getByRole('navigation', { name: 'Mape' }).filter({ visible: true });
+  const shown = async () =>
+    (await tree.getByRole('link').allInnerTexts()).filter((name) => name !== 'Tvrtka');
+  await expect
+    .poll(shown)
+    .toEqual([
+      'Omiljeno',
+      'Moji dokumenti',
+      'Podijeljeno sa mnom',
+      'Mreža',
+      'Bilješke',
+      'Poveznice',
+      'Ploče',
+      'Sef',
+      'Smeće',
+    ]);
+  const mine = tree.getByRole('link', { name: 'Moji dokumenti', exact: true });
+  await expect(tree.getByRole('link', { name: 'Korijen e2e' })).toHaveCount(0);
+  await mine.locator('..').getByRole('button', { name: 'Proširi' }).click();
+  await expect(tree.getByRole('link', { name: 'Korijen e2e' })).toBeVisible();
+  await mine.locator('..').getByRole('button', { name: 'Sažmi' }).click();
+  await expect(tree.getByRole('link', { name: 'Korijen e2e' })).toHaveCount(0);
+  await mine.click();
+  await expect(page).toHaveURL(/\/documents$/);
+  await expect(mine).toHaveAttribute('aria-current', 'page');
+  await expect(tree.getByRole('link', { name: 'Korijen e2e' })).toHaveCount(0);
+
+  await page.reload();
+  await expect(tree.getByRole('link', { name: 'Korijen e2e' })).toBeVisible();
+  await tree.getByRole('link', { name: 'Korijen e2e' }).click();
+  await tree.getByRole('link', { name: 'Omiljeno' }).click();
+  await expect(tree.getByRole('link', { name: 'Korijen e2e' })).toBeVisible();
+  await tree.getByRole('link', { name: 'Podijeljeno sa mnom' }).click();
+  await expect(page).toHaveURL(/\/shared$/);
+  await expect(page.getByRole('navigation', { name: 'Putanja' })).toHaveText('Podijeljeno sa mnom');
 });

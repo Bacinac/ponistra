@@ -16,8 +16,8 @@ Svaka stranica Ponistre ima isti okvir: traku modula, zaglavlje s pretragom i iz
 ### Lijevi stupac
 
 1. U lijevom stupcu je ono što pripada stranici: mape dokumenata, kalendari, popis razgovora ili sadržaj pomoći.
-2. Uz dokumente stupac nudi {t:favourites.title}, {t:tree.root}, {t:tree.shared}, {t:notes.title}, {t:links.title}, {t:boards.title}, {t:vault.title}, {t:locations.title} i {t:trash.title}. {t:tree.company} se prikazuje kad tvrtka ima zajedničke mape.
-3. Mapu s podmapama otvarate strelicom ispred naziva ({t:frame.expand}), a zatvarate istom strelicom ({t:frame.collapse}).
+2. Uz dokumente stupac na vrhu nudi {t:favourites.title}, zatim mjesta {t:tree.root}, {t:tree.company} (kad tvrtka ima zajedničke mape), {t:tree.shared} i {t:locations.title}. Ispod crte su zbirke {t:notes.title}, {t:links.title}, {t:boards.title} i {t:vault.title}, a ispod sljedeće crte {t:trash.title}.
+3. Mjesto, mapu s podmapama i {t:boards.title} s grupama otvarate strelicom ispred naziva ({t:frame.expand}), a zatvarate istom strelicom ({t:frame.collapse}). Pritisak na naziv pokazuje sadržaj desno.
 4. Širinu stupca mijenjate povlačenjem njegova desnog ruba ({t:frame.width}). Dvostruki klik na rub vraća zadanu širinu.
 5. Kad je rub odabran tipkom {k:Tab}, širinu mijenjate tipkama {k:ArrowLeft} i {k:ArrowRight}, a {k:Home} i {k:End} daju najmanju i najveću.
 6. Na mobitelu, i na stranicama koje u stupcu imaju nešto svoje, mape dokumenata otvara gumb {t:frame.folders} u zaglavlju.

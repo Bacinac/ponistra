@@ -27,7 +27,8 @@ export type JobKind =
   | 'personal'
   | 'mail-move'
   | 'network'
-  | 'opened';
+  | 'opened'
+  | 'unpack';
 
 interface Job {
   id: string;
@@ -128,6 +129,7 @@ const DOING: Record<JobKind, MessageKey> = {
   'mail-move': 'job.mailMove',
   network: 'job.copy',
   opened: 'job.import',
+  unpack: 'job.unpack',
 };
 
 async function cancel(job: Job) {

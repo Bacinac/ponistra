@@ -28,7 +28,7 @@ Ispod popisa, pod {t:mail.mailboxes}, otvarate kontakte [zajedničkog sandučić
 
 ## Kako radi
 
-Kontakti dolaze sami iz povezanih računa pošte (Google, Microsoft, ActiveSync) i iz imenika organizacije, a možete ih dodavati i sami. Svaku osobu iz računa Ponistra preuzima jednom i spaja je s kontaktom koji već ima istu adresu, isti broj ili isto ime; nakon toga kontakt je vaš i mijenjate ga ovdje. Uz kontakt, pod {t:contacts.sources}, piše odakle je došao i kada, a ispod toga {t:contacts.changed} s datumom zadnje promjene.
+Kontakti dolaze sami iz povezanih računa pošte (Google, Microsoft, ActiveSync) i iz imenika organizacije, a možete ih dodavati i sami, jednog po jednog ili sve iz datoteke VCF gumbom {t:shown.toContacts} na stranici datoteke ([Sadržaj datoteka po vrsti](help:files/held)). Svaku osobu iz računa Ponistra preuzima jednom i spaja je s kontaktom koji već ima istu adresu, isti broj ili isto ime; nakon toga kontakt je vaš i mijenjate ga ovdje. Uz kontakt, pod {t:contacts.sources}, piše odakle je došao i kada, a ispod toga {t:contacts.changed} s datumom zadnje promjene.
 
 Broj se pronalazi i kad ga upišete bez pozivnog broja zemlje, pa 091 pronalazi +385 91 234 5678. Kontakt bez imena u popisu se zove {t:contacts.unnamed}. Kad ništa ne odgovara traženju, piše: {t:contacts.noMatch}
 

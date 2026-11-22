@@ -31,7 +31,7 @@ from apps.documents.views import (
 from apps.exports import annotated
 from apps.jobs.kinds import Kind, answered, answered_before
 
-from . import bookmarks, composed, convert, create, ponx, reading, redacted, scanned
+from . import bookmarks, composed, convert, create, ponx, reading, redacted, scanned, unpacked
 from .formats import EXTENSIONS
 from .redaction.content import Unredactable
 from .views import photo
@@ -374,4 +374,5 @@ KINDS = {
     "redact": Kind(_redact_asked, _redact_done, saves=False),
     "scan": Kind(_scan_asked, _scan_done, saves=False),
     "links": Kind(_links_asked, _links_done, saves=False),
+    "unpack": Kind(unpacked.unpack_asked, unpacked.unpack_done, saves=False),
 }

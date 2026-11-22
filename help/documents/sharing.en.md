@@ -46,7 +46,7 @@ The log records {t:log.kind.opened}, {t:log.openedThroughLink}, {t:log.kind.down
 
 ## Related
 
-- [Shared](help:documents/shared)
+- [Shared with me](help:documents/shared)
 - [A link outside the installation](help:documents/outside)
 - [Sharing with someone outside](help:documents/outside-people)
 - [Files asked for](help:documents/asked-files)

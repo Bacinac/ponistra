@@ -23,7 +23,7 @@ Učitana mapa zadržava svoje podmape. Datoteke i podmape čiji naziv počinje t
 
 Ako datoteku nije moguće uvesti jer je nečitljiva ili prevelika, jer radna knjiga ima previše ćelija ili različitih formula, ili jer je spremljena u novijoj inačici programa, sprema se kao obična datoteka, a ispod popisa to se navodi s razlogom. Ostale datoteke se svejedno učitavaju. Datoteke koje se nisu uopće učitale navodi redak {t:upload.failed}
 
-Poslovi koji traju dulje od sekunde, poput uvoza, izrade kopije ili spremanja u drugi oblik, prikazuju se u okviru u donjem desnom kutu: {t:job.import}, {t:job.copy}, {t:job.saving}, {t:job.compose} ili {t:job.redact}, s nazivom i stanjem {t:job.waiting} ili {t:job.running}. Dok se posao još može prekinuti, uz njega stoji {t:tree.cancel}. Učitavanje se nastavlja i kad prijeđete na drugu stranicu.
+Poslovi koji traju dulje od sekunde, poput uvoza, izrade kopije ili spremanja u drugi oblik, prikazuju se u okviru u donjem desnom kutu: {t:job.import}, {t:job.copy}, {t:job.saving}, {t:job.compose}, {t:job.redact} ili {t:job.unpack}, s nazivom i stanjem {t:job.waiting} ili {t:job.running}. Dok se posao još može prekinuti, uz njega stoji {t:tree.cancel}. Učitavanje se nastavlja i kad prijeđete na drugu stranicu.
 
 ## Ograničenja
 

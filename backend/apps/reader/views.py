@@ -3,10 +3,10 @@ from django.utils.http import content_disposition_header
 
 from apps.blobs import store
 from apps.core.api import Refused, api, body
-from apps.documents.views import file_name, live_file, taken_out
+from apps.documents.views import extension_of, file_name, live_file, taken_out
 from apps.imports.reading import TooLarge, Unreadable
 
-from . import shown
+from . import client, shown
 from .archives import Locked
 from .client import Unavailable
 
@@ -79,3 +79,16 @@ def node_shown_part(request, pk, part):
     response["Content-Security-Policy"] = "sandbox"
     response["X-Content-Type-Options"] = "nosniff"
     return response
+
+
+def taken_from(user, pk, media_type: str, reading: str):
+    """What the reader reads in a file of the kind, for what it holds to be kept elsewhere in
+    PONISTRA; logged as the file taken out, which a folder that keeps it in the browser refuses."""
+    node, reach = live_file(user, pk)
+    if node.blob.media_type != media_type:
+        raise Refused(400, "wrong_kind")
+    taken_out(user, node, reach, extension_of(node) or "file")
+    try:
+        return node, client.ask(reading, store.path_of(node.blob_id))
+    except (TooLarge, Unavailable, Unreadable) as error:
+        raise _refused(error) from None

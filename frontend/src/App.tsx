@@ -65,6 +65,7 @@ const AdminPage = lazily(() => import('./settings'), 'AdminPage');
 const SharedPage = lazily(() => import('./FolderPage'), 'SharedPage');
 const FavouritesPage = lazily(() => import('./FolderPage'), 'FavouritesPage');
 const BoardsPage = lazily(() => import('./FolderPage'), 'BoardsPage');
+const BoardGroupPage = lazily(() => import('./FolderPage'), 'BoardGroupPage');
 const WorkspacePage = lazily(() => import('./WorkspacePage'), 'WorkspacePage');
 const WorkspaceBeside = lazily(() => import('./WorkspacePage'), 'WorkspaceBeside');
 const SharingPage = lazily(() => import('./sharing'), 'SharingPage');
@@ -393,6 +394,7 @@ export default function App() {
                 <Route path="/notes" element={<NotesPage />} />
                 <Route path="/links" element={<LinksPage />} />
                 <Route path="/boards" element={<BoardsPage />} />
+                <Route path="/boards/:group" element={<BoardGroupPage />} />
                 <Route path="/workspace" element={<WorkspacePage />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/help/:section?/:article?" element={<HelpPage />} />

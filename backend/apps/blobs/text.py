@@ -1,6 +1,7 @@
 import codecs
 from dataclasses import dataclass
 from html.parser import HTMLParser
+from pathlib import Path
 
 from charset_normalizer import from_bytes
 
@@ -58,8 +59,12 @@ def label(encoding: str) -> str:
 
 
 def read(blob: Blob, limit: int) -> Text:
+    return read_file(store.path_of(blob.sha256), limit)
+
+
+def read_file(path: Path, limit: int) -> Text:
     """At most limit bytes of a text file decoded, ending on a whole line where it is cut."""
-    with store.path_of(blob.sha256).open("rb") as file:
+    with path.open("rb") as file:
         raw = file.read(limit + 1)
     truncated = len(raw) > limit
     raw = raw[:limit]

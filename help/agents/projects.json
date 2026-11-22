@@ -89,13 +89,14 @@
     "backend/apps/workspace/views.py#files": "b0bb94184b20",
     "backend/apps/workspace/views.py#file_raw": "6907ccc66bd2",
     "workspace/files.mjs": "a5e9ddc23501",
-    "frontend/src/workspaceFiles.tsx#sourceOf": "d9980c31da15",
-    "frontend/src/files.tsx#FileBrowser": "b08c976af56a",
-    "frontend/src/files.tsx#FileView": "646dd8557be5",
+    "frontend/src/workspaceFiles.tsx#sourceOf": "299bd4dc5c8c",
+    "frontend/src/files.tsx#FileBrowser": "8a99a159caa6",
+    "frontend/src/files.tsx#FileView": "7082acc1ca9a",
     "backend/apps/workspace/views.py#file_picture": "a51b6048a2ec",
     "backend/apps/workspace/views.py#files_folder": "03c7a213fcc0",
     "backend/apps/workspace/views.py#files_rename": "ed20da6fb562",
     "backend/apps/workspace/views.py#files_remove": "6ae6cb2818d5",
-    "backend/apps/workspace/views.py#files_put": "09718d46bace"
+    "backend/apps/workspace/views.py#files_put": "09718d46bace",
+    "backend/apps/workspace/views.py#files_zip": "18b717d1fefa"
   }
 }

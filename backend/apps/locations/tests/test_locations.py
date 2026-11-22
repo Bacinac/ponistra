@@ -1,4 +1,7 @@
+import base64
+import io
 import uuid
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -424,4 +427,66 @@ async def test_a_file_is_served_whole_or_by_the_range_a_player_asks_for(spot):
     finally:
         sftp.ended("")
         # As after `live`: the thread Django shares outside a request keeps its connection open.
+        await sync_to_async(connections.close_all)()
+
+
+def _segment(text: str) -> str:
+    return base64.urlsafe_b64encode(text.encode()).decode().rstrip("=")
+
+
+CARD = b"BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Ana Horvat\r\nEMAIL:ana@example.com\r\nEND:VCARD\r\n"
+
+
+@pytest.mark.anyio
+@pytest.mark.django_db(transaction=True)
+async def test_what_a_file_holds_is_shown_and_a_folder_zipped_as_the_server_sends_it(spot):
+    user = await sync_to_async(User.objects.create_user)("ivo@example.com", "Kamen-Most-Rijeka-71")
+    browser = AsyncClient()
+    await browser.aforce_login(user)
+    given = {"kind": "sftp", "name": "Poslužitelj", "auth": "password", "path": spot} | SERVER
+    location = (await browser.post("/api/locations", given, content_type=JSON)).json()
+
+    async def written(server):
+        for name, data in (("kartica.vcf", CARD), ("upute.md", b"# Upute\n\nx")):
+
+            async def parts(data=data):
+                yield data
+
+            await server.put(name, parts())
+        await server.mkdir("mapa")
+
+        async def inner():
+            yield b"a"
+
+        await server.put("mapa/a.txt", inner())
+
+    await _on_server(spot, written)
+    at = f"/api/locations/{location['id']}"
+    try:
+        shown = (await browser.get(f"{at}/held/{_segment('kartica.vcf')}/shown")).json()
+        assert (shown["kind"], shown["count"]) == ("cards", 1)
+        assert shown["people"][0]["name"] == "Ana Horvat"
+        text = await browser.get(f"{at}/held/{_segment('upute.md')}/text", {"most": 7})
+        assert text.json()["text"] == "# Upute"
+        folder = await browser.get(f"{at}/held/{_segment('mapa')}/shown")
+        assert folder.status_code == 400
+
+        whole = await browser.get(f"{at}/zip", {"path": ""})
+        assert whole["Content-Disposition"] == "attachment; filename*=utf-8''Poslu%C5%BEitelj.zip"
+        packed = b"".join([part async for part in whole.streaming_content])
+        archive = zipfile.ZipFile(io.BytesIO(packed))
+        assert archive.namelist() == [
+            "Poslužitelj/",
+            "Poslužitelj/mapa/",
+            "Poslužitelj/mapa/a.txt",
+            "Poslužitelj/kartica.vcf",
+            "Poslužitelj/upute.md",
+        ]
+        assert archive.read("Poslužitelj/kartica.vcf") == CARD
+        chosen = await browser.get(f"{at}/zip", {"path": ["mapa/a.txt"]})
+        assert chosen["Content-Disposition"] == 'attachment; filename="a.txt.zip"'
+        packed = b"".join([part async for part in chosen.streaming_content])
+        assert zipfile.ZipFile(io.BytesIO(packed)).namelist() == ["a.txt"]
+    finally:
+        sftp.ended("")
         await sync_to_async(connections.close_all)()

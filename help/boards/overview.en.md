@@ -15,6 +15,13 @@ A board is a page of HTML you open in Ponistra, such as a plan, a tracker or an 
 1. A right click or long press on a board opens a menu with {t:boards.group}
 2. Type the group's name and press {t:tree.move}. A group of that name is made if there is none yet.
 
+### Groups in the tree
+
+1. In the left column press the arrow ({t:frame.expand}) before {t:boards.title}; your groups appear below it, and the arrow beside a group opens its subgroups.
+2. A group you press shows on the right only its boards and subgroups, in the same list as a folder of documents. No documents or links are made in a group.
+3. Drag a board onto a group in the tree to move it there, or onto {t:boards.title} to leave it without a group.
+4. A right click or long press on a group in the tree offers {t:tree.rename} and {t:tree.toTrash}.
+
 ### An open board
 
 - The board's menu offers {t:file.open}, which opens the board alone in a new tab, and {t:board.source} for its HTML; {t:board.shown} returns to the view.

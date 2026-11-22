@@ -1,3 +1,4 @@
+import re
 from logging import getLogger
 
 from django.conf import settings
@@ -14,6 +15,7 @@ from apps.documents.models import Node
 from apps.imports import convert, reading
 from apps.imports.formats import EXTENSIONS
 from apps.mail.models import Attachment
+from apps.reader import archives
 
 from . import ocr, pdf
 from .models import BlobPage, BlobText
@@ -24,6 +26,9 @@ CHANNEL = "search_text"
 # A text file is searched by this much of it, in pages a search vector holds.
 SEARCHED = 32 * 1024 * 1024
 PAGE = 64 * 1024
+# Postgres reads a path, or a name with a dot, as one word: "Ugovori/najam.docx" is found
+# neither by "ugovori" nor by "najam" unless the dots and slashes stand apart.
+JOINED = re.compile(r"\s*[/\\]\s*|\.(?=[^\W\d])")
 
 
 def wake() -> None:
@@ -33,13 +38,19 @@ def wake() -> None:
 
 def waiting():
     """The blobs whose text is still to be read: a PDF a file uses, a document shows or a message
-    carries, an Office or text file a file keeps or a message carries, and a TIFF a file keeps."""
+    carries, an Office or text file or an archive a file keeps or a message carries, and a TIFF a
+    file keeps."""
     carried = Exists(Attachment.objects.filter(blob=OuterRef("pk"), inline=False))
     filed = Exists(Node.objects.filter(blob=OuterRef("pk")))
     used = filed | Exists(DocumentBlob.objects.filter(blob=OuterRef("pk")))
     return Blob.objects.filter(text__isnull=True).filter(
         Q(media_type=store.PDF) & (used | carried)
-        | (Q(media_type__in=EXTENSIONS) | Q(media_type__startswith="text/")) & (filed | carried)
+        | (
+            Q(media_type__in=EXTENSIONS)
+            | Q(media_type__in=store.ARCHIVES)
+            | Q(media_type__startswith="text/")
+        )
+        & (filed | carried)
         | Q(media_type=store.TIFF) & filed
     )
 
@@ -62,7 +73,21 @@ def _text(blocks: list[Block]) -> str:
     return "\n".join(line for line in lines if line.strip())
 
 
+def _named(path: str) -> str:
+    return JOINED.sub(lambda found: " ." if found.group() == "." else " / ", path).strip(" /")
+
+
+def _listed(blob: Blob) -> list[str]:
+    """An archive's text: the paths of its entries, a line each; one compressed file has none."""
+    found = archives.listed(store.path_of(blob.sha256), "archive")
+    if found["raw"]:
+        return []
+    return text.pages("\n".join(_named(each["path"]) for each in found["entries"]), PAGE)
+
+
 def _read(blob: Blob) -> list[str]:
+    if blob.media_type in store.ARCHIVES:
+        return _listed(blob)
     if blob.media_type == store.PDF:
         return pdf.texts(store.path_of(blob.sha256))
     if blob.media_type == store.TIFF:
@@ -125,7 +150,7 @@ def extract_next() -> bool:
         except convert.Unavailable:
             log.warning("search: the converter did not answer for %s", blob.sha256)
             return False
-        except (reading.Unreadable, reading.TooLarge, text.NotText) as error:
+        except (reading.Unreadable, reading.TooLarge, text.NotText, archives.Locked) as error:
             log.warning("search: no text from %s: %r", blob.sha256, error)
             _failed(blob, error)
         except Exception as error:

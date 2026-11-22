@@ -1,5 +1,7 @@
 import base64
+import io
 import json
+import zipfile
 from functools import partial
 from uuid import UUID
 
@@ -896,3 +898,65 @@ def test_nobody_but_the_owner_changes_the_files(api, settings, workspace, path):
     assert api.post(f"/api/workspace/files/{path}", FILE, JSON).status_code == 403
     assert api.get("/api/workspace/file/picture", FILE).status_code == 403
     assert workspace.asked == []
+
+
+TREE = {
+    "": [
+        {"name": "docs", "kind": "folder", "size": None, "modified": "2026-11-20T08:00:00.000Z"},
+        {"name": "app.py", "kind": "file", "size": 5, "modified": "2026-11-21T09:30:00.000Z"},
+        {"name": "veza", "kind": "broken", "size": None, "modified": None},
+    ],
+    "docs": [{"name": "upute.md", "kind": "file", "size": 9, "modified": None}],
+}
+FILES = {"app.py": b"print", "docs/upute.md": b"# Upute\n\nx"}
+
+
+@pytest.fixture
+def project(settings, monkeypatch):
+    """A project of the workspace whose folders are listed and whose files are sent."""
+    settings.WORKSPACE_TOKEN = "token"
+
+    def answered(request):
+        assert request.url.params["folder"] == "/work/ponistra"
+        path = request.url.params["path"]
+        if request.url.path == "/ponistra/files":
+            return httpx2.Response(200, json={"path": path, "entries": TREE[path]})
+        assert request.url.path == "/ponistra/files/raw"
+        data = FILES[path]
+        return httpx2.Response(200, content=data, headers={"content-length": str(len(data))})
+
+    monkeypatch.setattr(
+        "apps.workspace.views.httpx2.AsyncClient",
+        partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
+    )
+
+
+def segment(text: str) -> str:
+    return base64.urlsafe_b64encode(text.encode()).decode().rstrip("=")
+
+
+def test_a_projects_files_are_zipped_as_the_workspace_sends_them(owner, project):
+    response = owner.get(
+        "/api/workspace/files/zip", {"folder": "/work/ponistra", "path": ["docs", "app.py"]}
+    )
+    assert response.status_code == 200
+    assert response["Content-Disposition"] == 'attachment; filename="ponistra.zip"'
+    archive = zipfile.ZipFile(io.BytesIO(async_to_sync(collected)(response)))
+    assert archive.namelist() == ["docs/", "docs/upute.md", "app.py"]
+    assert archive.read("docs/upute.md") == FILES["docs/upute.md"]
+    assert archive.getinfo("app.py").date_time == (2026, 11, 21, 10, 30, 0)
+
+    whole = owner.get("/api/workspace/files/zip", {"folder": "/work/ponistra", "path": ""})
+    names = zipfile.ZipFile(io.BytesIO(async_to_sync(collected)(whole))).namelist()
+    assert names == ["ponistra/", "ponistra/docs/", "ponistra/docs/upute.md", "ponistra/app.py"]
+    missing = {"folder": "/work/ponistra", "path": "nema.txt"}
+    assert owner.get("/api/workspace/files/zip", missing).status_code == 404
+
+
+def test_what_a_projects_file_holds_is_shown_as_in_documents(owner, project):
+    held = f"/api/workspace/held/{segment('/work/ponistra')}/{segment('docs/upute.md')}"
+    assert owner.get(f"{held}/text", {"most": 7}).json()["text"] == "# Upute"
+    assert owner.get(f"{held}/shown").status_code == 404
+    top = f"/api/workspace/held/{segment('/work/ponistra')}/{segment('/')}"
+    assert owner.get(f"{top}/shown").status_code == 400
+    assert owner.get(f"/api/workspace/held/{segment('/work/ponistra')}/x/shown").status_code == 400

@@ -9,7 +9,7 @@ Stavke u mapi otvarate, preimenujete, kopirate, premještate i bacate u smeće, 
 1. Desnom tipkom miša pritisnite stavku u popisu ili pritisnite gumb s tri točke na kraju njezina retka. Mapa u stablu lijevog stupca nudi {t:tree.rename} i {t:tree.toTrash} na desni klik ili dugi pritisak.
 2. Odaberite {t:tree.open}, {t:tree.rename}, {t:tree.move} ili {t:tree.toTrash}.
 3. Za dokument odaberite {t:copy.make}. Upišite naziv kopije i pritisnite {t:tree.create}.
-4. Za datoteku odaberite {t:file.download}.
+4. Za datoteku odaberite {t:file.download}, a za mapu ili poveznicu {t:zip.download}. Desni ili dugi pritisak na prazan dio popisa nudi {t:zip.folder} za otvorenu mapu.
 5. Pomoću {t:access.share} otvara se ploča s pravima stavke.
 
 ### Odabir više stavki
@@ -17,7 +17,7 @@ Stavke u mapi otvarate, preimenujete, kopirate, premještate i bacate u smeće, 
 1. Dugo pritisnite stavku ili je pritisnite uz {k:Mod}. Na računalu možete stati na redak i pritisnuti {k:Space}.
 2. Nakon toga dodir ili klik dodaje stavku u odabir ili je iz njega uklanja. Držite {k:Shift} za raspon. Dvostruki pritisak i tada otvara stavku.
 3. Pritisnite {k:Mod-a} ili kvačicu na traci odabira za sve stavke u mapi. U izborniku trake su {t:explorer.selectAll}, {t:explorer.invert} i {t:explorer.clear}.
-4. Na traci odabira odaberite {t:tree.move} ili {t:tree.toTrash}. Ostale radnje su pod tri točke.
+4. Na traci odabira odaberite {t:tree.move} ili {t:tree.toTrash}. Ostale radnje su pod tri točke, među njima {t:zip.download}, koja odabrano preuzima kao jednu ZIP datoteku.
 5. Pritisnite {k:Escape} za odustajanje od odabira, a {k:Delete} za premještanje odabranog u smeće.
 
 ### Premještanje
@@ -33,6 +33,8 @@ Kopija dokumenta nastaje uz izvornik, a naziv joj počinje s „Kopija –”. A
 
 Stavka premještena u mapu preuzima prava te mape, a prava koja je imala sama zadržava. Premještanje i brisanje vide svi koji imaju pristup, odmah. Kad više stavki povučete odjednom, premještaju se sve odabrane. Datoteku povučenu iz popisa na radnu površinu preglednik sprema kao datoteku.
 
+ZIP se slaže dok se šalje, stavku po stavku, pa preuzimanje počinje odmah. Mapa ulazi sa svime u sebi, dokument kao Word, Excel ili PowerPoint datoteka, kao kad ga preuzmete samog, datoteka kakva jest, a poveznica kao prečac `.url`. ZIP s jednom stavkom nosi njezino ime, a s više njih ime mape u kojoj su. Svaka preuzeta datoteka i dokument bilježe se kao preuzimanje.
+
 Stavka u smeću ne briše se odmah: vraća se iz [smeća](help:documents/trash). Okvir premještanja ne nudi mapu koju premještate. Kad mapa nema podmapa, piše: {t:tree.noSubfolders}
 
 ## Ograničenja
@@ -41,6 +43,7 @@ Stavka u smeću ne briše se odmah: vraća se iz [smeća](help:documents/trash).
 - U {t:tree.root} možete premjestiti samo stavke kojima ste vlasnik.
 - Iz mape {t:confined.label} stavka se ne može premjestiti van, preuzeti ni kopirati izvan mape. Radnja je tada onemogućena uz napomenu {t:confined.hint}.
 - {t:copy.make} postoji samo za dokumente, ne za mape i datoteke.
+- {t:zip.download} je onemogućen za mapu {t:confined.label}, a mapa koja u sebi ima takvu mapu odbija se cijela. U jedan ZIP ulazi najviše 1.000 odabranih stavki.
 - Bez mreže preimenovanje, premještanje i bacanje u smeće su onemogućeni ([Rad bez mreže](help:account/offline)).
 
 ## Povezano

@@ -18,9 +18,10 @@ from apps.core.asyncdb import database, waited
 from apps.mail import sharing
 from apps.mail.imap import Failed
 from apps.mail.models import Account
+from apps.reader.views import taken_from
 from apps.users.models import User
 
-from . import cards, directory, search
+from . import cards, directory, search, taking
 from .models import Book, Contact, Point, ordered, revised
 from .models import Directory as Listing
 from .vcard import FIELDS, Card, address_text, shown_name
@@ -414,3 +415,20 @@ def phone_contact(request, href):
         return JsonResponse(_served(_held(request.user).get(pk=made.pk)), status=201)
     cards.saved(found, given, phone=True, photo=photo, starred=starred)
     return JsonResponse(_served(_held(request.user).get(pk=found.pk)))
+
+
+@api("POST")
+def node_cards(request, pk):
+    """The people of a vCard file in the user's address book, each joined to the contact it
+    names or a new one."""
+    _, read = taken_from(request.user, pk, "text/vcard", "cards")
+    made = joined = 0
+    for each in read:
+        card = Card(**each)
+        if card.group or not (any(card.fields.values()) or card.points):
+            continue
+        if taking.filed(request.user.pk, card):
+            made += 1
+        else:
+            joined += 1
+    return JsonResponse({"made": made, "joined": joined})

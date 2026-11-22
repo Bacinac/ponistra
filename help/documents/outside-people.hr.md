@@ -44,4 +44,4 @@ Prijava u pregledniku traje najdulje 30 dana, a ponovno otvaranje iste poveznice
 - [Dijeljenje](help:documents/sharing)
 - [Poveznica izvan instalacije](help:documents/outside)
 - [Dokumenti u pošti kao poveznice](help:mail/shared-links)
-- [Podijeljeno](help:documents/shared)
+- [Podijeljeno sa mnom](help:documents/shared)

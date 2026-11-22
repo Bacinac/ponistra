@@ -14,6 +14,7 @@
     "frontend/src/search.tsx#wantsSearch": "a97e3b923ff7",
     "frontend/src/places.tsx#usePlaces": "c69944d0fd01",
     "backend/apps/search/views.py#search": "a686be7874fb",
-    "backend/apps/search/views.py#_mail": "b02769eaf1b0"
+    "backend/apps/search/views.py#_mail": "b02769eaf1b0",
+    "backend/apps/search/extraction.py#_listed": "30d4b9bd09bb"
   }
 }

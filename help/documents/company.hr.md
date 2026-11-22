@@ -21,5 +21,5 @@ Stavka {t:tree.company} u lijevom stupcu pojavljuje se tek kad imate pristup bar
 ## Povezano
 
 - [Dijeljenje](help:documents/sharing)
-- [Podijeljeno](help:documents/shared)
+- [Podijeljeno sa mnom](help:documents/shared)
 - [Pregled dokumenata](help:documents/overview)

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useState } from 'react';
+import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { FileBrowser, type FileEntry, type FileSource } from './files';
 import { I18nProvider } from './i18n';
@@ -61,7 +62,9 @@ function shown(from: FileSource) {
   return render(
     <QueryClientProvider client={client}>
       <I18nProvider>
-        <Shown from={from} />
+        <MemoryRouter>
+          <Shown from={from} />
+        </MemoryRouter>
       </I18nProvider>
     </QueryClientProvider>,
   );
@@ -134,4 +137,44 @@ test('a source that is only read has what changes it disabled', async () => {
   for (const name of ['Preimenuj', 'Obriši'])
     expect(screen.getByRole('menuitem', { name }).getAttribute('aria-disabled')).toBe('true');
   expect(screen.getByRole('button', { name: 'Novo' })).toHaveProperty('disabled', true);
+});
+
+test('a folder or the rows chosen are saved as one zip, what a file holds is shown', async () => {
+  const saved: string[] = [];
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    saved.push(this.getAttribute('href')!);
+  });
+  const asked: string[] = [];
+  vi.stubGlobal('fetch', (url: string) => {
+    asked.push(url);
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          kind: 'archive',
+          count: 1,
+          entries: [{ n: 0, path: 'ugovor.pdf', size: 3, modified: null, folder: false }],
+        }),
+        { headers: { 'Content-Type': 'application/json' } },
+      ),
+    );
+  });
+  kept[''].push({ name: 'paket.zip', kind: 'file', size: 9, modified: null });
+  shown({
+    ...source(),
+    heldBase: (path) => `/held/${path}`,
+    zipHref: (paths) => `/zip?${paths.join('&')}`,
+  });
+  fireEvent.contextMenu(await row('Ponude'));
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Preuzmi kao ZIP' }));
+  expect(saved).toEqual(['/zip?Ponude']);
+
+  fireEvent.contextMenu(document.querySelector('nav')!);
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Preuzmi mapu kao ZIP' }));
+  expect(saved).toEqual(['/zip?Ponude', '/zip?']);
+
+  await userEvent.dblClick(await row('paket.zip'));
+  expect(await screen.findByText('ugovor.pdf')).toBeTruthy();
+  expect(asked).toContain('/held/paket.zip/shown');
 });

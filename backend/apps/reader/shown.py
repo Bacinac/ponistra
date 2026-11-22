@@ -332,26 +332,20 @@ def _msg_part(path: Path, number: str) -> dict | None:
         }
 
 
-def _text(path: Path) -> str:
-    from apps.blobs import text
+def text(path: Path) -> str:
+    """The text of a file, in the encoding its bytes tell."""
+    from apps.blobs.text import encoding_of
 
     raw = path.read_bytes()
-    return raw.decode(text.encoding_of(raw), "replace")
-
-
-CARD = re.compile(r"BEGIN:VCARD.*?END:VCARD", re.IGNORECASE | re.DOTALL)
+    return raw.decode(encoding_of(raw), "replace")
 
 
 def _cards(path: Path) -> dict:
     from apps.contacts import vcard
 
-    found = CARD.findall(_text(path))
+    read, count = vcard.filed(text(path))
     people = []
-    for each in found[:MOST]:
-        try:
-            card = vcard.parsed(each)
-        except vcard.Malformed:
-            continue
+    for card in read[:MOST]:
         photo = card.photo if card.photo and len(card.photo) <= PHOTO else None
         kind = store.sniff(photo[:1024]) if photo else None
         people.append(
@@ -368,7 +362,7 @@ def _cards(path: Path) -> dict:
                 else None,
             }
         )
-    return {"people": people, "count": len(found)}
+    return {"people": people, "count": count}
 
 
 def _events(path: Path) -> dict:
@@ -377,7 +371,7 @@ def _events(path: Path) -> dict:
     from apps.imports.reading import Unreadable
 
     try:
-        calendar = Calendar.from_ical(_text(path))
+        calendar = Calendar.from_ical(text(path))
     except ValueError as error:
         raise Unreadable(str(error)) from None
     found = list(calendar.walk("VEVENT"))

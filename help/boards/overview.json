@@ -2,7 +2,8 @@
   "order": 10,
   "audience": "everyone",
   "covers": [
-    "route:/boards"
+    "route:/boards",
+    "route:/boards/:group"
   ],
   "quiet": [],
   "describes": {
@@ -14,6 +15,9 @@
     "backend/apps/documents/boards_place.py#page": "eb96ac98f2b0",
     "backend/apps/documents/boards_place.py#filed": "e4a380ff3564",
     "backend/apps/documents/board_data.py#read": "17041e5f14a3",
-    "backend/apps/documents/board_data.py#written": "fcdccd9c2ec6"
+    "backend/apps/documents/board_data.py#written": "fcdccd9c2ec6",
+    "frontend/src/FolderPage.tsx#BoardGroupPage": "b488931230da",
+    "frontend/src/frame.tsx#boardSource": "9051bd1c0dcc",
+    "frontend/src/frame.tsx#BoardsBranch": "cb820036d7e2"
   }
 }

@@ -502,7 +502,8 @@ async def test_an_agent_reads_the_text_of_what_a_message_carries_and_never_its_b
     assert "cut" not in read and "unread" not in read
 
     archive = await doors.call("read_attachment", message=message.pk, part="3")
-    assert (archive["pages"], archive["unread"]) == ([], "not_text")
+    assert "unread" not in archive
+    assert "client" in archive["pages"][0]["text"]
     assert "TAJNI" not in str(archive)
 
     assert "not_found" in await doors.refused("read_attachment", message=message.pk, part="4")

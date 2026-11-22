@@ -232,6 +232,21 @@ def parsed(text: str) -> Card:
     return card
 
 
+CARDS = re.compile(r"BEGIN:VCARD.*?END:VCARD", re.IGNORECASE | re.DOTALL)
+
+
+def filed(text: str) -> tuple[list[Card], int]:
+    """The cards of a file that read, and how many it holds."""
+    found = CARDS.findall(text)
+    read = []
+    for each in found:
+        try:
+            read.append(parsed(each))
+        except Malformed:
+            continue
+    return read, len(found)
+
+
 def _taken(card: Card, line: Line, custom: str) -> None:
     fields, name = card.fields, line.name
     if name in GROUPS and line.value.strip().lower() == GROUPS[name]:

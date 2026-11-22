@@ -1,5 +1,8 @@
 import errno
+import gzip
+import io
 import urllib.error
+import zipfile
 
 import pytest
 
@@ -8,10 +11,11 @@ from apps.blobs.models import Blob
 from apps.imports import convert
 from apps.imports.tests import test_xlsx
 from apps.imports.tests.word_files import p, word_file
+from apps.reader import archives
 from apps.search import extraction
 from apps.search.models import BlobText
 
-from .test_search import extract_all, search, titles, upload_file
+from .test_search import END, MARK, extract_all, search, titles, upload_file
 
 pytestmark = pytest.mark.django_db
 
@@ -101,3 +105,42 @@ def test_one_file_gone_from_the_store_is_recorded(api):
     extract_all()
     assert BlobText.objects.get(blob=gone).failed
     assert BlobText.objects.count() == 2
+
+
+def zipped(*names: str) -> bytes:
+    packed = io.BytesIO()
+    with zipfile.ZipFile(packed, "w") as archive:
+        for name in names:
+            archive.writestr(name, b"" if name.endswith("/") else b"x")
+    return packed.getvalue()
+
+
+def test_an_archive_is_found_by_the_names_of_its_entries(api):
+    upload_file(
+        api, "Paket", zipped("Ugovori 2024/", "Ugovori 2024/ugovor_najam-Lipa.docx", "a/b.c.pdf")
+    )
+    extract_all()
+    [result] = search(api, "najam")
+    assert result["title"] == "Paket"
+    assert f"ugovor_{MARK}najam{END}-Lipa .docx" in result["snippet"]
+    assert titles(search(api, "ugovori")) == titles(search(api, "lipa")) == ["Paket"]
+    assert titles(search(api, "docx")) == ["Paket"]
+    assert titles(search(api, "archive")) == []
+    assert BlobText.objects.get().page_count == 1
+
+
+def test_one_compressed_file_has_no_names_to_find(api):
+    upload_file(api, "Zapisnik", gzip.compress(b"Kalibracija osi\n"))
+    extract_all()
+    found = BlobText.objects.get()
+    assert (found.failed, found.page_count) == ("", 0)
+
+
+def test_an_archive_that_asks_for_a_password_is_recorded(api, monkeypatch):
+    def locked(path, name, password=None):
+        raise archives.Locked
+
+    monkeypatch.setattr(archives, "listed", locked)
+    upload_file(api, "Zaključano", zipped("a.txt"))
+    assert extraction.extract_next()
+    assert BlobText.objects.get().failed.startswith("Locked")

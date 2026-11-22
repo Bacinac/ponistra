@@ -1,10 +1,10 @@
-# Podijeljeno
+# Podijeljeno sa mnom
 
 Stranica {t:tree.shared} skuplja dokumente i mape koje su drugi podijelili s vama, a na drugoj kartici one koje ste vi podijelili s drugima.
 
 ## Kako se koristi
 
-1. U lijevom stupcu modula {t:rail.documents} pritisnite {t:tree.shared}.
+1. U lijevom stupcu modula {t:rail.documents} pritisnite {t:tree.shared}. Strelica ispred naziva ({t:frame.expand}) otvara podijeljene mape u stablu, ispod njega.
 2. Na vrhu odaberite {t:tree.sharedWithMe} ili {t:tree.sharedByMe}.
 3. Stavke otvarate i s njima radite kao u bilo kojoj mapi.
 

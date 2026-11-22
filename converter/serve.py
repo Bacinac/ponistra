@@ -3,12 +3,14 @@ with it as docx, xlsx or pptx; GET /health answers when the server is up. Each c
 LibreOffice in a profile of its own, two at a time, and is killed whole when it overruns.
 
 POST /archive?name=<its name> with an archive as the body answers with its entries as JSON, POST
-/archive/<n>?name=… with entry n's bytes, its name in Entry-Name; a password comes in
+/archive/<n>?name=… with entry n's bytes, its name in Entry-Name, POST /archive/all?name=… with
+every file among its first ten thousand entries as an uncompressed pax tar; a password comes in
 Archive-Password, URL-encoded, and is never kept. 409 asks for one, 413 refuses what unpacks past
 the limit, 422 an archive that cannot be read."""
 
 import json
 import os
+import shutil
 import signal
 import subprocess
 import tempfile
@@ -30,9 +32,9 @@ FILTERS = {
 }
 KINDS = {"docx": {"odt", "doc", "rtf"}, "xlsx": {"ods", "xls"}, "pptx": {"odp", "ppt"}}
 RUNNING = threading.BoundedSemaphore(2)
-# An archive waits in /tmp, a tmpfs within the service's memory, while it is read.
-LARGEST_ARCHIVE = 1024 * 1024 * 1024
 UNPACKING = threading.BoundedSemaphore(2)
+# One at a time: a whole archive unpacked takes its size again on the disk, and its time.
+PACKING = threading.BoundedSemaphore(1)
 
 
 def convert(data: bytes, kind: str, target: str) -> bytes | None:
@@ -95,13 +97,14 @@ class Handler(BaseHTTPRequestHandler):
     def _archive(self, place) -> None:
         size = int(self.headers.get("Content-Length") or 0)
         number = place.path.removeprefix("/archive").removeprefix("/")
-        if size <= 0 or number and not number.isdigit():
+        whole = number == "all"
+        if size <= 0 or number and not (whole or number.isdigit()):
             return self._refuse(HTTPStatus.BAD_REQUEST, size)
-        if size > LARGEST_ARCHIVE:
+        if size > archives.UNPACKED:
             return self._refuse(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, size)
         name = (parse_qs(place.query).get("name") or ["archive"])[0]
         password = unquote(self.headers.get("Archive-Password") or "") or None
-        with UNPACKING, tempfile.TemporaryDirectory() as work:
+        with PACKING if whole else UNPACKING, tempfile.TemporaryDirectory() as work:
             path = Path(work) / "archive"
             with path.open("wb") as file:
                 left = size
@@ -117,6 +120,11 @@ class Handler(BaseHTTPRequestHandler):
                     return self._reply(
                         HTTPStatus.OK, json.dumps(found).encode(), "application/json"
                     )
+                if whole:
+                    tar = Path(work) / "all.tar"
+                    archives.packed(path, name, password, tar)
+                    path.unlink()
+                    return self._sent(tar, "application/x-tar")
                 unpacked = archives.unpacked(path, name, int(number), password)
                 if unpacked is None:
                     return self._reply(HTTPStatus.NOT_FOUND)
@@ -156,6 +164,14 @@ class Handler(BaseHTTPRequestHandler):
             self.close_connection = True
             self.connection.shutdown(2)
 
+    def _sent(self, path: Path, kind: str) -> None:
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(path.stat().st_size))
+        self.end_headers()
+        with path.open("rb") as file:
+            shutil.copyfileobj(file, self.wfile, 1 << 20)
+
     def _refuse(self, status: HTTPStatus, size: int) -> None:
         # Read to its end: answered while still sending, the backend sees a broken connection,
         # which it takes for a converter that is down and comes back with the same file.
@@ -180,4 +196,10 @@ def _read(path: Path):
 
 
 if __name__ == "__main__":
+    # On the disk, not in memory: an archive can be as large as the installation's largest file.
+    # Emptied of what the work held when the service last stopped.
+    held = Path(tempfile.gettempdir()) / "work"
+    shutil.rmtree(held, ignore_errors=True)
+    held.mkdir()
+    tempfile.tempdir = str(held)
     ThreadingHTTPServer(("", PORT), Handler).serve_forever()

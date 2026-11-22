@@ -125,16 +125,16 @@ Kad se veza prekine, na primjer dok se Ponistra ažurira, mreža zastane ili tel
 
 1. Na stranici {t:rail.projects} pritisnite ikonu {t:workspace.files.open} desno od imena projekta.
 2. Datoteke se otvaraju na mjestu razgovora, u istom pregledniku kao [datoteke na mreži](help:documents/network): mapa projekta kao popis, mape prije datoteka, a putanja iznad njega vodi natrag. Mapa se otvara pritiskom na njezin redak; {t:files.refresh} je ponovno čita.
-3. Pritisnite datoteku. Tekst se otvara u uređivaču s brojevima redaka i bojama po vrsti datoteke; {k:Mod-f} traži u njoj, {k:Mod-z} poništava izmjenu. PDF, slika, zvuk i videozapis otvaraju se u novoj kartici preglednika; ostale datoteke nude samo {t:file.download}.
+3. Pritisnite datoteku. Tekst se otvara u uređivaču s brojevima redaka i bojama po vrsti datoteke; {k:Mod-f} traži u njoj, {k:Mod-z} poništava izmjenu. PDF, slika, zvuk i videozapis otvaraju se u novoj kartici preglednika. Arhiva, poruka e-pošte (EML, MSG), kontakti (VCF), kalendar (ICS) i slika koju preglednik ne prikazuje (BMP, ICO, TIFF, PSD) otvaraju se na mjestu popisa sa svojim sadržajem; ostale datoteke nude samo {t:file.download}.
 4. Uredite tekst. Uz naziv piše {t:workspace.files.unsaved}.
 5. Pritisnite {t:workspace.files.save} ili {k:Mod-s}. Kad je datoteka zapisana, piše {t:workspace.files.saved}.
 6. {t:workspace.files.back} vraća na mapu.
 7. Gumb {t:workspace.view.files} na vrhu (na telefonu u izborniku {t:workspace.view.more}) vraća datoteke dok gledate razgovor ili terminal; nespremljene izmjene za to vrijeme ostaju.
 8. {t:workspace.files.close} desno iznad datoteka zatvara ih.
 
-Uz uključen {t:preview.title} na širokom zaslonu prvi pritisak pokazuje stavku u ploči sa strane, sliku ili PDF umanjeno, a otvara je dvostruki pritisak.
+Uz uključen {t:preview.title} na širokom zaslonu prvi pritisak pokazuje stavku u ploči sa strane, sliku ili PDF umanjeno, sadržaj arhive, poruke, kontakata i kalendara, Markdown oblikovan, a otvara je dvostruki pritisak.
 
-{t:create.new} nudi {t:create.folder}, koja izrađuje mapu u onoj koja je otvorena, a {t:create.upload} šalje datoteke s uređaja u nju; isto čini povlačenje datoteka ili mapa na popis. Desni ili dugi pritisak na redak otvara njegov izbornik: {t:tree.open}, {t:file.download}, {t:tree.rename}, {t:tree.move} (u odredišnoj mapi pritisnite {t:tree.moveHere}) i {t:files.delete}, koje prvo pita {t:files.deleteHeading} Više stavki odabire se dugim pritiskom ili pritiskom uz Ctrl, a radnje su tada u traci iznad popisa.
+{t:create.new} nudi {t:create.folder}, koja izrađuje mapu u onoj koja je otvorena, a {t:create.upload} šalje datoteke s uređaja u nju; isto čini povlačenje datoteka ili mapa na popis. Desni ili dugi pritisak na redak otvara njegov izbornik: {t:tree.open}, {t:file.download}, {t:zip.download} (za mapu), {t:tree.rename}, {t:tree.move} (u odredišnoj mapi pritisnite {t:tree.moveHere}) i {t:files.delete}, koje prvo pita {t:files.deleteHeading} Više stavki odabire se dugim pritiskom ili pritiskom uz Ctrl, a radnje su tada u traci iznad popisa; {t:zip.download} ih preuzima kao jednu ZIP datoteku. Desni ili dugi pritisak na prazan dio popisa nudi i {t:zip.folder} za otvorenu mapu. ZIP se slaže dok se šalje, datoteku po datoteku, pa preuzimanje počinje odmah; u njega ulazi najviše 1.000 odabranih stavki.
 
 Datoteka koja nije tekst ili je veća od 1 MB ne otvara se u uređivaču: uz njezinu veličinu piše {t:workspace.files.binary} ili {t:workspace.files.large} Mapa bez ičega u sebi kaže {t:workspace.files.empty}
 

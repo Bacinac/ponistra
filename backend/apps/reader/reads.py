@@ -160,6 +160,32 @@ def _shown_part(paths: list[Path], head: dict, out):
     return shown.taken(paths[0], head["shape"], head["part"])
 
 
+def _cards(paths: list[Path], head: dict, out):
+    from dataclasses import asdict
+
+    from apps.contacts import vcard
+
+    from . import shown
+
+    read, _ = vcard.filed(shown.text(paths[0]))
+    return [asdict(each) for each in read]
+
+
+def _events(paths: list[Path], head: dict, out):
+    from dataclasses import asdict
+
+    from apps.calendar import ical
+    from apps.imports.reading import Unreadable
+
+    from . import shown
+
+    try:
+        name, series = ical.filed(shown.text(paths[0]))
+    except ical.Malformed as error:
+        raise Unreadable(str(error)) from None
+    return {"name": name, "series": [[asdict(found) for found in each] for each in series]}
+
+
 def _whole(paths: list[Path], head: dict, out):
     from apps.blobs import previews
 
@@ -204,6 +230,8 @@ READS: dict[str, Read] = {
     "shown": Read(_shown, 60),
     "shown_part": Read(_shown_part, 60),
     "whole": Read(_whole, 60),
+    "cards": Read(_cards, 120),
+    "events": Read(_events, 120),
 }
 
 # The first that a failure is an instance of names it; the backend raises the class named.

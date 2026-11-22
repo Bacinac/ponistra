@@ -6,7 +6,7 @@ import { AddGrant } from './access';
 import { deleteJson, getJson, patchJson, postJson, upload } from './api';
 import type { Opened, Written } from './codeEditor';
 import { ConfirmDialog, FolderPickDialog, Modal } from './dialogs';
-import { FileBrowser, type FileSource } from './files';
+import { FileBrowser, segment, type FileSource } from './files';
 import { Frame, Loaded, Loading } from './frame';
 import { Headed, inline, inlineField } from './headed';
 import { useI18n } from './i18n';
@@ -47,6 +47,9 @@ function sourceOf(location: Location, onCopy: (paths: string[]) => void, copy: s
     list: (path) => listed(location.id, path),
     rawHref: (path, download) => `${at}/raw?${asked(path, download ? { download: '1' } : {})}`,
     pictureHref: (path) => `${at}/picture?${asked(path)}`,
+    heldBase: (path) => `${at}/held/${segment(path)}`,
+    zipHref: (paths) =>
+      `${at}/zip?${new URLSearchParams(paths.map((path) => ['path', path])).toString()}`,
     read: (path) => getJson<Opened>(`${at}/text?${asked(path)}`),
     write: (path, text, hash) => postJson<Written>(`${at}/text`, { path, text, hash }),
     folder: (path, name) => postJson(`${at}/folder`, { path, name }),

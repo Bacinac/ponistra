@@ -241,7 +241,7 @@ class Node(models.Model):
                 FROM documents_node node JOIN tree ON node.parent_id = tree.id
                 WHERE node.trashed_at IS NULL
             )
-            SELECT * FROM tree ORDER BY depth
+            SELECT * FROM tree ORDER BY depth, created_at, id
             """,
             [self.pk],
         )

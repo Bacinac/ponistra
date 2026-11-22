@@ -9,7 +9,7 @@ You open, rename, copy, move and put items of a folder in the trash, one at a ti
 1. Right-click an item in the list, or press the button with three dots at the end of its row. A folder in the tree of the left column offers {t:tree.rename} and {t:tree.toTrash} on a right click or a long press.
 2. Choose {t:tree.open}, {t:tree.rename}, {t:tree.move} or {t:tree.toTrash}.
 3. For a document choose {t:copy.make}. Type the copy's name and press {t:tree.create}.
-4. For a file choose {t:file.download}.
+4. For a file choose {t:file.download}, for a folder or a link {t:zip.download}. A right or long press on an empty part of the list offers {t:zip.folder} for the folder that is open.
 5. {t:access.share} opens the panel of the item's rights.
 
 ### Choosing several items
@@ -17,7 +17,7 @@ You open, rename, copy, move and put items of a folder in the trash, one at a ti
 1. Long-press an item or press it with {k:Mod}. On a computer you can stand on the row and press {k:Space}.
 2. After that a tap or a click adds an item to the choice or takes it out. Hold {k:Shift} for a range. A double click still opens the item.
 3. Press {k:Mod-a} or the checkbox on the choice bar for every item in the folder. The bar's menu has {t:explorer.selectAll}, {t:explorer.invert} and {t:explorer.clear}.
-4. On the choice bar choose {t:tree.move} or {t:tree.toTrash}. The other actions are under the three dots.
+4. On the choice bar choose {t:tree.move} or {t:tree.toTrash}. The other actions are under the three dots, among them {t:zip.download}, which downloads what is chosen as one ZIP file.
 5. Press {k:Escape} to give up the choice, and {k:Delete} to move what is chosen to the trash.
 
 ### Moving
@@ -33,6 +33,8 @@ A document's copy is made beside the original, and its name starts with "Copy of
 
 An item moved into a folder takes that folder's rights and keeps the rights it had of its own. Everyone with access sees moving and deleting at once. When you drag several items at once, all those chosen move. A file dragged from the list onto the desktop is saved by the browser as a file.
 
+A ZIP is put together as it is sent, one item after another, so the download starts at once. A folder goes in with everything in it, a document as a Word, Excel or PowerPoint file, as when you download it alone, a file as it is, and a link as a `.url` shortcut. A ZIP of one item carries its name, of several the name of the folder they are in. Every file and document taken is recorded as a download.
+
 An item in the trash is not deleted at once: it comes back from the [trash](help:documents/trash). The moving box does not offer the folder you are moving. When a folder has no subfolders, it says: {t:tree.noSubfolders}
 
 ## Limits
@@ -41,6 +43,7 @@ An item in the trash is not deleted at once: it comes back from the [trash](help
 - Into {t:tree.root} you can move only items you own.
 - An item cannot be moved out of a folder {t:confined.label}, downloaded or copied outside it. The action is then disabled with the note {t:confined.hint}.
 - {t:copy.make} exists only for documents, not for folders and files.
+- {t:zip.download} is disabled for a folder {t:confined.label}, and a folder that holds such a folder is refused whole. One ZIP takes at most 1,000 chosen items.
 - Without the network renaming, moving and moving to the trash are disabled ([Working offline](help:account/offline)).
 
 ## Related

@@ -7,7 +7,7 @@
   ],
   "describes": {
     "frontend/src/pdf/Join.tsx#JoinDialog": "f005d6920d86",
-    "frontend/src/FolderPage.tsx#joinable": "258ac6805b45",
+    "frontend/src/FolderPage.tsx#joinable": "c0e7fcbef6e6",
     "backend/apps/imports/composed.py#compose": "a55d7c381b55"
   }
 }

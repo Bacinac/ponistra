@@ -32,7 +32,12 @@ def _of(owner_id: int, kind: str, source: str):
 
 
 def _found(owner_id: int, kind: str, source: str, card: Card) -> Contact | None:
-    others = _of(owner_id, kind, source)
+    return _matched(owner_id, _of(owner_id, kind, source), card)
+
+
+def _matched(owner_id: int, others, card: Card) -> Contact | None:
+    """The one of the contacts the card names: by an address, else as the one person holding one
+    of its numbers, else as the one person of its name."""
     keyed = [(each["kind"], cards.key(each["kind"], each["value"])) for each in card.points]
     addresses = {value for point, value in keyed if point == Point.Kind.EMAIL and value}
     if addresses:
@@ -164,6 +169,23 @@ def taken(
     taking.save()
     _entry(owner_id, found)
     return found
+
+
+@transaction.atomic
+def filed(owner_id: int, card: Card) -> bool:
+    """A card of a file in the owner's address book: joined to the contact of its uid, else to the
+    one it names, else a contact of its own. True where it made one."""
+    ordered(owner_id)
+    people = Contact.objects.filter(owner_id=owner_id, group=False)
+    found = card.uid and people.filter(uid=card.uid[:255]).first()
+    found = found or _matched(owner_id, people, card)
+    if found:
+        joined(found, card)
+        return False
+    if card.uid and Contact.objects.filter(owner_id=owner_id, uid=card.uid[:255]).exists():
+        card.uid = ""
+    _entry(owner_id, cards.made(owner_id, card))
+    return True
 
 
 @transaction.atomic

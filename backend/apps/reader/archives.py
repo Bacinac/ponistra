@@ -1,6 +1,6 @@
-"""An archive's entries and one entry's bytes, read by libarchive or 7-Zip in the converter
-service (D23), which reaches nothing but the backend. A password goes with the request and is
-never kept."""
+"""An archive's entries, one entry's bytes and all its files as a tar, read by libarchive or
+7-Zip in the converter service (D23), which reaches nothing but the backend. A password goes with
+the request and is never kept."""
 
 import http.client
 import json
@@ -19,17 +19,17 @@ from apps.imports.reading import TooLarge, Unreadable
 from .client import Unavailable
 
 TIMEOUT = 180
-# What the converter keeps in its memory while it reads one.
-LARGEST = 1024 * 1024 * 1024
+# The converter answers once it has packed the whole archive, as large as BLOB_MAX_BYTES.
+TIMEOUT_ALL = 3600
 
 
 class Locked(Exception):
     """The archive asks for a password: none was given, or the one given is wrong."""
 
 
-def _asked(path: Path, address: str, password: str | None):
+def _asked(path: Path, address: str, password: str | None, timeout: int = TIMEOUT):
     size = path.stat().st_size
-    if size > LARGEST:
+    if size > settings.BLOB_MAX_BYTES:
         raise TooLarge(f"an archive of {size} bytes")
     headers = {"Content-Length": str(size)}
     if password:
@@ -39,7 +39,7 @@ def _asked(path: Path, address: str, password: str | None):
     )
     try:
         with request.data:
-            return urllib.request.urlopen(request, timeout=TIMEOUT)
+            return urllib.request.urlopen(request, timeout=timeout)
     except urllib.error.HTTPError as error:
         if error.code == 409:
             raise Locked from None
@@ -54,7 +54,7 @@ def _asked(path: Path, address: str, password: str | None):
 
 def listed(path: Path, name: str, password: str | None = None) -> dict:
     """The entries, each {n, path, size, modified, folder}, at most the converter's ten
-    thousand, and how many it holds."""
+    thousand, how many it holds, and `raw` for one compressed file that holds no archive."""
     with _asked(path, f"/archive?name={quote(name)}", password) as response:
         return json.load(response)
 
@@ -71,6 +71,18 @@ def entry(
         if isinstance(error.__cause__, urllib.error.HTTPError) and error.__cause__.code == 404:
             return None
         raise
+    return _kept(response, number)
+
+
+def packed(path: Path, name: str, password: str | None = None) -> BinaryIO:
+    """Every file among the first ten thousand entries as an uncompressed pax tar, each under its
+    path in the archive, in a file of its own at its start, which goes once closed. A zip's times
+    are the wall clock it was packed on, read as UTC."""
+    response = _asked(path, f"/archive/all?name={quote(name)}", password, TIMEOUT_ALL)
+    return _kept(response, "all")[1]
+
+
+def _kept(response, number: str) -> tuple[str, BinaryIO]:
     found = tempfile.TemporaryFile()
     try:
         with response:

@@ -210,6 +210,19 @@ def test_an_archive_is_listed_and_its_entry_saved_through_the_converter(tmp_path
     assert shown.part(path, "paket.zip", "../x", store.ZIP) is None
 
 
+def test_all_of_an_archive_comes_as_a_tar_from_the_converter(tmp_path, converter):
+    answers, passwords = converter
+    answers["/archive/all"] = (200, b"TAR", {"Content-Type": "application/x-tar"})
+    path = tmp_path / "z"
+    path.write_bytes(b"PK\x05\x06" + bytes(18))
+    with archives.packed(path, "paket.zip", "tajna") as tar:
+        assert tar.read() == b"TAR"
+    assert passwords == ["tajna"]
+    answers["/archive/all"] = (413, b"", {})
+    with pytest.raises(archives.TooLarge):
+        archives.packed(path, "paket.zip")
+
+
 @pytest.mark.parametrize(
     ("status", "raised"),
     [

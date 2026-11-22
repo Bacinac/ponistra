@@ -15,6 +15,13 @@ Ploča je HTML stranica koju otvarate u Ponistri, poput plana, praćenja ili pre
 1. Desni klik ili dugi pritisak na ploču otvara izbornik s {t:boards.group}
 2. Upišite naziv grupe i pritisnite {t:tree.move}. Grupa tog naziva nastaje ako je još nema.
 
+### Grupe u stablu
+
+1. U lijevom stupcu pritisnite strelicu ({t:frame.expand}) ispred {t:boards.title}; ispod se pojavljuju vaše grupe, a strelica uz grupu otvara njezine podgrupe.
+2. Pritisnuta grupa prikazuje desno samo svoje ploče i podgrupe, istim popisom kao mapa dokumenata. U grupi se ne izrađuju dokumenti ni poveznice.
+3. Ploču povucite mišem na grupu u stablu da je premjestite u nju, ili na {t:boards.title} da ostane bez grupe.
+4. Desni klik ili dugi pritisak na grupu u stablu nudi {t:tree.rename} i {t:tree.toTrash}.
+
 ### Otvorena ploča
 
 - Izbornik ploče nudi {t:file.open}, koji ploču otvara samu u novoj kartici, te {t:board.source} za njezin HTML; {t:board.shown} vraća prikaz.

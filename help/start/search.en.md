@@ -24,7 +24,7 @@ The box in the header of every page searches through documents, mail, events, ta
 
 ## How it works
 
-Each group is ordered by how well a hit matches the words. The box shows at most 8 hits, shared among the groups as evenly as possible, and at most 5 commands. The commands of the page you are on, for example a document's commands with their shortcuts, come before the general ones. Titles are found even when a word in them is spelt a little differently.
+Each group is ordered by how well a hit matches the words. The box shows at most 8 hits, shared among the groups as evenly as possible, and at most 5 commands. The commands of the page you are on, for example a document's commands with their shortcuts, come before the general ones. Titles are found even when a word in them is spelt a little differently. An archive is also found by the names of the files and folders in it, and the hit shows the entry's path.
 
 Beside a hit in a document it says where in it the hit is: {t:search.tab}, {t:search.section}, {t:search.paragraph}, {t:search.table}, {t:search.cell}, {t:search.image}, {t:search.chart}, {t:search.pdf}, {t:search.page}, {t:search.footnote}, {t:search.endnote}, {t:search.comment}, {t:search.data} or {t:kind.link}. A hit in a message's attachment is marked {t:search.attachment} with the file's name. Mail takes in the shared mailboxes you read too; a message from a mailbox carries its name before the sender and opens in that mailbox. A person is marked {t:search.person.contact}, {t:search.person.colleague} or {t:search.person.directory}, and a task {t:tasks.done} or by its due date ({t:tasks.due}).
 

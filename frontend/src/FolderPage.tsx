@@ -4,6 +4,7 @@ import {
   Combine,
   Copy,
   Download,
+  FileArchive,
   FileText,
   FileUp,
   FolderUp,
@@ -43,6 +44,7 @@ import { CopyDialog, LinkDialog, MoveDialog, NameDialog } from './dialogs';
 import { endDrag, startDrag, useDropTarget, type Saved } from './drag';
 import {
   formatSize,
+  saveFrom,
   sortNodes,
   storedPreview,
   storedSort,
@@ -70,6 +72,7 @@ import {
   kindOf,
   placeText,
   type FoundNode,
+  groupHref,
   nodeHref,
   NodeIcon,
   useBoards,
@@ -132,6 +135,9 @@ const editable = (nodes: ListedNode[]) =>
   nodes.every((node) => covers(node.role, 'edit') && !node.company);
 const joinable = (nodes: ListedNode[]) =>
   nodes.length > 1 && nodes.every((node) => kindOf(node) === 'file');
+
+const zipOf = (ids: string[]) =>
+  `/api/nodes/zip?${new URLSearchParams(ids.map((id) => ['node', id])).toString()}`;
 
 /** A file as it is saved, a PDF with its notes, an image with its edits. */
 function savedOf(node: ListedNode): Saved | undefined {
@@ -317,6 +323,7 @@ function Explorer({
   const folderId = folder?.id ?? null;
   const reachable = useReachable();
   const writable = covers(role, 'edit') && reachable;
+  const boarded = path[0]?.boards ?? false;
   const kept = (nodes: ListedNode[]) => (confined && !writable) || nodes.some((node) => node.kept);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [sort, setSort] = useState<Sort>(storedSort);
@@ -410,7 +417,7 @@ function Explorer({
       <MenuItem
         icon={FileText}
         label={t('tree.newDocument')}
-        disabled={!writable}
+        disabled={!writable || boarded}
         onSelect={() => setDialog({ type: 'document' })}
       />
       <MenuItem
@@ -422,7 +429,7 @@ function Explorer({
       <MenuItem
         icon={Globe}
         label={t('create.link')}
-        disabled={!writable}
+        disabled={!writable || boarded}
         onSelect={() => setDialog({ type: 'link' })}
       />
       <MenuSeparator />
@@ -441,9 +448,27 @@ function Explorer({
       <MenuItem
         icon={ScanLine}
         label={t('create.scan')}
-        disabled={!writable}
+        disabled={!writable || boarded}
         onSelect={() => setDialog({ type: 'scan' })}
       />
+    </>
+  );
+
+  const folderItems = (
+    <>
+      {newItems}
+      {folder && (
+        <>
+          <MenuSeparator />
+          <MenuItem
+            icon={FileArchive}
+            label={t('zip.folder')}
+            disabled={confined}
+            hint={confined ? t('confined.hint') : undefined}
+            onSelect={() => saveFrom(zipOf([folder.id]))}
+          />
+        </>
+      )}
     </>
   );
 
@@ -512,6 +537,15 @@ function Explorer({
             disabled={confined || single.kept}
             hint={confined || single.kept ? t('confined.hint') : undefined}
             onSelect={() => location.assign(savedOf(single)!.href)}
+          />
+        )}
+        {single?.kind !== 'file' && (
+          <MenuItem
+            icon={FileArchive}
+            label={t('zip.download')}
+            disabled={confined || nodes.some((node) => node.kept)}
+            hint={confined || nodes.some((node) => node.kept) ? t('confined.hint') : undefined}
+            onSelect={() => saveFrom(zipOf(nodes.map((node) => node.id)))}
           />
         )}
         {single && !visitor && (
@@ -597,7 +631,7 @@ function Explorer({
       }
     >
       <ContextMenuArea
-        items={menuOn === 'selection' ? itemsFor(chosen) : newItems}
+        items={menuOn === 'selection' ? itemsFor(chosen) : folderItems}
         onOpen={(event) => {
           const id = (event.target as HTMLElement).closest('tr[data-id]')?.getAttribute('data-id');
           if (id && !choice.has(id)) choose([id], id);
@@ -1088,15 +1122,56 @@ export function FolderPage() {
   );
 }
 
+/** The page that shows a folder of a place of its own: the notes, the links, the boards and each
+ * group of boards; null for a folder of documents. */
+function placePage(folder: TreeNode | null, path: TreeNode[]): string | null {
+  if (folder?.notes) return '/notes';
+  if (folder?.links) return '/links';
+  if (folder?.boards) return '/boards';
+  if (folder && path[0]?.boards) return groupHref(folder);
+  return null;
+}
+
+/** A group of boards (D47), its boards and the groups in it listed as a folder's. */
+export function BoardGroupPage() {
+  const groupId = idIn(useParams().group);
+  const query = useFolder(groupId, { stays: true, enabled: groupId !== null });
+  if (groupId === null) return <Missing />;
+  return (
+    <Loaded query={query}>
+      {({ folder, root, role, confined, path, children }) => {
+        const page = placePage(folder, path) ?? (folder ? nodeHref(folder) : '/documents');
+        if (!folder || page !== groupHref(folder)) {
+          return query.isPlaceholderData ? null : <Navigate to={page} replace />;
+        }
+        return (
+          <Addressed href={query.isPlaceholderData ? null : page}>
+            <Explorer
+              key={folder.id}
+              folder={folder}
+              root={root}
+              role={role}
+              confined={confined}
+              path={path}
+              items={children}
+              empty="boards.empty"
+              showing
+            />
+          </Addressed>
+        );
+      }}
+    </Loaded>
+  );
+}
+
 function OpenFolder({ folderId }: { folderId: string | null }) {
   const wide = useWide();
   const query = useFolder(folderId, { stays: true });
   return (
     <Loaded query={query}>
       {({ folder, root, role, confined, path, children }) =>
-        (folder?.notes || folder?.links || folder?.boards || path[0]?.boards) &&
-        !query.isPlaceholderData ? (
-          <Navigate to={folder?.notes ? '/notes' : folder?.links ? '/links' : '/boards'} replace />
+        placePage(folder, path) && !query.isPlaceholderData ? (
+          <Navigate to={placePage(folder, path)!} replace />
         ) : (
           <Addressed
             href={query.isPlaceholderData ? null : folder ? nodeHref(folder) : '/documents'}

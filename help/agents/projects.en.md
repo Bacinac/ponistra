@@ -125,16 +125,16 @@ When the connection is lost, say while Ponistra updates, the network stalls or t
 
 1. On the {t:rail.projects} page press the {t:workspace.files.open} icon to the right of the project's name.
 2. The files open in the chat's place, in the same browser as [files on the network](help:documents/network): the project's folder as a list, folders before files, the path above it leading back. A folder opens when you press its row; {t:files.refresh} reads it again.
-3. Press a file. Text opens in an editor with line numbers and colours by the kind of file; {k:Mod-f} searches it, {k:Mod-z} undoes a change. A PDF, a picture, sound and video open in a new browser tab; other files offer only {t:file.download}.
+3. Press a file. Text opens in an editor with line numbers and colours by the kind of file; {k:Mod-f} searches it, {k:Mod-z} undoes a change. A PDF, a picture, sound and video open in a new browser tab. An archive, an email message (EML, MSG), contacts (VCF), a calendar (ICS) and a picture the browser does not show (BMP, ICO, TIFF, PSD) open in place of the list with what they hold; other files offer only {t:file.download}.
 4. Edit the text. Beside the name it says {t:workspace.files.unsaved}.
 5. Press {t:workspace.files.save} or {k:Mod-s}. Once the file is written, it says {t:workspace.files.saved}.
 6. {t:workspace.files.back} returns to the folder.
 7. The {t:workspace.view.files} button at the top (on a phone in the {t:workspace.view.more} menu) brings the files back while you look at a chat or the terminal; unsaved changes stay meanwhile.
 8. {t:workspace.files.close} at the right above the files closes them.
 
-With {t:preview.title} on and a wide screen, the first press shows the item in the panel at the side, a picture or a PDF drawn small, and a double press opens it.
+With {t:preview.title} on and a wide screen, the first press shows the item in the panel at the side, a picture or a PDF drawn small, what an archive, a message, contacts and a calendar hold, Markdown formatted, and a double press opens it.
 
-{t:create.new} offers {t:create.folder}, which makes a folder in the one that is open, and {t:create.upload} sends files from the device into it; dragging files or folders onto the list does the same. A right press or a long press on a row opens its menu: {t:tree.open}, {t:file.download}, {t:tree.rename}, {t:tree.move} (press {t:tree.moveHere} in the destination) and {t:files.delete}, which asks {t:files.deleteHeading} first. Several items are selected with a long press or a press with Ctrl, and the actions are then in the bar above the list.
+{t:create.new} offers {t:create.folder}, which makes a folder in the one that is open, and {t:create.upload} sends files from the device into it; dragging files or folders onto the list does the same. A right press or a long press on a row opens its menu: {t:tree.open}, {t:file.download}, {t:zip.download} (for a folder), {t:tree.rename}, {t:tree.move} (press {t:tree.moveHere} in the destination) and {t:files.delete}, which asks {t:files.deleteHeading} first. Several items are selected with a long press or a press with Ctrl, and the actions are then in the bar above the list; {t:zip.download} downloads them as one ZIP file. A right or long press on an empty part of the list also offers {t:zip.folder} for the folder that is open. A ZIP is put together as it is sent, one file after another, so the download starts at once; it takes at most 1,000 chosen items.
 
 A file that is not text or is larger than 1 MB does not open in the editor: beside its size it says {t:workspace.files.binary} or {t:workspace.files.large} A folder with nothing in it says {t:workspace.files.empty}
 

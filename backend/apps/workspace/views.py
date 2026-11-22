@@ -36,7 +36,9 @@ from apps.blobs.previews import DRAWN
 from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database
 from apps.core.sealed import seal
+from apps.exports import zipped
 from apps.imports.reading import TooLarge, Unreadable
+from apps.locations import held
 from apps.locations.views import SHOWN
 from apps.reader import client as reading
 from apps.users.sessions import CONFIRMED as CONFIRMED_AT
@@ -59,6 +61,7 @@ PASSED = {404, 409}
 FILES_PASSED = {400, 403, 404, 409, 413}
 FILE_PATH = 4096
 REMOVED = 1000
+ZIPPED = 1000
 # A file drawn small is read whole first; a larger one is shown without its picture.
 DRAWN_UP_TO = 64 * 1024 * 1024
 SNIFFED = 1024
@@ -448,6 +451,130 @@ async def file_picture(request):
         except Unreadable, TooLarge:
             raise Refused(404, "not_found") from None
     return HttpResponse(drawn, content_type="image/webp", headers={"Cache-Control": "private"})
+
+
+def _fetch(placed: dict):
+    async def fetch(kept) -> None:
+        client, answer = await _streamed(placed)
+        try:
+            held.too_large(int(answer.headers.get("content-length", 0)) or None)
+            await held.written(kept, answer.aiter_bytes())
+        finally:
+            await answer.aclose()
+            await client.aclose()
+
+    return fetch
+
+
+def _held(folder: str, token: str) -> dict:
+    placed = _placed({"folder": held.path_of(folder), "path": held.path_of(token)})
+    if not placed["path"].strip("/"):
+        raise Refused(400, "not_a_file")
+    return placed
+
+
+@api("GET", "POST")
+async def held_shown(request, folder, token):
+    """What a file of a project shows of what it holds, as a file of Documents shows it."""
+    _owner(request)
+    placed = _held(folder, token)
+    return await held.of(request, placed["path"].rsplit("/", 1)[-1], _fetch(placed))
+
+
+@api("GET", "POST")
+async def held_part(request, folder, token, part):
+    _owner(request)
+    placed = _held(folder, token)
+    return await held.part(request, placed["path"].rsplit("/", 1)[-1], part, _fetch(placed))
+
+
+@api("GET")
+async def held_text(request, folder, token):
+    _owner(request)
+    return await held.text_of(request, _fetch(_held(folder, token)))
+
+
+def _modified(given: object) -> datetime | None:
+    try:
+        return datetime.fromisoformat(given) if isinstance(given, str) else None
+    except ValueError:
+        return None
+
+
+async def _listed(folder: str, path: str) -> list[dict]:
+    found = await _asked(
+        "GET", "files", params={"folder": folder, "path": path}, passed=FILES_PASSED
+    )
+    return found["entries"]
+
+
+async def _zipped(folder: str, chosen: list[tuple[str, dict]]):
+    """The entries chosen, a folder with all it holds, each written as the workspace sends it;
+    anything but a folder or a file is left out."""
+    archive = zipped.Zipped()
+    waiting = [(path, entry, "") for path, entry in reversed(chosen)]
+    while waiting:
+        path, entry, into = waiting.pop()
+        modified = _modified(entry.get("modified"))
+        if entry["kind"] == "folder":
+            named = archive.named(into, entry["name"])
+            archive.folder(named, modified)
+            below = await _listed(folder, path)
+            waiting.extend(
+                (f"{path}/{each['name']}" if path else each["name"], each, named)
+                for each in reversed(below)
+            )
+        elif entry["kind"] == "file":
+            named = archive.named(into, entry["name"])
+            client, answer = await _streamed({"folder": folder, "path": path})
+            try:
+                async for sent in zipped.written(
+                    archive, named, modified, entry.get("size"), answer.aiter_bytes()
+                ):
+                    yield sent
+            finally:
+                await answer.aclose()
+                await client.aclose()
+    yield archive.closed()
+
+
+@api("GET")
+async def files_zip(request):
+    """Files and folders of a project as one zip, sent as it is written, a folder with all it
+    holds; the project itself where the path chosen is its top."""
+    _owner(request)
+    given = request.GET.getlist("path")
+    if not 0 < len(given) <= ZIPPED:
+        raise Refused(400, "invalid_paths")
+    folder = _placed({"folder": request.GET.get("folder")})["folder"]
+    paths = list(
+        dict.fromkeys(
+            _placed({"folder": folder, "path": path})["path"].strip("/") for path in given
+        )
+    )
+    project = folder.rstrip("/").rsplit("/", 1)[-1] or "Ponistra"
+    listings: dict[str, dict[str, dict]] = {}
+    chosen = []
+    for path in paths:
+        if not path:
+            chosen.append((path, {"name": project, "kind": "folder", "modified": None}))
+            continue
+        above, _, name = path.rpartition("/")
+        if above not in listings:
+            listings[above] = {each["name"]: each for each in await _listed(folder, above)}
+        if name not in listings[above]:
+            raise Refused(404, "not_found")
+        chosen.append((path, listings[above][name]))
+    folders = {path.rpartition("/")[0] for path in paths}
+    if len(chosen) == 1:
+        title = chosen[0][1]["name"]
+    elif len(folders) == 1 and (above := folders.pop()):
+        title = above.rsplit("/", 1)[-1]
+    else:
+        title = project
+    return StreamingHttpResponse(
+        _zipped(folder, chosen), content_type="application/zip", headers=zipped.zip_headers(title)
+    )
 
 
 @api("POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)

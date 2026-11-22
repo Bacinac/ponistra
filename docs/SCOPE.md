@@ -3620,11 +3620,33 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     and PSD draw as a PNG of at most 4096 px; a TIFF also goes through the OCR
     queue and, once read, shows as the PDF it became (always kept, as nothing
     else shows its pages), downloading as the TIFF it was. An archive shows as a
-    list, read per request by the `converter` (up to 1 GiB, its tmpfs, and
-    10 000 entries), the password sent in a header and kept nowhere. eml stays
+    list, read per request by the `converter` (up to the installation's largest
+    file, on a disk volume of its own, and 10 000 entries), the password sent in a header and kept nowhere. eml stays
     `text/plain` for search and is told by its name or its headers; msg by its
     OLE streams (MS-OXMSG). Unpacking, contacts and calendar from a file, the
     names in archives searched and a folder as one ZIP are VD5 to VD8.
+  - *Built (VD4, VD5, 2026-11-22).* A file on the network or in Projects is
+    shown from a temporary copy of up to 512 MB (`apps/locations/held.py`), its
+    path one base64url segment of the address so the reader's parts sit below
+    it. A folder or a choice of up to 1 000 items downloads as one ZIP written
+    as it is sent (`apps/exports/zipped.py`, the standard library's `zipfile`
+    over an unseekable sink): documents in their Office format and logged as
+    each download is, links as `.url`, a confined folder refused whole.
+  - *Built (VD6, 2026-11-22).* A file of Documents offers what it holds to the
+    rest of Ponistra, never to a visitor and never from the network or Projects.
+    A vcf's people join the address book once (`api/nodes/<id>/contacts`): by
+    the card's uid, else as a source's person joins (an address, the one person
+    of a number, the one person of a name), filling what the contact lacks. An
+    ics's series go into a calendar of the user's they may write, or a new one
+    named as the file names itself (`api/nodes/<id>/events`); one of the same
+    uid there is replaced, and no invitation is sent. Both are read by the
+    reader (D51) and logged as the file taken out, so a confined folder refuses
+    them. An archive unpacks as the job `unpack` into a folder named after it
+    beside it (else at the top of the user's documents): the `converter` reads
+    it once into a tar stream (`/archive/all`), its paths become folders and
+    its files are placed as an upload places them, Office files becoming
+    documents; a password travels sealed in the job and leaves it once it has
+    run.
   - *Order*: D23-1 text and code, audio and video, uploads in chunks; D23-2
     images and archives; D23-3 mail, contacts and calendars in files, the
     converter's formats, Markdown and HTML; D23-4 the `media` service.

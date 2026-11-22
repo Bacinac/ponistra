@@ -38,8 +38,10 @@ import {
   useMemo,
   useState,
   useSyncExternalStore,
+  type ComponentType,
   type CSSProperties,
   type Dispatch,
+  type DragEvent,
   type MouseEvent,
   type ReactNode,
   type SetStateAction,
@@ -88,6 +90,7 @@ import {
   covers,
   errorMessage,
   Failure,
+  groupHref,
   nodeHref,
   useCompany,
   useFolder,
@@ -97,6 +100,7 @@ import {
   type ListedNode,
   type MoveTo,
   type Role,
+  ROOT_LABELS,
   type Root,
   type TreeNode,
 } from './tree';
@@ -131,36 +135,40 @@ const ExpansionContext = createContext<Expansion | null>(null);
 function DropLink({
   to,
   end,
+  current,
   folder,
   fixed,
   onNodes,
   onFiles,
   className = '',
   children,
-}: {
+}: DropInto & {
   to: string;
   end?: boolean;
-  folder?: string;
-  /** A company folder, which stays where the administrator laid it out. */
-  fixed?: boolean;
-  onNodes?: (ids: string[]) => void;
-  onFiles?: (picked: Promise<Picked[]>) => void;
+  /** Whether the page shows this row, where its address alone does not say. */
+  current?: boolean;
   className?: string;
   children: ReactNode;
 }) {
   const drop = useDropTarget({ id: folder, onNodes, onFiles });
+  const props = {
+    ...drop.props,
+    draggable: !!folder && !!onNodes && !fixed,
+    onDragStart: folder ? (event: DragEvent) => startDrag(event, [folder]) : undefined,
+    onDragEnd: endDrag,
+    className: `${sideRow} ${className} ${drop.over ? 'outline-2 -outline-offset-2 outline-focus' : ''}`,
+  };
+  if (current === undefined) {
+    return (
+      <NavLink to={to} end={end} {...props}>
+        {children}
+      </NavLink>
+    );
+  }
   return (
-    <NavLink
-      to={to}
-      end={end}
-      {...drop.props}
-      draggable={!!folder && !!onNodes && !fixed}
-      onDragStart={folder ? (event) => startDrag(event, [folder]) : undefined}
-      onDragEnd={endDrag}
-      className={`${sideRow} ${className} ${drop.over ? 'outline-2 -outline-offset-2 outline-focus' : ''}`}
-    >
+    <Link to={to} aria-current={current ? 'page' : undefined} {...props}>
       {children}
-    </NavLink>
+    </Link>
   );
 }
 
@@ -176,72 +184,141 @@ function useUploadTo(): UploadTo {
   };
 }
 
-interface Level {
-  depth: number;
+/** What a row of the tree takes when something is dropped onto it, and the node it drags. */
+interface DropInto {
+  folder?: string;
+  /** A company folder, which stays where the administrator laid it out. */
+  fixed?: boolean;
+  onNodes?: (ids: string[]) => void;
+  onFiles?: (picked: Promise<Picked[]>) => void;
+}
+
+interface Rows<T> {
+  rows: T[] | undefined;
+  error: Error | null;
+}
+
+/** One kind of branch of the tree: the rows below a row, where each leads, what it takes and the
+ * menu it opens. Every source draws through the same rows. */
+interface TreeSource<T> {
+  /** The branches kept open because the page shows something in them, by key. */
   along: Set<string>;
-  moveTo: MoveTo;
-  uploadTo: UploadTo;
+  /** The rows below a row, read once it is opened. */
+  useRows: (row: T, enabled: boolean) => Rows<T>;
+  key: (row: T) => string;
+  href: (row: T) => string;
+  label: (row: T) => string;
+  icon: (row: T) => LucideIcon;
+  current?: (row: T) => boolean;
+  drop?: (row: T) => DropInto;
+  Menu?: ComponentType<{ row: T; along: Set<string>; children: ReactNode }>;
 }
 
-function Branch({ parent, ...level }: Level & { parent: string | null }) {
-  const listing = useFolder(parent);
-  return <FolderRows listing={listing} {...level} />;
-}
-
-function SharedBranch(level: Level) {
-  const listing = useShared();
-  return <FolderRows listing={listing} {...level} />;
-}
-
-function CompanyBranch(level: Level) {
+function TreeRows<T>({
+  source,
+  found,
+  depth,
+}: {
+  source: TreeSource<T>;
+  found: Rows<T>;
+  depth: number;
+}) {
   const { t } = useI18n();
-  const listing = useCompany();
-  if (!listing.data?.children.length) return null;
+  if (found.error) {
+    return (
+      <p style={{ paddingLeft: `${depth * 0.75}rem` }} className="px-2 py-1 text-sm text-danger">
+        {errorMessage(found.error, t)}
+      </p>
+    );
+  }
+  return found.rows?.map((row) => (
+    <TreeRow key={source.key(row)} source={source} row={row} depth={depth} />
+  ));
+}
+
+/** A row of the tree, with the rows below it once it is opened; a row known to hold none has
+ * nothing to open. */
+function TreeRow<T>({ source, row, depth }: { source: TreeSource<T>; row: T; depth: number }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useContext(ExpansionContext)!;
+  const key = source.key(row);
+  const expanded = open[key] ?? source.along.has(key);
+  const found = source.useRows(row, expanded);
+  const press = useMenuPress();
+  const { Menu } = source;
+  const Icon = source.icon(row);
+  const line = (
+    <div
+      {...(Menu ? press : {})}
+      style={{ paddingLeft: `${depth * 0.75}rem` }}
+      className={`flex items-center ${Menu ? 'select-none [-webkit-touch-callout:none]' : ''}`}
+    >
+      {found.rows?.length === 0 ? (
+        <span aria-hidden className="w-6 shrink-0" />
+      ) : (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-label={t(expanded ? 'frame.collapse' : 'frame.expand')}
+          onClick={() => setOpen((state) => ({ ...state, [key]: !expanded }))}
+          className="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-ink"
+        >
+          <ChevronRight size={16} className={expanded ? 'rotate-90' : undefined} />
+        </button>
+      )}
+      <DropLink
+        to={source.href(row)}
+        end
+        current={source.current?.(row)}
+        {...source.drop?.(row)}
+        className="flex-1"
+      >
+        <Icon size={16} aria-hidden className="shrink-0 text-muted" />
+        <span className="truncate">{source.label(row)}</span>
+      </DropLink>
+    </div>
+  );
   return (
     <>
-      <NavLink to="/company" end className={sideRow}>
-        <Building2 size={16} aria-hidden className="shrink-0 text-muted" />
-        {t('tree.company')}
-      </NavLink>
-      <FolderRows listing={listing} {...level} />
+      {Menu ? (
+        <Menu row={row} along={source.along}>
+          {line}
+        </Menu>
+      ) : (
+        line
+      )}
+      {expanded && <TreeRows source={source} found={found} depth={depth + 1} />}
     </>
   );
 }
 
-function FolderRows({
-  listing,
-  ...level
-}: Level & {
-  listing: UseQueryResult<{ children: ListedNode[] }>;
-}) {
-  const { t } = useI18n();
-  if (listing.isPending) return null;
-  if (listing.isError) {
-    return (
-      <p
-        style={{ paddingLeft: `${level.depth * 0.75}rem` }}
-        className="px-2 py-1 text-sm text-danger"
-      >
-        {errorMessage(listing.error, t)}
-      </p>
-    );
-  }
-  return listing.data.children
-    .filter((node) => node.kind === 'folder' && !node.notes && !node.links && !node.boards)
-    .map((folder) => <FolderRow key={folder.id} folder={folder} {...level} />);
+function foldersOf(listing: UseQueryResult<{ children: ListedNode[] }>): Rows<ListedNode> {
+  return {
+    rows: listing.data?.children.filter(
+      (node) => node.kind === 'folder' && !node.notes && !node.links && !node.boards,
+    ),
+    error: listing.error,
+  };
 }
 
-/** A folder of the tree, with the folders in it once it is opened; a folder known to hold none
- * has nothing to open. */
-function FolderRow({ folder, ...level }: Level & { folder: ListedNode }) {
-  const { depth, along, moveTo, uploadTo } = level;
+function useFolderRows(folder: ListedNode, enabled: boolean): Rows<ListedNode> {
+  return foldersOf(useFolder(folder.id, { enabled }));
+}
+
+function FolderMenu({
+  row: folder,
+  along,
+  away = '/documents',
+  children,
+}: {
+  row: ListedNode;
+  along: Set<string>;
+  /** Where the page goes when the folder it shows leaves for the trash. */
+  away?: string;
+  children: ReactNode;
+}) {
   const { t } = useI18n();
-  const [open, setOpen] = useContext(ExpansionContext)!;
-  const expanded = open[folder.id] ?? along.has(folder.id);
-  const listing = useFolder(folder.id, { enabled: expanded });
-  const empty = listing.data?.children.every((node) => node.kind !== 'folder');
   const navigate = useNavigate();
-  const press = useMenuPress();
   const toTrash = useToTrash();
   const [renaming, setRenaming] = useState(false);
   const fixed = !covers(folder.role, 'edit') || folder.company;
@@ -263,7 +340,7 @@ function FolderRow({ folder, ...level }: Level & { folder: ListedNode }) {
               onSelect={() =>
                 toTrash.mutate([folder.id], {
                   onSuccess: () => {
-                    if (level.along.has(folder.id)) void navigate('/documents');
+                    if (along.has(folder.id)) void navigate(away);
                   },
                 })
               }
@@ -271,38 +348,7 @@ function FolderRow({ folder, ...level }: Level & { folder: ListedNode }) {
           </>
         }
       >
-        <div
-          {...press}
-          style={{ paddingLeft: `${depth * 0.75}rem` }}
-          className="flex items-center select-none [-webkit-touch-callout:none]"
-        >
-          {empty ? (
-            <span aria-hidden className="w-6 shrink-0" />
-          ) : (
-            <button
-              type="button"
-              aria-expanded={expanded}
-              aria-label={t(expanded ? 'frame.collapse' : 'frame.expand')}
-              onClick={() => setOpen((state) => ({ ...state, [folder.id]: !expanded }))}
-              className="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-ink"
-            >
-              <ChevronRight size={16} className={expanded ? 'rotate-90' : undefined} />
-            </button>
-          )}
-          <DropLink
-            to={nodeHref(folder)}
-            folder={folder.id}
-            fixed={folder.company}
-            onNodes={covers(folder.role, 'edit') ? moveTo(folder.id) : undefined}
-            onFiles={
-              covers(folder.role, 'edit') ? uploadTo(folder.id, nodeHref(folder)) : undefined
-            }
-            className="flex-1"
-          >
-            <Folder size={16} aria-hidden className="shrink-0 text-muted" />
-            <span className="truncate">{folder.title}</span>
-          </DropLink>
-        </div>
+        {children}
       </ContextMenuArea>
       {renaming && (
         <NameDialog
@@ -314,31 +360,266 @@ function FolderRow({ folder, ...level }: Level & { folder: ListedNode }) {
           onClose={() => setRenaming(false)}
         />
       )}
-      {expanded && <FolderRows listing={listing} {...level} depth={depth + 1} />}
     </>
   );
 }
 
-const KEPT_APART: { to: string; end: boolean; icon: LucideIcon; label: MessageKey }[] = [
+/** Documents' folders, opened along the folders the page shows. */
+function folderSource(
+  path: TreeNode[],
+  moveTo: MoveTo,
+  uploadTo: UploadTo,
+): TreeSource<ListedNode> {
+  return {
+    along: new Set(path.map((node) => node.id)),
+    useRows: useFolderRows,
+    key: (folder) => folder.id,
+    href: nodeHref,
+    label: (folder) => folder.title,
+    icon: () => Folder,
+    drop: (folder) => {
+      const editable = covers(folder.role, 'edit');
+      return {
+        folder: folder.id,
+        fixed: folder.company,
+        onNodes: editable ? moveTo(folder.id) : undefined,
+        onFiles: editable ? uploadTo(folder.id, nodeHref(folder)) : undefined,
+      };
+    },
+    Menu: FolderMenu,
+  };
+}
+
+function BoardGroupMenu(props: { row: ListedNode; along: Set<string>; children: ReactNode }) {
+  if (props.row.boards) return props.children;
+  return <FolderMenu {...props} away="/boards" />;
+}
+
+/** The user's folder of boards, whose folders are its groups (D47): the folders' tree, leading to
+ * the page of boards and of each group, a board dropped onto a group filed in it. */
+function boardSource(
+  folders: TreeSource<ListedNode>,
+  moveTo: MoveTo,
+  title: string,
+): TreeSource<ListedNode> {
+  return {
+    ...folders,
+    href: (node) => (node.boards ? '/boards' : groupHref(node)),
+    label: (node) => (node.boards ? title : node.title),
+    icon: (node) => (node.boards ? LayoutDashboard : Folder),
+    drop: (node) =>
+      node.boards
+        ? { onNodes: moveTo(node.id) }
+        : { folder: node.id, fixed: true, onNodes: moveTo(node.id) },
+    Menu: BoardGroupMenu,
+  };
+}
+
+function BoardsBranch({ source }: { source: TreeSource<ListedNode> }) {
+  const { t } = useI18n();
+  const listing = useFolder(null);
+  const place = listing.data?.children.find((node) => node.boards);
+  const boardsShown = useLocation().pathname === '/boards';
+  if (listing.isPending) return null;
+  if (place) {
+    const along = boardsShown ? new Set([...source.along, place.id]) : source.along;
+    return <TreeRow source={{ ...source, along }} row={place} depth={0} />;
+  }
+  return (
+    <Plain>
+      <NavLink to="/boards" end className={`${sideRow} flex-1`}>
+        <LayoutDashboard size={16} aria-hidden className="shrink-0 text-muted" />
+        {t('boards.title')}
+      </NavLink>
+    </Plain>
+  );
+}
+
+/** My documents, Company and Shared with me: the roots of the documents' tree, each with its
+ * folders below it. */
+interface Place {
+  place: Root;
+}
+
+type PlaceRow = Place | ListedNode;
+
+const isPlace = (row: PlaceRow): row is Place => 'place' in row;
+
+const PLACE_HREFS: Record<Root, string> = {
+  mine: '/documents',
+  company: '/company',
+  shared: '/shared',
+};
+
+const PLACE_ICONS: Record<Root, LucideIcon> = { mine: Folders, company: Building2, shared: Users };
+
+function usePlaceRows(row: PlaceRow, enabled: boolean): Rows<PlaceRow> {
+  const place = isPlace(row) ? row.place : null;
+  const folder = useFolder(isPlace(row) ? null : row.id, {
+    enabled: enabled && (place === null || place === 'mine'),
+  });
+  const company = useCompany({ enabled: enabled && place === 'company' });
+  const shared = useShared(false, { enabled: enabled && place === 'shared' });
+  return foldersOf(place === 'company' ? company : place === 'shared' ? shared : folder);
+}
+
+function PlaceMenu({
+  row,
+  along,
+  children,
+}: {
+  row: PlaceRow;
+  along: Set<string>;
+  children: ReactNode;
+}) {
+  if (isPlace(row)) return children;
+  return (
+    <FolderMenu row={row} along={along}>
+      {children}
+    </FolderMenu>
+  );
+}
+
+/** The roots open along the page: the one the folder shown lies in, or the root shown itself. */
+function placesAlong(
+  along: Set<string>,
+  path: TreeNode[],
+  root: Root | undefined,
+  pathname: string,
+): Set<string> {
+  const shown = new Set(along);
+  const top = path[0];
+  if (top && !top.notes && !top.links && !top.boards) shown.add(`place:${root ?? 'mine'}`);
+  for (const [place, href] of Object.entries(PLACE_HREFS)) {
+    if (pathname === href) shown.add(`place:${place}`);
+  }
+  return shown;
+}
+
+/** A root the page opened stays open after it, as one the user opened does: the folder a page
+ * goes to is still loading when the page leaves the root, and the root's folders would blink. */
+function useOpenedPlaces(along: Set<string>) {
+  const [, setOpen] = useContext(ExpansionContext)!;
+  const opened = [...along].filter((key) => key.startsWith('place:')).join(' ');
+  useEffect(() => {
+    if (!opened) return;
+    setOpen((state) => {
+      const fresh = opened.split(' ').filter((key) => state[key] === undefined);
+      return fresh.length
+        ? { ...state, ...Object.fromEntries(fresh.map((key) => [key, true])) }
+        : state;
+    });
+  }, [opened, setOpen]);
+}
+
+function placeSource(
+  folders: TreeSource<ListedNode>,
+  along: Set<string>,
+  moveTo: MoveTo,
+  uploadTo: UploadTo,
+  t: (key: MessageKey) => string,
+): TreeSource<PlaceRow> {
+  return {
+    along,
+    useRows: usePlaceRows,
+    key: (row) => (isPlace(row) ? `place:${row.place}` : folders.key(row)),
+    href: (row) => (isPlace(row) ? PLACE_HREFS[row.place] : folders.href(row)),
+    label: (row) => (isPlace(row) ? t(ROOT_LABELS[row.place]) : folders.label(row)),
+    icon: (row) => (isPlace(row) ? PLACE_ICONS[row.place] : Folder),
+    drop: (row) => {
+      if (!isPlace(row)) return folders.drop!(row);
+      if (row.place !== 'mine') return {};
+      return { onNodes: moveTo(null), onFiles: uploadTo(null, PLACE_HREFS.mine) };
+    },
+    Menu: PlaceMenu,
+  };
+}
+
+function CompanyRoot({ source }: { source: TreeSource<PlaceRow> }) {
+  if (!useCompany().data?.children.length) return null;
+  return <TreeRow source={source} row={{ place: 'company' }} depth={0} />;
+}
+
+/** A row of the side column with nothing to open, its name in line with the tree's. */
+function Plain({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center">
+      <span aria-hidden className="w-6 shrink-0" />
+      {children}
+    </div>
+  );
+}
+
+const COLLECTIONS: { to: string; end: boolean; icon: LucideIcon; label: MessageKey }[] = [
   { to: '/notes', end: true, icon: StickyNote, label: 'notes.title' },
   { to: '/links', end: true, icon: Globe, label: 'links.title' },
   { to: '/boards', end: true, icon: LayoutDashboard, label: 'boards.title' },
   { to: '/vault', end: false, icon: Vault, label: 'vault.title' },
 ];
 
+const FAVOURITES = { to: '/favourites', icon: Star, label: 'favourites.title' } as const;
+const COMPANY = { to: '/company', icon: Building2, label: 'tree.company' } as const;
+
 const PHONE_PLACES: { to: string; icon: LucideIcon; label: MessageKey }[] = [
-  { to: '/favourites', icon: Star, label: 'favourites.title' },
-  ...KEPT_APART,
+  { to: '/shared', icon: Users, label: 'tree.shared' },
   { to: '/locations', icon: Network, label: 'locations.title' },
+  ...COLLECTIONS,
   { to: '/trash', icon: Trash2, label: 'trash.title' },
 ];
 
+/** Network itself (no location), a location, or a folder of a location. */
+interface NetworkPlace {
+  location: string | null;
+  path: string;
+  name: string;
+  icon: LucideIcon;
+}
+
+function placeKey({ location, path }: NetworkPlace): string {
+  if (location === null) return 'network';
+  return path ? `${sourceKey(location)}/${path}` : sourceKey(location);
+}
+
+/** The locations below Network, or the folders below a location's folder, read from the server
+ * once it is opened. */
+function useNetworkRows(place: NetworkPlace, enabled: boolean): Rows<NetworkPlace> {
+  const { location, path } = place;
+  const found = useLocations({ enabled: enabled && location === null });
+  const listing = useQuery({
+    queryKey: ['files', sourceKey(location ?? ''), 'list', path],
+    queryFn: () => listed(location!, path),
+    enabled: enabled && location !== null,
+  });
+  if (location === null) {
+    return {
+      rows: found.data?.locations.map((each) => ({
+        location: each.id,
+        path: '',
+        name: each.name,
+        icon: LOCATION_ICONS[each.kind],
+      })),
+      error: found.error,
+    };
+  }
+  return {
+    rows: listing.data?.entries
+      .filter((entry) => entry.kind === 'folder')
+      .map((entry) => ({
+        location,
+        path: path ? `${path}/${entry.name}` : entry.name,
+        name: entry.name,
+        icon: Folder,
+      })),
+    error: listing.error,
+  };
+}
+
 /** The location and folders the page shows, as the network's branches the tree keeps open. */
-function useNetworkAlong(): { along: Set<string>; at: string | null } {
+function useNetworkSource(): TreeSource<NetworkPlace> {
   const { pathname, search } = useLocation();
-  return useMemo(() => {
+  const { along, at } = useMemo(() => {
     const [, root, id] = pathname.split('/');
-    if (root !== 'locations') return { along: new Set(), at: null };
+    if (root !== 'locations') return { along: new Set<string>(), at: null };
     const along = new Set(['network']);
     if (!id) return { along, at: null };
     const path = new URLSearchParams(search).get('path') ?? '';
@@ -349,212 +630,97 @@ function useNetworkAlong(): { along: Set<string>; at: string | null } {
     );
     return { along, at: parts.length ? `${sourceKey(id)}/${parts.join('/')}` : sourceKey(id) };
   }, [pathname, search]);
-}
-
-/** A row of the network's branches, opened and closed as a folder of the tree is. */
-function NetworkRow({
-  id,
-  to,
-  icon: Icon,
-  label,
-  depth,
-  expanded,
-  empty,
-  current,
-}: {
-  id: string;
-  to: string;
-  icon: LucideIcon;
-  label: string;
-  depth: number;
-  expanded: boolean;
-  empty: boolean;
-  current: boolean;
-}) {
-  const { t } = useI18n();
-  const [, setOpen] = useContext(ExpansionContext)!;
-  return (
-    <div style={{ paddingLeft: `${depth * 0.75}rem` }} className="flex items-center">
-      {empty ? (
-        <span aria-hidden className="w-6 shrink-0" />
-      ) : (
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-label={t(expanded ? 'frame.collapse' : 'frame.expand')}
-          onClick={() => setOpen((state) => ({ ...state, [id]: !expanded }))}
-          className="shrink-0 rounded p-1 text-muted hover:bg-hover hover:text-ink"
-        >
-          <ChevronRight size={16} className={expanded ? 'rotate-90' : undefined} />
-        </button>
-      )}
-      <Link to={to} aria-current={current ? 'page' : undefined} className={`${sideRow} flex-1`}>
-        <Icon size={16} aria-hidden className="shrink-0 text-muted" />
-        <span className="truncate">{label}</span>
-      </Link>
-    </div>
-  );
-}
-
-type NetworkLevel = { depth: number; along: Set<string>; at: string | null };
-
-/** A folder of a location, with its folders read from the server once it is opened. */
-function NetworkFolder({
-  location,
-  path,
-  name,
-  icon,
-  ...level
-}: NetworkLevel & { location: string; path: string; name: string; icon: LucideIcon }) {
-  const { t } = useI18n();
-  const [open] = useContext(ExpansionContext)!;
-  const id = path ? `${sourceKey(location)}/${path}` : sourceKey(location);
-  const expanded = open[id] ?? level.along.has(id);
-  const listing = useQuery({
-    queryKey: ['files', sourceKey(location), 'list', path],
-    queryFn: () => listed(location, path),
-    enabled: expanded,
-  });
-  const folders = listing.data?.entries.filter((entry) => entry.kind === 'folder');
-  return (
-    <>
-      <NetworkRow
-        id={id}
-        to={folderHref(location, path)}
-        icon={icon}
-        label={name}
-        depth={level.depth}
-        expanded={expanded}
-        empty={folders?.length === 0}
-        current={level.at === id}
-      />
-      {expanded && listing.isError && (
-        <p
-          style={{ paddingLeft: `${(level.depth + 1) * 0.75}rem` }}
-          className="px-2 py-1 text-sm text-danger"
-        >
-          {errorMessage(listing.error, t)}
-        </p>
-      )}
-      {expanded &&
-        folders?.map((entry) => (
-          <NetworkFolder
-            key={entry.name}
-            location={location}
-            path={path ? `${path}/${entry.name}` : entry.name}
-            name={entry.name}
-            icon={Folder}
-            {...level}
-            depth={level.depth + 1}
-          />
-        ))}
-    </>
-  );
+  return {
+    along,
+    useRows: useNetworkRows,
+    key: placeKey,
+    href: ({ location, path }) => (location === null ? '/locations' : folderHref(location, path)),
+    label: (place) => place.name,
+    icon: (place) => place.icon,
+    current: (place) =>
+      place.location === null ? along.has('network') && at === null : at === placeKey(place),
+  };
 }
 
 /** Documents → Network as a folder of the tree: the locations the user reaches below it, and
     each location's folders below it. */
 function NetworkBranch() {
   const { t } = useI18n();
-  const [open] = useContext(ExpansionContext)!;
-  const { along, at } = useNetworkAlong();
-  const expanded = open.network ?? along.has('network');
-  const found = useLocations({ enabled: expanded });
-  const locations = found.data?.locations;
-  return (
-    <>
-      <NetworkRow
-        id="network"
-        to="/locations"
-        icon={Network}
-        label={t('locations.title')}
-        depth={0}
-        expanded={expanded}
-        empty={locations?.length === 0}
-        current={along.has('network') && at === null}
-      />
-      {expanded && found.isError && (
-        <p className="px-2 py-1 text-sm text-danger">{errorMessage(found.error, t)}</p>
-      )}
-      {expanded &&
-        locations?.map((each) => (
-          <NetworkFolder
-            key={each.id}
-            location={each.id}
-            path=""
-            name={each.name}
-            icon={LOCATION_ICONS[each.kind]}
-            depth={1}
-            along={along}
-            at={at}
-          />
-        ))}
-    </>
-  );
+  const source = useNetworkSource();
+  const network = { location: null, path: '', name: t('locations.title'), icon: Network };
+  return <TreeRow source={source} row={network} depth={0} />;
 }
 
 function FolderTree({
   path,
+  root,
   moveTo,
   moving,
 }: {
   path: TreeNode[];
+  root?: Root;
   moveTo: MoveTo;
   moving: Error | null;
 }) {
   const { t } = useI18n();
+  const { pathname } = useLocation();
   const toTrash = useToTrash();
   const uploadTo = useUploadTo();
-  const level = { depth: 0, along: new Set(path.map((node) => node.id)), moveTo, uploadTo };
+  const folders = folderSource(path, moveTo, uploadTo);
+  const along = placesAlong(folders.along, path, root, pathname);
+  useOpenedPlaces(along);
+  const places = placeSource(folders, along, moveTo, uploadTo, t);
+  const boards = boardSource(folders, moveTo, t('boards.title'));
   const failure = moving ?? toTrash.error;
+  const failed = failure && <p className="px-2 text-sm text-danger">{errorMessage(failure, t)}</p>;
   if (useVisitor()) {
     return (
       <nav aria-label={t('frame.folders')} className="flex flex-col gap-0.5">
-        <NavLink to="/shared" end className={sideRow}>
-          <Users size={16} aria-hidden className="shrink-0 text-muted" />
-          {t('tree.shared')}
-        </NavLink>
-        <SharedBranch {...level} />
-        {failure && <p className="px-2 text-sm text-danger">{errorMessage(failure, t)}</p>}
+        <TreeRow source={places} row={{ place: 'shared' }} depth={0} />
+        {failed}
       </nav>
     );
   }
   return (
     <nav aria-label={t('frame.folders')} className="flex flex-col gap-0.5">
-      <NavLink to="/favourites" end className={sideRow}>
-        <Star size={16} aria-hidden className="shrink-0 text-muted" />
-        {t('favourites.title')}
-      </NavLink>
-      <DropLink to="/documents" end onNodes={moveTo(null)} onFiles={uploadTo(null, '/documents')}>
-        <Folders size={16} aria-hidden className="shrink-0 text-muted" />
-        {t('tree.root')}
-      </DropLink>
-      <Branch parent={null} {...level} />
-      <CompanyBranch {...level} />
-      <NavLink to="/shared" end className={sideRow}>
-        <Users size={16} aria-hidden className="shrink-0 text-muted" />
-        {t('tree.shared')}
-      </NavLink>
-      <SharedBranch {...level} />
-      {KEPT_APART.map(({ to, end, icon: Icon, label }) => (
-        <NavLink
-          key={to}
-          to={to}
-          end={end}
-          className={sideRow}
-          onClick={to === '/links' ? (event) => openLinks() && event.preventDefault() : undefined}
-        >
-          <Icon size={16} aria-hidden className="shrink-0 text-muted" />
-          {t(label)}
+      <Plain>
+        <NavLink to={FAVOURITES.to} end className={`${sideRow} flex-1`}>
+          <Star size={16} aria-hidden className="shrink-0 text-muted" />
+          {t(FAVOURITES.label)}
         </NavLink>
-      ))}
+      </Plain>
+      <TreeRow source={places} row={{ place: 'mine' }} depth={0} />
+      <CompanyRoot source={places} />
+      <TreeRow source={places} row={{ place: 'shared' }} depth={0} />
       <NetworkBranch />
       <div className="my-2 h-px bg-line" />
-      <DropLink to="/trash" onNodes={(ids) => toTrash.mutate(ids)}>
-        <Trash2 size={16} aria-hidden className="shrink-0 text-muted" />
-        {t('trash.title')}
-      </DropLink>
-      {failure && <p className="px-2 text-sm text-danger">{errorMessage(failure, t)}</p>}
+      {COLLECTIONS.map(({ to, end, icon: Icon, label }) =>
+        to === '/boards' ? (
+          <BoardsBranch key={to} source={boards} />
+        ) : (
+          <Plain key={to}>
+            <NavLink
+              to={to}
+              end={end}
+              className={`${sideRow} flex-1`}
+              onClick={
+                to === '/links' ? (event) => openLinks() && event.preventDefault() : undefined
+              }
+            >
+              <Icon size={16} aria-hidden className="shrink-0 text-muted" />
+              {t(label)}
+            </NavLink>
+          </Plain>
+        ),
+      )}
+      <div className="my-2 h-px bg-line" />
+      <Plain>
+        <DropLink to="/trash" onNodes={(ids) => toTrash.mutate(ids)} className="flex-1">
+          <Trash2 size={16} aria-hidden className="shrink-0 text-muted" />
+          {t('trash.title')}
+        </DropLink>
+      </Plain>
+      {failed}
     </nav>
   );
 }
@@ -580,9 +746,12 @@ function HelpButton() {
 /** The places on a phone's page of documents, where the column they stand in is out of sight. */
 export function PhonePlaces() {
   const { t } = useI18n();
+  const company = Boolean(useCompany().data?.children.length);
+  const [shared, ...rest] = PHONE_PLACES;
+  const places = [FAVOURITES, ...(company ? [COMPANY] : []), shared, ...rest];
   return (
     <nav aria-label={t('frame.places')} className="grid grid-cols-3 gap-2 md:hidden">
-      {PHONE_PLACES.map(({ to, icon: Icon, label }) => (
+      {places.map(({ to, icon: Icon, label }) => (
         <Link key={to} to={to} className={`${button} min-w-0 flex-col justify-center`}>
           <Icon size={20} aria-hidden className="shrink-0 text-muted" />
           <span className="max-w-full truncate">{t(label)}</span>
@@ -1375,7 +1544,7 @@ export function Frame({
   const move = useMove();
   const moveTo: MoveTo = (parent) => (ids) => move.mutate({ ids, parent });
   const tree = folders && !slots.alone && (
-    <FolderTree path={path ?? []} moveTo={moveTo} moving={move.error} />
+    <FolderTree path={path ?? []} root={root} moveTo={moveTo} moving={move.error} />
   );
   const into = (slot: HTMLElement | null, content: ReactNode) =>
     slot && createPortal(content, slot);

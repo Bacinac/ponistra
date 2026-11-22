@@ -3,6 +3,8 @@
   "audience": "everyone",
   "covers": [],
   "quiet": [
+    "shown.addedEvents",
+    "shown.addedPeople",
     "shown.more"
   ],
   "describes": {
@@ -16,7 +18,14 @@
     "backend/apps/reader/views.py#node_shown": "45a95558e2cf",
     "backend/apps/reader/views.py#node_shown_part": "ccc84a5d9457",
     "backend/apps/reader/shown.py#kind_of": "9fc86c5d74d8",
-    "backend/apps/reader/archives.py#listed": "50396d36fd77",
-    "converter/archives.py": "9f417c36822a"
+    "backend/apps/reader/archives.py#listed": "9f654745a2fd",
+    "converter/archives.py": "43a0d78711b7",
+    "frontend/src/kinds.tsx#ToContacts": "9b0f50662eb3",
+    "frontend/src/kinds.tsx#IntoCalendar": "2706053d328c",
+    "frontend/src/kinds.tsx#Unpack": "d252e47eac46",
+    "backend/apps/contacts/views.py#node_cards": "5833b39fd24a",
+    "backend/apps/contacts/taking.py#filed": "8e6d506f0668",
+    "backend/apps/calendar/views.py#node_events": "b7b76fa08867",
+    "backend/apps/imports/unpacked.py#unpack_done": "0752bac31fa0"
   }
 }

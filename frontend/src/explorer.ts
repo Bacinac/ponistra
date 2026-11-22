@@ -95,3 +95,8 @@ export function formatSize(bytes: number, formatNumber: (value: number) => strin
   }
   return `${formatNumber(unit === 0 ? value : Math.round(value * 10) / 10)} ${UNITS[unit]}`;
 }
+
+/** What the address sends, saved by the browser under the name it gives; a refusal fails the
+ * download rather than replacing the page. */
+export const saveFrom = (href: string) =>
+  Object.assign(document.createElement('a'), { href, download: '' }).click();

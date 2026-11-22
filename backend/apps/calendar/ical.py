@@ -383,6 +383,30 @@ def _read(text: str) -> tuple[str, list[Found]]:
     return method, found
 
 
+def filed(text: str) -> tuple[str, list[list[Found]]]:
+    """A calendar file's name and each series it holds, the master first, then the occurrences
+    changed on their own; a series whose master it lacks, or an event that cannot be read, is
+    left out. Days off are whoever wrote the file's, as an invitation's are."""
+    try:
+        calendar = Calendar.from_ical(text)
+    except Exception as failed:
+        raise Malformed(str(failed)) from None
+    grouped: dict[str, list[Found]] = {}
+    for at, component in enumerate(calendar.walk("VEVENT")):
+        try:
+            found = _found(component)
+        except Exception:
+            continue
+        found.day_off = ""
+        grouped.setdefault(found.uid or f"\x00{at}", []).append(found)
+    series = []
+    for each in grouped.values():
+        each.sort(key=lambda found: found.recurrence_id is not None)
+        if each[0].recurrence_id is None:
+            series.append([each[0], *(found for found in each[1:] if found.recurrence_id)])
+    return str(calendar.get("X-WR-CALNAME", "")).strip(), series
+
+
 def parsed(text: str) -> list[Found]:
     """The events of the iCalendar: the master first, then the occurrences changed on their own.
     More than one series in it is malformed, as a calendar resource holds one."""

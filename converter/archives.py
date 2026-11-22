@@ -1,10 +1,12 @@
-"""An archive's entries listed, and one of them unpacked, by libarchive; a 7z with a password,
-which libarchive refuses, by 7-Zip. A compressed file that holds no archive is one entry, named
-as the file without its compression's extension."""
+"""An archive's entries listed, one of them unpacked or all its files packed as a tar, by
+libarchive; a 7z with a password, which libarchive refuses, by 7-Zip. A compressed file that holds
+no archive is one entry, named as the file without its compression's extension."""
 
 import os
 import re
+import shutil
 import subprocess
+import tarfile
 from contextlib import ExitStack
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
@@ -12,13 +14,17 @@ from pathlib import Path, PurePosixPath
 import libarchive
 from libarchive.exception import ArchiveError
 
-# Entries a listing shows; the rest are counted.
+# Entries a listing shows and a tar holds; the rest are counted.
 MOST = 10_000
-# What one entry may unpack to: past it, a bomb.
-UNPACKED = 1024 * 1024 * 1024
+# What one entry, or all of them in a tar, may unpack to: past it, a bomb. The installation's
+# largest file, as the backend keeps no larger.
+UNPACKED = int(os.environ["PONISTRA_FILE_MAX_GB"]) * 1024**3
 TIMEOUT = 120
+# 7-Zip writing every file of an archive as large as UNPACKED.
+TIMEOUT_ALL = 3600
 COMPRESSED = {".gz", ".bz2", ".xz", ".zst", ".lz4", ".z", ".lzma"}
 SEVEN = b"7z\xbc\xaf\x27\x1c"
+DANGEROUS = "Dangerous link path was ignored"
 LOCKED = re.compile(r"passphrase|encrypt|password", re.IGNORECASE)
 # Formats libarchive finds in plain text, which a compressed text file is not.
 TEXTUAL = (b"mtree",)
@@ -65,12 +71,10 @@ def _reader(path: Path, password: str | None, raw: bool):
     return libarchive.file_reader(str(path), passphrase=password or None)
 
 
-def listed(path: Path, name: str, password: str | None) -> dict:
-    """The archive's entries in the order it holds them, each numbered by that order."""
-    if password and _seven(path):
-        return _seven_listed(path, password)
+def _formats(read, path: Path, name: str, password: str | None, *args):
+    """`read` over the archive, or over the one compressed file libarchive finds no archive in."""
     try:
-        return _listed(path, name, password, raw=False)
+        return read(path, name, password, *args, raw=False)
     except Raw:
         pass
     except ArchiveError as error:
@@ -79,9 +83,17 @@ def listed(path: Path, name: str, password: str | None) -> dict:
         if "unrecognized archive format" not in str(error).lower():
             raise Unreadable(str(error)) from None
     try:
-        return _listed(path, name, password, raw=True)
+        return read(path, name, password, *args, raw=True)
     except ArchiveError as error:
         raise Unreadable(str(error)) from None
+
+
+def listed(path: Path, name: str, password: str | None) -> dict:
+    """The archive's entries in the order it holds them, each numbered by that order; `raw` when
+    the file is one compressed file rather than an archive."""
+    if password and _seven(path):
+        return _seven_listed(path, password)
+    return _formats(_listed, path, name, password)
 
 
 def _listed(path: Path, name: str, password: str | None, raw: bool) -> dict:
@@ -101,26 +113,17 @@ def _listed(path: Path, name: str, password: str | None, raw: bool) -> dict:
                     }
                 )
             count += 1
-    return {"entries": entries, "count": count}
+    return {"entries": entries, "count": count, "raw": raw}
 
 
 def unpacked(path: Path, name: str, number: int, password: str | None):
     """The entry's name, its size when the archive tells it, and its bytes as they unpack."""
     if password and _seven(path):
         return _seven_unpacked(path, number, password)
-    try:
-        return _unpacked(path, name, number, password, raw=False)
-    except Raw:
-        pass
-    except ArchiveError as error:
-        if LOCKED.search(str(error)):
-            raise Locked(str(error)) from None
-        if "unrecognized archive format" not in str(error).lower():
-            raise Unreadable(str(error)) from None
-    return _unpacked(path, name, number, password, raw=True)
+    return _formats(_unpacked, path, name, password, number)
 
 
-def _unpacked(path: Path, name: str, number: int, password: str | None, raw: bool):
+def _unpacked(path: Path, name: str, password: str | None, number: int, raw: bool):
     # The reader stays open while the bytes are sent, and closes with the last of them.
     held = ExitStack()
     try:
@@ -160,6 +163,78 @@ def _sent(held: ExitStack, first: bytes, blocks):
             yield block
 
 
+def packed(path: Path, name: str, password: str | None, into: Path) -> None:
+    """Every file among the archive's first MOST entries written to `into` as an uncompressed tar
+    of the pax format, each under its path in the archive and with its time; `into`'s folder holds
+    each file while it unpacks."""
+    if password and _seven(path):
+        return _seven_packed(path, password, into)
+    return _formats(_packed, path, name, password, into)
+
+
+def _packed(path: Path, name: str, password: str | None, into: Path, raw: bool) -> None:
+    spooled, told = into.with_name(f"{into.name}.entry"), 0
+    with (
+        _reader(path, password, raw) as archive,
+        tarfile.open(into, "w", format=tarfile.PAX_FORMAT) as tar,
+    ):
+        for at, entry in enumerate(archive):
+            if not raw and archive.format_name.startswith(TEXTUAL):
+                raise Raw
+            if at >= MOST:
+                break
+            if not raw and not (entry.isreg and entry.pathname):
+                continue
+            with spooled.open("wb") as file:
+                for block in entry.get_blocks():
+                    told += len(block)
+                    if told > UNPACKED:
+                        raise Overflow(f"more than {UNPACKED} bytes")
+                    file.write(block)
+            _added(tar, spooled, _stem(name) if raw else entry.pathname, entry.mtime)
+    spooled.unlink(missing_ok=True)
+
+
+def _added(tar: tarfile.TarFile, path: Path, name: str, mtime: float | None) -> None:
+    held = tarfile.TarInfo(name)
+    held.size, held.mtime = path.stat().st_size, int(mtime or 0)
+    with path.open("rb") as file:
+        tar.addfile(held, file)
+
+
+def _seven_packed(path: Path, password: str, into: Path) -> None:
+    found = _seven_entries(path, password)[:MOST]
+    files = [each for each in found if not _folder(each) and not _linked(each)]
+    if sum(int(each.get("Size") or 0) for each in files) > UNPACKED:
+        raise Overflow(f"more than {UNPACKED} bytes")
+    out = into.with_name(f"{into.name}.out")
+    process = _seven_run(["x", "-y", f"-o{out}"], [str(path)], password, stdout=subprocess.DEVNULL)
+    try:
+        _, failed = process.communicate(timeout=TIMEOUT_ALL)
+    except subprocess.TimeoutExpired:
+        os.killpg(process.pid, 9)
+        process.communicate()
+        raise Unreadable(f"unpacking overran {TIMEOUT_ALL} s") from None
+    text = failed.decode(errors="replace")
+    # 7-Zip fails the whole archive over a link pointing out of its folder, which it leaves out.
+    errors = [line for line in text.splitlines() if line.startswith("ERROR")]
+    if process.returncode != 0 and not (errors and all(DANGEROUS in line for line in errors)):
+        raise (Locked if LOCKED.search(text) else Unreadable)(text.strip()[-300:])
+    told = 0
+    with tarfile.open(into, "w", format=tarfile.PAX_FORMAT) as tar:
+        for each in files:
+            unpacked = out / each["Path"]
+            if unpacked.is_symlink() or not unpacked.is_file():
+                continue
+            if not unpacked.resolve().is_relative_to(out.resolve()):
+                continue
+            told += unpacked.stat().st_size
+            if told > UNPACKED:
+                raise Overflow(f"more than {UNPACKED} bytes")
+            _added(tar, unpacked, each["Path"], unpacked.stat().st_mtime)
+    shutil.rmtree(out, ignore_errors=True)
+
+
 def _seven_run(switches: list[str], files: list[str], password: str, **kwargs):
     return subprocess.Popen(
         ["7z", *switches, f"-p{password}", "-bsp0", "--", *files],
@@ -197,6 +272,10 @@ def _folder(entry: dict) -> bool:
     return entry.get("Folder") == "+" or entry.get("Attributes", "").startswith("D")
 
 
+def _linked(entry: dict) -> bool:
+    return " l" in entry.get("Attributes", "")
+
+
 def _seven_listed(path: Path, password: str) -> dict:
     found = _seven_entries(path, password)
     entries = []
@@ -214,7 +293,7 @@ def _seven_listed(path: Path, password: str) -> dict:
                 "folder": folder,
             }
         )
-    return {"entries": entries, "count": len(found)}
+    return {"entries": entries, "count": len(found), "raw": False}
 
 
 def _seven_unpacked(path: Path, number: int, password: str):

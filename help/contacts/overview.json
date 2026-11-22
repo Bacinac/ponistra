@@ -26,7 +26,7 @@
     "backend/apps/contacts/views.py#star": "372e8943cfdc",
     "backend/apps/contacts/views.py#photo": "3f6ab6dbf09e",
     "backend/apps/contacts/search.py#matching": "a671aa347138",
-    "backend/apps/contacts/taking.py#_found": "42e04b6c27e4",
+    "backend/apps/contacts/taking.py#_found": "d3f55d27b564",
     "backend/apps/contacts/taking.py#taken": "23a751b9a05f"
   }
 }

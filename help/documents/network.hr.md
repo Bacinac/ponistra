@@ -21,12 +21,12 @@ Dok nema nijedne lokacije, piše {t:locations.none} uz poveznicu na [postavke lo
 
 ### Otvaranje i uređivanje datoteke
 
-1. Pritisnite datoteku. Tekstualna datoteka otvara se u uređivaču na mjestu popisa, a PDF, slika, zvuk i videozapis u novoj kartici preglednika.
+1. Pritisnite datoteku. Tekstualna datoteka otvara se u uređivaču na mjestu popisa, a PDF, slika, zvuk i videozapis u novoj kartici preglednika. Arhiva (ZIP, 7z, RAR, TAR i druge), poruka e-pošte (EML, MSG), kontakti (VCF), kalendar (ICS) i slika koju preglednik ne prikazuje (BMP, ICO, TIFF, PSD) otvaraju se na mjestu popisa sa svojim sadržajem, kao u Dokumentima, uz {t:file.download}.
 2. Nakon izmjene teksta pritisnite {t:workspace.files.save} ili {k:Mod-s}. Uz naziv piše {t:workspace.files.unsaved} dok izmjene nisu spremljene, a zatim {t:workspace.files.saved}
 3. {t:workspace.files.back} vraća na mapu. Ako izmjene nisu spremljene, pita {t:workspace.files.discard}
 4. Ostale datoteke nude samo {t:file.download}.
 
-Uz uključen {t:preview.title} na širokom zaslonu prvi pritisak pokazuje stavku u ploči sa strane, a otvara je dvostruki pritisak.
+Uz uključen {t:preview.title} na širokom zaslonu prvi pritisak pokazuje stavku u ploči sa strane, a otvara je dvostruki pritisak. Ploča pokazuje i sadržaj arhive, poruke, kontakata, kalendara i takve slike, a Markdown oblikovan.
 
 ### Nove stavke
 
@@ -40,6 +40,7 @@ Izbornik se otvara desnim pritiskom ili dugim pritiskom na redak. Više stavki o
 
 - {t:tree.open} otvara stavku.
 - {t:file.download} preuzima datoteku na uređaj.
+- {t:zip.download} preuzima odabrane mape i datoteke kao jednu ZIP datoteku, mapu sa svime u njoj. Desni ili dugi pritisak na prazan dio popisa nudi {t:zip.folder} za otvorenu mapu.
 - {t:tree.rename} mijenja naziv jedne stavke.
 - {t:tree.move} otvara mape lokacije; pritisnite {t:tree.moveHere} u odredišnoj.
 - {t:files.delete} briše odabrano s poslužitelja, nakon pitanja {t:files.deleteHeading}
@@ -55,6 +56,8 @@ Spremanje teksta provjerava je li datoteka na poslužitelju ista kao kad ste je 
 
 Kopiranje u Ponistru radi u pozadini kao posao {t:job.copy}: datoteke koje Ponistra zna pročitati (Word, Excel, PowerPoint, PDF, tekst) postaju dokumenti, ostale datoteke, a mapa se kopira sa svime što sadrži. Kopija nakon toga nema veze s izvornikom.
 
+ZIP se slaže dok se šalje: Ponistra čita datoteku po datoteku s poslužitelja i odmah je prosljeđuje, pa preuzimanje počinje odmah i ništa se ne sprema u Ponistri. Poveznice i posebne datoteke na poslužitelju ne ulaze u ZIP. Sadržaj datoteke Ponistra čita iz privremene kopije koju briše čim ga pročita; datoteka na poslužitelju ostaje netaknuta.
+
 Brisanje na poslužitelju je trajno: Ponistrino smeće ga ne čuva. Mapa se briše sa svime u njoj.
 
 Prva promjena na lokaciji može tražiti [potvrdu da ste to vi](help:account/confirm).
@@ -63,7 +66,8 @@ Prva promjena na lokaciji može tražiti [potvrdu da ste to vi](help:account/con
 
 - Tko lokaciju samo čita, ima onemogućene {t:create.new}, {t:tree.rename}, {t:tree.move} i {t:files.delete}.
 - U uređivaču se otvara tekst do 1 MB; za veći piše {t:workspace.files.large} Datoteka koja nije tekst javlja {t:workspace.files.binary}
-- Jednim kopiranjem prenosi se najviše 1.000 stavki.
+- Jednim kopiranjem prenosi se najviše 1.000 stavki, a u jedan ZIP ulazi najviše 1.000 odabranih stavki (mapa sa svime u njoj je jedna stavka).
+- Sadržaj se pokazuje za datoteke do 512 MB; za veću piše {t:error.too_large}
 - Poveznice na poslužitelju koje vode izvan mape lokacije ne otvaraju se.
 - {t:error.location_unreachable} i {t:error.location_closed} znače da poslužitelj ne odgovara; pokušajte ponovno ili provjerite mrežu do njega.
 - {t:error.location_login} i {t:error.location_secret_lost} rješava vlasnik lokacije ponovnim upisom prijave u [postavkama](help:documents/locations).

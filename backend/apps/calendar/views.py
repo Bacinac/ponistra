@@ -23,6 +23,7 @@ from apps.journal.entries import Kind
 from apps.mail import sharing
 from apps.mail.models import Account
 from apps.mail.servers import known_as
+from apps.reader.views import taken_from
 from apps.users.accounts import administrator
 
 from . import availability, ical, invitations, recurrence, taking, workdays
@@ -1095,3 +1096,35 @@ def free(request):
             )
         ]
     return JsonResponse(found)
+
+
+@api("POST")
+def node_events(request, pk):
+    """The events of a calendar file in one of the user's calendars, or in a new one named as the
+    file names itself; an event the calendar holds already, by its uid, takes what the file
+    gives."""
+    data = body(request)
+    if data.get("calendar") is None:
+        calendar = None
+    else:
+        calendar = _own(request.user, data.get("calendar"))
+        if calendar.read_only:
+            raise Refused(403, "read_only")
+    node, read = taken_from(request.user, pk, "text/calendar", "events")
+    with transaction.atomic():
+        if calendar is None:
+            calendar = taking.own(request.user.pk, read["name"] or node.title)
+        made = changed = 0
+        for given in read["series"]:
+            series = [Found(**each) for each in given]
+            uid = series[0].uid
+            masters = Event.objects.filter(calendar=calendar, master=None, uid=uid)
+            if uid and (master := masters.first()) is not None:
+                kept.replaced(master, series)
+                changed += 1
+                continue
+            first = kept.made(calendar, series[0])
+            for each in series[1:]:
+                kept.made(calendar, each, master=first)
+            made += 1
+    return JsonResponse({"calendar": calendar.pk, "made": made, "changed": changed})

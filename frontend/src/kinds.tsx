@@ -1,14 +1,28 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Download, Folder, Paperclip } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import {
+  CalendarPlus,
+  Download,
+  Folder,
+  FolderInput,
+  Paperclip,
+  Plus,
+  UserPlus,
+  type LucideIcon,
+} from 'lucide-react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import Markdown, { type Components } from 'react-markdown';
+import { Link, useNavigate } from 'react-router';
 import remarkGfm from 'remark-gfm';
 import { answered, ApiError, csrfToken, getJson, postJson } from './api';
+import { useVisitor } from './auth';
+import { useCalendars } from './calendarData';
 import { formatSize } from './explorer';
 import { Loading } from './frame';
 import { useI18n } from './i18n';
+import { runJob } from './jobs';
 import { HtmlBody } from './mailBody';
-import { field, iconButton, primaryButton } from './styles';
+import { Menu, MenuItem } from './menu';
+import { button, field, iconButton, primaryButton } from './styles';
 import { errorMessage, Failure } from './tree';
 
 /** What a file holds, shown by its kind rather than as its bytes (D23): read by the server from
@@ -164,17 +178,205 @@ function Read({ base, title, compact }: { base: string; title: string; compact: 
   if (!held) return <Failure error={read.error!} />;
   switch (held.kind) {
     case 'archive':
-      return <Archive base={base} held={held} password={password} compact={compact} />;
+      return (
+        <Acted action={<Unpack base={base} title={title} password={password} />}>
+          <Archive base={base} held={held} password={password} compact={compact} />
+        </Acted>
+      );
     case 'message':
     case 'outlook':
       return <Message base={base} held={held} title={title} />;
     case 'cards':
-      return <Cards people={held.people} count={held.count} />;
+      return (
+        <Acted action={<ToContacts base={base} />}>
+          <Cards people={held.people} count={held.count} />
+        </Acted>
+      );
     case 'events':
-      return <Events name={held.name} events={held.events} count={held.count} />;
+      return (
+        <Acted action={<ToCalendar base={base} />}>
+          <Events name={held.name} events={held.events} count={held.count} />
+        </Acted>
+      );
     default:
       return null;
   }
+}
+
+/** The file of Documents the address serves, whose contents may be kept elsewhere in Ponistra;
+ * none for a file on the network or in Projects. */
+function nodeOf(base: string): string | null {
+  return /^\/api\/nodes\/([^/]+)$/.exec(base)?.[1] ?? null;
+}
+
+function Acted({ action, children }: { action: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex min-h-0 flex-col gap-2">
+      {action}
+      {children}
+    </div>
+  );
+}
+
+function ActionButton({
+  icon: Icon,
+  label,
+  onClick,
+  pending,
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick?: () => void;
+  pending?: boolean;
+}) {
+  return (
+    <button type="button" onClick={onClick} disabled={pending} className={button}>
+      <Icon size={16} aria-hidden />
+      {label}
+    </button>
+  );
+}
+
+function Outcome({
+  error,
+  text,
+  to,
+  label,
+}: {
+  error: Error | null;
+  text: string | null;
+  to?: string;
+  label?: string;
+}) {
+  const { t } = useI18n();
+  if (error) return <p className="text-sm text-danger">{errorMessage(error, t)}</p>;
+  if (text === null) return null;
+  return (
+    <p role="status" className="text-sm">
+      {text}{' '}
+      {to && (
+        <Link to={to} className="text-link hover:underline">
+          {label}
+        </Link>
+      )}
+    </p>
+  );
+}
+
+function ToContacts({ base }: { base: string }) {
+  const { t, formatNumber } = useI18n();
+  const visitor = useVisitor();
+  const added = useMutation({
+    mutationFn: () => postJson<{ made: number; joined: number }>(`${base}/contacts`, {}),
+  });
+  if (visitor || !nodeOf(base)) return null;
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <ActionButton
+        icon={UserPlus}
+        label={t('shown.toContacts')}
+        onClick={() => added.mutate()}
+        pending={added.isPending}
+      />
+      <Outcome
+        error={added.error}
+        text={
+          added.data
+            ? t('shown.addedPeople')
+                .replace('{made}', formatNumber(added.data.made))
+                .replace('{joined}', formatNumber(added.data.joined))
+            : null
+        }
+        to="/contacts"
+        label={t('shown.openContacts')}
+      />
+    </div>
+  );
+}
+
+function ToCalendar({ base }: { base: string }) {
+  const visitor = useVisitor();
+  if (visitor || !nodeOf(base)) return null;
+  return <IntoCalendar base={base} />;
+}
+
+function IntoCalendar({ base }: { base: string }) {
+  const { t, formatNumber } = useI18n();
+  const calendars = useCalendars();
+  const added = useMutation({
+    mutationFn: (calendar: number | null) =>
+      postJson<{ calendar: number; made: number; changed: number }>(`${base}/events`, {
+        calendar,
+      }),
+  });
+  const writable = (calendars.data?.calendars ?? []).filter((each) => !each.read_only);
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Menu
+        align="start"
+        trigger={
+          <button type="button" disabled={added.isPending} className={button}>
+            <CalendarPlus size={16} aria-hidden />
+            {t('shown.toCalendar')}
+          </button>
+        }
+      >
+        {writable.map((each) => (
+          <MenuItem
+            key={each.id}
+            icon={CalendarPlus}
+            label={each.name}
+            onSelect={() => added.mutate(each.id)}
+          />
+        ))}
+        <MenuItem icon={Plus} label={t('shown.newCalendar')} onSelect={() => added.mutate(null)} />
+      </Menu>
+      <Outcome
+        error={added.error}
+        text={
+          added.data
+            ? t('shown.addedEvents')
+                .replace('{made}', formatNumber(added.data.made))
+                .replace('{changed}', formatNumber(added.data.changed))
+            : null
+        }
+        to="/calendar"
+        label={t('shown.openCalendar')}
+      />
+    </div>
+  );
+}
+
+function Unpack({
+  base,
+  title,
+  password,
+}: {
+  base: string;
+  title: string;
+  password: string | null;
+}) {
+  const { t } = useI18n();
+  const visitor = useVisitor();
+  const navigate = useNavigate();
+  const node = nodeOf(base);
+  const unpacked = useMutation({
+    mutationFn: () =>
+      runJob<{ folder: string }>('unpack', { node, ...(password ? { password } : {}) }, title),
+    onSuccess: ({ folder }) => void navigate(`/f/${folder}`),
+  });
+  if (visitor || !node) return null;
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <ActionButton
+        icon={FolderInput}
+        label={t('shown.unpack')}
+        onClick={() => unpacked.mutate()}
+        pending={unpacked.isPending}
+      />
+      <Outcome error={unpacked.error} text={null} />
+    </div>
+  );
 }
 
 function Locked({

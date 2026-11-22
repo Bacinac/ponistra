@@ -106,16 +106,19 @@ services:
     restart: unless-stopped
 
   converter:
-    # LibreOffice reads the files it is given, which may be hostile, so it runs on a
-    # network that reaches only the backend, with nothing writable but its /tmp.
+    # LibreOffice and libarchive read the files they are given, which may be hostile, so they
+    # run on a network that reaches only the backend, with nothing writable but /tmp, on the
+    # disk: an archive can be as large as the installation's largest file.
     image: ghcr.io/bacinac/ponistra-converter:${PONISTRA_VERSION:?set in .env}
     container_name: ponistra_converter
     logging: *log
     init: true
+    environment:
+      PONISTRA_FILE_MAX_GB: ${PONISTRA_FILE_MAX_GB:-10}
     networks: [convert]
     read_only: true
-    tmpfs:
-      - /tmp
+    volumes:
+      - converting:/tmp
     mem_limit: 2g
     pids_limit: 256
     healthcheck:
@@ -463,6 +466,7 @@ configs:
       sync /wal
 
 volumes:
+  converting:
   reading:
   recordings:
 

@@ -24,7 +24,7 @@ Kutija u zaglavlju svake stranice traži kroz dokumente, poštu, događaje, zada
 
 ## Kako radi
 
-Svaka skupina poredana je po tome koliko pogodak odgovara riječima. Kutija prikazuje najviše 8 pogodaka, podijeljenih među skupinama koliko je moguće jednako, i najviše 5 naredbi. Naredbe stranice na kojoj ste, na primjer naredbe dokumenta s njihovim prečacima, dolaze prije općih. Naslovi se pronalaze i kad je riječ u njima napisana malo drukčije.
+Svaka skupina poredana je po tome koliko pogodak odgovara riječima. Kutija prikazuje najviše 8 pogodaka, podijeljenih među skupinama koliko je moguće jednako, i najviše 5 naredbi. Naredbe stranice na kojoj ste, na primjer naredbe dokumenta s njihovim prečacima, dolaze prije općih. Naslovi se pronalaze i kad je riječ u njima napisana malo drukčije. Arhiva se pronalazi i po nazivima datoteka i mapa u njoj, a pogodak prikazuje putanju stavke.
 
 Uz pogodak u dokumentu piše gdje je u njemu: {t:search.tab}, {t:search.section}, {t:search.paragraph}, {t:search.table}, {t:search.cell}, {t:search.image}, {t:search.chart}, {t:search.pdf}, {t:search.page}, {t:search.footnote}, {t:search.endnote}, {t:search.comment}, {t:search.data} ili {t:kind.link}. Pogodak u privitku poruke nosi oznaku {t:search.attachment} s nazivom datoteke. Pošta obuhvaća i zajedničke sandučiće koje čitate; poruka iz sandučića nosi njegov naziv ispred pošiljatelja i otvara se u tom sandučiću. Osoba je označena kao {t:search.person.contact}, {t:search.person.colleague} ili {t:search.person.directory}, a zadatak kao {t:tasks.done} ili rokom ({t:tasks.due}).
 

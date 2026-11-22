@@ -5,6 +5,7 @@ import {
   ChevronRight,
   ChevronUp,
   Download,
+  FileArchive,
   FileUp,
   Folder,
   FolderInput,
@@ -29,6 +30,7 @@ import { Cancel, ConfirmDialog, Modal, NameDialog } from './dialogs';
 import { useDropTarget } from './drag';
 import {
   formatSize,
+  saveFrom,
   storedPreview,
   storedSort,
   storePreview,
@@ -38,6 +40,7 @@ import {
 } from './explorer';
 import { Loading, Panel, useWide } from './frame';
 import { useI18n } from './i18n';
+import { HeldView, type HeldKind } from './kinds';
 import type { MessageKey } from './i18n/hr';
 import { ActionsMenu, ContextMenuArea, Menu, MenuItem, MenuSeparator } from './menu';
 import { button, iconButton, primaryButton } from './styles';
@@ -64,6 +67,10 @@ export interface FileSource {
   rawHref: (path: string, download?: boolean) => string;
   /** An image or a PDF's first page drawn small, where the source draws them. */
   pictureHref?: (path: string) => string;
+  /** The file's address that what it holds is shown under, as a file of Documents shows it. */
+  heldBase?: (path: string) => string;
+  /** The files and folders as one zip, a folder with all it holds. */
+  zipHref?: (paths: string[]) => string;
   read: (path: string) => Promise<Opened>;
   write: (path: string, text: string, hash: string) => Promise<Written>;
   folder: (path: string, name: string) => Promise<unknown>;
@@ -86,10 +93,29 @@ export interface Framed {
 const within = (folder: string, name: string) => (folder ? `${folder}/${name}` : name);
 const above = (path: string) => path.replace(/\/?[^/]*$/, '');
 const nameOf = (path: string) => path.split('/').pop() ?? path;
+/** A path as one segment of an address, base64url without padding. */
+export const segment = (path: string) =>
+  btoa(String.fromCharCode(...new TextEncoder().encode(path)))
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replace(/=+$/, '');
 export const listKey = (source: FileSource, path: string) => ['files', source.key, 'list', path];
 const fileKey = (source: FileSource, path: string) => ['files', source.key, 'file', path];
 
-const PICTURES = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'avif', 'tif', 'tiff', 'heic'];
+const PICTURES = [
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'bmp',
+  'avif',
+  'tif',
+  'tiff',
+  'heic',
+  'ico',
+  'psd',
+];
 const SOUND = ['mp3', 'm4a', 'ogg', 'oga', 'wav', 'flac'];
 const VIDEO = ['mp4', 'm4v', 'webm', 'mov', 'ogv'];
 /** As much of a text file as a glance reads and shows. */
@@ -98,6 +124,45 @@ const GLANCED_TEXT = 20_000;
 
 const extensionOf = (name: string) =>
   name.includes('.', 1) ? name.slice(name.lastIndexOf('.') + 1).toLowerCase() : '';
+
+/** What the server shows of what a file holds, told by its name, as Documents tells it by its
+ * bytes. */
+const HELD: Record<string, HeldKind> = {
+  bmp: 'picture',
+  ico: 'picture',
+  tif: 'picture',
+  tiff: 'picture',
+  psd: 'picture',
+  ...Object.fromEntries(
+    [
+      'zip',
+      'tar',
+      'gz',
+      'tgz',
+      'bz2',
+      'xz',
+      'zst',
+      'lz4',
+      '7z',
+      'rar',
+      'iso',
+      'cab',
+      'lzh',
+      'xar',
+    ].map((extension) => [extension, 'archive' as const]),
+  ),
+  eml: 'message',
+  mht: 'message',
+  mhtml: 'message',
+  msg: 'message',
+  vcf: 'cards',
+  ics: 'events',
+  md: 'markdown',
+  markdown: 'markdown',
+};
+
+const heldOf = (source: FileSource, name: string): HeldKind | null =>
+  (source.heldBase && HELD[extensionOf(name)]) || null;
 
 function kindOf(entry: FileEntry): ShownKind {
   if (entry.kind === 'folder') return 'folder';
@@ -110,7 +175,8 @@ function kindOf(entry: FileEntry): ShownKind {
 }
 
 /** What a browser shows by itself, in a tab of its own. */
-const played = (entry: FileEntry) => ['file', 'image', 'audio', 'video'].includes(kindOf(entry));
+const played = (source: FileSource, entry: FileEntry) =>
+  !heldOf(source, entry.name) && ['file', 'image', 'audio', 'video'].includes(kindOf(entry));
 
 const collator = new Intl.Collator('hr', { numeric: true, sensitivity: 'base' });
 
@@ -242,13 +308,14 @@ function Glance({ source, path, entry }: { source: FileSource; path: string; ent
   const kind = kindOf(entry);
   const extension = extensionOf(entry.name);
   const [missing, setMissing] = useState(false);
-  const reads = kind === 'other' && entry.size !== null && entry.size <= GLANCED;
+  const held = entry.kind === 'file' ? heldOf(source, entry.name) : null;
+  const reads = !held && kind === 'other' && entry.size !== null && entry.size <= GLANCED;
   const read = useQuery({
     queryKey: fileKey(source, path),
     queryFn: () => source.read(path),
     enabled: reads,
   });
-  const pictured = source.pictureHref && (kind === 'file' || PICTURES.includes(extension));
+  const pictured = !held && source.pictureHref && (kind === 'file' || PICTURES.includes(extension));
   return (
     <>
       <h3 className="flex items-start gap-2 font-semibold break-words">
@@ -263,6 +330,7 @@ function Glance({ source, path, entry }: { source: FileSource; path: string; ent
           className="max-h-96 w-full shrink-0 rounded border border-line object-contain"
         />
       )}
+      {held && <HeldView base={source.heldBase!(path)} kind={held} title={entry.name} compact />}
       {kind === 'video' && (
         <video src={source.rawHref(path)} controls preload="metadata" className="w-full rounded" />
       )}
@@ -319,7 +387,13 @@ function FileView({
   };
   useEffect(() => () => told.current?.(false), []);
   const [leaving, setLeaving] = useState(false);
-  const opened = useQuery({ queryKey: fileKey(source, path), queryFn: () => source.read(path) });
+  const found = heldOf(source, nameOf(path));
+  const held = found === 'markdown' ? null : found;
+  const opened = useQuery({
+    queryKey: fileKey(source, path),
+    queryFn: () => source.read(path),
+    enabled: !held,
+  });
   return (
     <div className="flex min-h-full w-full flex-col gap-2">
       <div>
@@ -332,7 +406,17 @@ function FileView({
           {t('workspace.files.back')}
         </button>
       </div>
-      {opened.isPending ? (
+      {held ? (
+        <div className="flex min-h-0 flex-1 flex-col items-start gap-3">
+          <a href={source.rawHref(path, true)} download={nameOf(path)} className={button}>
+            <Download size={14} aria-hidden />
+            {t('file.download')}
+          </a>
+          <div className="flex min-h-0 w-full flex-1 flex-col items-center overflow-auto">
+            <HeldView base={source.heldBase!(path)} kind={held} title={nameOf(path)} />
+          </div>
+        </div>
+      ) : opened.isPending ? (
         <Loading />
       ) : opened.isError ? (
         <p className="text-sm text-danger">{errorMessage(opened.error, t)}</p>
@@ -465,7 +549,8 @@ export function FileBrowser({
     const at = within(path, entry.name);
     if (entry.kind === 'folder') onGo(at);
     else if (entry.kind !== 'file') return;
-    else if (played(entry)) window.open(source.rawHref(at), '_blank', 'noopener,noreferrer');
+    else if (played(source, entry))
+      window.open(source.rawHref(at), '_blank', 'noopener,noreferrer');
     else onGo(path, at);
   };
   const toggled = useRef<string | null>(null);
@@ -503,6 +588,21 @@ export function FileBrowser({
       />
     </>
   );
+  const folderItems = (
+    <>
+      {newItems}
+      {source.zipHref && (
+        <>
+          <MenuSeparator />
+          <MenuItem
+            icon={FileArchive}
+            label={t('zip.folder')}
+            onSelect={() => saveFrom(source.zipHref!([path]))}
+          />
+        </>
+      )}
+    </>
+  );
   const itemsFor = (those: FileEntry[]) => {
     const [single] = those;
     const alone = those.length === 1;
@@ -522,6 +622,13 @@ export function FileBrowser({
             icon={Download}
             label={t('file.download')}
             onSelect={() => window.open(source.rawHref(paths[0], true), '_self')}
+          />
+        )}
+        {source.zipHref && !(alone && single.kind === 'file') && (
+          <MenuItem
+            icon={FileArchive}
+            label={t('zip.download')}
+            onSelect={() => saveFrom(source.zipHref!(paths))}
           />
         )}
         {source.more?.(paths, () => choice.choose([]))}
@@ -636,7 +743,7 @@ export function FileBrowser({
     children: (
       <>
         <ContextMenuArea
-          items={menuOn === 'selection' ? itemsFor(chosen) : newItems}
+          items={menuOn === 'selection' ? itemsFor(chosen) : folderItems}
           onOpen={(event) => {
             const name = (event.target as HTMLElement)
               .closest('tr[data-name]')

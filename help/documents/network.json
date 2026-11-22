@@ -10,9 +10,9 @@
   "describes": {
     "frontend/src/locations.tsx#LocationsPage": "d57dbc9483cb",
     "frontend/src/locations.tsx#Browsed": "eebb5c0bc043",
-    "frontend/src/locations.tsx#sourceOf": "e92ca83a0194",
-    "frontend/src/files.tsx#FileBrowser": "b08c976af56a",
-    "frontend/src/files.tsx#FileView": "646dd8557be5",
+    "frontend/src/locations.tsx#sourceOf": "df0f4bf25ac0",
+    "frontend/src/files.tsx#FileBrowser": "8a99a159caa6",
+    "frontend/src/files.tsx#FileView": "7082acc1ca9a",
     "backend/apps/locations/views.py#files": "79c81f482f09",
     "backend/apps/locations/views.py#raw": "3e9488b90b5b",
     "backend/apps/locations/views.py#text": "c60ed2e19cf5",
@@ -20,7 +20,9 @@
     "backend/apps/locations/views.py#remove": "5c31966fe821",
     "backend/apps/locations/views.py#put": "7a1f48bdc966",
     "backend/apps/locations/jobs.py#_copied": "584410ea1e70",
-    "frontend/src/frame.tsx#NetworkBranch": "1760e47e2bf5",
-    "frontend/src/frame.tsx#NetworkFolder": "f453d65421fb"
+    "frontend/src/frame.tsx#NetworkBranch": "5fa69c34f7a6",
+    "frontend/src/frame.tsx#useNetworkRows": "d04899963b77",
+    "backend/apps/locations/views.py#zip_of": "0a511643c02d",
+    "backend/apps/locations/views.py#held_shown": "f9ad64216122"
   }
 }

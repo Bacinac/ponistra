@@ -28,7 +28,7 @@ Below the list, under {t:mail.mailboxes}, you open the contacts of a [shared mai
 
 ## How it works
 
-Contacts come by themselves from your connected mail accounts (Google, Microsoft, ActiveSync) and from the organisation's directory, and you can add them yourself. Ponistra takes each person from an account once and joins them with the contact that already has the same address, the same number or the same name; after that the contact is yours and you change it here. Under {t:contacts.sources} the contact says where it came from and when, and below that {t:contacts.changed} with the date of the last change.
+Contacts come by themselves from your connected mail accounts (Google, Microsoft, ActiveSync) and from the organisation's directory, and you can add them yourself, one by one or all those of a VCF file with the {t:shown.toContacts} button on the file's page ([File content by kind](help:files/held)). Ponistra takes each person from an account once and joins them with the contact that already has the same address, the same number or the same name; after that the contact is yours and you change it here. Under {t:contacts.sources} the contact says where it came from and when, and below that {t:contacts.changed} with the date of the last change.
 
 A number is found even when you type it without the country code, so 091 finds +385 91 234 5678. A contact without a name is called {t:contacts.unnamed} in the list. When nothing matches the search, it says: {t:contacts.noMatch}
 

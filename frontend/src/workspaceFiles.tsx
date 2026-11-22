@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { getJson, postJson, upload } from './api';
 import type { Opened, Written } from './codeEditor';
 import { ConfirmDialog } from './dialogs';
-import { FileBrowser, type FileEntry, type FileSource } from './files';
+import { FileBrowser, segment, type FileEntry, type FileSource } from './files';
 import { useI18n } from './i18n';
 import { useHeldRelease } from './release';
 import { iconButton } from './styles';
@@ -25,6 +25,9 @@ function sourceOf(folder: string, name: string): FileSource {
     rawHref: (path, download) =>
       `/api/workspace/file/raw?${asked(folder, path, download ? { download: '1' } : {})}`,
     pictureHref: (path) => `/api/workspace/file/picture?${asked(folder, path)}`,
+    heldBase: (path) => `/api/workspace/held/${segment(folder)}/${segment(path)}`,
+    zipHref: (paths) =>
+      `/api/workspace/files/zip?${new URLSearchParams([['folder', folder], ...paths.map((path) => ['path', path])]).toString()}`,
     read: (path) => getJson<Opened>(`/api/workspace/file?${asked(folder, path)}`),
     write: (path, text, hash) =>
       postJson<Written>('/api/workspace/file', { folder, path, text, hash }),

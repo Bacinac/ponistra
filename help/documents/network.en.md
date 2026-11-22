@@ -21,12 +21,12 @@ While there is no location, the page says {t:locations.none} beside a link to th
 
 ### Opening and editing a file
 
-1. Press a file. A text file opens in the editor in place of the list, and a PDF, a picture, sound and video in a new browser tab.
+1. Press a file. A text file opens in the editor in place of the list, and a PDF, a picture, sound and video in a new browser tab. An archive (ZIP, 7z, RAR, TAR and others), an email message (EML, MSG), contacts (VCF), a calendar (ICS) and a picture the browser does not show (BMP, ICO, TIFF, PSD) open in place of the list with what they hold, as in Documents, beside {t:file.download}.
 2. After changing the text press {t:workspace.files.save} or {k:Mod-s}. Beside the name it says {t:workspace.files.unsaved} until the changes are saved, and then {t:workspace.files.saved}
 3. {t:workspace.files.back} returns to the folder. If changes are not saved, it asks {t:workspace.files.discard}
 4. Other files offer only {t:file.download}.
 
-With {t:preview.title} on and a wide screen, the first press shows the item in the panel at the side, and a double press opens it.
+With {t:preview.title} on and a wide screen, the first press shows the item in the panel at the side, and a double press opens it. The panel also shows what an archive, a message, contacts, a calendar and such a picture hold, and Markdown formatted.
 
 ### New items
 
@@ -40,6 +40,7 @@ The menu opens with a right press or a long press on a row. Several items are se
 
 - {t:tree.open} opens the item.
 - {t:file.download} downloads a file to the device.
+- {t:zip.download} downloads the folders and files chosen as one ZIP file, a folder with everything in it. A right or long press on an empty part of the list offers {t:zip.folder} for the folder that is open.
 - {t:tree.rename} changes the name of one item.
 - {t:tree.move} opens the location's folders; press {t:tree.moveHere} in the destination.
 - {t:files.delete} deletes what is selected from the server, after asking {t:files.deleteHeading}
@@ -55,6 +56,8 @@ Saving text checks that the file on the server is the same as when you opened it
 
 Copying into Ponistra runs in the background as the job {t:job.copy}: files Ponistra can read (Word, Excel, PowerPoint, PDF, text) become documents, the others files, and a folder is copied with everything in it. The copy has no tie to the original afterwards.
 
+A ZIP is put together as it is sent: Ponistra reads one file after another from the server and passes it on at once, so the download starts at once and nothing is stored in Ponistra. Links and special files on the server do not go into the ZIP. Ponistra reads what a file holds from a temporary copy it deletes as soon as it has read it; the file on the server stays as it was.
+
 Deleting on the server is permanent: Ponistra's trash does not keep it. A folder is deleted with everything in it.
 
 The first change on a location may ask you to [confirm that it is you](help:account/confirm).
@@ -63,7 +66,8 @@ The first change on a location may ask you to [confirm that it is you](help:acco
 
 - Whoever only reads a location has {t:create.new}, {t:tree.rename}, {t:tree.move} and {t:files.delete} disabled.
 - The editor opens text up to 1 MB; for a larger one it says {t:workspace.files.large} A file that is not text reports {t:workspace.files.binary}
-- One copy carries at most 1,000 items.
+- One copy carries at most 1,000 items, and one ZIP at most 1,000 chosen items (a folder with everything in it is one item).
+- What a file holds is shown for files up to 512 MB; for a larger one it says {t:error.too_large}
 - Links on the server that lead out of the location's folder do not open.
 - {t:error.location_unreachable} and {t:error.location_closed} mean the server does not answer; try again or check the network to it.
 - {t:error.location_login} and {t:error.location_secret_lost} are solved by the location's owner entering the sign-in again in the [settings](help:documents/locations).

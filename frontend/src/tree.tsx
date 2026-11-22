@@ -225,17 +225,19 @@ export function useFolder(id: string | null, { stays = false, enabled = true } =
   });
 }
 
-export function useShared(byMe = false) {
+export function useShared(byMe = false, { enabled = true } = {}) {
   return useQuery({
     queryKey: [...TREE, 'shared', byMe ? 'me' : 'others'],
     queryFn: () => getJson<{ children: ListedNode[] }>(`/api/nodes/shared${byMe ? '?by=me' : ''}`),
+    enabled,
   });
 }
 
-export function useCompany() {
+export function useCompany({ enabled = true } = {}) {
   return useQuery({
     queryKey: [...TREE, 'company'],
     queryFn: () => getJson<{ children: ListedNode[] }>('/api/nodes/company'),
+    enabled,
   });
 }
 
@@ -342,6 +344,11 @@ export function nodeHref(
 ): string {
   if (node.kind === 'link') return node.href ?? '';
   return `/${ROUTES[node.kind]}/${segment(node.title, node.id)}`;
+}
+
+/** The page of a group of boards (D47), a folder in the user's folder of boards. */
+export function groupHref(node: Pick<TreeNode, 'id' | 'title'>): string {
+  return `/boards/${segment(node.title, node.id)}`;
 }
 
 /** Whether an address leaves PONISTRA, as a link's page does: it opens in a tab of its own. */

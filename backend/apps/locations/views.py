@@ -4,6 +4,7 @@ Documents and shared as a folder is (D54). Every view that waits on a server is 
 import asyncio
 import hashlib
 import tempfile
+from dataclasses import replace
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -22,15 +23,16 @@ from apps.blobs.views import Unsatisfiable, byte_range
 from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database
 from apps.core.sealed import opened, seal
+from apps.exports import zipped
 from apps.imports.reading import TooLarge, Unreadable
 from apps.network.models import Tunnel
 from apps.reader import client
 from apps.shares import smb
 from apps.users.models import policy
 
-from . import reach, sftp
+from . import held, reach, sftp
 from .models import Grant, Location
-from .remote import EDITED, Failed, asked, joined, name_of, ordered
+from .remote import EDITED, Entry, Failed, Remote, asked, joined, name_of, ordered
 
 User = get_user_model()
 # A file drawn small is read whole first; a larger one is shown without its picture.
@@ -40,6 +42,8 @@ SNIFFED = 1024
 SHOWN = DRAWN | {"audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav", "audio/flac"}
 SHOWN |= {"video/mp4", "video/webm", "video/quicktime", "video/ogg"}
 CHANGES = ("POST",)
+# What one zip takes at once: the rows chosen in one folder.
+ZIPPED = 1000
 
 
 def _address(found: Location) -> str:
@@ -528,3 +532,95 @@ async def put(request, pk):
     finally:
         await remote.close()
     return JsonResponse({"path": path}, status=201)
+
+
+def _fetch(remote: Remote, path: str):
+    async def fetch(kept) -> None:
+        entry = await remote.stat(path)
+        if entry.kind != "file":
+            raise Refused(400, "not_a_file")
+        held.too_large(entry.size)
+        await held.written(kept, remote.chunks(path, 0, entry.size or 0))
+
+    return fetch
+
+
+@api("GET", "POST")
+async def held_shown(request, pk, token):
+    """What a file of the location shows of what it holds, as a file of Documents shows it."""
+    path = asked(held.path_of(token), root=False)
+    _, remote = await _remote(request, pk)
+    try:
+        return await held.of(request, path.rsplit("/", 1)[-1], _fetch(remote, path))
+    finally:
+        await remote.close()
+
+
+@api("GET", "POST")
+async def held_part(request, pk, token, part):
+    path = asked(held.path_of(token), root=False)
+    _, remote = await _remote(request, pk)
+    try:
+        return await held.part(request, path.rsplit("/", 1)[-1], part, _fetch(remote, path))
+    finally:
+        await remote.close()
+
+
+@api("GET")
+async def held_text(request, pk, token):
+    path = asked(held.path_of(token), root=False)
+    _, remote = await _remote(request, pk)
+    try:
+        return await held.text_of(request, _fetch(remote, path))
+    finally:
+        await remote.close()
+
+
+async def _zipped(remote: Remote, chosen: list[tuple[str, Entry]]):
+    """The entries chosen, a folder with all it holds, each written as the server sends it; a
+    link or anything but a folder or a file is left out, as the browser shows it and no more."""
+    archive = zipped.Zipped()
+    try:
+        waiting = [(path, entry, "") for path, entry in reversed(chosen)]
+        while waiting:
+            path, entry, folder = waiting.pop()
+            if entry.kind == "folder":
+                named = archive.named(folder, entry.name)
+                archive.folder(named, entry.modified)
+                below = ordered(await remote.listed(path))
+                waiting.extend((joined(path, each.name), each, named) for each in reversed(below))
+            elif entry.kind == "file":
+                named = archive.named(folder, entry.name)
+                parts = remote.chunks(path, 0, entry.size or 0)
+                async for sent in zipped.written(archive, named, entry.modified, entry.size, parts):
+                    yield sent
+        yield archive.closed()
+    finally:
+        await remote.close()
+
+
+@api("GET")
+async def zip_of(request, pk):
+    """The files and folders chosen as one zip, sent as it is written, a folder with all it
+    holds."""
+    given = request.GET.getlist("path")
+    if not 0 < len(given) <= ZIPPED:
+        raise Refused(400, "invalid_paths")
+    paths = list(dict.fromkeys(asked(path) for path in given))
+    found, remote = await _remote(request, pk)
+    try:
+        chosen = [(path, await remote.stat(path)) for path in paths]
+    except BaseException:
+        await remote.close()
+        raise
+    chosen = [(path, entry if path else replace(entry, name=found.name)) for path, entry in chosen]
+    folders = {path.rpartition("/")[0] for path in paths}
+    if len(chosen) == 1:
+        title = chosen[0][1].name
+    elif len(folders) == 1 and (folder := folders.pop()):
+        title = folder.rsplit("/", 1)[-1]
+    else:
+        title = found.name
+    return StreamingHttpResponse(
+        _zipped(remote, chosen), content_type="application/zip", headers=zipped.zip_headers(title)
+    )
