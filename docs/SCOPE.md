@@ -4906,6 +4906,18 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     folder for as long as the socket lives. node-pty and ws come from code-server itself, so the
     image needs no build tools. Binary frames carry what is typed and shown, a text frame
     `{cols, rows}` resizes; the socket closes with 4000 once the shell exits.
+  - *Files on hosts* (PJ12, 2026-11-22). The Files tab opens the project's folder or a host's,
+    chosen in the place menu, with the same actions: browse, read, download, and edit text under a
+    fresh D33 confirmation and a sha256 check; nothing is deleted, renamed or uploaded. A host is a
+    managed block of the workspace's `~/.ssh/config` (marked `# Ponistra files:`, the owner's own
+    entries left as they are), its key an ed25519 made there (`~/.ssh/ponistra_ed25519`), whose
+    public line the hosts view shows for the host's `authorized_keys`. The workspace speaks SFTP v3
+    itself over OpenSSH's `ssh -s sftp` from the image (`workspace/hosts.mjs`, no new dependency),
+    one connection per host closed after two idle minutes; a save writes a copy beside the file and
+    renames it over (`posix-rename@openssh.com`), keeping owner and mode, and where that cannot keep
+    them writes the file in place, as vim does. An unreachable host, a refused or unreadable key, a
+    changed host key or a missing SFTP server each has an error of its own. The starting folder is
+    where the files open, not a fence: the host's user's rights are the limit.
 - **D53: a file opened from the computer is read first, placed only when asked — approved
   2026-11-21** (Ivo: „dokument prvo otvoriti u full screenu … u ponistri to samo otvori kao recent
   documents, i tek na save se spremi na odabrano mjesto … bez prijave da radi isto za sve

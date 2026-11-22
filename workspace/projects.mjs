@@ -83,6 +83,7 @@ import {
 } from './chats.mjs';
 import { hostOf } from './host.mjs';
 import { FILES, filesAnswered } from './files.mjs';
+import { HOSTS, hostFilesAnswered, hostsAnswered } from './hosts.mjs';
 import { followMemory, MEMORY, memoryAnswered } from './memory.mjs';
 import { TERMINAL, upgraded } from './terminal.mjs';
 import { followWork } from './worked.mjs';
@@ -1079,6 +1080,13 @@ const answersGiven = (text) => {
   return answers;
 };
 
+// A model the owner chose, one of those Claude Code offers; none leaves the chat on its own.
+const modelGiven = (model) => {
+  if (model == null) return null;
+  if (!modelsOf().some(({ value }) => value === model)) throw new Refusal(400, 'invalid_model');
+  return model;
+};
+
 const titleGiven = (text) => {
   if (!text || text.length > TITLE || text.includes('\n')) throw new Refusal(400, 'invalid_text');
   return text;
@@ -1268,7 +1276,7 @@ const awaited = () => {
     moved = true;
     const session = randomUUID();
     try {
-      begun(session, command.folder, command.text, command.images ?? []);
+      begun(session, command.folder, command.text, command.images ?? [], command.model ?? null);
     } catch (error) {
       settle(command, 'failed', error instanceof Refusal ? error.message : 'unread');
       continue;
@@ -1314,15 +1322,16 @@ const ordered = async (given) => {
     if (!projectFolders().includes(given.folder)) throw new Refusal(404, 'no_project');
     if (!text) throw new Refusal(400, 'invalid_text');
     const images = imagesGiven(given.images);
+    const model = modelGiven(given.model);
     if (given.when != null) {
       const when = whenGiven(given.when, now, true);
-      command = { ...command, folder: given.folder, text, images, when, sessions: [], paused: [], state: 'waiting' };
+      command = { ...command, folder: given.folder, text, images, model, when, sessions: [], paused: [], state: 'waiting' };
       writeJson(commandAt(id), command);
       return { state: 'waiting', error: null, session: null };
     }
     const session = randomUUID();
-    begun(session, given.folder, text, images);
-    command = { ...command, folder: given.folder, session, text, images, state: 'done' };
+    begun(session, given.folder, text, images, model);
+    command = { ...command, folder: given.folder, session, text, images, model, state: 'done' };
   } else if (kind === 'cancel' && given.round === undefined) {
     const waiting = /^\d{1,18}$/.test(text ?? '') ? readJson(commandAt(Number(text))) : null;
     const said = waiting?.kind === 'say' && (waiting.state === 'sent' || waiting.state === 'done');
@@ -1334,7 +1343,7 @@ const ordered = async (given) => {
     const session = sessionGiven(given.session);
     const folder = folderOf(session, live);
     if (kind === 'rename') titleGiven(text);
-    if (kind === 'model' && !modelsOf().some(({ value }) => value === text)) throw new Refusal(400, 'invalid_model');
+    if (kind === 'model' && modelGiven(text || null) === null) throw new Refusal(400, 'invalid_model');
     if (!text) throw new Refusal(400, 'invalid_text');
     command = { ...command, folder, session, text, images: kind === 'say' ? imagesGiven(given.images) : [] };
     if (kind === 'say') undone(session);
@@ -1754,8 +1763,14 @@ createServer(async (request, response) => {
     }
     if (FILES.test(path)) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
-      const found = await filesAnswered(request, path, address, bodyOf, projectFolders, response);
+      const found = address.searchParams.has('host')
+        ? await hostFilesAnswered(request, path, address, bodyOf, response)
+        : await filesAnswered(request, path, address, bodyOf, projectFolders, response);
       return found === null ? undefined : answer(200, found);
+    }
+    if (HOSTS.test(path)) {
+      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
+      return answer(200, await hostsAnswered(request, path, bodyOf));
     }
     if (MEMORY.test(path)) {
       if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });

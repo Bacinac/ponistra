@@ -125,6 +125,7 @@ interface Model {
   value: string;
   name: string;
   resolved: string;
+  standard?: boolean;
 }
 
 /** What a chat last said through its hooks: that it answered, or that it waits on its owner. */
@@ -1150,17 +1151,22 @@ function NewChat({
   folder,
   name,
   round,
+  models,
   onStarted,
   onClose,
 }: {
   folder: string;
   name: string;
   round: boolean;
+  models: Model[];
   onStarted: (session: string) => void;
   onClose: () => void;
 }) {
   const { t } = useI18n();
   const [said, setSaid] = useState('');
+  const standard = models.find((model) => model.standard);
+  const [model, setModel] = useState<string | null>(null);
+  const chosen = models.find((each) => each.value === model) ?? standard;
   const typed = useRef<HTMLTextAreaElement>(null);
   useEffect(() => typed.current?.focus(), []);
   const pictures = usePictures();
@@ -1177,6 +1183,7 @@ function NewChat({
         folder,
         text: round ? (text ? `nastavi: ${text}` : 'nastavi') : text,
         ...(pictures.items.length && { images: pictures.given() }),
+        ...(chosen && chosen.value !== standard?.value && { model: chosen.value }),
         ...(when && { when }),
       },
       {
@@ -1237,6 +1244,15 @@ function NewChat({
             onText={(text) => setSaid((now) => (now.trim() ? `${now.trimEnd()} ${text}` : text))}
           />
           <PictureButton pictures={pictures} />
+          {standard && (
+            <ModelMenu
+              models={models}
+              value={chosen?.value ?? ''}
+              name={chosen?.name ?? null}
+              disabled={started.isPending}
+              onChange={setModel}
+            />
+          )}
           <button type="button" onClick={onClose} className={`${button} ml-auto`}>
             {t('tree.cancel')}
           </button>
@@ -2190,17 +2206,42 @@ function Conversation({
 
 /** The model the chat runs on, which a click changes for its next answer. */
 function ModelChoice({ chat, models }: { chat: Known; models: Model[] }) {
-  const { t } = useI18n();
   const command = useCommand();
   const current = models.find((model) => model.resolved === chat.model);
   const name = current?.name ?? chat.model;
   if (!name && !models.length) return null;
   return (
+    <ModelMenu
+      models={models}
+      value={current?.value ?? ''}
+      name={name}
+      disabled={command.isPending}
+      onChange={(value) => command.mutate({ kind: 'model', session: chat.id, text: value })}
+    />
+  );
+}
+
+/** The models a chat may run on, behind the name of the one it runs or starts on. */
+function ModelMenu({
+  models,
+  value,
+  name,
+  disabled,
+  onChange,
+}: {
+  models: Model[];
+  value: string;
+  name: string | null;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useI18n();
+  return (
     <Menu
       trigger={
         <button
           type="button"
-          disabled={!models.length || command.isPending}
+          disabled={!models.length || disabled}
           aria-label={`${t('workspace.model')}: ${name ?? '–'}`}
           className={small}
         >
@@ -2210,9 +2251,9 @@ function ModelChoice({ chat, models }: { chat: Known; models: Model[] }) {
       }
     >
       <MenuChoices
-        value={current?.value ?? ''}
+        value={value}
         choices={models.map((model) => ({ value: model.value, label: model.name }))}
-        onChange={(value) => command.mutate({ kind: 'model', session: chat.id, text: value })}
+        onChange={onChange}
       />
     </Menu>
   );
@@ -2703,6 +2744,7 @@ function Pult({
           folder={begun.folder}
           name={begun.name}
           round={begun.round}
+          models={models}
           onStarted={(session) => {
             setStarting(null);
             choose(session);

@@ -196,6 +196,8 @@ urlpatterns = [
     path("api/workspace/files", workspace.files),
     path("api/workspace/file", workspace.file),
     path("api/workspace/file/raw", workspace.file_raw),
+    path("api/workspace/hosts", workspace.hosts),
+    path("api/workspace/hosts/key", workspace.hosts_key),
     path("api/workspace/changed", workspace.changed),
     path("api/workspace/agent", workspace.agent),
     path("api/workspace/worked", workspace.worked),

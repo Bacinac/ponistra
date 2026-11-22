@@ -249,6 +249,14 @@ def test_the_owner_reads_a_chat_on_from_a_place_in_its_transcript(owner, workspa
             {"folder": "/work/alpha", "text": "nastavi"},
         ),
         (
+            {"kind": "chat", "folder": "/work/alpha", "text": "nastavi", "model": "fable"},
+            {"folder": "/work/alpha", "text": "nastavi", "model": "fable"},
+        ),
+        (
+            {"kind": "chat", "folder": "/work/alpha", "text": "pregledaj", "model": None},
+            {"folder": "/work/alpha", "text": "pregledaj"},
+        ),
+        (
             {
                 "kind": "chat",
                 "folder": "/work/alpha",
@@ -363,6 +371,11 @@ def test_a_message_carries_no_file_but_an_image_of_its_own(owner, workspace):
         ({"kind": "move", "session": SESSION}, "invalid_round"),
         ({"kind": "move", "round": ROUND}, "invalid_session"),
         ({"kind": "chat", "folder": "work", "text": "nastavi"}, "invalid_folder"),
+        (
+            {"kind": "chat", "folder": "/work/alpha", "text": "x", "model": "Opus 5.5"},
+            "invalid_model",
+        ),
+        ({"kind": "chat", "folder": "/work/alpha", "text": "x", "model": 5}, "invalid_model"),
         ({"kind": "say", "session": SESSION, "text": "x", "images": "a"}, "invalid_images"),
         ({"kind": "say", "session": SESSION, "text": "x", "images": ["0" * 64]}, "invalid_images"),
         ({"kind": "say", "session": SESSION, "text": "x", "images": ["x"]}, "invalid_images"),
@@ -741,3 +754,139 @@ def test_the_owner_downloads_a_file_as_the_workspace_sends_it(owner, settings, m
     assert async_to_sync(collected)(response) == sent
     assert response["Content-Disposition"] == 'attachment; filename="app.py"'
     assert response["Content-Length"] == str(len(sent))
+
+
+ON_HOST = {"host": "mlaka", "path": "srv/app.conf"}
+HOSTS = {
+    "hosts": [
+        {
+            "name": "mlaka",
+            "address": "192.0.2.11",
+            "port": 22,
+            "user": "root",
+            "path": "/srv",
+            "key": "ponistra_ed25519",
+        }
+    ],
+    "keys": [{"name": "ponistra_ed25519", "type": "ssh-ed25519", "comment": "", "public": "k"}],
+    "made": "ponistra_ed25519",
+}
+HOST = dict(HOSTS["hosts"][0])
+
+
+def test_a_hosts_folder_is_asked_by_its_name_beside_the_path(owner, workspace):
+    workspace.answer = (200, {"path": "srv", "entries": []})
+    response = owner.get("/api/workspace/files", {"host": "mlaka", "path": "srv"})
+    assert response.json() == {"path": "srv", "entries": []}
+    [asked] = workspace.asked
+    assert dict(asked.url.params) == {"host": "mlaka", "path": "srv"}
+
+
+def test_a_hosts_file_is_written_with_the_host_beside_the_path(owner, workspace):
+    workspace.answer = (200, {"hash": "b" * 64})
+    given = {**ON_HOST, "text": "x\n", "hash": HASHED}
+    assert owner.post("/api/workspace/file", given, JSON).json() == {"hash": "b" * 64}
+    [written] = workspace.asked
+    assert (written.method, written.url.path) == ("POST", "/ponistra/files/write")
+    assert dict(written.url.params) == {"host": "mlaka"}
+    assert json.loads(written.content) == {"path": "srv/app.conf", "text": "x\n", "hash": HASHED}
+
+
+@pytest.mark.parametrize(
+    "error", ["ssh_key_refused", "host_unreachable", "host_unknown", "host_key_changed"]
+)
+def test_a_host_that_cannot_be_reached_says_why(owner, workspace, error):
+    workspace.answer = (409, {"error": error})
+    response = owner.get("/api/workspace/files", {"host": "mlaka", "path": ""})
+    assert (response.status_code, response.json()) == (409, {"error": error})
+
+
+@pytest.mark.parametrize("host", ["", "-oProxyCommand=x", "a b", "a" * 64])
+def test_a_host_is_asked_only_by_a_name_its_config_can_hold(owner, workspace, host):
+    response = owner.get("/api/workspace/files", {"host": host, "path": ""})
+    assert (response.status_code, response.json()) == (400, {"error": "invalid_host"})
+    assert workspace.asked == []
+
+
+def test_the_owner_reads_the_hosts_and_the_keys(owner, workspace):
+    workspace.answer = (200, HOSTS)
+    assert owner.get("/api/workspace/hosts").json() == HOSTS
+    [asked] = workspace.asked
+    assert (asked.method, asked.url.path) == ("GET", "/ponistra/hosts")
+
+
+def test_a_host_is_saved_in_the_place_of_the_one_it_was(owner, workspace):
+    workspace.answer = (200, HOSTS)
+    given = {**HOST, "was": "old"}
+    assert owner.post("/api/workspace/hosts", given, JSON).json() == HOSTS
+    [asked] = workspace.asked
+    assert (asked.method, asked.url.path) == ("POST", "/ponistra/hosts")
+    assert json.loads(asked.content) == given
+
+
+@pytest.mark.parametrize(
+    "given, error",
+    [
+        ({**HOST, "name": "-x"}, "invalid_host"),
+        ({**HOST, "was": "a b"}, "invalid_host"),
+        ({**HOST, "address": "-oProxyCommand=x"}, "invalid_host_address"),
+        ({**HOST, "address": "a b"}, "invalid_host_address"),
+        ({**HOST, "port": 0}, "invalid_host_port"),
+        ({**HOST, "port": True}, "invalid_host_port"),
+        ({**HOST, "port": "22"}, "invalid_host_port"),
+        ({**HOST, "user": "root\nHost *"}, "invalid_host_user"),
+        ({**HOST, "path": "/srv\nProxyCommand x"}, "invalid_path"),
+        ({**HOST, "key": "../id"}, "invalid_host_key"),
+    ],
+)
+def test_a_host_holds_only_what_its_entry_can_say(owner, workspace, given, error):
+    response = owner.post("/api/workspace/hosts", given, JSON)
+    assert (response.status_code, response.json()) == (400, {"error": error})
+    assert workspace.asked == []
+
+
+def test_a_host_is_removed_by_its_name(owner, workspace):
+    workspace.answer = (200, {**HOSTS, "hosts": []})
+    response = owner.delete("/api/workspace/hosts?name=mlaka")
+    assert response.json()["hosts"] == []
+    [asked] = workspace.asked
+    assert (asked.url.path, json.loads(asked.content)) == (
+        "/ponistra/hosts/remove",
+        {"name": "mlaka"},
+    )
+
+
+def test_the_workspace_makes_its_own_key(owner, workspace):
+    workspace.answer = (200, HOSTS)
+    assert owner.post("/api/workspace/hosts/key", {}, JSON).json() == HOSTS
+    workspace.answer = (409, {"error": "key_exists"})
+    response = owner.post("/api/workspace/hosts/key", {}, JSON)
+    assert (response.status_code, response.json()) == (409, {"error": "key_exists"})
+
+
+@pytest.mark.parametrize(
+    "method, path",
+    [
+        ("post", "/api/workspace/hosts"),
+        ("delete", "/api/workspace/hosts?name=mlaka"),
+        ("post", "/api/workspace/hosts/key"),
+    ],
+)
+def test_hosts_change_only_for_an_owner_who_confirmed_within_a_working_day(
+    owner, workspace, method, path
+):
+    session = owner.session
+    session[CONFIRMED] = (timezone.now() - CONFIRMED_FOR).isoformat()
+    session.save()
+    response = getattr(owner, method)(path, HOST, JSON)
+    assert (response.status_code, response.json()) == (403, {"error": "confirm_required"})
+    assert workspace.asked == []
+
+
+def test_nobody_but_the_owner_reaches_the_hosts(api, settings, workspace):
+    settings.WORKSPACE = "owner@example.com"
+    assert api.get("/api/workspace/hosts").status_code == 403
+    assert api.post("/api/workspace/hosts", HOST, JSON).status_code == 403
+    assert api.post("/api/workspace/hosts/key", {}, JSON).status_code == 403
+    assert api.get("/api/workspace/files", {"host": "mlaka"}).status_code == 403
+    assert workspace.asked == []

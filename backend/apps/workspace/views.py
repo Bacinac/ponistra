@@ -2,7 +2,8 @@
 Vite ask before every request and WebSocket that reaches it. One elsewhere has a door of its own.
 The workspace lists its projects, chats and rounds of chats when asked, shows a chat's transcript,
 carries out what the owner asks of it from the page of code (each a `Command` it reports on as it
-goes, D52), shows and writes the files of its projects (PJ6), and says when what it lists changed,
+goes, D52), shows and writes the files of its projects (PJ6) and of the hosts it reaches over SSH
+(PJ12), and says when what it lists changed,
 which reaches the owner's tabs as the area `workspace`. Each project it lists is matched here with
 the board of its plan, `Plan <name>`."""
 
@@ -50,6 +51,13 @@ AREA = "workspace"
 PASSED = {404, 409}
 FILES_PASSED = {400, 403, 404, 409, 413}
 FILE_PATH = 4096
+# A host of the workspace's own ssh config, and what its entry holds.
+HOST = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,62}")
+ADDRESS = re.compile(r"(?!-)[A-Za-z0-9._:-]{1,253}")
+HOST_USER = re.compile(r"[A-Za-z0-9._][A-Za-z0-9._-]{0,63}")
+KEY_NAME = re.compile(r"[A-Za-z0-9._-]{1,100}")
+# A host's files come over ssh, which connects first and asks a request or more of the host.
+HOST_WITHIN = 45
 ROUND = re.compile(r"[A-Za-z0-9._-]{1,100}")
 SESSION = re.compile(r"[0-9a-f-]{36}")
 PLACE = re.compile(r"\d{1,15}")
@@ -166,10 +174,11 @@ async def _asked(
     payload: dict | None = None,
     params: dict | None = None,
     passed: set[int] = PASSED,
+    within: float = ASKED_WITHIN,
 ) -> dict:
     url, headers = _address(path)
     try:
-        async with httpx2.AsyncClient(timeout=ASKED_WITHIN, trust_env=False) as client:
+        async with httpx2.AsyncClient(timeout=within, trust_env=False) as client:
             answer = await client.request(method, url, headers=headers, json=payload, params=params)
     except httpx2.HTTPError as error:
         logger.warning("the code workspace did not answer %s %s: %s", method, path, error)
@@ -280,34 +289,48 @@ async def chat(request, session):
 
 
 def _placed(given) -> dict:
-    """A path within one of the workspace's projects, as the workspace checks it again."""
-    folder, path = given.get("folder"), given.get("path", "")
-    if not isinstance(folder, str) or not folder.startswith("/") or len(folder) > FILE_PATH:
-        raise Refused(400, "invalid_folder")
+    """A path within one of the workspace's projects, or from the folder a host of its own opens
+    at (`host`), as the workspace checks it again."""
+    folder, host, path = given.get("folder"), given.get("host"), given.get("path", "")
     if not isinstance(path, str) or len(path) > FILE_PATH or "\0" in path:
         raise Refused(400, "invalid_path")
+    if host is not None:
+        if not isinstance(host, str) or not HOST.fullmatch(host):
+            raise Refused(400, "invalid_host")
+        return {"host": host, "path": path}
+    if not isinstance(folder, str) or not folder.startswith("/") or len(folder) > FILE_PATH:
+        raise Refused(400, "invalid_folder")
     return {"folder": folder, "path": path}
+
+
+def _within(placed: dict) -> float:
+    return HOST_WITHIN if "host" in placed else ASKED_WITHIN
 
 
 @api("GET")
 async def files(request):
-    """A folder's entries within a project of the workspace, folders first."""
+    """A folder's entries within a project of the workspace or on a host, folders first."""
     if not owns(request.user):
         return JsonResponse({"error": "not_the_owner"}, status=403)
+    placed = _placed(request.GET)
     return JsonResponse(
-        await _asked("GET", "files", params=_placed(request.GET), passed=FILES_PASSED)
+        await _asked("GET", "files", params=placed, passed=FILES_PASSED, within=_within(placed))
     )
 
 
 @api("GET", "POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
 async def file(request):
-    """A file of a project with its text and its hash where it is text small enough to edit, or
-    its text written anew while the file is still what that hash says (PJ6)."""
+    """A file of a project or a host with its text and its hash where it is text small enough to
+    edit, or its text written anew while the file is still what that hash says (PJ6, PJ12)."""
     if not owns(request.user):
         return JsonResponse({"error": "not_the_owner"}, status=403)
     if request.method == "GET":
         placed = _placed(request.GET)
-        return JsonResponse(await _asked("GET", "files/read", params=placed, passed=FILES_PASSED))
+        return JsonResponse(
+            await _asked(
+                "GET", "files/read", params=placed, passed=FILES_PASSED, within=_within(placed)
+            )
+        )
     given = body(request)
     placed = _placed(given)
     text, hash = given.get("text"), given.get("hash")
@@ -315,18 +338,29 @@ async def file(request):
         raise Refused(400, "invalid_text")
     if not isinstance(hash, str) or not HASH.fullmatch(hash):
         raise Refused(400, "invalid_hash")
+    # The workspace finds a host where it finds it for every other request, beside the path.
+    host = {"host": placed.pop("host")} if "host" in placed else None
     payload = {**placed, "text": text, "hash": hash}
-    return JsonResponse(await _asked("POST", "files/write", payload, passed=FILES_PASSED))
+    return JsonResponse(
+        await _asked(
+            "POST",
+            "files/write",
+            payload,
+            params=host,
+            passed=FILES_PASSED,
+            within=HOST_WITHIN if host else ASKED_WITHIN,
+        )
+    )
 
 
 @api("GET")
 async def file_raw(request):
-    """A file of a project as it is, downloaded."""
+    """A file of a project or a host as it is, downloaded."""
     if not owns(request.user):
         return JsonResponse({"error": "not_the_owner"}, status=403)
     placed = _placed(request.GET)
     url, headers = _address("files/raw")
-    client = httpx2.AsyncClient(timeout=httpx2.Timeout(ASKED_WITHIN, read=None), trust_env=False)
+    client = httpx2.AsyncClient(timeout=httpx2.Timeout(_within(placed), read=None), trust_env=False)
     try:
         answer = await client.send(
             client.build_request("GET", url, headers=headers, params=placed), stream=True
@@ -364,6 +398,56 @@ async def file_raw(request):
             **sized,
         },
     )
+
+
+def _host_of(given) -> dict:
+    """A host's entry as the owner set it, each field checked before it reaches the workspace."""
+    name, address, port = given.get("name"), given.get("address"), given.get("port")
+    user, key, was = given.get("user"), given.get("key"), given.get("was")
+    path = given.get("path", "")
+    if not isinstance(name, str) or not HOST.fullmatch(name):
+        raise Refused(400, "invalid_host")
+    if was is not None and (not isinstance(was, str) or not HOST.fullmatch(was)):
+        raise Refused(400, "invalid_host")
+    if not isinstance(address, str) or not ADDRESS.fullmatch(address):
+        raise Refused(400, "invalid_host_address")
+    if not isinstance(port, int) or isinstance(port, bool) or not 1 <= port <= 65535:
+        raise Refused(400, "invalid_host_port")
+    if not isinstance(user, str) or not HOST_USER.fullmatch(user):
+        raise Refused(400, "invalid_host_user")
+    if not isinstance(path, str) or len(path) > FILE_PATH or re.search(r"[\0\r\n]", path):
+        raise Refused(400, "invalid_path")
+    if not isinstance(key, str) or not KEY_NAME.fullmatch(key):
+        raise Refused(400, "invalid_host_key")
+    host = {"name": name, "address": address, "port": port, "user": user, "path": path, "key": key}
+    return host if was is None else {**host, "was": was}
+
+
+@api("GET", "POST", "DELETE", confirmed=("POST", "DELETE"), confirmed_for=CONFIRMED_FOR)
+async def hosts(request):
+    """The hosts whose files the workspace reaches over SSH, entries of its own ssh config, with
+    the keys it signs in with (PJ12); a host saved, in the place of the one it was (`was`), or one
+    removed."""
+    if not owns(request.user):
+        return JsonResponse({"error": "not_the_owner"}, status=403)
+    if request.method == "GET":
+        return JsonResponse(await _asked("GET", "hosts", passed=FILES_PASSED))
+    if request.method == "DELETE":
+        name = request.GET.get("name")
+        if not isinstance(name, str) or not HOST.fullmatch(name):
+            raise Refused(400, "invalid_host")
+        return JsonResponse(
+            await _asked("POST", "hosts/remove", {"name": name}, passed=FILES_PASSED)
+        )
+    return JsonResponse(await _asked("POST", "hosts", _host_of(body(request)), passed=FILES_PASSED))
+
+
+@api("POST", confirmed=("POST",), confirmed_for=CONFIRMED_FOR)
+async def hosts_key(request):
+    """The workspace's own ed25519 key made, whose public half the owner gives each host."""
+    if not owns(request.user):
+        return JsonResponse({"error": "not_the_owner"}, status=403)
+    return JsonResponse(await _asked("POST", "hosts/key", passed=FILES_PASSED))
 
 
 def shown(command: Command) -> dict:
@@ -474,14 +558,14 @@ def _when(given, repeats: bool) -> dict:
     return when
 
 
-def _asked_of(user, given: dict) -> tuple[dict, list[dict]]:
-    """The fields of a command of its kind, each checked before it reaches the workspace, and the
-    images that go with it."""
+def _asked_of(user, given: dict) -> tuple[dict, dict]:
+    """The fields of a command of its kind, each checked before it reaches the workspace, and what
+    only goes with it there: the images, and the model a new chat starts on."""
     kind = given.get("kind")
     if kind not in Kind.values:
         raise Refused(400, "invalid_command")
     fields: dict = {"kind": kind}
-    pictures: list[dict] = []
+    carried: dict = {}
     # A round consolidated and closed leaves its coordinator, told to push by its session.
     after = kind == Kind.PUSH and "round" not in given
     if kind in BY_ROUND and kind != Kind.CANCEL and not after:
@@ -505,6 +589,8 @@ def _asked_of(user, given: dict) -> tuple[dict, list[dict]]:
         if not isinstance(folder, str) or not folder.startswith("/") or len(folder) > 500:
             raise Refused(400, "invalid_folder")
         fields.update(folder=folder, text=_text(given))
+        if given.get("model") is not None:
+            carried["model"] = _model(given["model"])
     elif kind == Kind.SAY:
         fields["text"] = _text(given)
     elif kind == Kind.ANSWER:
@@ -515,16 +601,21 @@ def _asked_of(user, given: dict) -> tuple[dict, list[dict]]:
             raise Refused(400, "invalid_text")
         fields["text"] = title
     elif kind == Kind.MODEL:
-        model = _text(given)
-        if not MODEL.fullmatch(model):
-            raise Refused(400, "invalid_model")
-        fields["text"] = model
+        fields["text"] = _model(_text(given))
     elif kind == Kind.AUTO:
         fields["text"] = _text(given, SWITCHES)
     if kind in (Kind.CHAT, Kind.SAY):
         pictures = _pictures(user, given)
         fields["images"] = len(pictures)
-    return fields, pictures
+        if pictures:
+            carried["images"] = pictures
+    return fields, carried
+
+
+def _model(model) -> str:
+    if not isinstance(model, str) or not MODEL.fullmatch(model):
+        raise Refused(400, "invalid_model")
+    return model
 
 
 def _round_of(given: dict) -> str:
@@ -557,14 +648,13 @@ def _begun(pk: int, session) -> None:
         Command.objects.filter(pk=pk, kind=Kind.CHAT).update(session=session)
 
 
-async def sent(command: Command, pictures: list[dict] | None = None) -> Command:
+async def sent(command: Command, carried: dict | None = None) -> Command:
     """Hands the command to the workspace, which takes it at once or says why not."""
     payload = {"id": command.pk, "kind": command.kind, "auto": command.auto}
     for name in ("folder", "round", "session", "text", "when"):
         if value := getattr(command, name):
             payload[name] = value
-    if pictures:
-        payload["images"] = pictures
+    payload.update(carried or {})
     try:
         answer = await _asked("POST", "commands", payload)
     except Refused as refused:
@@ -590,12 +680,12 @@ async def commands(request):
         return JsonResponse({"error": "not_the_owner"}, status=403)
     if request.method == "GET":
         return JsonResponse({"commands": await database(_recent)()})
-    fields, pictures = await database(_asked_of)(request.user, body(request))
+    fields, carried = await database(_asked_of)(request.user, body(request))
     if fields["kind"] in CONFIRMED and not fresh(
         await request.session.aget(CONFIRMED_AT), CONFIRMED_FOR
     ):
         return JsonResponse({"error": "confirm_required"}, status=403)
-    command = await sent(await database(Command.objects.create)(**fields), pictures)
+    command = await sent(await database(Command.objects.create)(**fields), carried)
     await database(_withdrawn)(command)
     return JsonResponse(shown(command))
 

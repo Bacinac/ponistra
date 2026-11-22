@@ -20,7 +20,8 @@ The chats run Claude Code in the workspace, which signs in once, with a Claude s
 2. Find the project. {t:workspace.general} is the workspace as a whole, for chats that belong to no single project.
 3. Press the {t:workspace.newChat} icon right of the project's name (its name shows when the mouse rests on it).
 4. The form opens in the chat's place (on a phone in place of the list), the cursor already in its field. In the field {t:workspace.newChatText} type the first message, or press {t:speech.dictate} and say it. Images are added as in a message on the page.
-5. Press {t:workspace.startChat} or Enter, as in a message on the page; until the workspace answers, the button spins and another press sends nothing. The chat starts in the workspace and shows in the form's place; the editor does not open. To start it later, press {t:workspace.startWhen} (the section Starting on a condition).
+5. Below the field stands the {t:workspace.model} the chat will start on, the one it would get anyway. To start it on another, press it and choose one; the chat answers on it from its first message, and a model chosen with {t:workspace.startWhen} waits with the command until it starts.
+6. Press {t:workspace.startChat} or Enter, as in a message on the page; until the workspace answers, the button spins and another press sends nothing. The chat starts in the workspace and shows in the form's place; the editor does not open. To start it later, press {t:workspace.startWhen} (the section Starting on a condition).
 
 ### Back to a chat
 
@@ -64,7 +65,7 @@ The same {t:workspace.yes} and {t:workspace.no}, or the same questions, also sta
 ### A new round
 
 1. On the {t:rail.projects} page press the {t:workspace.newRound} icon right of the project's name.
-2. The form opens in the chat's place. In the field {t:workspace.newRoundText} type what the round should do, or press {t:speech.dictate} below the field and say it. The field may stay empty: the coordinator then takes the next steps from the project's plan.
+2. The form opens in the chat's place. In the field {t:workspace.newRoundText} type what the round should do, or press {t:speech.dictate} below the field and say it. The field may stay empty: the coordinator then takes the next steps from the project's plan. The coordinator's {t:workspace.model} is chosen below the field, as in a new chat.
 3. Press {t:workspace.openRound} or Enter. The workspace starts a coordinator with the message “nastavi: …” and shows it in the form's place; the editor does not open.
 4. The coordinator divides the work into chats. The round appears on the page, and beside each chat not yet sent stands its task: press the chat to read it.
 
@@ -134,6 +135,19 @@ A file that is not text or is larger than 1 MB does not open in the editor: besi
 
 If you changed a file and then choose another, close the files or open them for another project, Ponistra asks {t:workspace.files.discard} with the note {t:workspace.files.discardBody} {t:workspace.files.discardConfirm} drops the changes, and cancelling keeps you in the file.
 
+### Files on hosts
+
+The same view of files opens folders on other machines the workspace reaches over SSH.
+
+1. In the files, press the project's name at the left above the tree. The menu offers the project, every host set up and {t:workspace.hosts.title}.
+2. Press {t:workspace.hosts.title}. Two sections stand in the tree's place: {t:workspace.hosts.title} and {t:workspace.hosts.keys}; with no host it says {t:workspace.hosts.none}
+3. If the workspace has no key yet, press {t:workspace.hosts.makeKey} in the {t:workspace.hosts.keys} section. The workspace makes an ed25519 key and the section shows its public half. {t:workspace.hosts.copy} copies it; add it to `~/.ssh/authorized_keys` of the user on the host.
+4. Press {t:workspace.hosts.add}. In the dialog enter the {t:workspace.hosts.name} (the name the host goes by in the menu, in the terminal and for agents), the {t:workspace.hosts.address}, the {t:workspace.hosts.port}, the {t:workspace.hosts.user}, a {t:workspace.hosts.path} if you like, and choose the {t:workspace.hosts.key}; with no key the dialog offers {t:workspace.hosts.makeKey}. Press {t:workspace.hosts.add}.
+5. Press the host in the list, or {t:workspace.hosts.open} in its row's menu. The tree shows the host's starting folder, and its files are read, downloaded and edited as in a project.
+6. Another host, or the project again, is chosen from the same menu above the tree.
+
+{t:workspace.hosts.edit} in the row's menu opens the same dialog with the values filled in. {t:workspace.hosts.remove} asks {t:workspace.hosts.removeTitle} with the note {t:workspace.hosts.removeBody} The files on the host stay untouched. Setting up or removing a host and making the key ask you to confirm who you are, as saving a file does.
+
 ### Time worked
 
 1. On the {t:rail.projects} page press {t:workspace.view.hours}, far right in the row with {t:workspace.view.chat} (on a phone in the {t:workspace.view.more} menu).
@@ -190,6 +204,8 @@ The terminal is the workspace owner's bash shell, the same as in the editor's te
 
 The workspace itself reads and writes the files; Ponistra only carries them and stores nothing. Every path holds only within the project's folder: a symbolic link leading out stands grey in the tree and is described {t:workspace.files.outside} A link leading nowhere is described {t:workspace.files.broken} Neither opens, nor does an item that is neither a file nor a folder ({t:workspace.files.other}). The `.git` folder at the project's root is not shown. Saving writes the whole file at once, with the same permissions, and only while the disk still holds what the editor loaded: a chat or another session may write to the same tree. If the file changed meanwhile, it says {t:workspace.files.changed} {t:workspace.files.reload} loads what is on the disk now and drops your changes, and {t:workspace.files.overwrite} writes yours over it. While a change is unsaved and the file changes on the disk, the editor keeps your text; otherwise it shows the new content when the page reads it again.
 
+A host is an entry of the workspace's `~/.ssh/config`, and the key a file in `~/.ssh` beside it: the workspace's terminal and agents reach the same host by the same name, and entries of your own in that file stay as they are. The page lists only the entries it set up itself, each with `IdentitiesOnly`, taking the host's key on the first connection; after that the workspace refuses a host whose key changed. The workspace reads and writes the host's files over SFTP, through OpenSSH, so what the other entries say holds too, a jump through another host for one. The starting folder is where the files open, not a fence: the page shows what the user on the host may reach, and an empty starting folder is that user's home. Saving on a host too writes only while the host still holds what the editor loaded. Where it can, it writes a copy beside the file and puts it in the file's place at once, with the same owner, group and permissions; where the user on the host may not write to the folder or give the file its owner, it writes over the file itself, which so keeps its owner. The connection to a host stays open for two minutes after the last request. Nothing on a host is deleted, renamed or uploaded.
+
 The workspace measures the time worked by itself from the chats' transcripts it already reads: every chat's, those in the editor too, each moment a chat wrote down, a message, an answer or a tool. The moments of one project, from all its chats, make a block of work until more than 15 minutes pass between two; a block lasts at least 2 minutes and counts on the day it began, by Croatian time. Projects worked on at once each count in full, so a day's {t:workspace.hours.total} may pass 24 hours; {t:workspace.hours.wall} is the time any project was worked on, without overlap. The project is the folder in the workspace's root the chat began in, also when it began in a subfolder of it; a chat in the root itself counts under {t:workspace.general}. Every minute the workspace reads what is new in the transcripts and tells Ponistra, which keeps the time in its database with a mark of how far each transcript was read; what was once kept stays when a chat's transcript is deleted, and reading the same transcript again counts nothing twice. The page refreshes by itself when new time arrives.
 
 The workspace checks the condition every minute and on every change it reports to the page. Time is Croatian time, so a repeating chat starts at the same hour after the clocks change too. After each start a repeating chat waits for the next time, and every start is a new chat; any other condition starts once. The weekly reset, the five-hour threshold and a red nightly run count only from the moment you set the condition, so a state from before does not meet it. With {t:workspace.when.pause} set, the workspace stops the chats the condition started as soon as the weekly limit reaches that percent, and {t:workspace.paused} shows below the round; once the weekly window is below it again, each stopped chat is told to finish its work. The command of a repeating chat stands at the foot of its latest chat as {t:workspace.progress.waiting}.
@@ -216,6 +232,21 @@ The page exists only for the owner of the code workspace.
 - {t:error.not_found} The file or folder was deleted or renamed meanwhile.
 - {t:error.not_permitted} The user the workspace runs as may not read or write that file or folder.
 - {t:error.too_large} The text grew past 1 MB, so it is not saved from the editor.
+- {t:error.unknown_host} The host was removed or renamed meanwhile. Choose it again from the menu above the tree.
+- {t:error.ssh_key_refused} The public key chosen for the host is not in the `authorized_keys` of the user on the host, or the user is wrong.
+- {t:error.ssh_key_unreadable} The key's file in the workspace's `~/.ssh` is damaged or its permissions are too wide.
+- {t:error.host_unreachable} The host does not answer at the address and port, or the connection broke during a request.
+- {t:error.host_unknown} The name in the address resolves to no IP address.
+- {t:error.host_key_changed} The host presents another key than at the first connection; if that is expected (a host installed anew), remove the old key from the workspace's `~/.ssh/known_hosts` in the terminal.
+- {t:error.host_key_unknown} An entry of your own for the host in the SSH settings asks for a known host key, and the workspace has none.
+- {t:error.ssh_config_invalid} SSH does not accept the workspace's `~/.ssh/config`; correct the file in the terminal or the editor.
+- {t:error.sftp_missing} The host has no SFTP server turned on.
+- {t:error.sftp_garbled} The shell of the user on the host prints text even when not interactive, so SFTP cannot work.
+- {t:error.host_failed} The host refused the action for no reason SFTP names; the message is in the workspace's log.
+- {t:error.host_closed} The host was removed or changed while the request waited.
+- {t:error.host_exists} The workspace's `~/.ssh/config` already holds an entry of that name.
+- {t:error.key_exists} The workspace's key already exists; no new one is made over it.
+- {t:error.invalid_host} {t:error.invalid_host_address} {t:error.invalid_host_port} {t:error.invalid_host_user} {t:error.invalid_host_key} A host's entry takes only what the SSH settings can write.
 - {t:error.asked} The coordinator was already sent a word it has not taken yet.
 - {t:error.not_waiting} The chat got its answer meanwhile.
 - {t:error.chat_working} The chat started working or asking between the press and the handover, so it was not opened in the editor.

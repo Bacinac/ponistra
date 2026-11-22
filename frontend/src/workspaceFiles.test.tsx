@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { EditorView } from '@codemirror/view';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { I18nProvider } from './i18n';
@@ -49,8 +49,31 @@ const FILES: Record<string, unknown> = {
   },
 };
 
+const HOSTS = {
+  hosts: [
+    {
+      name: 'mlaka',
+      address: '192.0.2.11',
+      port: 22,
+      user: 'root',
+      path: '/srv',
+      key: 'ponistra_ed25519',
+    },
+  ],
+  keys: [
+    {
+      name: 'ponistra_ed25519',
+      type: 'ssh-ed25519',
+      comment: 'ponistra@example.org',
+      public: 'ssh-ed25519 AAAAC3Nza ponistra@example.org',
+    },
+  ],
+  made: 'ponistra_ed25519',
+};
+
 const sent: { method: string; url: string; body: Record<string, unknown> | null }[] = [];
 let written: () => Response;
+let onHost: () => Response;
 
 beforeEach(() => {
   sent.length = 0;
@@ -61,17 +84,39 @@ beforeEach(() => {
     removeEventListener: () => {},
   }));
   written = () => Response.json({ path: 'backend/app.py', size: 6, modified: '', hash: NEWER });
+  onHost = () =>
+    Response.json({
+      path: '',
+      entries: [{ name: 'app.conf', kind: 'file', size: 6, modified: '2026-11-22T00:00:00Z' }],
+    });
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string, init?: RequestInit) => {
       const method = init?.method ?? 'GET';
       const body = init?.body ? JSON.parse(String(init.body)) : null;
       sent.push({ method, url, body });
-      const asked = new URL(url, 'http://ponistra').searchParams.get('path') ?? '';
+      const params = new URL(url, 'http://ponistra').searchParams;
+      const asked = params.get('path') ?? '';
+      if (url.startsWith('/api/workspace/hosts'))
+        return Promise.resolve(
+          Response.json(
+            method === 'POST' && body?.name
+              ? { ...HOSTS, hosts: [...HOSTS.hosts, { ...body, was: undefined }] }
+              : HOSTS,
+          ),
+        );
       if (method === 'POST') return Promise.resolve(written());
+      if (url.startsWith('/api/workspace/files?') && params.has('host'))
+        return Promise.resolve(onHost());
       if (url.startsWith('/api/workspace/files?'))
         return Promise.resolve(Response.json(LISTS[asked]));
-      return Promise.resolve(Response.json(FILES[asked]));
+      return Promise.resolve(
+        Response.json(
+          params.has('host')
+            ? { path: asked, size: 6, modified: '', kind: 'text', text: 'x = 1\n', hash: HASH }
+            : FILES[asked],
+        ),
+      );
     }),
   );
 });
@@ -153,4 +198,64 @@ test('a file changed on the disk meanwhile is not written over unless the owner 
   await waitFor(() => expect(editor.state.doc.toString()).toBe('y = 1\n'));
   expect(screen.queryByRole('alert')).toBeNull();
   expect(screen.getByRole('button', { name: 'Spremi' })).toHaveProperty('disabled', true);
+});
+
+test('a host chosen in the place menu shows its files, and its file is saved with the host beside the path', async () => {
+  shown();
+  await screen.findByRole('button', { name: 'backend' });
+  await userEvent.click(screen.getByRole('button', { name: 'Mjesto: Ponistra' }));
+  await userEvent.click(await screen.findByRole('menuitemradio', { name: 'mlaka' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'app.conf' }));
+  expect(
+    sent.find((each) => each.url.startsWith('/api/workspace/files?') && each.url.includes('host')),
+  ).toMatchObject({ url: '/api/workspace/files?host=mlaka&path=' });
+  await waitFor(() => expect(document.querySelector('.cm-editor')).not.toBeNull());
+  const editor = EditorView.findFromDOM(document.querySelector<HTMLElement>('.cm-editor')!)!;
+  act(() => editor.dispatch({ changes: { from: 0, to: 1, insert: 'z' } }));
+  await userEvent.click(screen.getByRole('button', { name: 'Spremi' }));
+  await waitFor(() =>
+    expect(sent.find((each) => each.method === 'POST')?.body).toEqual({
+      host: 'mlaka',
+      path: 'app.conf',
+      text: 'z = 1\n',
+      hash: HASH,
+    }),
+  );
+});
+
+test('a host that refuses the key says so where its files would be', async () => {
+  onHost = () => Response.json({ error: 'ssh_key_refused' }, { status: 409 });
+  shown();
+  await userEvent.click(await screen.findByRole('button', { name: 'Mjesto: Ponistra' }));
+  await userEvent.click(await screen.findByRole('menuitemradio', { name: 'mlaka' }));
+  expect(
+    await screen.findByText('Host je odbio ključ: javni ključ nije u authorized_keys na hostu.'),
+  ).toBeTruthy();
+});
+
+test('a host is added from the hosts, where the public key waits to be copied', async () => {
+  shown();
+  await userEvent.click(await screen.findByRole('button', { name: 'Mjesto: Ponistra' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Hostovi' }));
+  expect((await screen.findByLabelText('Javni ključ ponistra_ed25519')).textContent).toBe(
+    'ssh-ed25519 AAAAC3Nza ponistra@example.org',
+  );
+  expect(screen.queryByRole('textbox')).toBeNull();
+  await userEvent.click(screen.getByRole('button', { name: 'Dodaj host' }));
+  const dialog = await screen.findByRole('dialog');
+  await userEvent.type(within(dialog).getByLabelText('Naziv'), 'dev');
+  await userEvent.type(within(dialog).getByLabelText('Adresa'), '192.0.2.12');
+  await userEvent.type(within(dialog).getByLabelText('Korisnik'), 'bacinac');
+  await userEvent.type(within(dialog).getByLabelText('Početna mapa'), '/mnt/docker');
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Dodaj host' }));
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  expect(sent.find((each) => each.method === 'POST')?.body).toEqual({
+    name: 'dev',
+    address: '192.0.2.12',
+    port: 22,
+    user: 'bacinac',
+    path: '/mnt/docker',
+    key: 'ponistra_ed25519',
+  });
+  expect(await screen.findByText('dev')).toBeTruthy();
 });

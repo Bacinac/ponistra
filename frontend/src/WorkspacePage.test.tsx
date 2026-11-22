@@ -1640,6 +1640,75 @@ test('a new chat is set to start every day, waits under its project and is calle
   await waitFor(() => expect(asked.at(-1)).toEqual({ kind: 'cancel', text: '7' }));
 });
 
+const OFFERED = [
+  { value: 'opus', name: 'Opus 5.5', resolved: 'claude-opus-5-5', standard: true },
+  { value: 'fable', name: 'Fable 5.1', resolved: 'claude-fable-5-1', standard: false },
+];
+
+test('a new round starts its coordinator on the model chosen in the form', async () => {
+  const asked: Asked[] = [];
+  served({
+    ...commanded(asked),
+    'GET /api/workspace/projects': () => ({ ...PROJECTS, models: OFFERED }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const alpha = await screen.findByRole('region', { name: 'Alpha' });
+  await user.click(within(alpha).getByRole('button', { name: 'Novi krug' }));
+  const form = screen.getByRole('region', { name: 'Novi krug' });
+  await user.click(within(form).getByRole('button', { name: 'Model: Opus 5.5' }));
+  expect(screen.getByRole('menuitemradio', { name: 'Opus 5.5' })).toHaveProperty(
+    'ariaChecked',
+    'true',
+  );
+  await user.click(screen.getByRole('menuitemradio', { name: 'Fable 5.1' }));
+  await user.click(within(form).getByRole('button', { name: 'Otvori koordinatora' }));
+  await waitFor(() =>
+    expect(asked).toEqual([
+      { kind: 'chat', folder: '/work/alpha', text: 'nastavi', model: 'fable' },
+    ]),
+  );
+});
+
+test('a chat set to start later keeps the model chosen, and the one it would get is not sent', async () => {
+  const asked: Asked[] = [];
+  served({
+    'GET /api/workspace/projects': () => ({ ...PROJECTS, models: OFFERED }),
+    'POST /api/workspace/commands': async (request) => {
+      const given = (await request.json()) as Asked;
+      asked.push(given);
+      return { ...COMMAND, ...given, id: asked.length, state: 'waiting' };
+    },
+  });
+  const { user } = open('/workspace', OWNER);
+  const alpha = await screen.findByRole('region', { name: 'Alpha' });
+  for (const model of ['Opus 5.5', 'Fable 5.1']) {
+    await user.click(within(alpha).getByRole('button', { name: 'Novi chat' }));
+    const form = screen.getByRole('region', { name: 'Novi chat' });
+    await user.keyboard('catchup');
+    await user.click(within(form).getByRole('button', { name: 'Model: Opus 5.5' }));
+    await user.click(screen.getByRole('menuitemradio', { name: model }));
+    await user.click(within(form).getByRole('button', { name: 'Pokreni kad…' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Postavi' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Novi chat' })).toBeNull());
+  }
+  expect(asked.map(({ model }) => model)).toEqual([undefined, 'fable']);
+});
+
+test('a workspace that names no model a chat would get offers no choice in the form', async () => {
+  served({
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      models: OFFERED.map(({ standard: _standard, ...model }) => model),
+    }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const alpha = await screen.findByRole('region', { name: 'Alpha' });
+  await user.click(within(alpha).getByRole('button', { name: 'Novi chat' }));
+  const form = screen.getByRole('region', { name: 'Novi chat' });
+  expect(within(form).queryByRole('button', { name: /^Model:/ })).toBeNull();
+});
+
 test('a coordinator that says its round is finished is offered to close, once it rests', async () => {
   const asked: Asked[] = [];
   const finished = {

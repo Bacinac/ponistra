@@ -10,15 +10,15 @@ import { Refusal } from './chats.mjs';
 
 export const FILES = /^\/ponistra\/files(\/(read|raw|write))?$/;
 // Larger than this a file is only downloaded; the editor would hold it all in the page.
-const EDITED = 1024 * 1024;
-const WRITE_BODY = 4 * EDITED + 64 * 1024;
-const PATH = 4096;
+export const EDITED = 1024 * 1024;
+export const WRITE_BODY = 4 * EDITED + 64 * 1024;
+export const PATH = 4096;
 const HIDDEN = new Set(['.git']);
 const BY_NAME = new Intl.Collator('hr', { numeric: true, sensitivity: 'base' });
 
-const denied = (error) => (error.code === 'EACCES' || error.code === 'EPERM' ? new Refusal(403, 'not_permitted') : error);
+export const denied = (error) => (error.code === 'EACCES' || error.code === 'EPERM' ? new Refusal(403, 'not_permitted') : error);
 
-const hashOf = (bytes) => createHash('sha256').update(bytes).digest('hex');
+export const hashOf = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 const inside = (base, real) => real === base || real.startsWith(`${base}${sep}`);
 
@@ -28,10 +28,15 @@ const baseOf = (folder, folders) => {
   return realpathSync(folder);
 };
 
+/** A path asked within a place, which a text of no more than PATH characters names. */
+export const askedPath = (path) => {
+  if (typeof path !== 'string' || path.length > PATH || path.includes('\0')) throw new Refusal(400, 'invalid_path');
+  return path;
+};
+
 /** Where a path given within the project really lies, refused when that is outside it. */
 const placed = (base, path) => {
-  if (typeof path !== 'string' || path.length > PATH || path.includes('\0')) throw new Refusal(400, 'invalid_path');
-  const asked = join(base, path);
+  const asked = join(base, askedPath(path));
   if (!inside(base, asked)) throw new Refusal(400, 'invalid_path');
   let real;
   try {
@@ -62,15 +67,20 @@ const entryOf = (base, directory, each) => {
   };
 };
 
+/** Folders first, then by name as Croatian orders it. */
+export const ordered = (entries) =>
+  entries.sort((one, other) =>
+    (one.kind === 'folder') !== (other.kind === 'folder') ? (one.kind === 'folder' ? -1 : 1) : BY_NAME.compare(one.name, other.name),
+  );
+
 const listed = (folder, path, folders) => {
   const base = baseOf(folder, folders);
   const directory = placed(base, path ?? '');
   if (!statSync(directory).isDirectory()) throw new Refusal(400, 'not_a_folder');
   const entries = readdirSync(directory, { withFileTypes: true })
     .filter((each) => !(directory === base && HIDDEN.has(each.name)))
-    .map((each) => entryOf(base, directory, each))
-    .sort((one, other) => (one.kind === 'folder') !== (other.kind === 'folder') ? (one.kind === 'folder' ? -1 : 1) : BY_NAME.compare(one.name, other.name));
-  return { path: relative(base, directory), entries };
+    .map((each) => entryOf(base, directory, each));
+  return { path: relative(base, directory), entries: ordered(entries) };
 };
 
 const regular = (real) => {
@@ -80,7 +90,7 @@ const regular = (real) => {
 };
 
 /** Text decodes as UTF-8 throughout and holds no NUL, which no text file writes. */
-const textOf = (bytes) => {
+export const textOf = (bytes) => {
   if (bytes.includes(0)) return null;
   try {
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
@@ -100,11 +110,17 @@ const read = (folder, path, folders) => {
   return { ...shown, kind: text === null ? 'binary' : 'text', text, hash: hashOf(bytes) };
 };
 
-const written = ({ folder, path, text, hash }, folders) => {
+/** The bytes of a text to write over a file still holding what `hash` says it held. */
+export const writtenBytes = (text, hash) => {
   if (typeof text !== 'string') throw new Refusal(400, 'invalid_text');
   if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/.test(hash)) throw new Refusal(400, 'invalid_hash');
   const bytes = Buffer.from(text, 'utf8');
   if (bytes.length > EDITED) throw new Refusal(413, 'too_large');
+  return bytes;
+};
+
+const written = ({ folder, path, text, hash }, folders) => {
+  const bytes = writtenBytes(text, hash);
   const base = baseOf(folder, folders);
   const real = placed(base, path);
   const stat = regular(real);

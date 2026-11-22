@@ -375,10 +375,12 @@ export const takenOver = async (session, folder) => {
   return hosted.get(session) ?? started(session, folder, false);
 };
 
-/** A new chat in the folder, with its first message. */
-export const begun = (session, folder, text, images = []) => {
+/** A new chat in the folder, with its first message, on the model its owner chose or else on
+    Claude Code's own. */
+export const begun = (session, folder, text, images = [], model = null) => {
   if (!SESSION.test(session)) throw new Refusal(400, 'invalid_session');
-  const chat = started(session, folder, true);
+  if (model !== null && !offered(model)) throw new Refusal(400, 'invalid_model');
+  const chat = started(session, folder, true, model);
   chat.said(text, images);
   return chat;
 };
@@ -419,11 +421,14 @@ export const interrupt = (session) => {
   chat.interrupted();
 };
 
-/** The models a chat may run on, as Claude Code names them; empty until it was first asked. */
+/** The models a chat may run on, as Claude Code names them, the one a chat gets unless its owner
+    chooses marked `standard`; empty until it was first asked. */
 export const modelsOf = () => models;
 
+const offered = (model) => models.some(({ value }) => value === model);
+
 export const choose = (chat, model) => {
-  if (!models.some(({ value }) => value === model)) throw new Refusal(400, 'invalid_model');
+  if (!offered(model)) throw new Refusal(400, 'invalid_model');
   chat.chose(model);
 };
 
@@ -491,10 +496,16 @@ const windowOf = (kind, name, given) => {
 // What `get_usage` answers, read strictly: a shape this service does not know is said aloud.
 // The models by Claude Code's own short names, as its picker offers them first; a dated name or
 // the account's default is no choice of its own.
-const modelsFrom = (response) =>
-  (response?.models ?? [])
+const modelsFrom = (response) => {
+  const given = response?.models ?? [];
+  const standard = given.find(({ value }) => value === 'default')?.resolvedModel;
+  return given
     .filter(({ value }) => typeof value === 'string' && value !== 'default' && !value.startsWith('claude-'))
-    .map(({ value, displayName, resolvedModel }) => ({ value, name: String(displayName ?? value), resolved: String(resolvedModel ?? value) }));
+    .map(({ value, displayName, resolvedModel }) => {
+      const resolved = String(resolvedModel ?? value);
+      return { value, name: String(displayName ?? value), resolved, standard: resolved === standard };
+    });
+};
 
 const usageFrom = (response) => {
   const limits = response?.rate_limits;
