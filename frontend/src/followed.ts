@@ -19,7 +19,11 @@ const AREAS: Record<string, (key: QueryKey) => boolean> = {
     (root === 'calendar' && part === 'free'),
   account: ([root]) => root === 'app-passwords' || root === 'passkeys' || root === 'authenticator',
   users: ([root]) =>
-    root === 'accounts' || root === 'policy' || root === 'people' || root === 'session',
+    root === 'accounts' ||
+    root === 'policy' ||
+    root === 'people' ||
+    root === 'session' ||
+    root === 'locations',
   applications: ([root]) => root === 'identity',
   journal: ([root]) => root === 'journal',
   // A rule or a hold changes what may be deleted wherever content is listed.
@@ -33,6 +37,7 @@ const AREAS: Record<string, (key: QueryKey) => boolean> = {
   worked: ([root]) => root === 'worked',
   memory: ([root]) => root === 'memory',
   drive: ([root]) => root === 'drive',
+  locations: ([root]) => root === 'locations',
   meetings: ([root]) => root === 'meeting-recordings' || root === 'meeting',
   network: ([root]) => root === 'network',
   // A board's page reads what it keeps by itself, once `BoardView` tells it this area changed.

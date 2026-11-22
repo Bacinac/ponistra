@@ -81,10 +81,11 @@ class Left:
 class Server:
     """A session with the server, its connections its own, closed on leaving."""
 
-    def __init__(self, address: Address, username: str, password: str):
+    def __init__(self, address: Address, username: str, password: str, port: int = 445):
         self.address = address
         self.username = username
         self.password = password
+        self.port = port
         self.cache: dict = {}
 
     def __enter__(self) -> Server:
@@ -93,6 +94,7 @@ class Server:
                 self.address.host,
                 username=self.username,
                 password=self.password,
+                port=self.port,
                 connection_timeout=15,
                 connection_cache=self.cache,
                 auth_protocol="ntlm",
@@ -110,7 +112,7 @@ class Server:
     def close(self) -> None:
         smbclient.reset_connection_cache(connection_cache=self.cache)
 
-    def _full(self, path: str) -> str:
+    def full(self, path: str) -> str:
         return "\\".join([self.address.unc, *path.split("/")]) if path else self.address.unc
 
     def walk(self) -> Iterator[Found | Left]:
@@ -120,7 +122,7 @@ class Server:
         while waiting:
             folder = waiting.pop()
             try:
-                entries = list(smbclient.scandir(self._full(folder), connection_cache=self.cache))
+                entries = list(smbclient.scandir(self.full(folder), connection_cache=self.cache))
             except exceptions.SMBOSError as refused:
                 if not folder or not _denied(refused):
                     raise
@@ -162,7 +164,7 @@ class Server:
         """Whether whoever reads the folder above may not read this: its inheritance broken or a
         right denied on it; None where the account may not read its rights."""
         raw = SMBRawIO(
-            self._full(path),
+            self.full(path),
             mode="r",
             share_access="rwd",
             desired_access=FilePipePrinterAccessMask.READ_CONTROL,
@@ -189,7 +191,7 @@ class Server:
         """The file's bytes; `alone` refuses while anyone has it open to write, as a scanner
         does until its file is whole."""
         return smbclient.open_file(
-            self._full(path),
+            self.full(path),
             mode="rb",
             share_access="r" if alone else "rwd",
             connection_cache=self.cache,
@@ -198,7 +200,7 @@ class Server:
     def deletable(self, path: str) -> bool:
         """Whether the account may delete the file, asked without deleting it."""
         raw = SMBRawIO(
-            self._full(path),
+            self.full(path),
             mode="r",
             share_access="rwd",
             desired_access=FilePipePrinterAccessMask.DELETE,
@@ -214,7 +216,7 @@ class Server:
         return True
 
     def remove(self, path: str) -> None:
-        smbclient.remove(self._full(path), connection_cache=self.cache)
+        smbclient.remove(self.full(path), connection_cache=self.cache)
 
 
 def _query_security(transaction) -> None:

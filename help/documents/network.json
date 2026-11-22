@@ -1,0 +1,24 @@
+{
+  "order": 92,
+  "audience": "everyone",
+  "covers": [
+    "route:/locations/:location?"
+  ],
+  "quiet": [
+    "files.deleteBody"
+  ],
+  "describes": {
+    "frontend/src/locations.tsx#LocationsPage": "e001f9ee7095",
+    "frontend/src/locations.tsx#Browsed": "eebb5c0bc043",
+    "frontend/src/locations.tsx#sourceOf": "bca29e6aa1f3",
+    "frontend/src/files.tsx#FileBrowser": "8437a51ab138",
+    "frontend/src/files.tsx#FileView": "669ac5587ce9",
+    "backend/apps/locations/views.py#files": "79c81f482f09",
+    "backend/apps/locations/views.py#raw": "3e9488b90b5b",
+    "backend/apps/locations/views.py#text": "c60ed2e19cf5",
+    "backend/apps/locations/views.py#rename": "45a3956e2394",
+    "backend/apps/locations/views.py#remove": "5c31966fe821",
+    "backend/apps/locations/views.py#put": "7a1f48bdc966",
+    "backend/apps/locations/jobs.py#_copied": "584410ea1e70"
+  }
+}

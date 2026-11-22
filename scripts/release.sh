@@ -13,7 +13,7 @@ set -eu
 cd "$(git rev-parse --show-toplevel)"
 
 REGISTRY=ghcr.io/bacinac
-SERVICES="frontend backend converter ocr printer recorder workspace"
+SERVICES="frontend backend converter ocr printer recorder tunnel workspace"
 SOURCE=https://github.com/Bacinac/ponistra
 
 case "${1:-}" in

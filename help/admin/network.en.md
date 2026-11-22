@@ -29,6 +29,8 @@ The token is tried at Cloudflare before it is saved and kept sealed with the ins
 
 [System health](help:admin/health) checks both and tells the administrators when meetings from outside or the DNS records stop working.
 
+[VPN tunnels](help:admin/tunnels) into another network are set up on the same page, under {t:network.tunnels}.
+
 ## Limits
 
 - The ports are checked through the installation's own public address. A router that does not loop traffic back to its own address shows {t:network.unreached} though it may work from outside; then check with a call from a mobile network.
@@ -38,6 +40,7 @@ The token is tried at Cloudflare before it is saved and kept sealed with the ins
 
 ## Related
 
+- [VPN tunnels](help:admin/tunnels)
 - [System health](help:admin/health)
 - [Administration](help:admin/administration)
 - [Guests in a meeting](help:meetings/guests)

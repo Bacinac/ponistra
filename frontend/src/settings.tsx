@@ -7,6 +7,7 @@ import {
   DoorOpen,
   Globe,
   HardDrive,
+  Network,
   HeartPulse,
   KeySquare,
   Languages,
@@ -38,6 +39,7 @@ const Collections = lazily(() => import('./collections'), 'Collections');
 const Consents = lazily(() => import('./consents'), 'Consents');
 const Devices = lazily(() => import('./devices'), 'Devices');
 const DriveSettings = lazily(() => import('./drive'), 'DriveSettings');
+const LocationSettings = lazily(() => import('./locations'), 'LocationSettings');
 const MailAccounts = lazily(() => import('./mail'), 'MailAccounts');
 const MailSettings = lazily(() => import('./mail'), 'MailSettings');
 const Notifications = lazily(() => import('./notifications'), 'Notifications');
@@ -113,6 +115,12 @@ export const ACCOUNT: {
     heading: 'settings.documents',
     entries: [
       { to: '/settings/google', icon: HardDrive, title: 'drive.title', body: DriveSettings },
+      {
+        to: '/settings/locations',
+        icon: Network,
+        title: 'locations.settings',
+        body: LocationSettings,
+      },
     ],
   },
 ];

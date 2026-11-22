@@ -1,0 +1,23 @@
+{
+  "order": 94,
+  "audience": "everyone",
+  "covers": [
+    "setting:/settings/locations"
+  ],
+  "quiet": [
+    "locations.removeBody"
+  ],
+  "describes": {
+    "frontend/src/locations.tsx#LocationSettings": "9cd2a4abbe6e",
+    "frontend/src/locations.tsx#LocationForm": "791ee3ba29a0",
+    "frontend/src/locations.tsx#SharingDialog": "8b6fe2acdd8e",
+    "frontend/src/locations.tsx#PublicKey": "4339596c4020",
+    "backend/apps/locations/views.py#locations": "c29008534321",
+    "backend/apps/locations/views.py#location": "ff96fe053a1a",
+    "backend/apps/locations/views.py#_given": "6d4bcbfc3bd3",
+    "backend/apps/locations/views.py#_tried": "7224f5dbf762",
+    "backend/apps/locations/views.py#_granted": "0e52dd3db1d7",
+    "backend/apps/locations/reach.py#reached": "e7844ff5944e",
+    "backend/apps/locations/reach.py#role_on": "57e73778b1c4"
+  }
+}

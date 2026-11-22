@@ -6,10 +6,11 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /usr/local/bin/uv
 # Snapshots: restic, and the Postgres the installation runs, from PostgreSQL's own repository,
 # since Debian's is a major version behind it; its server recovers a snapshot in a cluster of its own,
-# which needs the locale Postgres's image makes its databases with.
+# which needs the locale Postgres's image makes its databases with. OpenSSH speaks SFTP to the
+# network's locations (D54), nss_wrapper naming it the user it runs as, whom no passwd lists.
 COPY --from=restic/restic:0.19.1 /usr/bin/restic /usr/local/bin/restic
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends locales postgresql-common \
+    && apt-get install -y --no-install-recommends locales postgresql-common openssh-client libnss-wrapper \
     && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \
     && /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y \
     && sed -ri 's/#(create_main_cluster) .*$/\1 = false/' /etc/postgresql-common/createcluster.conf \

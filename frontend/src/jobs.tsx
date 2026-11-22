@@ -25,7 +25,8 @@ export type JobKind =
   | 'scan'
   | 'links'
   | 'personal'
-  | 'mail-move';
+  | 'mail-move'
+  | 'network';
 
 interface Job {
   id: string;
@@ -115,6 +116,7 @@ const DOING: Record<JobKind, MessageKey> = {
   links: 'job.import',
   personal: 'job.saving',
   'mail-move': 'job.mailMove',
+  network: 'job.copy',
 };
 
 async function cancel(job: Job) {

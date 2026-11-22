@@ -1,15 +1,3 @@
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import { LanguageDescription, syntaxHighlighting } from '@codemirror/language';
-import { languages } from '@codemirror/language-data';
-import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
-import { Compartment, EditorState, type Text } from '@codemirror/state';
-import {
-  drawSelection,
-  EditorView,
-  highlightSpecialChars,
-  keymap,
-  lineNumbers,
-} from '@codemirror/view';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
@@ -23,14 +11,13 @@ import {
   Link2Off,
   Pencil,
   Plus,
-  RotateCcw,
-  Save,
   Server,
   Trash2,
   X,
 } from 'lucide-react';
-import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'react';
-import { ApiError, deleteJson, getJson, postJson } from './api';
+import { useState, type FormEvent } from 'react';
+import { deleteJson, getJson, postJson } from './api';
+import { CodeEditor, type Opened, type Written } from './codeEditor';
 import { Cancel, ConfirmDialog, Modal, Picker } from './dialogs';
 import { formatSize } from './explorer';
 import { Loading, useWide } from './frame';
@@ -41,7 +28,6 @@ import { useHeldRelease } from './release';
 import { ActionsMenu, Menu, MenuChoices, MenuItem, MenuSeparator } from './menu';
 import { button, field, iconButton, primaryButton } from './styles';
 import { errorMessage } from './tree';
-import { look, PHRASES, style } from './TextView';
 import { CopyButton } from './vault/parts';
 
 type Kind = 'folder' | 'file' | 'outside' | 'broken' | 'other';
@@ -56,22 +42,6 @@ interface Entry {
 interface Listed {
   path: string;
   entries: Entry[];
-}
-
-interface Opened {
-  path: string;
-  size: number;
-  modified: string;
-  kind: 'text' | 'binary' | 'large';
-  text: string | null;
-  hash: string | null;
-}
-
-interface Written {
-  path: string;
-  size: number;
-  modified: string;
-  hash: string;
 }
 
 const UNOPENED: Partial<Record<Kind, MessageKey>> = {
@@ -186,180 +156,6 @@ function Entries({
   );
 }
 
-/** A text file in CodeMirror as Ponistra shows code, written back with Ctrl+S or Save while the
- * disk still holds what was read. */
-function Editor({
-  place,
-  path,
-  opened,
-  onDirty,
-}: {
-  place: Place;
-  path: string;
-  opened: Opened;
-  onDirty: (dirty: boolean) => void;
-}) {
-  const { t } = useI18n();
-  const queryClient = useQueryClient();
-  const host = useRef<HTMLDivElement>(null);
-  const view = useRef<EditorView | null>(null);
-  const saved = useRef<{ doc: Text | null; hash: string }>({ doc: null, hash: opened.hash! });
-  const [dirty, setDirty] = useState(false);
-  const [changed, setChanged] = useState(false);
-  const marked = useEffectEvent((now: boolean) => {
-    setDirty(now);
-    onDirty(now);
-  });
-  const settled = (written: Written, doc: Text) => {
-    saved.current = { doc, hash: written.hash };
-    setChanged(false);
-    marked(false);
-    queryClient.setQueryData<Opened>(fileKey(place, path), (before) =>
-      before ? { ...before, ...written, text: doc.toString() } : before,
-    );
-    void queryClient.invalidateQueries({
-      queryKey: listKey(place, path.replace(/\/?[^/]*$/, '')),
-    });
-  };
-  const writing = useMutation({
-    mutationFn: ({ doc, hash }: { doc: Text; hash: string }) =>
-      postJson<Written>('/api/workspace/file', { ...place, path, text: doc.toString(), hash }),
-    onSuccess: (written, { doc }) => settled(written, doc),
-    onError: (error) => {
-      if (error instanceof ApiError && error.status === 409) setChanged(true);
-    },
-  });
-  const save = useEffectEvent((hash?: string) => {
-    const now = view.current?.state.doc;
-    if (now && !writing.isPending) writing.mutate({ doc: now, hash: hash ?? saved.current.hash });
-  });
-  const overwrite = useMutation({
-    mutationFn: () => getJson<Opened>(`/api/workspace/file?${placeOf(place, path)}`),
-    onSuccess: (now) => {
-      if (now.hash) save(now.hash);
-    },
-  });
-  const replaced = useEffectEvent((now: Opened, force = false) => {
-    const editor = view.current;
-    if (!editor || now.text === null || (!force && now.hash === saved.current.hash)) return;
-    editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: now.text } });
-    saved.current = { doc: editor.state.doc, hash: now.hash! };
-    setChanged(false);
-    marked(false);
-  });
-  const reload = useMutation({
-    mutationFn: () => getJson<Opened>(`/api/workspace/file?${placeOf(place, path)}`),
-    onSuccess: (now) => {
-      writing.reset();
-      replaced(now, true);
-      queryClient.setQueryData(fileKey(place, path), now);
-    },
-  });
-
-  useEffect(() => {
-    const language = new Compartment();
-    const editor = new EditorView({
-      parent: host.current!,
-      state: EditorState.create({
-        doc: opened.text ?? '',
-        extensions: [
-          lineNumbers(),
-          highlightSpecialChars(),
-          history(),
-          drawSelection(),
-          highlightSelectionMatches(),
-          search({ top: true }),
-          keymap.of([
-            {
-              key: 'Mod-s',
-              preventDefault: true,
-              run: () => {
-                save();
-                return true;
-              },
-            },
-            ...searchKeymap,
-            ...historyKeymap,
-            ...defaultKeymap,
-          ]),
-          EditorState.phrases.of(
-            Object.fromEntries(Object.entries(PHRASES).map(([phrase, key]) => [phrase, t(key)])),
-          ),
-          syntaxHighlighting(style),
-          look,
-          language.of([]),
-          EditorView.updateListener.of((update) => {
-            if (update.docChanged) marked(!update.state.doc.eq(saved.current.doc!));
-          }),
-        ],
-      }),
-    });
-    saved.current = { doc: editor.state.doc, hash: opened.hash! };
-    view.current = editor;
-    let gone = false;
-    void LanguageDescription.matchFilename(languages, path.split('/').pop() ?? path)
-      ?.load()
-      .then((support) => {
-        if (!gone) editor.dispatch({ effects: language.reconfigure(support) });
-      });
-    return () => {
-      gone = true;
-      view.current = null;
-      editor.destroy();
-      marked(false);
-    };
-  }, [place, path, t]);
-
-  useEffect(() => {
-    if (!dirty) replaced(opened);
-  }, [opened, dirty]);
-
-  const failure = writing.error ?? overwrite.error ?? reload.error;
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-line px-2 py-1">
-        <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted">{path}</span>
-        <span className="text-xs text-muted">
-          {dirty
-            ? t('workspace.files.unsaved')
-            : writing.isSuccess
-              ? t('workspace.files.saved')
-              : ''}
-        </span>
-        <button
-          type="button"
-          disabled={!dirty || writing.isPending}
-          onClick={() => save()}
-          className={primaryButton}
-        >
-          <Save size={14} aria-hidden />
-          {t('workspace.files.save')}
-        </button>
-      </div>
-      {changed ? (
-        <div role="alert" className="flex flex-wrap items-center gap-2 bg-panel px-2 py-1 text-sm">
-          <span className="text-danger">{t('workspace.files.changed')}</span>
-          <button type="button" onClick={() => reload.mutate()} className={button}>
-            <RotateCcw size={14} aria-hidden />
-            {t('workspace.files.reload')}
-          </button>
-          <button type="button" onClick={() => overwrite.mutate()} className={button}>
-            <Save size={14} aria-hidden />
-            {t('workspace.files.overwrite')}
-          </button>
-        </div>
-      ) : (
-        failure && (
-          <p role="alert" className="bg-panel px-2 py-1 text-sm text-danger">
-            {errorMessage(failure, t)}
-          </p>
-        )
-      )}
-      <div ref={host} className="min-h-[50dvh] flex-1 overflow-hidden" />
-    </div>
-  );
-}
-
 /** A file chosen in the tree: its text to edit, or what it is and a download. */
 function FileView({
   place,
@@ -371,6 +167,7 @@ function FileView({
   onDirty: (dirty: boolean) => void;
 }) {
   const { t, formatNumber } = useI18n();
+  const queryClient = useQueryClient();
   const opened = useQuery({
     queryKey: fileKey(place, path),
     queryFn: () => getJson<Opened>(`/api/workspace/file?${placeOf(place, path)}`),
@@ -379,7 +176,27 @@ function FileView({
   if (opened.isError)
     return <p className="p-2 text-sm text-danger">{errorMessage(opened.error, t)}</p>;
   if (opened.data.kind === 'text')
-    return <Editor place={place} path={path} opened={opened.data} onDirty={onDirty} />;
+    return (
+      <CodeEditor
+        source={placeKey(place)}
+        path={path}
+        opened={opened.data}
+        read={() => getJson<Opened>(`/api/workspace/file?${placeOf(place, path)}`)}
+        write={(text, hash) =>
+          postJson<Written>('/api/workspace/file', { ...place, path, text, hash })
+        }
+        onWritten={(written, text) => {
+          queryClient.setQueryData<Opened>(fileKey(place, path), (before) =>
+            before ? { ...before, ...written, text } : before,
+          );
+          void queryClient.invalidateQueries({
+            queryKey: listKey(place, path.replace(/\/?[^/]*$/, '')),
+          });
+        }}
+        onRead={(now) => queryClient.setQueryData(fileKey(place, path), now)}
+        onDirty={onDirty}
+      />
+    );
   return (
     <div className="flex flex-col items-start gap-3 p-4 text-sm">
       <p className="font-mono text-xs text-muted">{path}</p>

@@ -575,6 +575,8 @@ test('a spreadsheet becomes a document of a tab for each sheet, its table named 
   const original = report.getByRole('link', { name: 'Preuzmi izvornu datoteku' });
   const download = await page.request.get((await original.getAttribute('href'))!);
   expect(download.headers()['content-type']).toBe(XLSX);
+  await page.getByRole('button', { name: 'Izvještaj o uvozu' }).click();
+  await expect(report).toHaveCount(0);
 
   await at('B2').click();
   await page.keyboard.press('Control+a');

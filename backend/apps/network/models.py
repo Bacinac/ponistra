@@ -22,3 +22,42 @@ class Dns(models.Model):
 
     def __str__(self) -> str:
         return f"…{self.hint}" if self.hint else "none"
+
+
+class Tunnel(models.Model):
+    """A VPN tunnel of the installation, kept up by the service `tunnel`, through which what
+    stands behind it is reached (D54). What lets it in, WireGuard's configuration or SoftEther's
+    password, is sealed with the installation's secret; `shown` is what the settings show of it.
+    `state`, `error` and `detail` are what the service told at its last change, `address` the
+    installation's own on the far side, `since` when the state last changed."""
+
+    class Kind(models.TextChoices):
+        WIREGUARD = "wireguard"
+        SOFTETHER = "softether"
+
+    class State(models.TextChoices):
+        CONNECTING = "connecting"
+        UP = "up"
+        FAILED = "failed"
+        OFF = "off"
+        # The service itself does not answer.
+        UNREACHED = "unreached"
+
+    name = models.CharField(max_length=150, unique=True)
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    enabled = models.BooleanField(default=True)
+    shown = models.JSONField(default=dict)
+    sealed = models.BinaryField(default=bytes)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.CONNECTING)
+    error = models.CharField(max_length=32, blank=True)
+    detail = models.TextField(blank=True)
+    address = models.CharField(max_length=64, blank=True)
+    since = models.DateTimeField(null=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.DB_SET_NULL, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    changed_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name

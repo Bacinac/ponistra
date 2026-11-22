@@ -53,9 +53,11 @@ services:
     environment:
       PONISTRA_ENV: dev
       PONISTRA_MAIL_PLAIN_HOSTS: mox
-    networks: [mailtest]
+    networks: [mailtest, sftptest]
     depends_on:
       mox:
+        condition: service_started
+      sftp:
         condition: service_started
     volumes:
       - ./backend:/app
@@ -99,6 +101,16 @@ services:
       - /tmp
     restart: unless-stopped
 
+  sftp:
+    # The SFTP server the backend's tests and the browser's sign in to for a location on the
+    # network (D54): the account sftp, password sftpsftp, its files in ~/files.
+    build:
+      context: ./e2e/sftp
+    image: ponistra/sftp
+    container_name: ponistra_sftp
+    networks: [sftptest]
+    restart: unless-stopped
+
   converter:
     build:
       context: ./converter
@@ -110,6 +122,11 @@ services:
     build:
       context: ./recorder
     image: ponistra/recorder
+
+  tunnel:
+    build:
+      context: ./tunnel
+    image: ponistra/tunnel
 
   reader:
     image: ponistra/backend:dev
@@ -164,4 +181,6 @@ services:
 
 networks:
   mailtest:
+    internal: true
+  sftptest:
     internal: true

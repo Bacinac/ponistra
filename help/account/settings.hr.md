@@ -8,7 +8,7 @@ Postavke skupljaju na jednom mjestu sve što vrijedi za vaš račun: prijavu, ur
 2. U lijevom stupcu odaberite stranicu. Pod {t:settings.account} su {t:settings.signIn} ({t:signIn.choice}, {t:passkeys.title} i {t:password.title} na jednoj stranici), {t:devices.mine}, {t:appPasswords.title} i {t:notifications.title}.
 3. Pod {t:settings.mail} su {t:mail.accounts}, {t:mail.senders}, [{t:away.title}](help:mail/away) i [{t:collections.title}](help:mail/collections).
 4. Pod {t:settings.ai} su {t:agents.title}, {t:consents.title} i {t:translation.title}.
-5. Pod {t:settings.documents} je [{t:drive.title}](help:account/google-drive).
+5. Pod {t:settings.documents} su [{t:drive.title}](help:account/google-drive) i [{t:locations.settings}](help:documents/locations).
 6. Na mobitelu popis stranica je zasebna stranica. Otvorena stranica vraća se na popis pomoću {t:frame.close}.
 
 ## Kako radi

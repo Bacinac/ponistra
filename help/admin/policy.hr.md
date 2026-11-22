@@ -1,12 +1,13 @@
 # Pravila prijave i dijeljenja
 
-Administrator određuje smije li se i mora li se prijavljivati pristupnim ključem, traži li prijava lozinkom drugi korak i tko smije izraditi poveznicu za nekoga izvan instalacije.
+Administrator određuje smije li se i mora li se prijavljivati pristupnim ključem, traži li prijava lozinkom drugi korak tko smije izraditi poveznicu za nekoga izvan instalacije i tko smije dodati mrežnu lokaciju.
 
 ## Kako se koristi
 
 1. Na stranici {t:users.title}, u odjeljku {t:policy.title}, pod {t:policy.passkeys} odaberite {t:policy.passkeys.off}, {t:policy.passkeys.nobody}, {t:policy.passkeys.administrators} ili {t:policy.passkeys.everyone}.
 2. Uključite ili isključite {t:policy.secondFactor}.
 3. U odjeljku {t:policy.outside.title}, pod {t:policy.outside}, odaberite {t:policy.outside.nobody}, {t:policy.outside.administrators} ili {t:policy.outside.everyone}.
+4. U odjeljku {t:policy.locations.title}, pod {t:policy.locations}, odaberite isto.
 
 ## Kako radi
 
@@ -19,6 +20,8 @@ Uz {t:policy.secondFactor} prijava lozinkom traži i kôd iz [aplikacije za aute
 Ako takav korisnik izgubi uređaj, administrator mu pod {t:users.edit} postavlja novu lozinku; time se brišu njegova aplikacija za autentifikaciju i, kad mu je ključ obavezan ili je drugi korak uključen, pristupni ključevi, a novi dodaje pri sljedećoj prijavi.
 
 Pravilo dijeljenja određuje tko smije izraditi poveznicu kojom netko bez računa u instalaciji otvara ploču. Uz {t:policy.outside.nobody} prestaju vrijediti i sve već izrađene poveznice.
+
+Pravilo mrežnih lokacija određuje tko smije dodati [mrežnu lokaciju](help:documents/locations), dakle upisati poslužitelj i račun kojim se Ponistra na njega prijavljuje. Već dodane lokacije ostaju i dalje se otvaraju, i onima s kojima su podijeljene.
 
 Svaka promjena pravila upisuje se u [dnevnik](help:admin/journal).
 

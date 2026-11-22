@@ -153,7 +153,8 @@ class Session(AbstractBaseSession):
 class Policy(models.Model):
     """How the installation's users sign in and share, in one row: whether the sign-in page offers
     passkeys and whom it holds to them, whether a sign-in with a password asks for a second factor,
-    and who may make a link for someone outside it (D39)."""
+    who may make a link for someone outside it (D39) and who may add a location on the network
+    (D54)."""
 
     class Passkeys(models.TextChoices):
         OFF = "off"
@@ -170,6 +171,9 @@ class Policy(models.Model):
     passkeys = models.CharField(max_length=16, choices=Passkeys, default=Passkeys.EVERYONE)
     second_factor = models.BooleanField(default=False, db_default=False)
     outside = models.CharField(
+        max_length=16, choices=Outside, default=Outside.EVERYONE, db_default=Outside.EVERYONE
+    )
+    locations = models.CharField(
         max_length=16, choices=Outside, default=Outside.EVERYONE, db_default=Outside.EVERYONE
     )
     changed_by = models.ForeignKey(User, null=True, on_delete=models.DB_SET_NULL, related_name="+")
@@ -194,6 +198,12 @@ class Policy(models.Model):
         """Whether the user may make a link for someone outside the installation."""
         return self.outside == Policy.Outside.EVERYONE or (
             self.outside == Policy.Outside.ADMINISTRATORS and user.is_staff
+        )
+
+    def adds_locations(self, user: User) -> bool:
+        """Whether the user may add a location on the network."""
+        return self.locations == Policy.Outside.EVERYONE or (
+            self.locations == Policy.Outside.ADMINISTRATORS and user.is_staff
         )
 
 

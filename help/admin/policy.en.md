@@ -1,12 +1,13 @@
 # Sign-in and sharing rules
 
-An administrator decides whether signing in with a passkey is allowed or required, whether a sign-in with a password asks for a second step, and who may make a link for someone outside the installation.
+An administrator decides whether signing in with a passkey is allowed or required, whether a sign-in with a password asks for a second step, who may make a link for someone outside the installation, and who may add a network location.
 
 ## How to use it
 
 1. On the {t:users.title} page, in the {t:policy.title} section, under {t:policy.passkeys} choose {t:policy.passkeys.off}, {t:policy.passkeys.nobody}, {t:policy.passkeys.administrators} or {t:policy.passkeys.everyone}.
 2. Turn {t:policy.secondFactor} on or off.
 3. In the {t:policy.outside.title} section, under {t:policy.outside}, choose {t:policy.outside.nobody}, {t:policy.outside.administrators} or {t:policy.outside.everyone}.
+4. In the {t:policy.locations.title} section, under {t:policy.locations}, choose the same.
 
 ## How it works
 
@@ -19,6 +20,8 @@ With {t:policy.secondFactor} a sign-in with a password also asks for a code from
 If such a user loses their device, an administrator sets a new password for them under {t:users.edit}; this deletes their authenticator app and, where a passkey is required of them or the second step is on, their passkeys, and they add new ones at their next sign-in.
 
 The sharing rule decides who may make a link with which someone without an account in the installation opens a board. With {t:policy.outside.nobody} all links already made stop working too.
+
+The network locations rule decides who may add a [network location](help:documents/locations), that is, enter a server and the account Ponistra signs in to it with. Locations already added stay and still open, also for those they are shared with.
 
 Every change of the rules is written to the [journal](help:admin/journal).
 

@@ -29,6 +29,8 @@ Token se prije spremanja provjerava kod Cloudflarea i čuva zapečaćen tajnim k
 
 [Zdravlje sustava](help:admin/health) provjerava oboje i javlja administratorima kad sastanci izvana ili DNS zapisi prestanu raditi.
 
+[VPN tuneli](help:admin/tunnels) u drugu mrežu postavljaju se na istoj stranici, pod {t:network.tunnels}.
+
 ## Ograničenja
 
 - Provjera portova ide preko vlastite javne adrese. Usmjerivač koji ne vraća promet na vlastitu adresu pokazat će {t:network.unreached} iako izvana možda radi; tada provjerite pozivom s mobilne mreže.
@@ -38,6 +40,7 @@ Token se prije spremanja provjerava kod Cloudflarea i čuva zapečaćen tajnim k
 
 ## Povezano
 
+- [VPN tuneli](help:admin/tunnels)
 - [Zdravlje sustava](help:admin/health)
 - [Administracija](help:admin/administration)
 - [Gosti na sastanku](help:meetings/guests)

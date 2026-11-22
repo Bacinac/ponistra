@@ -82,6 +82,11 @@ enters the plan as a step.
   the path open (no change that would close it). Trigger: the first company holding a
   licence for Ponistra and a tenant in TaskStreamer asks for it, a Ponistra installation
   for the first customer installation the likeliest.
+- **SoftEther server certificate checked** (D54, ml-4). A SoftEther tunnel signs in with a
+  password and, as the client does by default, takes the server's certificate unchecked.
+  Checking means a pinned
+  certificate or CA per tunnel (`AccountServerCertSet`, `AccountServerCertEnable`). Trigger: a
+  tunnel to a SoftEther server reached across a network the installation does not trust.
 
 ## Licence rule (hard)
 
@@ -4963,8 +4968,46 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
   - *A full file manager* (chosen over read only): browse, preview through the reader (D51),
     download, upload, new folder, rename, move, delete and edit text, what changes or removes
     under a fresh D33 confirmation. D37's copy of a company's folder stays what it is.
+    Built (ml-1, ml-2, 2026-11-22): `apps.locations` (`Location`, `Grant`, the password or the
+    key sealed as `location`; `Policy.locations` nobody/administrators/everyone). `remote.Remote`
+    is what a server offers (list, stat, read in ranges, write, make, rename, remove), spoken by
+    `sftp.Sftp` (SFTP v3 in Python over `ssh -F <config> -s`, a temporary folder per connection,
+    host keys kept on first sight and another one refused, connections kept per event loop for
+    two minutes) and `smbfiles.Smb` (D37's `shares.smb.Server` on worker threads). A key is made
+    by Ponistra per location (ed25519), its public half shown for `authorized_keys`. Every path
+    is joined under the location's folder and a link leading out of it is not followed. *Copy to
+    Ponistra* is the job `network`, which places what it reads as an upload is placed.
+    The browser is one engine for every place files stand outside Ponistra's own tree:
+    `frontend/src/files.tsx` (`FileBrowser`: the list of *My documents*, selection, preview panel,
+    menus, upload, the move dialog, the text editor of `codeEditor.tsx`) knows only a
+    `FileSource`: `key`, `name`, `writable`, `list(path)`, `rawHref(path, download?)`,
+    `pictureHref?(path)`, `read(path)` and `write(path, text, hash)` for text, `folder(path,
+    name)`, `rename(path, to)` (a move is a rename to another folder), `remove(paths)`,
+    `put(path, name, file)` and `more?(paths)` for the source's own menu items. A network
+    location is the first source (`locations.tsx#sourceOf`, where *Copy to Ponistra* comes in
+    through `more`); the Files tab of Projects becomes the second (ml-6) and keeps nothing of
+    its own but its source.
+    A tunnel plugs in at two points, neither built here: `sftp.Target` gets a `ProxyCommand`
+    through the service's SOCKS5 port, and `smbfiles.reached` a socket opened by
+    `tunnels.opened`; `Location` gets the tunnel as a nullable key.
   - *VPN* is a step of its own after the locations: one service `tunnel`, WireGuard (wireguard-go,
     MIT) and SoftEther (Apache 2.0), a location choosing the tunnel it goes through. OpenVPN,
     openfortivpn and strongSwan are GPL and stay out.
+    Built (ml-4, 2026-11-22): tunnels are the installation's, set up by an administrator under
+    *Administration → Network* (`apps.network`, `Tunnel`, the WireGuard configuration or the
+    SoftEther password sealed, D33 on every change, an enabled switch). The backend hands the
+    service every enabled tunnel at once under a digest (`PUT /tunnels`) on each save and
+    whenever the service restarted or holds other tunnels, and long-polls it for states, which
+    reach the page as live changes (`tunnels.follow`). What stands behind a tunnel is reached
+    through the service's SOCKS5 port, `tunnel:1080`, the tunnel's id as the user name and the
+    host named to the far side (`tunnels.opened(tunnel, host, port)`), so the backend has no
+    `NET_ADMIN` and routes nothing. WireGuard runs on wireguard-go's netstack (gVisor) inside the
+    service: no device, no capability, overlapping networks apart by construction. SoftEther is
+    its client built from source against libedit (not GNU readline), driven through `vpncmd`;
+    DHCP in Go (insomniacslk/dhcp, BSD), each tunnel a routing table and fwmark of its own with
+    its sockets marked, and `/dev/net/tun` made by the service, so it alone holds `NET_ADMIN`,
+    `NET_RAW` and `MKNOD`; a host without the device fails only SoftEther (`no_device`). Proven
+    live: WireGuard against a netstack peer through the dev backend, SoftEther against a
+    throwaway vpnserver (SecureNAT, DHCP, a wrong password told as `refused`).
   - Filebrowser on LXC 210 (`_infra/filebrowser`) is retired once `/mnt/docker` there is a location
     and Ivo finds nothing missing.

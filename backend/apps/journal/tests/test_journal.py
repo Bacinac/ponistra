@@ -115,6 +115,7 @@ def test_the_policy_is_written_only_when_it_changes(admin):
             "passkeys": Policy.Passkeys.EVERYONE,
             "second_factor": False,
             "outside": Policy.Outside.NOBODY,
+            "locations": Policy.Outside.EVERYONE,
         }
     ]
 

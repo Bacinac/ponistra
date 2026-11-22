@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     "apps.workspace",
     "apps.memory",
     "apps.shares",
+    "apps.locations",
     "apps.drive",
     "apps.collecting",
 ]

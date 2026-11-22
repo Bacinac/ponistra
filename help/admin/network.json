@@ -9,7 +9,7 @@
     "network.lost"
   ],
   "describes": {
-    "frontend/src/network.tsx#NetworkView": "5357187468e0",
+    "frontend/src/network.tsx#NetworkView": "918bca751e47",
     "frontend/src/network.tsx#TokenForm": "a8766f1352bb",
     "frontend/src/network.tsx#NetworkPage": "7cc4aa1dfa73",
     "backend/apps/network/views.py#network": "76dfbdc7dc84",

@@ -28,6 +28,7 @@ from apps.identity import views as identity
 from apps.imports import views as imports
 from apps.jobs import views as jobs
 from apps.journal import views as journal
+from apps.locations import views as locations
 from apps.mail import secured as mail_secured
 from apps.mail import views as mail
 from apps.meetings import views as meetings
@@ -52,6 +53,8 @@ urlpatterns = [
     path("api/crossed", views.crossed),
     path("api/health", health.health),
     path("api/network", network.network),
+    path("api/network/tunnels", network.tunnel_list),
+    path("api/network/tunnels/<int:pk>", network.tunnel),
     path("api/journal", journal.journal),
     path("api/retention/rules", retention.rules),
     path("api/retention/rules/<int:pk>", retention.rule),
@@ -278,6 +281,18 @@ urlpatterns = [
     path("api/company/<uuid:pk>", company.folder),
     path("api/company/<uuid:pk>/share", shares.share),
     path("api/company/<uuid:pk>/share/move", shares.move),
+    path("api/locations", locations.locations),
+    path("api/locations/<uuid:pk>", locations.location),
+    path("api/locations/<uuid:pk>/grants", locations.grants),
+    path("api/locations/<uuid:pk>/grants/<int:grant_pk>", locations.grant),
+    path("api/locations/<uuid:pk>/files", locations.files),
+    path("api/locations/<uuid:pk>/raw", locations.raw),
+    path("api/locations/<uuid:pk>/picture", locations.picture),
+    path("api/locations/<uuid:pk>/text", locations.text),
+    path("api/locations/<uuid:pk>/folder", locations.folder),
+    path("api/locations/<uuid:pk>/rename", locations.rename),
+    path("api/locations/<uuid:pk>/remove", locations.remove),
+    path("api/locations/<uuid:pk>/put", locations.put),
     path("api/drive", drive.drives),
     path("api/drive/<int:pk>", drive.drive),
     path("api/drive/<int:pk>/finish", drive.finish),

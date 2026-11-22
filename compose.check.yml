@@ -43,6 +43,9 @@ services:
   mox:
     container_name: !reset null
     restart: "no"
+  sftp:
+    container_name: !reset null
+    restart: "no"
   ocr:
     container_name: !reset null
     restart: "no"
@@ -124,6 +127,9 @@ services:
       - ALL
     depends_on:
       - backend
+    restart: "no"
+  tunnel:
+    container_name: !reset null
     restart: "no"
   recorder:
     # Beside the check's LiveKit, on its network, its recordings only as long as the run.

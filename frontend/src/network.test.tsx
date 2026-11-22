@@ -17,6 +17,7 @@ test('the network page says the ports are not confirmed and keeps a DNS token by
   let network: object = SEEN;
   serve({
     'GET /api/network': () => network,
+    'GET /api/network/tunnels': () => ({ tunnels: [] }),
     'PATCH /api/network': async (request) => {
       sent.push(await request.json());
       network = {
@@ -43,7 +44,10 @@ test('the network page says the ports are not confirmed and keeps a DNS token by
 });
 
 test('without names pointing straight at it the installation asks for no token', async () => {
-  serve({ 'GET /api/network': () => ({ ...SEEN, reached: true, relay: '', names: [] }) });
+  serve({
+    'GET /api/network': () => ({ ...SEEN, reached: true, relay: '', names: [] }),
+    'GET /api/network/tunnels': () => ({ tunnels: [] }),
+  });
   open('/network', { is_admin: true });
   expect(await screen.findByText('Dostupno')).toBeTruthy();
   expect(screen.queryByLabelText('Cloudflare API token (Zone: Read, DNS: Edit)')).toBeNull();

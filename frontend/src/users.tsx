@@ -105,6 +105,7 @@ interface Policy {
   passkeys: Passkeys;
   second_factor: boolean;
   outside: Outside;
+  locations: Outside;
 }
 const OUTSIDE: Outside[] = ['nobody', 'administrators', 'everyone'];
 const COMPANY = ['company'];
@@ -538,7 +539,9 @@ function CompanySection({
   );
 }
 
-function OutsidePolicySection() {
+/** Who may do what the installation lets be switched off: a link for someone outside, a
+ * location on the network. */
+function WhoPolicySection({ rule }: { rule: 'outside' | 'locations' }) {
   const { t } = useI18n();
   const queryClient = useQueryClient();
   const policy = useQuery({
@@ -546,17 +549,17 @@ function OutsidePolicySection() {
     queryFn: () => getJson<Policy>('/api/policy'),
   });
   const change = useMutation({
-    mutationFn: (outside: Outside) => patchJson('/api/policy', { outside }),
+    mutationFn: (who: Outside) => patchJson('/api/policy', { [rule]: who }),
     onSuccess: (changed) => queryClient.setQueryData(POLICY, changed),
   });
   const failure = policy.error ?? change.error;
 
   return (
-    <Headed heading={t('policy.outside.title')}>
+    <Headed heading={t(`policy.${rule}.title`)}>
       <label className="flex flex-wrap items-center justify-between gap-2 text-sm">
-        {t('policy.outside')}
+        {t(`policy.${rule}`)}
         <select
-          value={policy.data?.outside ?? ''}
+          value={policy.data?.[rule] ?? ''}
           disabled={!policy.isSuccess || change.isPending}
           onChange={(event) => change.mutate(event.target.value as Outside)}
           className={compactField}
@@ -803,7 +806,8 @@ function Directory({ accounts }: { accounts: Accounts }) {
         ))}
         <PolicySection />
         <ProvidersSection />
-        <OutsidePolicySection />
+        <WhoPolicySection rule="outside" />
+        <WhoPolicySection rule="locations" />
         <RecoverySection />
       </div>
       {dialog?.type === 'account' && (

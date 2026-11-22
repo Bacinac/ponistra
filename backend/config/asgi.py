@@ -40,7 +40,7 @@ from apps.mail.later import later  # noqa: E402
 from apps.mail.sync import mail  # noqa: E402
 from apps.meetings import lobby  # noqa: E402
 from apps.memory.night import nightly as memory  # noqa: E402
-from apps.network import address  # noqa: E402
+from apps.network import address, tunnels  # noqa: E402
 from apps.push.notices import deliver  # noqa: E402
 from apps.retention.sweep import sweeping  # noqa: E402
 from apps.search.extraction import extract  # noqa: E402
@@ -123,6 +123,7 @@ async def lifespan(receive, send) -> None:
             background.start_soon(drives)
             background.start_soon(deliver)
             background.start_soon(address.follow)
+            background.start_soon(tunnels.follow)
             background.start_soon(health)
             background.start_soon(directories)
             background.start_soon(sweeping)

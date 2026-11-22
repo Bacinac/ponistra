@@ -78,7 +78,7 @@ services:
       - ./volumes/wal:/wal
       - ./volumes/workspace:/data/workspace
       - ./.env:/installation/.env:ro
-    networks: [default, convert, print, ocr, read, workspace, record]
+    networks: [default, convert, print, ocr, read, workspace, record, tunnel]
     # Past this a runaway ends the backend, which restarts, rather than the host and Postgres
     # with it.
     mem_limit: 3g
@@ -318,6 +318,45 @@ services:
       - ALL
     restart: unless-stopped
 
+  tunnel:
+    # The VPN tunnels (D54): WireGuard in user space and SoftEther's client, which the backend
+    # reaches through one SOCKS5 port and never as a route of its own. NET_ADMIN, NET_RAW, MKNOD
+    # and the tun device's class are SoftEther's: its adapter, the DHCP that addresses it and
+    # the routes each tunnel keeps in a table of its own. A host that does not pass /dev/net/tun
+    # leaves SoftEther refused and WireGuard working (docs/INSTALL.md).
+    image: ghcr.io/bacinac/ponistra-tunnel:${PONISTRA_VERSION:?set in .env}
+    container_name: ponistra_tunnel
+    logging: *log
+    init: true
+    networks: [tunnel]
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/softether
+    device_cgroup_rules:
+      - "c 10:200 rwm"
+    sysctls:
+      # The far side answers on a tunnel's adapter, which the main table does not route to.
+      net.ipv4.conf.all.rp_filter: 0
+      net.ipv4.conf.default.rp_filter: 0
+    mem_limit: 256m
+    pids_limit: 128
+    healthcheck:
+      test: ["CMD", "/tunnel", "health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - MKNOD
+    restart: unless-stopped
+
   workspace:
     # The owner's code workspace (D34), on with COMPOSE_PROFILES=workspace and PONISTRA_WORKSPACE
     # naming its owner: VS Code in the browser, reached only through the frontend, which asks the
@@ -438,4 +477,6 @@ networks:
     internal: true
   # Not internal: the recorder reaches LiveKit on the host's network.
   record:
+  # Not internal: the tunnel reaches the VPN servers.
+  tunnel:
   workspace:

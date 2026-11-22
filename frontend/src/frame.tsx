@@ -18,6 +18,7 @@ import {
   Settings,
   FolderKanban,
   LayoutDashboard,
+  Network,
   StickyNote,
   SunMoon,
   Video,
@@ -322,6 +323,7 @@ const KEPT_APART: { to: string; end: boolean; icon: LucideIcon; label: MessageKe
   { to: '/links', end: true, icon: Globe, label: 'links.title' },
   { to: '/boards', end: true, icon: LayoutDashboard, label: 'boards.title' },
   { to: '/vault', end: false, icon: Vault, label: 'vault.title' },
+  { to: '/locations', end: false, icon: Network, label: 'locations.title' },
 ];
 
 const PHONE_PLACES: { to: string; icon: LucideIcon; label: MessageKey }[] = [

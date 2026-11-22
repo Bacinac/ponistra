@@ -69,6 +69,27 @@ the relay's certificate as well. Where Cloudflare keeps that name and the
 public address changes, a token of its zone (Zone: Read, DNS: Edit) entered
 on **Administration → Network** keeps the record pointing at it.
 
+## VPN tunnels
+
+**Administration → Network** keeps WireGuard and SoftEther tunnels into other
+networks, held by the service `tunnel`; the backend reaches what stands behind
+them through that service's SOCKS5 port and routes nothing itself. WireGuard
+runs inside the service and needs nothing from the host.
+
+SoftEther needs the kernel's TUN device (character 10:200). The service makes
+`/dev/net/tun` in its own container, the only one granted that device and
+`NET_ADMIN`, `NET_RAW` and `MKNOD`; on a plain Linux host or VM nothing more is
+needed. A Proxmox LXC has to let the device through, in
+`/etc/pve/lxc/<id>.conf`, followed by a restart of the container:
+
+```
+lxc.cgroup2.devices.allow: c 10:200 rwm
+lxc.mount.entry: /dev/net/tun dev/net/tun none bind,create=file 0 0
+```
+
+Without it a SoftEther tunnel says the host gives no `/dev/net/tun`, and
+WireGuard tunnels keep working.
+
 ## Mail, sign-in and AI
 
 Everything else is set in the application, by an administrator, and kept in

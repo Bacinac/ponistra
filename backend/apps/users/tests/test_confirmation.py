@@ -41,6 +41,14 @@ GUARDED = [
     ("post", "/api/vault/unlocks"),
     ("delete", "/api/vault/unlocks/1"),
     ("post", f"/api/vault/collections/{uuid.UUID(int=1)}/exported"),
+    ("post", "/api/locations"),
+    ("patch", f"/api/locations/{uuid.UUID(int=1)}"),
+    ("delete", f"/api/locations/{uuid.UUID(int=1)}"),
+    ("post", f"/api/locations/{uuid.UUID(int=1)}/text"),
+    ("post", f"/api/locations/{uuid.UUID(int=1)}/folder"),
+    ("post", f"/api/locations/{uuid.UUID(int=1)}/rename"),
+    ("post", f"/api/locations/{uuid.UUID(int=1)}/remove"),
+    ("post", f"/api/locations/{uuid.UUID(int=1)}/put"),
 ]
 
 
