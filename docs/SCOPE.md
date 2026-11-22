@@ -4946,3 +4946,25 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
   - *Headings* in a document's or a file's side column show the top level; the branch being read
     opens by itself as the pages scroll and closes once left, a chevron opens one by hand and keeps
     it open, and a list that fits its column is shown whole.
+- **D54: files on the network, browsed from Documents — approved 2026-11-22** (Ivo: „želim na ovoj
+  stranici imati neki browser datotekama s networka koje bih dodao … postavi u settings, a onda tu
+  samo browsa. želim ubiti onaj filebrowser quantum i ovo raditi iz Ponistre … i mogućnost VPN
+  spajanja”). Documents gets *Network* in its side column: the locations the user reaches, each a
+  folder tree read live from where it stands, in the list every folder has (name, type, modified,
+  size, preview). Nothing of a location is kept in Ponistra until *Copy to Ponistra* asks.
+  - *Locations* are set up in the settings, each its user's own with that user's account on the
+    server, as a mailbox is, its secret sealed; its owner shares it with people as a folder is
+    shared, and an administrator may switch adding them off. Two kinds: SMB (D37's connector,
+    smbprotocol) and SFTP, spoken by the backend itself over OpenSSH's `ssh -s sftp` as PJ12 did in
+    the workspace (asyncssh is EPL, paramiko LGPL), a jump through another host included.
+  - *The backend connects*, never the workspace, so an installation without Projects has it too.
+    PJ12's hosts leave the Projects page, whose Files tab shows the workspace's files alone; its
+    SFTP moves to the backend and `workspace/hosts.mjs` goes.
+  - *A full file manager* (chosen over read only): browse, preview through the reader (D51),
+    download, upload, new folder, rename, move, delete and edit text, what changes or removes
+    under a fresh D33 confirmation. D37's copy of a company's folder stays what it is.
+  - *VPN* is a step of its own after the locations: one service `tunnel`, WireGuard (wireguard-go,
+    MIT) and SoftEther (Apache 2.0), a location choosing the tunnel it goes through. OpenVPN,
+    openfortivpn and strongSwan are GPL and stay out.
+  - Filebrowser on LXC 210 (`_infra/filebrowser`) is retired once `/mnt/docker` there is a location
+    and Ivo finds nothing missing.
