@@ -8,7 +8,7 @@
     "locations.removeBody"
   ],
   "describes": {
-    "frontend/src/locations.tsx#LocationSettings": "8149a3685a2b",
+    "frontend/src/locations.tsx#LocationSettings": "d1c2079f127b",
     "frontend/src/locations.tsx#LocationForm": "8cf404369045",
     "frontend/src/locations.tsx#SharingDialog": "8b6fe2acdd8e",
     "frontend/src/locations.tsx#PublicKey": "4339596c4020",

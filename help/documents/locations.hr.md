@@ -1,6 +1,6 @@
 # Mrežne lokacije
 
-Mrežna lokacija je mapa na poslužitelju, zajedno s računom kojim se Ponistra na njega prijavljuje; dodaje se u postavkama, a njezine se datoteke otvaraju u Dokumentima.
+Mrežna lokacija je mapa na poslužitelju, zajedno s računom kojim se Ponistra na njega prijavljuje; dodaje se u postavkama, a njezine se datoteke otvaraju na stranici {t:rail.files}.
 
 ## Kako se koristi
 
@@ -31,7 +31,7 @@ Mrežna lokacija je mapa na poslužitelju, zajedno s računom kojim se Ponistra 
 3. {t:access.share} otvara popis pristupa: dodajte osobu, grupu ili sve korisnike i odaberite {t:access.role.read}, {t:access.role.edit} ili {t:access.role.own}.
 4. {t:locations.remove} uklanja lokaciju nakon potvrde.
 
-Naziv lokacije u popisu otvara njezine [datoteke](help:documents/network).
+Naziv lokacije u popisu otvara njezine [datoteke](help:files/network).
 
 ## Kako radi
 
@@ -61,6 +61,6 @@ Uklanjanjem lokacija nestaje svima, a datoteke na poslužitelju ostaju netaknute
 
 ## Povezano
 
-- [Datoteke na mreži](help:documents/network)
+- [Datoteke na mreži](help:files/network)
 - [Dijeljenje](help:documents/sharing)
 - [Potvrda da ste to vi](help:account/confirm)

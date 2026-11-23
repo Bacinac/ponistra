@@ -1,23 +1,15 @@
 # Files on the network
 
-The {t:locations.title} page opens folders on the organisation's servers, shared folders (SMB) and SSH servers (SFTP), and works with their files where they are, without copying them into Ponistra.
+The network locations in {t:rail.files} open folders on the organisation's servers, shared folders (SMB) and SSH servers (SFTP), and their files are worked on where they are, without copying them into Ponistra.
 
 ## How to use it
 
 ### Opening a location
 
-1. In the side column of Documents press {t:locations.title}.
-2. The list shows the locations you added and those shared with you, each with its name, its address under {t:locations.address} and its owner under {t:locations.owner}. Press a location.
-3. A folder opens when you press its row, and the path in the title leads back.
+1. On the module bar, press {t:rail.files}.
+2. In the left column, open {t:locations.title}; below it are the locations you added and those shared with you. The same list stands on the {t:rail.files} page while no folder is open.
+3. Press a location, and a folder by pressing its row; the [address bar](help:files/manager) leads back.
 4. {t:files.refresh} reads the folder from the server again.
-
-While there is no location, the page says {t:locations.none} beside a link to the [location settings](help:documents/locations).
-
-### Through the folder tree
-
-1. In the side column of Documents press the arrow ({t:frame.expand}) beside {t:locations.title}; your locations appear below it.
-2. The arrow beside a location or a folder shows the folders in it, and pressing it again ({t:frame.collapse}) hides them.
-3. Pressing the name of a location or a folder opens it on the right; the open folder's row in the tree is marked.
 
 ### Opening and editing a file
 
@@ -44,7 +36,7 @@ The menu opens with a right press or a long press on a row. Several items are se
 - {t:tree.rename} changes the name of one item.
 - {t:tree.move} opens the location's folders; press {t:tree.moveHere} in the destination.
 - {t:files.delete} deletes what is selected from the server, after asking {t:files.deleteHeading}
-- {t:locations.copy} opens Ponistra's folders; {t:locations.copyHere} copies what is selected into the chosen folder.
+- {t:files.copy}, {t:files.cut} and {t:files.paste} transfer items into Ponistra, to another location or into the workspace ([Files](help:files/manager)).
 
 ## How it works
 

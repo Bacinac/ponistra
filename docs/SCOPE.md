@@ -5051,3 +5051,39 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
     throwaway vpnserver (SecureNAT, DHCP, a wrong password told as `refused`).
   - Filebrowser on LXC 210 (`_infra/filebrowser`) is retired once `/mnt/docker` there is a location
     and Ivo finds nothing missing.
+- **D55: Files, a page of its own over every source, with Docker in it — approved 2026-11-23**
+  (Ivo: „trebalo dodati file manager … kao samostalni prikaz koji bi imao sve one funkcije koje
+  se očekuju od njega. i trebali bi imati nešto za upravljanje dockerima - možda ga čak
+  integrirati u file manager”). D54's `FileBrowser` grows into the installation's file manager.
+  - *One page, every source.* *Files* stands in the rail with the shell every page has; its side
+    column is one tree over My documents, Company, Shared, the network locations and the
+    workspace. Network leaves the Documents column (Documents keeps Ponistra's own content) and
+    the Files tab of Projects opens the workspace in Files: each source is shown in one place.
+  - *What a file manager is expected to do:* two panes and tabs; cut, copy and paste with the
+    keyboard and by dragging, within a source and between any two; an address bar one can type
+    into; search by name inside a location; list and grid with thumbnails; hidden files; a
+    folder's size, properties, owner and mode (changed where the source allows), symbolic
+    links shown as such; bookmarks; a checksum. A copy or move between sources is a job in the
+    backend, read from one `Remote` and written to the other, never through the browser, with
+    a queue of transfers, progress and the conflict asked once (skip, replace, keep both).
+    A move within one source is a rename there; within Ponistra's tree a copy makes each node
+    again (a document with its state, tabs and versions) and a move stays Documents' own.
+    `FileSource` gains what these need (`stat`, `mode`, `owner`, `search`, `folderSize`,
+    `checksum`); a transfer goes through `startTransfer`.
+  - *Docker on a host Ponistra reaches by SSH,* never a socket mounted into the installation
+    (as S2's relay already holds: the backend never gets Docker). A location may be a Docker host:
+    Ponistra makes a key of its own for it, whose `authorized_keys` line it shows with a forced
+    command that lets through only `docker system dial-stdio` (how `docker -H ssh://` reaches
+    the Engine API) and `docker compose` in a stack's folder, so compose runs where the stack's
+    files and build contexts are. The Engine API (Apache 2.0) is spoken by the backend itself,
+    over the same `ssh` and the same tunnels as SFTP. Docker on a host is root on it, so it is
+    an administrator's, and every action that changes something asks a fresh D33 confirmation.
+  - *Stacks are folders.* A folder holding `compose.yaml` on a Docker host is a stack: Files
+    shows its containers and their state beside its files, with start, stop, restart, pull and
+    up, logs live and a shell in a container; the compose file is edited in the editor every
+    text file has. The host itself lists its containers, images, volumes and networks, and
+    prunes them: a prune removes exactly what the lists mark unused, named volumes and tagged
+    images included, not Docker's narrower default of dangling images and anonymous volumes.
+  - *Incus stays with Ponistra OS's „Računala”* (its D11): machines and their guests, through its
+    agent. A guest is a source in Files, and Docker in a guest is a Docker host like any other.
+  - Filebrowser on LXC 210 (`_infra/filebrowser`) retires with this rather than with D54.

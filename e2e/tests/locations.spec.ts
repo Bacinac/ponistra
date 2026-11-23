@@ -1,22 +1,16 @@
 import { expect, test } from './fixtures';
+import { openLocation, removeLocation } from './helpers/locations';
 
-test('a location on the network is set up, browsed, changed and copied from', async ({ page }) => {
+test('a location on the network is set up, browsed in Files, changed and copied from', async ({
+  page,
+}) => {
   const stamp = Date.now();
   const name = `Arhiva ${stamp}`;
   const folder = `Ponude ${stamp}`;
   const file = `zapis ${stamp}`;
 
-  await page.goto('/settings/locations');
-  await page.getByRole('button', { name: 'Dodaj lokaciju' }).click();
-  await page.getByLabel('Vrsta').selectOption('sftp');
-  await page.getByRole('textbox', { name: 'Naziv' }).fill(name);
-  await page.getByRole('textbox', { name: 'Poslužitelj', exact: true }).fill('sftp');
-  await page.getByRole('textbox', { name: 'Mapa' }).fill('files');
-  await page.getByRole('textbox', { name: 'Korisničko ime' }).fill('sftp');
-  await page.getByLabel('Lozinka', { exact: true }).fill('sftpsftp');
-  await page.getByRole('button', { name: 'Spremi' }).click();
-  await page.getByRole('link', { name }).click();
-  await expect(page).toHaveURL(/\/locations\/[0-9a-f-]{36}$/);
+  const tree = await openLocation(page, name);
+  const location = page.url();
 
   await page.getByRole('button', { name: 'Novo' }).click();
   await page.getByRole('menuitem', { name: 'Nova mapa' }).click();
@@ -46,23 +40,22 @@ test('a location on the network is set up, browsed, changed and copied from', as
   await expect(row).toContainText('18 B');
 
   await row.click({ button: 'right' });
-  await page.getByRole('menuitem', { name: 'Kopiraj u Ponistru…' }).click();
-  await page.getByRole('button', { name: 'Kopiraj ovamo' }).click();
+  await page.getByRole('menuitem', { name: 'Kopiraj', exact: true }).click();
+  await tree.getByRole('link', { name: 'Moji dokumenti' }).click();
+  const mine = page.getByRole('region', { name: 'Moji dokumenti' });
+  const box = (await mine.boundingBox())!;
+  await mine.click({ button: 'right', position: { x: box.width / 2, y: box.height - 8 } });
+  await page.getByRole('menuitem', { name: 'Zalijepi', exact: true }).click();
+  await expect(mine.getByRole('row').filter({ hasText: file })).toBeVisible();
   await page.goto('/documents');
   await expect(page.getByRole('row').filter({ hasText: file })).toBeVisible();
 
-  await page.goBack();
-  await page.getByRole('button', { name, exact: true }).click();
+  await page.goto(location);
   const made = page.getByRole('row').filter({ hasText: folder });
   await made.click({ button: 'right' });
   await page.getByRole('menuitem', { name: 'Obriši' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Obriši' }).click();
   await expect(made).toBeHidden();
 
-  await page.goto('/settings/locations');
-  const kept = page.getByRole('listitem').filter({ hasText: name });
-  await kept.getByRole('button', { name: 'Radnje' }).click();
-  await page.getByRole('menuitem', { name: 'Ukloni lokaciju' }).click();
-  await page.getByRole('alertdialog').getByRole('button', { name: 'Ukloni lokaciju' }).click();
-  await expect(kept).toBeHidden();
+  await removeLocation(page, name);
 });

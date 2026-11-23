@@ -46,6 +46,9 @@ services:
   sftp:
     container_name: !reset null
     restart: "no"
+  dockerhost:
+    container_name: !reset null
+    restart: "no"
   ocr:
     container_name: !reset null
     restart: "no"

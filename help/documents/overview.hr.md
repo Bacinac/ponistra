@@ -9,7 +9,7 @@ Dokumenti drže vaše tekstove, tablice, prezentacije i datoteke u mapama, zajed
 ### Kretanje po mapama
 
 1. Otvorite modul {t:rail.documents} na traci modula.
-2. U lijevom stupcu odaberite {t:tree.root}, {t:tree.company} ili {t:tree.shared}. Strelica uz mjesto otvara njegove mape, uz mapu njezine podmape, a uz {t:locations.title} [lokacije na mreži](help:documents/network) i njihove mape. Na mobitelu mape otvara gumb {t:frame.folders}, a {t:favourites.title}, {t:tree.company}, {t:tree.shared}, {t:locations.title}, {t:notes.title}, {t:links.title}, {t:boards.title}, {t:vault.title} i {t:trash.title} stoje na vrhu stranice.
+2. U lijevom stupcu odaberite {t:tree.root}, {t:tree.company} ili {t:tree.shared}. Strelica uz mjesto otvara njegove mape, a uz mapu njezine podmape. Lokacije na mreži i radni prostor su u [Datotekama](help:files/manager). Na mobitelu mape otvara gumb {t:frame.folders}, a {t:favourites.title}, {t:tree.company}, {t:tree.shared}, {t:notes.title}, {t:links.title}, {t:boards.title}, {t:vault.title} i {t:trash.title} stoje na vrhu stranice.
 3. Pritisnite mapu u popisu ili stanite na nju i pritisnite {k:Enter}. Dvostruki pritisak otvara je i kad je uključen pregled uz popis.
 4. Putanja iznad popisa vodi natrag u svaku nadređenu mapu.
 

@@ -64,13 +64,18 @@ function look(element: HTMLElement): ITheme {
 
 /** A login shell in the project's folder of the workspace (KR25). It outlives this panel and its
  * connection: a connection lost is opened again and shown what the shell wrote meanwhile, and
- * only closing the panel or the shell's exit ends it. */
+ * only closing the panel or the shell's exit ends it. Another socket speaking the same protocol
+ * (`path`) is told in its first message what `opensWith` names in place of the folder. */
 export function TerminalPanel({
-  folder,
+  folder = '',
+  path = PATH,
+  opensWith,
   name,
   onClose,
 }: {
-  folder: string;
+  folder?: string;
+  path?: string;
+  opensWith?: Record<string, string>;
   name: string;
   onClose: () => void;
 }) {
@@ -83,6 +88,7 @@ export function TerminalPanel({
   const [refused, setRefused] = useState<'copy' | 'paste' | null>(null);
   const ending = useRef<() => void>(onClose);
   useHeldRelease(true);
+  const told = JSON.stringify(opensWith ?? { folder });
 
   useEffect(() => {
     const element = host.current!;
@@ -137,16 +143,17 @@ export function TerminalPanel({
     };
     function connected() {
       retrying = undefined;
-      postJson(PATH).then(
+      postJson(path).then(
         () => {
           if (gone) return;
           const scheme = location.protocol === 'https:' ? 'wss:' : 'ws:';
-          const opening = new WebSocket(`${scheme}//${location.host}${PATH}`);
+          const opening = new WebSocket(`${scheme}//${location.host}${path}`);
           socket = opening;
           opening.binaryType = 'arraybuffer';
           let fresh = true;
           opening.onopen = () => {
-            opening.send(JSON.stringify({ folder, cols: terminal.cols, rows: terminal.rows }));
+            const first = { ...JSON.parse(told), cols: terminal.cols, rows: terminal.rows };
+            opening.send(JSON.stringify(first));
             pinging = setInterval(() => {
               opening.send('ping');
               unanswered ??= setTimeout(() => dropped(opening), ANSWERED_WITHIN);
@@ -240,7 +247,7 @@ export function TerminalPanel({
       socket?.close();
       terminal.dispose();
     };
-  }, [folder, opened]);
+  }, [path, told, opened]);
 
   const reopen = () => {
     setFailure(null);

@@ -23,7 +23,7 @@ An uploaded folder keeps its subfolders. Files and subfolders whose name starts 
 
 When a file cannot be imported because it is unreadable or too large, because a workbook has too many cells or different formulas, or because it was saved by a newer version of its program, it is kept as a plain file, and the line under the list says so with the reason. The other files upload all the same. Files that did not upload at all are listed in the line {t:upload.failed}
 
-Jobs that take longer than a second, such as an import, making a copy or saving in another format, show in a box in the bottom right corner: {t:job.import}, {t:job.copy}, {t:job.saving}, {t:job.compose}, {t:job.redact} or {t:job.unpack}, with the name and the state {t:job.waiting} or {t:job.running}. While a job can still be stopped, {t:tree.cancel} stands beside it. An upload goes on when you move to another page.
+Jobs that take longer than a second, such as an import, making a copy or saving in another format, show in a box in the bottom right corner: {t:job.import}, {t:job.copy}, {t:job.saving}, {t:job.compose}, {t:job.redact}, {t:job.unpack} or {t:job.checksum}, with the name and the state {t:job.waiting} or {t:job.running}. While a job can still be stopped, {t:tree.cancel} stands beside it. An upload goes on when you move to another page.
 
 ## Limits
 

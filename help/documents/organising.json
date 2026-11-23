@@ -12,10 +12,10 @@
     "frontend/src/FolderPage.tsx#Explorer": "8c9d10a3471f",
     "frontend/src/dialogs.tsx#MoveDialog": "d9fc2a9383aa",
     "frontend/src/dialogs.tsx#CopyDialog": "d185b4dc6396",
-    "frontend/src/frame.tsx#FolderTree": "86b54cad7640",
+    "frontend/src/frame.tsx#FolderTree": "feb727370654",
     "frontend/src/choice.tsx": "4c36a2c48ed0",
     "backend/apps/imports/jobs.py#_copy_done": "3e7011a3b736",
     "backend/apps/documents/views.py#trash": "1aba1d76777f",
-    "backend/apps/exports/views.py#nodes_zip": "c0159a3054b8"
+    "backend/apps/exports/views.py#nodes_zip": "5a18b304e928"
   }
 }

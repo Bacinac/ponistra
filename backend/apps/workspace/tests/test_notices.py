@@ -247,7 +247,7 @@ def owner(settings, monkeypatch):
         return httpx2.Response(200, json={"projects": found.projects, "usage": found.usage})
 
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
     )
     return found

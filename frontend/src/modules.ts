@@ -1,6 +1,14 @@
-import { CalendarDays, Files, type LucideIcon, Mail, MessagesSquare, Sun } from 'lucide-react';
+import {
+  CalendarDays,
+  Files,
+  FolderTree,
+  type LucideIcon,
+  Mail,
+  MessagesSquare,
+  Sun,
+} from 'lucide-react';
 
-export type Module = 'today' | 'calendar' | 'mail' | 'documents' | 'chat';
+export type Module = 'today' | 'calendar' | 'mail' | 'documents' | 'files' | 'chat';
 
 /** The rail holds every module, down the side of a wide screen and along the foot of a phone. */
 export const MODULES: { id: Module; icon: LucideIcon; to: string }[] = [
@@ -9,4 +17,5 @@ export const MODULES: { id: Module; icon: LucideIcon; to: string }[] = [
   { id: 'mail', icon: Mail, to: '/mail' },
   { id: 'chat', icon: MessagesSquare, to: '/chat' },
   { id: 'documents', icon: Files, to: '/documents' },
+  { id: 'files', icon: FolderTree, to: '/files' },
 ];

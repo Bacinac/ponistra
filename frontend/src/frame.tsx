@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { type UseQueryResult } from '@tanstack/react-query';
 import {
   Building2,
   ChevronRight,
@@ -18,7 +18,6 @@ import {
   Settings,
   FolderKanban,
   LayoutDashboard,
-  Network,
   StickyNote,
   SunMoon,
   Video,
@@ -107,7 +106,6 @@ import {
 import { useTitle } from './title';
 import { UploadProvider, useUploads, type Picked } from './upload';
 import { useAccounts } from './mailData';
-import { folderHref, listed, LOCATION_ICONS, sourceKey, useLocations } from './locationsData';
 
 type Expansion = [Record<string, boolean>, Dispatch<SetStateAction<Record<string, boolean>>>];
 
@@ -193,14 +191,14 @@ interface DropInto {
   onFiles?: (picked: Promise<Picked[]>) => void;
 }
 
-interface Rows<T> {
+export interface Rows<T> {
   rows: T[] | undefined;
   error: Error | null;
 }
 
 /** One kind of branch of the tree: the rows below a row, where each leads, what it takes and the
  * menu it opens. Every source draws through the same rows. */
-interface TreeSource<T> {
+export interface TreeSource<T> {
   /** The branches kept open because the page shows something in them, by key. */
   along: Set<string>;
   /** The rows below a row, read once it is opened. */
@@ -238,7 +236,15 @@ function TreeRows<T>({
 
 /** A row of the tree, with the rows below it once it is opened; a row known to hold none has
  * nothing to open. */
-function TreeRow<T>({ source, row, depth }: { source: TreeSource<T>; row: T; depth: number }) {
+export function TreeRow<T>({
+  source,
+  row,
+  depth,
+}: {
+  source: TreeSource<T>;
+  row: T;
+  depth: number;
+}) {
   const { t } = useI18n();
   const [open, setOpen] = useContext(ExpansionContext)!;
   const key = source.key(row);
@@ -562,94 +568,9 @@ const COMPANY = { to: '/company', icon: Building2, label: 'tree.company' } as co
 
 const PHONE_PLACES: { to: string; icon: LucideIcon; label: MessageKey }[] = [
   { to: '/shared', icon: Users, label: 'tree.shared' },
-  { to: '/locations', icon: Network, label: 'locations.title' },
   ...COLLECTIONS,
   { to: '/trash', icon: Trash2, label: 'trash.title' },
 ];
-
-/** Network itself (no location), a location, or a folder of a location. */
-interface NetworkPlace {
-  location: string | null;
-  path: string;
-  name: string;
-  icon: LucideIcon;
-}
-
-function placeKey({ location, path }: NetworkPlace): string {
-  if (location === null) return 'network';
-  return path ? `${sourceKey(location)}/${path}` : sourceKey(location);
-}
-
-/** The locations below Network, or the folders below a location's folder, read from the server
- * once it is opened. */
-function useNetworkRows(place: NetworkPlace, enabled: boolean): Rows<NetworkPlace> {
-  const { location, path } = place;
-  const found = useLocations({ enabled: enabled && location === null });
-  const listing = useQuery({
-    queryKey: ['files', sourceKey(location ?? ''), 'list', path],
-    queryFn: () => listed(location!, path),
-    enabled: enabled && location !== null,
-  });
-  if (location === null) {
-    return {
-      rows: found.data?.locations.map((each) => ({
-        location: each.id,
-        path: '',
-        name: each.name,
-        icon: LOCATION_ICONS[each.kind],
-      })),
-      error: found.error,
-    };
-  }
-  return {
-    rows: listing.data?.entries
-      .filter((entry) => entry.kind === 'folder')
-      .map((entry) => ({
-        location,
-        path: path ? `${path}/${entry.name}` : entry.name,
-        name: entry.name,
-        icon: Folder,
-      })),
-    error: listing.error,
-  };
-}
-
-/** The location and folders the page shows, as the network's branches the tree keeps open. */
-function useNetworkSource(): TreeSource<NetworkPlace> {
-  const { pathname, search } = useLocation();
-  const { along, at } = useMemo(() => {
-    const [, root, id] = pathname.split('/');
-    if (root !== 'locations') return { along: new Set<string>(), at: null };
-    const along = new Set(['network']);
-    if (!id) return { along, at: null };
-    const path = new URLSearchParams(search).get('path') ?? '';
-    const parts = path.split('/').filter(Boolean);
-    along.add(sourceKey(id));
-    parts.forEach((_, index) =>
-      along.add(`${sourceKey(id)}/${parts.slice(0, index + 1).join('/')}`),
-    );
-    return { along, at: parts.length ? `${sourceKey(id)}/${parts.join('/')}` : sourceKey(id) };
-  }, [pathname, search]);
-  return {
-    along,
-    useRows: useNetworkRows,
-    key: placeKey,
-    href: ({ location, path }) => (location === null ? '/locations' : folderHref(location, path)),
-    label: (place) => place.name,
-    icon: (place) => place.icon,
-    current: (place) =>
-      place.location === null ? along.has('network') && at === null : at === placeKey(place),
-  };
-}
-
-/** Documents → Network as a folder of the tree: the locations the user reaches below it, and
-    each location's folders below it. */
-function NetworkBranch() {
-  const { t } = useI18n();
-  const source = useNetworkSource();
-  const network = { location: null, path: '', name: t('locations.title'), icon: Network };
-  return <TreeRow source={source} row={network} depth={0} />;
-}
 
 function FolderTree({
   path,
@@ -692,7 +613,6 @@ function FolderTree({
       <TreeRow source={places} row={{ place: 'mine' }} depth={0} />
       <CompanyRoot source={places} />
       <TreeRow source={places} row={{ place: 'shared' }} depth={0} />
-      <NetworkBranch />
       <div className="my-2 h-px bg-line" />
       {COLLECTIONS.map(({ to, end, icon: Icon, label }) =>
         to === '/boards' ? (
@@ -1092,6 +1012,8 @@ function moduleAt(pathname: string): Module | null {
   if (pathname === '/settings' || pathname.startsWith('/settings/')) return null;
   if (pathname === '/help' || pathname.startsWith('/help/')) return null;
   if (pathname === '/workspace') return null;
+  if (pathname === '/files' || pathname.startsWith('/files/') || pathname.startsWith('/docker/'))
+    return 'files';
   return INSTALLATION_PATHS.includes(pathname) ? null : 'documents';
 }
 

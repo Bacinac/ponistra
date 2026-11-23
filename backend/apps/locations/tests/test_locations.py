@@ -13,8 +13,7 @@ from django.test import AsyncClient
 
 from apps.access.tests.test_access import JSON, person
 from apps.blobs.tests.uploads import uploaded
-from apps.documents.models import Node
-from apps.locations import jobs, reach, sftp, smbfiles
+from apps.locations import reach, sftp, smbfiles
 from apps.locations.models import Location
 from apps.locations.remote import Entry, Failed
 from apps.network.models import Tunnel
@@ -261,24 +260,6 @@ def test_a_location_signs_in_with_a_key_made_for_it_once_the_server_knows_it(api
     on_server(trusted, "")
     assert names(api, location) == []
     assert b"PRIVATE KEY" not in bytes(Location.objects.get().secret)
-
-
-def test_files_and_folders_are_copied_into_ponistra_dated_as_on_the_server(api, spot):
-    location = added(api, spot)
-    files = f"/api/locations/{location['id']}"
-    post(api, f"{files}/folder", {"path": "", "name": "Ponude"})
-    put(api, location, "Ponude", "prva.txt", b"Prva ponuda")
-    put(api, location, "", "bilješka.txt", b"Samo redak")
-    asked = {"location": location["id"], "paths": ["Ponude", "bilješka.txt"], "folder": None}
-
-    made = jobs.KINDS["network"].done(api.user, asked)
-    nodes = {node.title: node for node in Node.objects.filter(pk__in=made["nodes"])}
-    assert set(nodes) == {"Ponude", "bilješka"}
-    assert nodes["Ponude"].kind == Node.Kind.FOLDER
-    inside = Node.objects.get(parent=nodes["Ponude"])
-    assert inside.title == "prva"
-    assert (datetime.now(UTC) - inside.updated_at).total_seconds() < 120
-    assert names(api, location) == ["Ponude", "bilješka.txt"]
 
 
 class Shelf:

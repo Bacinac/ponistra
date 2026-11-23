@@ -9,7 +9,13 @@ const AREAS: Record<string, (key: QueryKey) => boolean> = {
   calendar: ([root]) => root === 'calendar' || root === 'calendar-event',
   tasks: ([root]) => root === 'tasks',
   conversations: ([root]) => root === 'conversations' || root === 'channels' || root === 'peek',
-  nodes: ([root]) => root === 'tree' || root === 'access' || root === 'company',
+  nodes: ([root, part]) =>
+    root === 'tree' ||
+    root === 'access' ||
+    root === 'company' ||
+    (root === 'files' && typeof part === 'string' && part.startsWith('ponistra:')),
+  bookmarks: ([root]) => root === 'bookmarks',
+  containers: ([root]) => root === 'containers',
   vault: ([root]) => root === 'vault',
   // A message and a draft are read once and kept: their lists say what changed of them.
   mail: ([root, part]) => root === 'mail' && part !== 'message' && part !== 'draft',

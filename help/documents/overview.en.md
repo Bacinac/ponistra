@@ -9,7 +9,7 @@ Documents holds your texts, tables, presentations and files in folders, together
 ### Moving between folders
 
 1. Open {t:rail.documents} on the bar of modules.
-2. In the left column choose {t:tree.root}, {t:tree.company} or {t:tree.shared}. The arrow beside a place opens its folders, beside a folder its subfolders, and beside {t:locations.title} the [locations on the network](help:documents/network) and their folders. On a phone the {t:frame.folders} button opens the folders, and {t:favourites.title}, {t:tree.company}, {t:tree.shared}, {t:locations.title}, {t:notes.title}, {t:links.title}, {t:boards.title}, {t:vault.title} and {t:trash.title} stand at the top of the page.
+2. In the left column choose {t:tree.root}, {t:tree.company} or {t:tree.shared}. The arrow beside a place opens its folders, and beside a folder its subfolders. The locations on the network and the workspace are in [Files](help:files/manager). On a phone the {t:frame.folders} button opens the folders, and {t:favourites.title}, {t:tree.company}, {t:tree.shared}, {t:notes.title}, {t:links.title}, {t:boards.title}, {t:vault.title} and {t:trash.title} stand at the top of the page.
 3. Click a folder in the list, or go to it and press {k:Enter}. A double click opens it even when the preview beside the list is on.
 4. The path above the list leads back to each folder above.
 

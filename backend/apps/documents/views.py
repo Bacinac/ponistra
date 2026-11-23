@@ -595,8 +595,6 @@ def moved_into(
             raise Refused(400, "links_at_top")
         if node.boards and parent is not None:
             raise Refused(400, "boards_at_top")
-        if into and into[0].boards and not boards.is_board(node):
-            raise Refused(400, "not_a_board")
         if reach.escapes(into, moved=True):
             raise Refused(403, "confined")
         # Only an owner may change who sees a node; an editor moves it inside the

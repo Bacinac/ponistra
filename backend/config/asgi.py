@@ -25,6 +25,8 @@ from apps.collab import live  # noqa: E402
 from apps.collab.server import collab  # noqa: E402
 from apps.collab.watch import GRID_PATH, watch  # noqa: E402
 from apps.contacts.sync import contacts  # noqa: E402
+from apps.containers import live as containers_live  # noqa: E402
+from apps.containers import shell as containers_shell  # noqa: E402
 from apps.content.elements import follow  # noqa: E402
 from apps.content.words import follow as words  # noqa: E402
 from apps.core.asyncdb import database  # noqa: E402
@@ -88,6 +90,8 @@ async def application(scope, receive, send) -> None:
             await lobby.socket(scope, receive, send)
         case "websocket" if scope["path"] == terminal.PATH:
             await terminal.socket(scope, receive, send)
+        case "websocket" if scope["path"] == containers_shell.PATH:
+            await containers_shell.socket(scope, receive, send)
         case "websocket":
             await collab(scope, receive, send)
         case "lifespan":
@@ -126,6 +130,7 @@ async def lifespan(receive, send) -> None:
             background.start_soon(deliver)
             background.start_soon(address.follow)
             background.start_soon(tunnels.follow)
+            background.start_soon(containers_live.follow)
             background.start_soon(health)
             background.start_soon(directories)
             background.start_soon(sweeping)

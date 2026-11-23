@@ -7,6 +7,7 @@ import { Loaded } from './frame';
 import { Rows, Section, Verdict } from './health';
 import { useI18n } from './i18n';
 import { AdminFrame } from './settings';
+import { DockerHostsSection } from './containers/admin';
 import { TunnelsSection } from './tunnels';
 import { button, field, primaryButton } from './styles';
 import { errorMessage } from './tree';
@@ -113,6 +114,7 @@ function NetworkView({ network }: { network: Network }) {
         </Section>
       )}
       <TunnelsSection />
+      <DockerHostsSection />
     </div>
   );
 }

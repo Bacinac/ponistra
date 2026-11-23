@@ -8,12 +8,14 @@ import { createHash, randomUUID } from 'node:crypto';
 import {
   chmodSync,
   createReadStream,
+  lchownSync,
   createWriteStream,
   linkSync,
   lstatSync,
   mkdirSync,
   readdirSync,
   readFileSync,
+  readlinkSync,
   realpathSync,
   renameSync,
   rmSync,
@@ -24,7 +26,7 @@ import { pipeline } from 'node:stream/promises';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { Refusal } from './chats.mjs';
 
-export const FILES = /^\/ponistra\/files(\/(read|raw|write|folder|rename|remove|put))?$/;
+export const FILES = /^\/ponistra\/files(\/(read|raw|write|folder|rename|remove|put|stat|mode|owner))?$/;
 // Larger than this a file is only downloaded; the editor would hold it all in the page.
 const EDITED = 1024 * 1024;
 const WRITE_BODY = 4 * EDITED + 64 * 1024;
@@ -67,22 +69,32 @@ const placed = (base, path) => {
   return real;
 };
 
-const entryOf = (base, directory, each) => {
-  const at = join(directory, each.name);
+const linkOf = (at) => {
+  try {
+    return readlinkSync(at);
+  } catch {
+    return null;
+  }
+};
+
+const entryOf = (base, directory, name, symbolic) => {
+  const at = join(directory, name);
+  const link = symbolic ? { link: linkOf(at) } : {};
   let stat;
   let outside = false;
   try {
     stat = statSync(at);
-    if (each.isSymbolicLink()) outside = !inside(base, realpathSync(at));
+    if (symbolic) outside = !inside(base, realpathSync(at));
   } catch {
-    return { name: each.name, kind: 'broken', size: null, modified: null };
+    return { name, kind: symbolic ? 'link' : 'other', size: null, modified: null, ...link };
   }
-  if (outside) return { name: each.name, kind: 'outside', size: null, modified: null };
+  if (outside) return { name, kind: 'outside', size: null, modified: null, ...link };
   return {
-    name: each.name,
+    name,
     kind: stat.isDirectory() ? 'folder' : stat.isFile() ? 'file' : 'other',
     size: stat.isFile() ? stat.size : null,
     modified: stat.mtime.toISOString(),
+    ...link,
   };
 };
 
@@ -98,7 +110,7 @@ const listed = (folder, path, folders) => {
   if (!statSync(directory).isDirectory()) throw new Refusal(400, 'not_a_folder');
   const entries = readdirSync(directory, { withFileTypes: true })
     .filter((each) => !(directory === base && HIDDEN.has(each.name)))
-    .map((each) => entryOf(base, directory, each));
+    .map((each) => entryOf(base, directory, each.name, each.isSymbolicLink()));
   return { path: relative(base, directory), entries: ordered(entries) };
 };
 
@@ -304,13 +316,79 @@ export const filesAnswered = async (request, path, address, bodyOf, folders, res
   }
 };
 
-const CHANGES = { '/ponistra/files/folder': made, '/ponistra/files/rename': renamed, '/ponistra/files/remove': removed };
+/** The names of the system's users or groups by their ids, as its file lists them. */
+const namesIn = (file) => {
+  const names = new Map();
+  try {
+    for (const line of readFileSync(file, 'utf8').split('\n')) {
+      const [name, , id] = line.split(':');
+      if (name && id) names.set(Number(id), name);
+    }
+  } catch {
+    // A system without the file names nobody.
+  }
+  return names;
+};
+
+/** An entry itself, a link and not what it points at, with whom it belongs to and its mode. */
+const statOf = (base, at) => {
+  const own = lstatSync(at);
+  const entry = entryOf(base, dirname(at), basename(at), own.isSymbolicLink());
+  return {
+    ...entry,
+    path: relative(base, at),
+    mode: own.mode & 0o7777,
+    uid: own.uid,
+    gid: own.gid,
+    owner: namesIn('/etc/passwd').get(own.uid) ?? null,
+    group: namesIn('/etc/group').get(own.gid) ?? null,
+  };
+};
+
+const stated = (folder, path, folders) => {
+  const base = baseOf(folder, folders);
+  if (!askedPath(path).replace(/\/+$/, '')) return statOf(base, base);
+  const { at } = spotted(base, path);
+  missing(at);
+  return statOf(base, at);
+};
+
+const whole = (value, most) => {
+  if (!Number.isInteger(value) || value < 0 || value > most) throw new Refusal(400, 'invalid_value');
+  return value;
+};
+
+/** The mode of the entry a path names, of what a link points at only where it stays inside. */
+const moded = ({ folder, path, mode }, folders) => {
+  const base = baseOf(folder, folders);
+  const real = placed(base, path);
+  kept(base, real);
+  chmodSync(real, whole(mode, 0o7777));
+  return statOf(base, real);
+};
+
+const owned = ({ folder, path, uid, gid }, folders) => {
+  const base = baseOf(folder, folders);
+  const { at } = spotted(base, path);
+  missing(at);
+  lchownSync(at, whole(uid, 0xffffffff), whole(gid, 0xffffffff));
+  return statOf(base, at);
+};
+
+const CHANGES = {
+  '/ponistra/files/folder': made,
+  '/ponistra/files/rename': renamed,
+  '/ponistra/files/remove': removed,
+  '/ponistra/files/mode': moded,
+  '/ponistra/files/owner': owned,
+};
 
 const answered = async (request, path, address, bodyOf, folders, response) => {
   const folder = address.searchParams.get('folder');
   const asked = address.searchParams.get('path');
   if (request.method === 'GET' && path === '/ponistra/files') return listed(folder, asked, folders);
   if (request.method === 'GET' && path === '/ponistra/files/read') return read(folder, asked, folders);
+  if (request.method === 'GET' && path === '/ponistra/files/stat') return stated(folder, asked, folders);
   if (request.method === 'GET' && path === '/ponistra/files/raw') {
     sent(request, folder, asked, folders, response);
     return null;

@@ -204,7 +204,37 @@ class Node(models.Model):
     def save(self, *args, **kwargs):
         if self.kind in (Node.Kind.DOCUMENT, Node.Kind.FILE) and self.room is None:
             self.room = uuid.uuid4()
+        if self.parent_id is not None and (
+            self._state.adding or self.parent_id != getattr(self, "_stood_in", None)
+        ):
+            self._admitted()
         super().save(*args, **kwargs)
+        self._stood_in = self.parent_id
+
+    @classmethod
+    def from_db(cls, db, field_names, values, *, fetch_mode=None):
+        node = super().from_db(db, field_names, values, fetch_mode=fetch_mode)
+        node._stood_in = node.__dict__.get("parent_id")
+        return node
+
+    def _admitted(self) -> None:
+        """A group of boards holds boards and groups of them alone, however a node comes in."""
+        from apps.core.api import Refused
+
+        from .boards import is_board
+
+        parent = self.parent
+        if not hasattr(parent, "_among_boards"):
+            parent._among_boards = parent.ancestry()[0].boards
+        if not parent._among_boards:
+            return
+        if self.kind == Node.Kind.FOLDER:
+            below = [] if self._state.adding else self.descendants()
+            if all(node.kind == Node.Kind.FOLDER or is_board(node) for node in below):
+                return
+        elif is_board(self):
+            return
+        raise Refused(400, "not_a_board")
 
     def ancestry(self) -> list[Node]:
         """The node and its ancestors, root first."""

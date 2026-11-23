@@ -201,6 +201,46 @@ def test_the_folder_of_boards_stays_at_the_top_and_takes_only_boards(api, upload
     assert filed(api, node, "").json()["error"] == "invalid_title"
 
 
+def test_a_group_of_boards_takes_boards_and_groups_alone_however_they_come(api, upload):
+    node = board(api, upload)
+    filed(api, node, "Baba")
+    group = str(Node.objects.get(pk=node).parent_id)
+
+    def made(kind: str, **fields):
+        return api.post(
+            "/api/nodes",
+            {"kind": kind, "title": "Ponuda", "parent": group, **fields},
+            content_type="application/json",
+        )
+
+    def moved(moving: str, parent: str):
+        return api.post(
+            "/api/nodes/move",
+            {"nodes": [moving], "parent": parent},
+            content_type="application/json",
+        )
+
+    assert made("document").json()["error"] == "not_a_board"
+    assert made("link", href="https://example.com").json()["error"] == "not_a_board"
+    plain = upload(b"Ponuda za kamere")["sha256"]
+    assert made("file", blob=plain, extension="txt").json()["error"] == "not_a_board"
+    assert not Node.objects.filter(parent=group).exclude(pk=node).exists()
+
+    subgroup = create(api, "folder", "Kamere", parent=group)
+    assert made("file", blob=upload(PAGE.encode())["sha256"], extension="html").status_code == 201
+
+    of_boards = create(api, "folder", "Arhiva")
+    create(api, "folder", "2025", parent=of_boards)
+    old = board(api, upload)
+    assert moved(old, of_boards).status_code == 200
+    assert moved(of_boards, subgroup).status_code == 200
+
+    mixed = create(api, "folder", "Mješovito")
+    create(api, "document", "Ugovor", parent=create(api, "folder", "Ugovori", parent=mixed))
+    assert moved(mixed, group).json()["error"] == "not_a_board"
+    assert Node.objects.get(pk=mixed).parent_id is None
+
+
 def test_a_rewritten_board_keeps_each_page_and_takes_one_back(api, upload):
     node = Node.objects.get(pk=board(api, upload))
     assert api.get(f"/api/nodes/{node.pk}/versions").json() == {"versions": []}

@@ -92,7 +92,7 @@ def workspace(settings, monkeypatch):
     settings.WORKSPACE_TOKEN = "token"
     held = Workspace()
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(held)),
     )
     return held

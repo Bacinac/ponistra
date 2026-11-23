@@ -1,0 +1,47 @@
+{
+  "order": 87,
+  "audience": "admin",
+  "covers": [
+    "route:/docker/:location"
+  ],
+  "quiet": [
+    "docker.host",
+    "docker.hostNone",
+    "docker.hostRemoveTitle",
+    "docker.hostRemoveWarning",
+    "docker.removeTitle",
+    "docker.pruneConfirm",
+    "docker.pruneWarning.containers",
+    "docker.pruneWarning.images",
+    "docker.pruneWarning.builder",
+    "docker.pruneWarning.volumes",
+    "docker.pruneWarning.networks",
+    "docker.pruned",
+    "docker.logsOf",
+    "docker.shellIn",
+    "docker.running",
+    "docker.done",
+    "docker.failedWith",
+    "docker.state.running",
+    "docker.state.exited",
+    "docker.state.created",
+    "docker.state.paused",
+    "docker.state.restarting",
+    "docker.state.removing",
+    "docker.state.dead",
+    "docker.location"
+  ],
+  "describes": {
+    "frontend/src/containers/admin.tsx#DockerHostsSection": "e9bf15848324",
+    "frontend/src/containers/aside.tsx#ContainersAside": "c3d2f4eb14e9",
+    "frontend/src/containers/host.tsx#DockerHostPage": "323de82a0891",
+    "frontend/src/containers/panels.tsx#OutputDialog": "d1349b0519d8",
+    "backend/apps/containers/views.py#hosts": "a660658de7c2",
+    "backend/apps/containers/views.py#pruned": "a21b976a13ad",
+    "backend/apps/containers/views.py#stack": "071104ab11fe",
+    "backend/apps/containers/reach.py#COMMAND": "ce19d830b52d",
+    "backend/apps/containers/compose.py#ran": "0122e7b27d54",
+    "backend/apps/containers/shell.py#socket": "d59af0678463",
+    "backend/apps/containers/live.py#follow": "bb2480fb5eb2"
+  }
+}

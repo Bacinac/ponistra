@@ -19,7 +19,7 @@ from smbprotocol.transport import Tcp
 from apps.network import socks
 from apps.shares import smb
 
-from .remote import CHUNK, Entry, Failed
+from .remote import CHUNK, Entry, Failed, Stat
 
 SIGNED_IN = {
     "share_login": "location_login",
@@ -94,6 +94,14 @@ async def _off[R](tunnel: int | None, work: Callable[[], R]) -> R:
         raise known from None
 
 
+ATTRIBUTES = {
+    "readonly": FileAttributes.FILE_ATTRIBUTE_READONLY,
+    "hidden": FileAttributes.FILE_ATTRIBUTE_HIDDEN,
+    "system": FileAttributes.FILE_ATTRIBUTE_SYSTEM,
+    "archive": FileAttributes.FILE_ATTRIBUTE_ARCHIVE,
+}
+
+
 def _entry(name: str, info) -> Entry:
     folder = bool(info.file_attributes & FileAttributes.FILE_ATTRIBUTE_DIRECTORY)
     return Entry(
@@ -101,6 +109,7 @@ def _entry(name: str, info) -> Entry:
         "folder" if folder else "file",
         None if folder else info.end_of_file,
         info.last_write_time.replace(tzinfo=UTC),
+        hidden=bool(info.file_attributes & smb.HIDDEN),
     )
 
 
@@ -132,10 +141,7 @@ class Smb:
         def scanned() -> list[Entry]:
             found = []
             for entry in smbclient.scandir(self._full(path), connection_cache=self.server.cache):
-                info = entry.smb_info
-                if info.file_attributes & smb.HIDDEN:
-                    continue
-                found.append(_entry(entry.name, info))
+                found.append(_entry(entry.name, entry.smb_info))
             return found
 
         if not await self._off(
@@ -145,17 +151,30 @@ class Smb:
         return await self._off(scanned)
 
     async def stat(self, path: str) -> Entry:
-        def stated() -> Entry:
+        return (await self.described(path)).entry
+
+    async def described(self, path: str) -> Stat:
+        def stated() -> Stat:
             found = smbclient.stat(self._full(path), connection_cache=self.server.cache)
-            folder = bool(found.st_file_attributes & FileAttributes.FILE_ATTRIBUTE_DIRECTORY)
-            return Entry(
+            attributes = found.st_file_attributes
+            folder = bool(attributes & FileAttributes.FILE_ATTRIBUTE_DIRECTORY)
+            entry = Entry(
                 path.rsplit("/", 1)[-1],
                 "folder" if folder else "file",
                 None if folder else found.st_size,
                 datetime.fromtimestamp(found.st_mtime, UTC),
+                hidden=bool(attributes & smb.HIDDEN),
             )
+            marked = tuple(name for name, bit in ATTRIBUTES.items() if attributes & bit)
+            return Stat(entry, attributes=marked)
 
         return await self._off(stated)
+
+    async def chmod(self, path: str, mode: int) -> None:
+        raise Failed("not_supported", 400)
+
+    async def chown(self, path: str, uid: int, gid: int) -> None:
+        raise Failed("not_supported", 400)
 
     async def chunks(self, path: str, start: int, length: int) -> AsyncIterator[bytes]:
         file = await self._off(lambda: self.server.read(path))

@@ -88,6 +88,8 @@ INSTALLED_APPS = [
     "apps.memory",
     "apps.shares",
     "apps.locations",
+    "apps.files",
+    "apps.containers",
     "apps.drive",
     "apps.collecting",
 ]

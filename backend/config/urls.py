@@ -14,6 +14,8 @@ from apps.collecting import views as collecting
 from apps.comments import views as comments
 from apps.contacts import carddav
 from apps.contacts import views as contacts
+from apps.containers import shell as containers_shell
+from apps.containers import views as containers
 from apps.content import views as content
 from apps.core import views
 from apps.dav import views as dav
@@ -21,6 +23,7 @@ from apps.documents import boards_place, launcher, notes, opened
 from apps.documents import views as documents
 from apps.drive import views as drive
 from apps.exports import views as exports
+from apps.files import views as files
 from apps.health import views as health
 from apps.help import views as help_pages
 from apps.identity import providers, scim, signin
@@ -206,6 +209,11 @@ urlpatterns = [
     path("api/workspace/files/remove", workspace.files_remove),
     path("api/workspace/files/put", workspace.files_put),
     path("api/workspace/files/zip", workspace.files_zip),
+    path("api/workspace/files/stat", workspace.files_stat),
+    path("api/workspace/files/mode", workspace.files_mode),
+    path("api/workspace/files/owner", workspace.files_owner),
+    path("api/workspace/files/search", workspace.files_search),
+    path("api/workspace/files/size", workspace.files_size),
     path("api/workspace/held/<str:folder>/<str:token>/shown", workspace.held_shown),
     path("api/workspace/held/<str:folder>/<str:token>/text", workspace.held_text),
     path("api/workspace/held/<str:folder>/<str:token>/shown/<str:part>", workspace.held_part),
@@ -289,6 +297,16 @@ urlpatterns = [
     path("api/company/<uuid:pk>", company.folder),
     path("api/company/<uuid:pk>/share", shares.share),
     path("api/company/<uuid:pk>/share/move", shares.move),
+    path("api/containers/hosts", containers.hosts),
+    path("api/containers/hosts/<uuid:pk>", containers.host),
+    path("api/containers/hosts/<uuid:pk>/prune", containers.pruned),
+    path("api/containers/hosts/<uuid:pk>/stack", containers.stack),
+    path("api/containers/hosts/<uuid:pk>/containers/<str:ref>/logs", containers.logs),
+    path("api/containers/hosts/<uuid:pk>/containers/<str:ref>/<str:action>", containers.acted),
+    path("api/containers/hosts/<uuid:pk>/<str:kind>", containers.listed),
+    path("api/containers/hosts/<uuid:pk>/<str:kind>/<str:ref>", containers.removed),
+    path("api/containers/shell", containers_shell.confirmed),
+    path("api/containers/confirm", containers_shell.confirmed),
     path("api/locations", locations.locations),
     path("api/locations/<uuid:pk>", locations.location),
     path("api/locations/<uuid:pk>/grants", locations.grants),
@@ -302,6 +320,14 @@ urlpatterns = [
     path("api/locations/<uuid:pk>/remove", locations.remove),
     path("api/locations/<uuid:pk>/put", locations.put),
     path("api/locations/<uuid:pk>/zip", locations.zip_of),
+    path("api/locations/<uuid:pk>/stat", locations.stat),
+    path("api/locations/<uuid:pk>/mode", locations.mode),
+    path("api/locations/<uuid:pk>/owner", locations.owner),
+    path("api/locations/<uuid:pk>/search", locations.search),
+    path("api/locations/<uuid:pk>/size", locations.size),
+    path("api/files/bookmarks", files.bookmarks),
+    path("api/files/bookmarks/<int:pk>", files.bookmark),
+    path("api/files/transfers", files.transfers),
     path("api/locations/<uuid:pk>/held/<str:token>/shown", locations.held_shown),
     path("api/locations/<uuid:pk>/held/<str:token>/text", locations.held_text),
     path("api/locations/<uuid:pk>/held/<str:token>/shown/<str:part>", locations.held_part),

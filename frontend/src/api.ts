@@ -9,6 +9,8 @@ export class ApiError extends Error {
     readonly path: string,
     readonly status: number,
     readonly code: string | undefined,
+    /** What the server on the far side said as it refused, in its own words. */
+    readonly detail?: string,
   ) {
     super(`${path}: HTTP ${status}${code ? ` ${code}` : ''}`);
   }
@@ -27,7 +29,8 @@ export function csrfToken(): string {
 
 async function refused(path: string, response: Response): Promise<never> {
   const body = await response.json().catch(() => ({}));
-  throw new ApiError(path, response.status, body.error);
+  const detail = typeof body.detail === 'string' ? body.detail : undefined;
+  throw new ApiError(path, response.status, body.error, detail);
 }
 
 let confirming: (() => Promise<boolean>) | null = null;

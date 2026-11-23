@@ -1,18 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, KeyRound, Pencil, Share2, Trash2 } from 'lucide-react';
+import { KeyRound, Pencil, Share2, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Link } from 'react-router';
 import { AddGrant } from './access';
 import { deleteJson, getJson, patchJson, postJson, upload } from './api';
 import type { Opened, Written } from './codeEditor';
-import { ConfirmDialog, FolderPickDialog, Modal } from './dialogs';
-import { FileBrowser, segment, type FileSource } from './files';
-import { Frame, Loaded, Loading } from './frame';
+import { ConfirmDialog, Modal } from './dialogs';
+import { segment, type FileSource, type FileStat } from './files';
+import { Loading } from './frame';
 import { Headed, inline, inlineField } from './headed';
 import { useI18n } from './i18n';
 import { runJob } from './jobs';
 import {
   asked,
+  filesHref,
   listed,
   LOCATION_ICONS,
   LOCATIONS,
@@ -25,6 +26,7 @@ import {
 import { RemoveButton } from './mailParts';
 import { ActionsMenu, MenuItem, MenuSeparator } from './menu';
 import { Badge, granteeName } from './people';
+import { ContainersAside } from './containers/aside';
 import { button, field, primaryButton } from './styles';
 import { errorMessage, type Grantee, type Role } from './tree';
 import { CopyButton } from './vault/parts';
@@ -37,9 +39,12 @@ interface Grant {
 
 const ROLES: Role[] = ['read', 'edit', 'own'];
 
+const nameOf = (path: string) => path.split('/').pop() ?? path;
+
 /** A location on the network as a file browser reads and changes it. */
-function sourceOf(location: Location, onCopy: (paths: string[]) => void, copy: string): FileSource {
+export function locationSource(location: Location): FileSource {
   const at = `/api/locations/${location.id}`;
+  const smb = location.kind === 'smb';
   return {
     key: sourceKey(location.id),
     name: location.name,
@@ -57,131 +62,20 @@ function sourceOf(location: Location, onCopy: (paths: string[]) => void, copy: s
     remove: (paths) => postJson(`${at}/remove`, { paths }),
     put: async (path, name, file) =>
       postJson(`${at}/put`, { path, name, blob: (await upload(file)).sha256 }),
-    more: (paths) => <MenuItem icon={Copy} label={copy} onSelect={() => onCopy(paths)} />,
+    aside: (path) => <ContainersAside location={location.id} path={path} />,
+    stat: (path) => getJson<FileStat>(`${at}/stat?${asked(path)}`),
+    ...(smb || location.role === 'read'
+      ? {}
+      : {
+          mode: (path: string, mode: number) => postJson<FileStat>(`${at}/mode`, { path, mode }),
+          owner: (path: string, uid: number, gid: number) =>
+            postJson<FileStat>(`${at}/owner`, { path, uid, gid }),
+        }),
+    search: (path, query) => getJson(`${at}/search?${asked(path, { q: query })}`),
+    folderSize: (path) => getJson(`${at}/size?${asked(path)}`),
+    checksum: (path, algorithm) =>
+      runJob('checksum', { source: sourceKey(location.id), path, algorithm }, nameOf(path)),
   };
-}
-
-function Browsed({ location }: { location: Location }) {
-  const { t } = useI18n();
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const [copying, setCopying] = useState<string[] | null>(null);
-  const copy = useMutation({
-    mutationFn: ({ paths, folder }: { paths: string[]; folder: string | null }) =>
-      runJob('network', { location: location.id, paths, folder }, location.name),
-  });
-  const go = (path: string, file?: string) => {
-    const next = new URLSearchParams();
-    if (path) next.set('path', path);
-    if (file) next.set('file', file);
-    void navigate({ search: next.toString() });
-  };
-  return (
-    <>
-      <FileBrowser
-        key={location.id}
-        source={sourceOf(location, setCopying, t('locations.copy'))}
-        path={params.get('path') ?? ''}
-        file={params.get('file')}
-        onGo={go}
-        frame={({ title, actions, primary, panel, children }) => (
-          <Frame title={title} actions={actions} primary={primary} panel={panel}>
-            {children}
-            {copy.error && (
-              <p role="alert" className="text-sm text-danger">
-                {errorMessage(copy.error, t)}
-              </p>
-            )}
-          </Frame>
-        )}
-      />
-      {copying && (
-        <FolderPickDialog
-          heading={t('locations.copy')}
-          confirmLabel={t('locations.copyHere')}
-          onPick={(folder) => {
-            copy.mutate({ paths: copying, folder });
-            setCopying(null);
-          }}
-          onClose={() => setCopying(null)}
-        />
-      )}
-    </>
-  );
-}
-
-/** Documents → Network: the locations the user reaches, and the files of the one opened. */
-export function LocationsPage() {
-  const { t } = useI18n();
-  const { location: id } = useParams();
-  const navigate = useNavigate();
-  const found = useLocations();
-  return (
-    <Loaded query={found}>
-      {({ locations }) => {
-        const opened = locations.find((each) => each.id === id);
-        if (opened) return <Browsed location={opened} />;
-        return (
-          <Frame title={t('locations.title')}>
-            <div className="flex w-full max-w-5xl flex-col gap-3">
-              {id && <p className="text-sm text-danger">{t('error.not_found')}</p>}
-              {locations.length === 0 ? (
-                <p className="text-muted">
-                  {t('locations.none')}{' '}
-                  <Link to="/settings/locations" className="underline">
-                    {t('locations.settings')}
-                  </Link>
-                </p>
-              ) : (
-                <table className="w-full border-collapse">
-                  <thead className="text-left text-sm text-muted">
-                    <tr className="h-10 border-b border-line">
-                      <th className="w-full px-2 py-2 font-normal">{t('tree.name')}</th>
-                      <th className="hidden px-2 py-2 font-normal whitespace-nowrap md:table-cell">
-                        {t('locations.address')}
-                      </th>
-                      <th className="hidden px-2 py-2 font-normal whitespace-nowrap sm:table-cell">
-                        {t('locations.owner')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {locations.map((each) => {
-                      const Icon = LOCATION_ICONS[each.kind];
-                      return (
-                        <tr
-                          key={each.id}
-                          tabIndex={0}
-                          onClick={() => void navigate(`/locations/${each.id}`)}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') void navigate(`/locations/${each.id}`);
-                          }}
-                          className="cursor-default border-b border-line select-none hover:bg-hover"
-                        >
-                          <td className="max-w-0 px-2 py-2 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <Icon size={18} aria-hidden className="shrink-0 text-muted" />
-                              <span className="truncate">{each.name}</span>
-                            </div>
-                          </td>
-                          <td className="hidden px-2 py-2 text-sm whitespace-nowrap text-muted md:table-cell">
-                            {each.address}
-                          </td>
-                          <td className="hidden px-2 py-2 text-sm whitespace-nowrap text-muted sm:table-cell">
-                            {each.owner.name}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </Frame>
-        );
-      }}
-    </Loaded>
-  );
 }
 
 function useLocationChange<V>(mutationFn: (variables: V) => Promise<unknown>) {
@@ -471,7 +365,7 @@ export function LocationSettings() {
             <li key={each.id} className="flex flex-col gap-2 border-b border-line py-2">
               <div className="flex items-center gap-3">
                 <Icon size={18} aria-hidden className="shrink-0 text-muted" />
-                <Link to={`/locations/${each.id}`} className="min-w-0 flex-1 truncate">
+                <Link to={filesHref(`location:${each.id}`)} className="min-w-0 flex-1 truncate">
                   {each.name}
                   <span className="ml-2 text-sm text-muted">
                     {each.tunnel ? `${each.address} · ${each.tunnel.name}` : each.address}

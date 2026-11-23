@@ -30,7 +30,8 @@ from apps.core.asyncdb import database
 from apps.users.models import User
 from apps.users.sessions import CONFIRMED, fresh
 
-from .views import ASKED_WITHIN, CONFIRMED_FOR, kept_here, owns
+from .remote import ASKED_WITHIN, kept_here
+from .views import CONFIRMED_FOR, owns
 
 logger = logging.getLogger(__name__)
 

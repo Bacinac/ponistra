@@ -31,9 +31,46 @@ class Entry:
     kind: str  # folder, file, link (to nowhere it can follow), other
     size: int | None
     modified: datetime | None
+    # Where a symbolic link points; the kind is then its target's.
+    link: str | None = None
+    # Hidden by the server's own mark rather than a leading dot, as SMB's.
+    hidden: bool = False
 
     def described(self) -> dict:
-        return {"name": self.name, "kind": self.kind, "size": self.size, "modified": self.modified}
+        shown = {"name": self.name, "kind": self.kind, "size": self.size, "modified": self.modified}
+        if self.link is not None:
+            shown["link"] = self.link
+        if self.hidden:
+            shown["hidden"] = True
+        return shown
+
+
+@dataclass(frozen=True)
+class Stat:
+    """An entry itself, a link and not what it points at, with whom it belongs to and its mode
+    where the server has them."""
+
+    entry: Entry
+    mode: int | None = None
+    uid: int | None = None
+    gid: int | None = None
+    owner: str | None = None
+    group: str | None = None
+    attributes: tuple[str, ...] = ()
+
+    def described(self, path: str) -> dict:
+        shown = {
+            **self.entry.described(),
+            "path": path,
+            "mode": self.mode,
+            "uid": self.uid,
+            "gid": self.gid,
+            "owner": self.owner,
+            "group": self.group,
+        }
+        if self.attributes:
+            shown["attributes"] = list(self.attributes)
+        return shown
 
 
 def asked(path: object, *, root: bool = True) -> str:
@@ -74,6 +111,12 @@ class Remote(Protocol):
     async def listed(self, path: str) -> list[Entry]: ...
 
     async def stat(self, path: str) -> Entry: ...
+
+    async def described(self, path: str) -> Stat: ...
+
+    async def chmod(self, path: str, mode: int) -> None: ...
+
+    async def chown(self, path: str, uid: int, gid: int) -> None: ...
 
     def chunks(self, path: str, start: int, length: int) -> AsyncIterator[bytes]: ...
 

@@ -8,7 +8,7 @@ Svaka stranica Ponistre ima isti okvir: traku modula, zaglavlje s pretragom i iz
 
 ### Moduli
 
-1. Na traci modula ({t:rail.label}) odaberite {t:rail.today}, {t:rail.calendar}, {t:rail.mail}, {t:rail.chat} ili {t:rail.documents}. Na širokom zaslonu traka je uz lijevi rub, a na mobitelu uz donji, gdje nema {t:rail.calendar}: otvara se poveznicom {t:rail.calendar} uz dnevni raspored na stranici {t:rail.today}. Na mobitelu naslov stranice stoji u zasebnom retku ispod gumba zaglavlja.
+1. Na traci modula ({t:rail.label}) odaberite {t:rail.today}, {t:rail.calendar}, {t:rail.mail}, {t:rail.chat}, {t:rail.documents} ili {t:rail.files}. Na širokom zaslonu traka je uz lijevi rub, a na mobitelu uz donji, gdje nema {t:rail.calendar}: otvara se poveznicom {t:rail.calendar} uz dnevni raspored na stranici {t:rail.today}. Na mobitelu naslov stranice stoji u zasebnom retku ispod gumba zaglavlja.
 2. Logo Ponistre na vrhu trake vodi na {t:rail.today}.
 3. Stranica koja pripada modulu, kao {t:rail.contacts} u modulu {t:rail.chat}, u zaglavlju ispred naslova ima naziv modula kojim se vraćate u njega.
 4. Ako ste vlasnik radnog prostora za kod, na traci je i {t:rail.projects}, [stranica s projektima i razgovorima](help:agents/projects); na mobitelu je umjesto toga u izborniku {t:frame.account}.
@@ -16,7 +16,7 @@ Svaka stranica Ponistre ima isti okvir: traku modula, zaglavlje s pretragom i iz
 ### Lijevi stupac
 
 1. U lijevom stupcu je ono što pripada stranici: mape dokumenata, kalendari, popis razgovora ili sadržaj pomoći.
-2. Uz dokumente stupac na vrhu nudi {t:favourites.title}, zatim mjesta {t:tree.root}, {t:tree.company} (kad tvrtka ima zajedničke mape), {t:tree.shared} i {t:locations.title}. Ispod crte su zbirke {t:notes.title}, {t:links.title}, {t:boards.title} i {t:vault.title}, a ispod sljedeće crte {t:trash.title}.
+2. Uz dokumente stupac na vrhu nudi {t:favourites.title}, zatim mjesta {t:tree.root}, {t:tree.company} (kad tvrtka ima zajedničke mape), {t:tree.shared}. Ispod crte su zbirke {t:notes.title}, {t:links.title}, {t:boards.title} i {t:vault.title}, a ispod sljedeće crte {t:trash.title}.
 3. Mjesto, mapu s podmapama i {t:boards.title} s grupama otvarate strelicom ispred naziva ({t:frame.expand}), a zatvarate istom strelicom ({t:frame.collapse}). Pritisak na naziv pokazuje sadržaj desno.
 4. Širinu stupca mijenjate povlačenjem njegova desnog ruba ({t:frame.width}). Dvostruki klik na rub vraća zadanu širinu.
 5. Kad je rub odabran tipkom {k:Tab}, širinu mijenjate tipkama {k:ArrowLeft} i {k:ArrowRight}, a {k:Home} i {k:End} daju najmanju i najveću.

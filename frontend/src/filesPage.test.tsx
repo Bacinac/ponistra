@@ -20,15 +20,18 @@ const location = (id: string, name: string, kind: string, address: string) => ({
 const FOLDERS: Record<string, { name: string; kind: string }[]> = {
   '': [
     { name: 'Ponude', kind: 'folder' },
+    { name: '.skriveno', kind: 'folder' },
     { name: 'popis.txt', kind: 'file' },
   ],
   Ponude: [{ name: '2026', kind: 'folder' }],
   'Ponude/2026': [],
 };
 
-test('Network opens in the tree as a folder: locations below it, their folders read as a branch opens', async () => {
+test('Network in the column of Files: locations below it, their folders read as a branch opens', async () => {
   const asked: string[] = [];
   serve({
+    'GET /api/files/bookmarks': () => ({ bookmarks: [] }),
+    'GET /api/files/transfers': () => ({ transfers: [] }),
     'GET /api/locations': () => ({
       locations: [
         location(NAS, 'Arhiva', 'smb', '\\\\nas\\arhiva'),
@@ -49,33 +52,31 @@ test('Network opens in the tree as a folder: locations below it, their folders r
       return { path, entries };
     },
   });
-  const { user, router, settled } = open('/locations');
+  const { user, router, settled } = open('/files');
   await settled();
-  let tree = screen.getByRole('navigation', { name: 'Mape' });
-  expect(within(tree).getByRole('link', { name: 'Mreža' }).getAttribute('aria-current')).toBe(
-    'page',
-  );
+  let tree = screen.getByRole('navigation', { name: 'Datoteke' });
+  const row = (name: string) => within(tree).getByRole('link', { name }).parentElement!;
+  await user.click(within(row('Mreža')).getByRole('button', { name: 'Proširi' }));
   await within(tree).findByRole('link', { name: 'Arhiva' });
   expect(within(tree).getByRole('link', { name: 'Poslužitelj' })).toBeTruthy();
   expect(asked).toEqual([]);
 
-  const row = (name: string) => within(tree).getByRole('link', { name }).parentElement!;
   await user.click(within(row('Arhiva')).getByRole('button', { name: 'Proširi' }));
-  await user.click(await within(tree).findByRole('link', { name: 'Ponude' }));
+  expect(await within(tree).findByRole('link', { name: 'Ponude' })).toBeTruthy();
+  expect(within(tree).queryByRole('link', { name: '.skriveno' })).toBeNull();
+  expect(within(tree).queryByRole('link', { name: 'popis.txt' })).toBeNull();
+  await user.click(within(tree).getByRole('link', { name: 'Ponude' }));
   await waitFor(() =>
     expect(`${router.state.location.pathname}${router.state.location.search}`).toBe(
-      `/locations/${NAS}?path=Ponude`,
+      `/files/${encodeURIComponent(`location:${NAS}`)}?path=Ponude`,
     ),
   );
   await settled();
-  tree = screen.getByRole('navigation', { name: 'Mape' });
+  tree = screen.getByRole('navigation', { name: 'Datoteke' });
   expect(within(tree).getByRole('link', { name: 'Ponude' }).getAttribute('aria-current')).toBe(
     'page',
   );
-  expect(within(tree).getByRole('link', { name: 'Mreža' }).getAttribute('aria-current')).toBeNull();
   expect(within(tree).getByRole('link', { name: '2026' })).toBeTruthy();
-  expect(within(tree).queryByRole('link', { name: 'popis.txt' })).toBeNull();
-  expect(within(row('2026')).queryByRole('button', { name: 'Proširi' })).toBeTruthy();
   await user.click(within(row('2026')).getByRole('button', { name: 'Proširi' }));
   await settled();
   expect(within(row('2026')).queryByRole('button')).toBeNull();

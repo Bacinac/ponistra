@@ -9,11 +9,11 @@
     "network.lost"
   ],
   "describes": {
-    "frontend/src/network.tsx#NetworkView": "918bca751e47",
+    "frontend/src/network.tsx#NetworkView": "c82d8ee17023",
     "frontend/src/network.tsx#TokenForm": "a8766f1352bb",
     "frontend/src/network.tsx#NetworkPage": "7cc4aa1dfa73",
     "backend/apps/network/views.py#network": "76dfbdc7dc84",
     "backend/apps/network/address.py#reached": "c261935e2aa5",
-    "backend/apps/network/address.py#follow": "0ef43ab625de"
+    "backend/apps/network/address.py#follow": "bccf924b24e4"
   }
 }

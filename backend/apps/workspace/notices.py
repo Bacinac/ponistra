@@ -21,8 +21,9 @@ from apps.core.asyncdb import released
 from apps.push import notices as push
 from apps.push.models import Notice
 
+from . import remote
 from .models import Command, Seen
-from .views import _asked, sent
+from .views import sent
 
 FINISHED = {"idle", "closed"}
 HEARD = {"stop": "said", "notification": "asks"}
@@ -172,7 +173,7 @@ def told() -> None:
     released()
     with _one_at_a_time:
         try:
-            listed = async_to_sync(_asked)("GET", "projects")
+            listed = async_to_sync(remote.asked)("GET", "projects")
         except Refused:
             return
         with transaction.atomic():

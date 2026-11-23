@@ -1,21 +1,16 @@
-import { X } from 'lucide-react';
-import { useState } from 'react';
 import { getJson, postJson, upload } from './api';
 import type { Opened, Written } from './codeEditor';
-import { ConfirmDialog } from './dialogs';
-import { FileBrowser, segment, type FileEntry, type FileSource } from './files';
-import { useI18n } from './i18n';
-import { useHeldRelease } from './release';
-import { iconButton } from './styles';
+import { segment, type FileEntry, type FileSource, type FileStat } from './files';
+import { runJob } from './jobs';
 
 const asked = (folder: string, path: string, more: Record<string, string> = {}) =>
   new URLSearchParams({ folder, path, ...more }).toString();
 
-/** A project of the workspace as a source of the file browser Documents shows a network location
- * in (ML6). */
-function sourceOf(folder: string, name: string): FileSource {
+/** A project of the workspace as a source of Files (ML6, D55). */
+export function workspaceSource(folder: string, name: string): FileSource {
+  const key = `workspace:${folder}`;
   return {
-    key: `workspace:${folder}`,
+    key,
     name,
     writable: true,
     list: (path) =>
@@ -41,78 +36,14 @@ function sourceOf(folder: string, name: string): FileSource {
         name,
         blob: (await upload(file)).sha256,
       }),
+    stat: (path) => getJson<FileStat>(`/api/workspace/files/stat?${asked(folder, path)}`),
+    mode: (path, mode) => postJson<FileStat>('/api/workspace/files/mode', { folder, path, mode }),
+    owner: (path, uid, gid) =>
+      postJson<FileStat>('/api/workspace/files/owner', { folder, path, uid, gid }),
+    search: (path, query) =>
+      getJson(`/api/workspace/files/search?${asked(folder, path, { q: query })}`),
+    folderSize: (path) => getJson(`/api/workspace/files/size?${asked(folder, path)}`),
+    checksum: (path, algorithm) =>
+      runJob('checksum', { source: key, path, algorithm }, path.split('/').pop() ?? path),
   };
-}
-
-/** The files of a project of the workspace (PJ6), in the browser Documents → Network uses. */
-export function FilesPanel({
-  folder,
-  name,
-  onDirty,
-  onClose,
-}: {
-  folder: string;
-  name: string;
-  onDirty: (dirty: boolean) => void;
-  onClose: () => void;
-}) {
-  const { t } = useI18n();
-  const [source] = useState(() => sourceOf(folder, name));
-  const [at, setAt] = useState<{ path: string; file: string | null }>({ path: '', file: null });
-  const [dirty, setDirtyHere] = useState(false);
-  const [leaving, setLeaving] = useState(false);
-  const setDirty = (now: boolean) => {
-    setDirtyHere(now);
-    onDirty(now);
-  };
-  useHeldRelease(dirty);
-  return (
-    <>
-      <FileBrowser
-        source={source}
-        path={at.path}
-        file={at.file}
-        onGo={(path, file) => setAt({ path, file: file ?? null })}
-        onDirty={setDirty}
-        frame={({ actions, primary, panel, children }) => (
-          <section
-            aria-label={t('workspace.view.files')}
-            className="flex min-h-0 min-w-0 flex-1 flex-col"
-          >
-            <div className="mb-2 flex items-center gap-2">
-              {primary}
-              <div className="flex-1" />
-              {actions}
-              <button
-                type="button"
-                aria-label={t('workspace.files.close')}
-                title={t('workspace.files.close')}
-                onClick={() => (dirty ? setLeaving(true) : onClose())}
-                className={iconButton}
-              >
-                <X size={16} aria-hidden />
-              </button>
-            </div>
-            <div className="flex min-h-[60dvh] min-w-0 flex-1 gap-2">
-              <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">{children}</div>
-              {panel}
-            </div>
-          </section>
-        )}
-      />
-      {leaving && (
-        <ConfirmDialog
-          heading={t('workspace.files.discard')}
-          confirmLabel={t('workspace.files.discardConfirm')}
-          onConfirm={() => {
-            setDirty(false);
-            onClose();
-          }}
-          onClose={() => setLeaving(false)}
-        >
-          {t('workspace.files.discardBody')}
-        </ConfirmDialog>
-      )}
-    </>
-  );
 }

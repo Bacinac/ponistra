@@ -57,6 +57,11 @@ export const sourceKey = (id: string) => `location:${id}`;
 export const listed = (id: string, path: string) =>
   getJson<{ path: string; entries: FileEntry[] }>(`/api/locations/${id}/files?${asked(path)}`);
 
-/** The page of a location's folder. */
-export const folderHref = (id: string, path: string) =>
-  path ? `/locations/${id}?${new URLSearchParams({ path })}` : `/locations/${id}`;
+/** The page of Files showing a source's folder, and a file of it opened in its place. */
+export const filesHref = (source: string, path = '', file?: string | null) => {
+  const query = new URLSearchParams();
+  if (path) query.set('path', path);
+  if (file) query.set('file', file);
+  const asked = query.toString();
+  return `/files/${encodeURIComponent(source)}${asked ? `?${asked}` : ''}`;
+};

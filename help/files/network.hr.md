@@ -1,23 +1,15 @@
 # Datoteke na mreži
 
-Stranica {t:locations.title} otvara mape na poslužiteljima organizacije, dijeljene mape (SMB) i SSH poslužitelje (SFTP), i s njihovim datotekama radi ondje gdje jesu, bez kopiranja u Ponistru.
+Lokacije na mreži u {t:rail.files} otvaraju mape na poslužiteljima organizacije, dijeljene mape (SMB) i SSH poslužitelje (SFTP), a s njihovim datotekama radi se ondje gdje jesu, bez kopiranja u Ponistru.
 
 ## Kako se koristi
 
 ### Otvaranje lokacije
 
-1. U bočnom stupcu Dokumenata pritisnite {t:locations.title}.
-2. Popis pokazuje lokacije koje ste dodali i one koje su s vama podijeljene, svaku s nazivom, pod {t:locations.address} s adresom i pod {t:locations.owner} s vlasnikom. Pritisnite lokaciju.
-3. Mapu otvarate pritiskom na njezin redak, a natrag se vraćate kroz put u naslovu.
+1. Na traci modula pritisnite {t:rail.files}.
+2. U lijevom stupcu otvorite {t:locations.title}; ispod su lokacije koje ste dodali i one koje su s vama podijeljene. Isti popis stoji na stranici {t:rail.files} dok nijedna mapa nije otvorena.
+3. Pritisnite lokaciju, a mapu pritiskom na njezin redak; natrag vodi [adresna traka](help:files/manager).
 4. {t:files.refresh} ponovno čita mapu s poslužitelja.
-
-Dok nema nijedne lokacije, piše {t:locations.none} uz poveznicu na [postavke lokacija](help:documents/locations).
-
-### Kroz stablo mapa
-
-1. U bočnom stupcu Dokumenata pritisnite strelicu ({t:frame.expand}) uz {t:locations.title}; ispod se pojavljuju vaše lokacije.
-2. Strelica uz lokaciju ili mapu pokazuje mape u njoj, a ponovni pritisak ({t:frame.collapse}) ih skriva.
-3. Pritisak na naziv lokacije ili mape otvara je desno; redak otvorene mape u stablu je označen.
 
 ### Otvaranje i uređivanje datoteke
 
@@ -44,7 +36,7 @@ Izbornik se otvara desnim pritiskom ili dugim pritiskom na redak. Više stavki o
 - {t:tree.rename} mijenja naziv jedne stavke.
 - {t:tree.move} otvara mape lokacije; pritisnite {t:tree.moveHere} u odredišnoj.
 - {t:files.delete} briše odabrano s poslužitelja, nakon pitanja {t:files.deleteHeading}
-- {t:locations.copy} otvara mape Ponistre; {t:locations.copyHere} kopira odabrano u odabranu mapu.
+- {t:files.copy}, {t:files.cut} i {t:files.paste} prenose stavke u Ponistru, na drugu lokaciju ili u radni prostor ([Datoteke](help:files/manager)).
 
 ## Kako radi
 

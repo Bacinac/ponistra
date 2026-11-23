@@ -20,7 +20,8 @@ from apps.core.asyncdb import released
 from apps.push import notices as push
 from apps.push.models import Notice
 from apps.workspace.models import Command
-from apps.workspace.views import _asked, sent
+from apps.workspace.remote import asked
+from apps.workspace.views import sent
 
 from .models import Advice, Analysed, Nightly, Proposal
 
@@ -63,7 +64,7 @@ def told() -> None:
 
 def read() -> dict:
     released()
-    return async_to_sync(_asked)("GET", "memory")
+    return async_to_sync(asked)("GET", "memory")
 
 
 def synced(listed: dict) -> list[Proposal]:
@@ -215,7 +216,7 @@ def waiting_count() -> int:
 
 
 def _written(proposal: Proposal, text: str | None, expected: str) -> str:
-    answer = async_to_sync(_asked)(
+    answer = async_to_sync(asked)(
         "POST",
         "memory/write",
         {"store": proposal.store, "file": proposal.file, "hash": expected, "text": text},
@@ -282,7 +283,7 @@ def _rebased(proposal: Proposal) -> bool:
     if proposal.removes:
         return False
     where = urlencode({"store": proposal.store, "file": proposal.file})
-    current = async_to_sync(_asked)("GET", f"memory/file?{where}")
+    current = async_to_sync(asked)("GET", f"memory/file?{where}")
     if current["text"] is None:
         return False
     after = merged(proposal.before, proposal.after, current["text"])
@@ -352,7 +353,7 @@ def proposed(
     if sum((edits is not None, text is not None, remove)) != 1:
         raise Refused(400, "one_of_edits_text_remove")
     where = urlencode({"store": store, "file": file})
-    current = async_to_sync(_asked)("GET", f"memory/file?{where}")
+    current = async_to_sync(asked)("GET", f"memory/file?{where}")
     before = current["text"]
     if remove:
         if before is None:

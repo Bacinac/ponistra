@@ -17,6 +17,7 @@ from anyio import sleep, to_thread
 from django.conf import settings
 
 from apps.core import sealed
+from apps.core.asyncdb import database
 
 from .models import Dns
 
@@ -136,7 +137,7 @@ async def follow() -> None:
     pointed = None
     while True:
         try:
-            token = await to_thread.run_sync(lambda: opened(setting()))
+            token = await database(lambda: opened(setting()), own_thread=True)()
             if token:
                 address = await to_thread.run_sync(public)
                 if (address, token) != pointed:
@@ -144,9 +145,9 @@ async def follow() -> None:
                         if await to_thread.run_sync(point, token, name, address):
                             log.info("address: %s now points at %s", name, address)
                     pointed = (address, token)
-                await to_thread.run_sync(_followed, "")
+                await database(_followed, own_thread=True)("")
         except Exception as failed:
             log.exception("address: the direct names could not follow the public address")
             pointed = None
-            await to_thread.run_sync(_followed, str(failed))
+            await database(_followed, own_thread=True)(str(failed))
         await sleep(LOOK)

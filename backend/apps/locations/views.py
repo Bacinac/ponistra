@@ -24,6 +24,7 @@ from apps.core.api import Refused, api, body
 from apps.core.asyncdb import database
 from apps.core.sealed import opened, seal
 from apps.exports import zipped
+from apps.files import walk
 from apps.imports.reading import TooLarge, Unreadable
 from apps.network.models import Tunnel
 from apps.reader import client
@@ -505,6 +506,65 @@ async def remove(request, pk):
     finally:
         await remote.close()
     return HttpResponse(status=204)
+
+
+@api("GET")
+async def stat(request, pk):
+    """An entry itself, a link and not what it points at, with its owner and mode where the
+    server has them."""
+    path = asked(request.GET.get("path", ""))
+    _, remote = await _remote(request, pk)
+    try:
+        return JsonResponse((await remote.described(path)).described(path))
+    finally:
+        await remote.close()
+
+
+@api("POST", confirmed=CHANGES)
+async def mode(request, pk):
+    data = body(request)
+    path, given = asked(data.get("path", "")), walk.mode_of(data.get("mode"))
+    _, remote = await _remote(request, pk, Role.EDIT)
+    try:
+        await remote.chmod(path, given)
+        return JsonResponse((await remote.described(path)).described(path))
+    finally:
+        await remote.close()
+
+
+@api("POST", confirmed=CHANGES)
+async def owner(request, pk):
+    data = body(request)
+    path = asked(data.get("path"), root=False)
+    uid, gid = walk.id_of(data.get("uid")), walk.id_of(data.get("gid"))
+    _, remote = await _remote(request, pk, Role.EDIT)
+    try:
+        await remote.chown(path, uid, gid)
+        return JsonResponse((await remote.described(path)).described(path))
+    finally:
+        await remote.close()
+
+
+@api("GET")
+async def search(request, pk):
+    """The entries below a folder whose names hold what was asked."""
+    path, query = asked(request.GET.get("path", "")), walk.query_of(request.GET.get("q"))
+    _, remote = await _remote(request, pk)
+    try:
+        return JsonResponse(await walk.searched(remote, path, query))
+    finally:
+        await remote.close()
+
+
+@api("GET")
+async def size(request, pk):
+    """A folder's size with all it holds."""
+    path = asked(request.GET.get("path", ""))
+    _, remote = await _remote(request, pk)
+    try:
+        return JsonResponse(await walk.sized(remote, path))
+    finally:
+        await remote.close()
 
 
 def _uploaded(user, sha256: object) -> Path:

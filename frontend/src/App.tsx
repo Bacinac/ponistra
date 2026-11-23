@@ -41,13 +41,14 @@ const ContactsPage = lazily(() => import('./contacts'), 'ContactsPage');
 const DevicePdfs = lazily(() => import('./pdf/Device'), 'DevicePdfs');
 const DocumentPage = lazily(() => import('./DocumentPage'), 'DocumentPage');
 const FilePage = lazily(() => import('./FilePage'), 'FilePage');
+const FilesPage = lazily(() => import('./filesPage'), 'FilesPage');
+const DockerHostPage = lazily(() => import('./containers/host'), 'DockerHostPage');
 const FolderPage = lazily(() => import('./FolderPage'), 'FolderPage');
 const GuestMeetingPage = lazily(() => import('./guest'), 'GuestMeetingPage');
 const OutsidePage = lazily(() => import('./outside'), 'OutsidePage');
 const VisitPage = lazily(() => import('./outside'), 'VisitPage');
 const HealthPage = lazily(() => import('./health'), 'HealthPage');
 const NetworkPage = lazily(() => import('./network'), 'NetworkPage');
-const LocationsPage = lazily(() => import('./locations'), 'LocationsPage');
 const JournalPage = lazily(() => import('./journal'), 'JournalPage');
 const HelpPage = lazily(() => import('./help'), 'HelpPage');
 const LinksPage = lazily(() => import('./links'), 'LinksPage');
@@ -423,7 +424,8 @@ export default function App() {
                 <Route path="/chat/:conversation?" element={<ChatPage />} />
                 <Route path="/calendar/:view?/:date?" element={<CalendarPage />} />
                 <Route path="/vault/:collection?/:item?" element={<VaultPage />} />
-                <Route path="/locations/:location?" element={<LocationsPage />} />
+                <Route path="/files/:source?" element={<FilesPage />} />
+                <Route path="/docker/:location" element={<DockerHostPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

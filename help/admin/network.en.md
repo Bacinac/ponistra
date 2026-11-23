@@ -29,7 +29,7 @@ The token is tried at Cloudflare before it is saved and kept sealed with the ins
 
 [System health](help:admin/health) checks both and tells the administrators when meetings from outside or the DNS records stop working.
 
-[VPN tunnels](help:admin/tunnels) into another network are set up on the same page, under {t:network.tunnels}.
+[VPN tunnels](help:admin/tunnels) into another network are set up on the same page, under {t:network.tunnels}, and below them [Docker hosts](help:admin/docker) under {t:docker.hosts}.
 
 ## Limits
 
@@ -41,6 +41,7 @@ The token is tried at Cloudflare before it is saved and kept sealed with the ins
 ## Related
 
 - [VPN tunnels](help:admin/tunnels)
+- [Docker hosts](help:admin/docker)
 - [System health](help:admin/health)
 - [Administration](help:admin/administration)
 - [Guests in a meeting](help:meetings/guests)

@@ -27,7 +27,7 @@ from django.utils import timezone
 
 from apps.blobs import store
 from apps.core.asyncdb import database
-from apps.workspace.views import kept_here
+from apps.workspace.remote import kept_here
 
 log = getLogger(__name__)
 

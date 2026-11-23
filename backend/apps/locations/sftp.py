@@ -20,7 +20,7 @@ from pathlib import Path
 
 from apps.network import socks
 
-from .remote import CHUNK, Entry, Failed
+from .remote import CHUNK, Entry, Failed, Stat
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +34,9 @@ PACKET = 1024 * 1024
 SAID = 16 * 1024
 
 INIT, VERSION, OPEN, CLOSE, READ, WRITE, LSTAT, FSTAT = 1, 2, 3, 4, 5, 6, 7, 8
+SETSTAT = 9
 OPENDIR, READDIR, REMOVE, MKDIR, RMDIR, REALPATH, STAT, RENAME = 11, 12, 13, 14, 15, 16, 17, 18
+READLINK = 19
 EXTENDED = 200
 STATUS, HANDLE, DATA, NAME, ATTRS = 101, 102, 103, 104, 105
 OK, EOF, NO_SUCH_FILE, PERMISSION_DENIED, FAILURE = 0, 1, 2, 3, 4
@@ -169,7 +171,7 @@ def _named(folder: Path) -> dict[str, str]:
     }
 
 
-def _placed(target: Target) -> tuple[Path, dict[str, str]]:
+def placed(target: Target) -> tuple[Path, dict[str, str]]:
     """A folder of the connection's own with its config, known hosts and secret, and the
     environment ssh runs in, the password told by askpass."""
     folder = Path(tempfile.mkdtemp(prefix="location-"))
@@ -183,6 +185,15 @@ def _placed(target: Target) -> tuple[Path, dict[str, str]]:
         _private(folder / "askpass", f'#!/bin/sh\nexec cat "{folder}/password"\n', 0o700)
         environment |= {"SSH_ASKPASS": str(folder / "askpass"), "SSH_ASKPASS_REQUIRE": "force"}
     return folder, environment
+
+
+def failure(said: str, host: str) -> Failed:
+    """Why ssh to the host ended, by what it said."""
+    for pattern, code in FAILURES:
+        if pattern.search(said):
+            return Failed(code)
+    log.warning("ssh to %s ended: %s", host, said or "without a word")
+    return Failed("location_failed")
 
 
 def made_key(comment: str) -> tuple[str, str]:
@@ -214,6 +225,10 @@ def _string(value: str | bytes) -> bytes:
 
 def _attrs(permissions: int | None = None) -> bytes:
     return _u32(0) if permissions is None else _u32(A_PERMISSIONS) + _u32(permissions)
+
+
+def _owned(uid: int, gid: int) -> bytes:
+    return _u32(A_UIDGID) + _u32(uid) + _u32(gid)
 
 
 class _Reader:
@@ -263,7 +278,7 @@ def _kind(attrs: dict) -> str:
     return {0o040000: "folder", 0o100000: "file", 0o120000: "link"}.get(kind, "other")
 
 
-def _entry(name: str, attrs: dict) -> Entry:
+def _entry(name: str, attrs: dict, link: str | None = None) -> Entry:
     kind = _kind(attrs)
     mtime = attrs.get("mtime")
     return Entry(
@@ -271,7 +286,14 @@ def _entry(name: str, attrs: dict) -> Entry:
         kind,
         attrs.get("size") if kind == "file" else None,
         datetime.fromtimestamp(mtime, UTC) if mtime is not None else None,
+        link,
     )
+
+
+def _owners(longname: str) -> tuple[str | None, str | None]:
+    """The owner and group a server's `ls -l` line names, as OpenSSH writes it."""
+    parts = longname.split(None, 4)
+    return (parts[2], parts[3]) if len(parts) == 5 else (None, None)
 
 
 class Connection:
@@ -295,7 +317,7 @@ class Connection:
         return self.failure is not None
 
     async def open(self) -> None:
-        self.folder, environment = _placed(self.target)
+        self.folder, environment = placed(self.target)
         try:
             self.process = await asyncio.create_subprocess_exec(
                 "ssh",
@@ -334,12 +356,7 @@ class Connection:
             return self.target.known_hosts
 
     def _failed(self) -> Failed:
-        said = self.said.decode(errors="replace").strip()
-        for pattern, code in FAILURES:
-            if pattern.search(said):
-                return Failed(code)
-        log.warning("ssh to %s ended: %s", self.target.host, said or "without a word")
-        return Failed("location_failed")
+        return failure(self.said.decode(errors="replace").strip(), self.target.host)
 
     def end(self, failure: Failed | None = None) -> None:
         if self.gone:
@@ -470,7 +487,19 @@ class Connection:
     async def write(self, handle: bytes, offset: int, data: bytes) -> None:
         await self.request(WRITE, _string(handle), _u64(offset), _string(data))
 
+    async def readlink(self, path: str) -> str:
+        reader = await self._expected(NAME, READLINK, _string(path))
+        reader.u32()
+        return reader.string()
+
+    async def setstat(self, path: str, attrs: bytes) -> None:
+        await self.request(SETSTAT, _string(path), attrs)
+
     async def entries(self, path: str) -> list[tuple[str, dict]]:
+        return [(name, attrs) for name, _, attrs in await self.lines(path)]
+
+    async def lines(self, path: str) -> list[tuple[str, str, dict]]:
+        """A folder's entries, each with the `ls -l` line the server writes of it."""
         handle = (await self._expected(HANDLE, OPENDIR, _string(path))).raw()
         found = []
         try:
@@ -482,10 +511,10 @@ class Connection:
                     raise Failed("location_garbled")
                 for _ in range(reader.u32()):
                     name = reader.string()
-                    reader.string()
+                    longname = reader.string()
                     attrs = reader.attrs()
                     if name not in (".", ".."):
-                        found.append((name, attrs))
+                        found.append((name, longname, attrs))
         finally:
             if not self.gone:
                 await self.close(handle)
@@ -549,18 +578,56 @@ class Sftp:
         found = []
         for name, attrs in await self.link.entries(folder):
             if _kind(attrs) == "link":
-                try:
-                    attrs = await self.link.stat(posixpath.join(folder, name))
-                except Failed:
-                    if self.link.gone:
-                        raise
-                    found.append(Entry(name, "link", None, None))
-                    continue
-            found.append(_entry(name, attrs))
+                found.append(await self._followed(posixpath.join(folder, name), name))
+            else:
+                found.append(_entry(name, attrs))
         return found
+
+    async def _followed(self, real: str, name: str) -> Entry:
+        """A symbolic link as what it points at, a link to nowhere where that is gone."""
+        try:
+            target = await self.link.readlink(real)
+        except Failed:
+            if self.link.gone:
+                raise
+            target = None
+        try:
+            return _entry(name, await self.link.stat(real), target)
+        except Failed:
+            if self.link.gone:
+                raise
+            return Entry(name, "link", None, None, target)
 
     async def stat(self, path: str) -> Entry:
         return _entry(posixpath.basename(path), await self.link.stat(self._real(path)))
+
+    async def described(self, path: str) -> Stat:
+        real = self._real(path)
+        name = posixpath.basename(real)
+        attrs = await self.link.stat(real, follow=False)
+        entry = await self._followed(real, name) if _kind(attrs) == "link" else _entry(name, attrs)
+        owner = group = None
+        if path:
+            above = posixpath.dirname(real)
+            for each, longname, _ in await self.link.lines(above):
+                if each == name:
+                    owner, group = _owners(longname)
+                    break
+        permissions = attrs.get("permissions")
+        return Stat(
+            entry,
+            mode=None if permissions is None else permissions & 0o7777,
+            uid=attrs.get("uid"),
+            gid=attrs.get("gid"),
+            owner=owner,
+            group=group,
+        )
+
+    async def chmod(self, path: str, mode: int) -> None:
+        await self.link.setstat(self._real(path), _attrs(mode))
+
+    async def chown(self, path: str, uid: int, gid: int) -> None:
+        await self.link.setstat(self._real(path), _owned(uid, gid))
 
     async def chunks(self, path: str, start: int, length: int) -> AsyncIterator[bytes]:
         """The bytes from `start` on, several reads ahead of what is sent on."""

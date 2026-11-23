@@ -4,7 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 from anyio import create_task_group
-from asgiref.sync import sync_to_async
+from asgiref.sync import SyncToAsync
 from django.db import connections
 
 from apps.backups import backups
@@ -22,6 +22,16 @@ def pytest_make_parametrize_id(config, val, argname):
     if isinstance(val, bytes):
         return argname
     return None
+
+
+@pytest.fixture(autouse=True)
+def shared_thread_released(request):
+    yield
+    # An async test reaches the database through the one thread asgiref keeps for thread-sensitive
+    # calls outside a request; its pooled connection would outlive the test and hold the test
+    # database open past the pool's close.
+    if request.node.get_closest_marker("anyio"):
+        SyncToAsync.single_thread_executor.submit(connections.close_all).result()
 
 
 @pytest.fixture(autouse=True)
@@ -110,6 +120,3 @@ async def live(monkeypatch):
     monkeypatch.setattr(server, "collab", fresh)
     async with fresh, create_task_group():
         yield fresh
-    # The rooms reach the database on the thread Django shares outside a request, whose
-    # connection would otherwise outlive the test and hold the test database open.
-    await sync_to_async(connections.close_all)()

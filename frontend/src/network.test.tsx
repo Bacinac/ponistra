@@ -18,6 +18,7 @@ test('the network page says the ports are not confirmed and keeps a DNS token by
   serve({
     'GET /api/network': () => network,
     'GET /api/network/tunnels': () => ({ tunnels: [] }),
+    'GET /api/containers/hosts': () => ({ hosts: [] }),
     'PATCH /api/network': async (request) => {
       sent.push(await request.json());
       network = {
@@ -47,6 +48,7 @@ test('without names pointing straight at it the installation asks for no token',
   serve({
     'GET /api/network': () => ({ ...SEEN, reached: true, relay: '', names: [] }),
     'GET /api/network/tunnels': () => ({ tunnels: [] }),
+    'GET /api/containers/hosts': () => ({ hosts: [] }),
   });
   open('/network', { is_admin: true });
   expect(await screen.findByText('Dostupno')).toBeTruthy();

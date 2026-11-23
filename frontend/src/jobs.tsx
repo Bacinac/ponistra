@@ -26,7 +26,7 @@ export type JobKind =
   | 'links'
   | 'personal'
   | 'mail-move'
-  | 'network'
+  | 'checksum'
   | 'opened'
   | 'unpack';
 
@@ -127,7 +127,7 @@ const DOING: Record<JobKind, MessageKey> = {
   links: 'job.import',
   personal: 'job.saving',
   'mail-move': 'job.mailMove',
-  network: 'job.copy',
+  checksum: 'job.checksum',
   opened: 'job.import',
   unpack: 'job.unpack',
 };

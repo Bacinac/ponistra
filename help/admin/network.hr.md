@@ -29,7 +29,7 @@ Token se prije spremanja provjerava kod Cloudflarea i čuva zapečaćen tajnim k
 
 [Zdravlje sustava](help:admin/health) provjerava oboje i javlja administratorima kad sastanci izvana ili DNS zapisi prestanu raditi.
 
-[VPN tuneli](help:admin/tunnels) u drugu mrežu postavljaju se na istoj stranici, pod {t:network.tunnels}.
+[VPN tuneli](help:admin/tunnels) u drugu mrežu postavljaju se na istoj stranici, pod {t:network.tunnels}, a ispod njih [Docker domaćini](help:admin/docker) pod {t:docker.hosts}.
 
 ## Ograničenja
 
@@ -41,6 +41,7 @@ Token se prije spremanja provjerava kod Cloudflarea i čuva zapečaćen tajnim k
 ## Povezano
 
 - [VPN tuneli](help:admin/tunnels)
+- [Docker domaćini](help:admin/docker)
 - [Zdravlje sustava](help:admin/health)
 - [Administracija](help:admin/administration)
 - [Gosti na sastanku](help:meetings/guests)

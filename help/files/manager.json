@@ -1,0 +1,27 @@
+{
+  "order": 5,
+  "audience": "everyone",
+  "covers": [
+    "route:/files/:source?"
+  ],
+  "quiet": [
+    "files.conflictBody",
+    "files.counted",
+    "files.tabs",
+    "transfers.files",
+    "transfers.items",
+    "transfers.skipped"
+  ],
+  "describes": {
+    "frontend/src/filesPage.tsx#FilesPage": "a706e7161107",
+    "frontend/src/filesPage.tsx#FilesTree": "676bb9a6e35f",
+    "frontend/src/filesPage.tsx#Overview": "607871a53aa6",
+    "frontend/src/filesPage.tsx#ConflictDialog": "b8d02c4f0556",
+    "frontend/src/files.tsx#FileBrowser": "484327afae19",
+    "frontend/src/filesParts.tsx#AddressBar": "d63c466c688c",
+    "frontend/src/filesParts.tsx#Properties": "c69e02ab3ce3",
+    "frontend/src/ponistraFiles.tsx#ponistraSource": "71116d9ad11b",
+    "frontend/src/transfers.tsx#Transfers": "277433eb5238",
+    "backend/apps/files/transfer.py#_Transfer": "a90d9677aae8"
+  }
+}

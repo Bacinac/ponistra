@@ -53,11 +53,13 @@ services:
     environment:
       PONISTRA_ENV: dev
       PONISTRA_MAIL_PLAIN_HOSTS: mox
-    networks: [mailtest, sftptest]
+    networks: [mailtest, sftptest, dockertest]
     depends_on:
       mox:
         condition: service_started
       sftp:
+        condition: service_started
+      dockerhost:
         condition: service_started
     volumes:
       - ./backend:/app
@@ -109,6 +111,19 @@ services:
     image: ponistra/sftp
     container_name: ponistra_sftp
     networks: [sftptest]
+    restart: unless-stopped
+
+  dockerhost:
+    # The Docker host the backend's tests and the browser's reach by SSH (D55): the account dock,
+    # password dockdock, its stacks in ~/stacks. Docker in Docker runs only privileged; its
+    # network reaches nothing but the backend.
+    build:
+      context: ./e2e/docker
+    image: ponistra/dockerhost
+    container_name: ponistra_dockerhost
+    networks: [dockertest]
+    privileged: true
+    mem_limit: 1g
     restart: unless-stopped
 
   converter:
@@ -183,4 +198,6 @@ networks:
   mailtest:
     internal: true
   sftptest:
+    internal: true
+  dockertest:
     internal: true

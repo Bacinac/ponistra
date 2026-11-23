@@ -137,7 +137,7 @@ def workspace(settings, monkeypatch):
     workspace.answer = (200, LISTED)
     workspace.asked = asked
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
     )
     return workspace
@@ -748,7 +748,7 @@ def test_the_owner_downloads_a_file_as_the_workspace_sends_it(owner, settings, m
         return httpx2.Response(200, content=sent, headers={"content-length": str(len(sent))})
 
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
     )
     response = owner.get("/api/workspace/file/raw", FILE)
@@ -823,7 +823,7 @@ def test_an_uploaded_file_reaches_the_workspace_whole(owner, settings, monkeypat
         return httpx2.Response(200, json={"path": "docs/a.bin", "size": len(data)})
 
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
     )
     given = {"folder": "/work/ponistra", "path": "docs", "name": "a.bin", "blob": blob}
@@ -847,7 +847,7 @@ def test_a_picture_is_shown_in_place_and_a_player_gets_its_range(owner, settings
         return httpx2.Response(200, content=PNG, headers={"content-length": str(len(PNG))})
 
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
     )
     response = owner.get("/api/workspace/file/raw", FILE, headers={"Range": "bytes=4-7"})
@@ -873,7 +873,7 @@ def test_a_picture_is_drawn_small_by_the_reader(owner, settings, monkeypatch):
         return b"webp"
 
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
     )
     monkeypatch.setattr("apps.workspace.views.reading.ask", ask)
@@ -926,7 +926,7 @@ def project(settings, monkeypatch):
         return httpx2.Response(200, content=data, headers={"content-length": str(len(data))})
 
     monkeypatch.setattr(
-        "apps.workspace.views.httpx2.AsyncClient",
+        "apps.workspace.remote.httpx2.AsyncClient",
         partial(httpx2.AsyncClient, transport=httpx2.MockTransport(answered)),
     )
 

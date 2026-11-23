@@ -8,7 +8,7 @@ Every page of Ponistra has the same frame: the bar of modules, the header with t
 
 ### Modules
 
-1. On the bar of modules ({t:rail.label}) choose {t:rail.today}, {t:rail.calendar}, {t:rail.mail}, {t:rail.chat} or {t:rail.documents}. On a wide screen the bar is along the left edge, on a phone along the bottom, where {t:rail.calendar} is left out: it opens from {t:rail.calendar} beside the day's schedule on {t:rail.today}. On a phone the page's title stands in a row of its own below the header's buttons.
+1. On the bar of modules ({t:rail.label}) choose {t:rail.today}, {t:rail.calendar}, {t:rail.mail}, {t:rail.chat}, {t:rail.documents} or {t:rail.files}. On a wide screen the bar is along the left edge, on a phone along the bottom, where {t:rail.calendar} is left out: it opens from {t:rail.calendar} beside the day's schedule on {t:rail.today}. On a phone the page's title stands in a row of its own below the header's buttons.
 2. The Ponistra logo at the top of the bar leads to {t:rail.today}.
 3. A page that belongs to a module, as {t:rail.contacts} belongs to {t:rail.chat}, has the module's name before its title in the header, which takes you back to it.
 4. If you own a code workspace, the bar also holds {t:rail.projects}, [a page of projects and chats](help:agents/projects); on a phone it is in the {t:frame.account} menu instead.
@@ -16,7 +16,7 @@ Every page of Ponistra has the same frame: the bar of modules, the header with t
 ### The left column
 
 1. The left column holds what belongs to the page: the folders of documents, the calendars, the list of conversations or the contents of the help.
-2. Beside the documents the column offers {t:favourites.title} at the top, then the places {t:tree.root}, {t:tree.company} (when the company has shared folders), {t:tree.shared} and {t:locations.title}. Below a line are the collections {t:notes.title}, {t:links.title}, {t:boards.title} and {t:vault.title}, and below the next line {t:trash.title}.
+2. Beside the documents the column offers {t:favourites.title} at the top, then the places {t:tree.root}, {t:tree.company} (when the company has shared folders) and {t:tree.shared}. Below a line are the collections {t:notes.title}, {t:links.title}, {t:boards.title} and {t:vault.title}, and below the next line {t:trash.title}.
 3. Open a place, a folder with subfolders or {t:boards.title} with its groups by the arrow before its name ({t:frame.expand}), and close it by the same arrow ({t:frame.collapse}). Pressing the name shows its contents on the right.
 4. Change the column's width by dragging its right edge ({t:frame.width}). A double click on the edge brings back the default width.
 5. With the edge chosen by {k:Tab}, the {k:ArrowLeft} and {k:ArrowRight} keys change the width, and {k:Home} and {k:End} give the narrowest and the widest.

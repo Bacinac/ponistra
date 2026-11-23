@@ -1,6 +1,6 @@
 # Network locations
 
-A network location is a folder on a server, together with the account Ponistra signs in to it with; it is added in the settings, and its files open in Documents.
+A network location is a folder on a server, together with the account Ponistra signs in to it with; it is added in the settings, and its files open on the {t:rail.files} page.
 
 ## How to use it
 
@@ -31,7 +31,7 @@ A network location is a folder on a server, together with the account Ponistra s
 3. {t:access.share} opens the access list: add a person, a group or all users and choose {t:access.role.read}, {t:access.role.edit} or {t:access.role.own}.
 4. {t:locations.remove} removes the location after a confirmation.
 
-A location's name in the list opens its [files](help:documents/network).
+A location's name in the list opens its [files](help:files/network).
 
 ## How it works
 
@@ -61,6 +61,6 @@ Removing a location takes it from everyone, and the files on the server stay unt
 
 ## Related
 
-- [Files on the network](help:documents/network)
+- [Files on the network](help:files/network)
 - [Sharing](help:documents/sharing)
 - [Confirming that it is you](help:account/confirm)

@@ -65,6 +65,7 @@ import { ContextMenuArea, Menu, MenuChoices, MenuItem, MenuSub } from './menu';
 import { useMenuPress } from './press';
 import { button, field, iconButton, primaryButton } from './styles';
 import { codeText, errorMessage, Failure } from './tree';
+import { filesHref } from './locationsData';
 import { useHeldRelease } from './release';
 import { useFilePicker } from './upload';
 import { DictateButton } from './voice';
@@ -1356,7 +1357,7 @@ function ProjectSection({
   chosen: string | null;
   onChoose: Choose;
   onTerminal: (folder: string, name: string) => void;
-  onFiles: (folder: string, name: string) => void;
+  onFiles: (folder: string) => void;
   starting: Starting | null;
   onStart: (starting: Starting) => void;
 }) {
@@ -1462,7 +1463,7 @@ function ProjectSection({
               type="button"
               aria-label={t('workspace.files.open')}
               title={t('workspace.files.open')}
-              onClick={() => onFiles(project.path, name)}
+              onClick={() => onFiles(project.path)}
               className={`${small} shrink-0`}
             >
               <FolderTree size={16} aria-hidden />
@@ -2361,7 +2362,7 @@ function Others({
   chosen: string | null;
   onChoose: Choose;
   onTerminal: (folder: string, name: string) => void;
-  onFiles: (folder: string, name: string) => void;
+  onFiles: (folder: string) => void;
   starting: Starting | null;
   onStart: (starting: Starting) => void;
 }) {
@@ -2407,7 +2408,7 @@ function latest(projects: Project[]): string | null {
   return rounds[0]?.coordinator.id ?? null;
 }
 
-type Tab = 'overview' | 'chat' | 'memory' | 'hours' | 'spend' | 'terminal' | 'files';
+type Tab = 'overview' | 'chat' | 'memory' | 'hours' | 'spend' | 'terminal';
 
 type View = Tab | 'start';
 
@@ -2421,13 +2422,12 @@ interface Starting {
 const LINKED = ['memory', 'hours', 'spend'] as const;
 
 /** The views a phone keeps in a menu beside the overview and the conversation. */
-const TUCKED = new Set<Tab>(['terminal', 'files', 'memory', 'hours', 'spend']);
+const TUCKED = new Set<Tab>(['terminal', 'memory', 'hours', 'spend']);
 
 const VIEW_ICONS: Record<Tab, LucideIcon> = {
   overview: ClipboardList,
   chat: MessageSquarePlus,
   terminal: SquareTerminal,
-  files: FolderTree,
   memory: Brain,
   hours: Clock,
   spend: Gauge,
@@ -2437,14 +2437,12 @@ const VIEWS: Record<Tab, MessageKey> = {
   overview: 'workspace.view.overview',
   chat: 'workspace.view.chat',
   terminal: 'workspace.view.terminal',
-  files: 'workspace.view.files',
   memory: 'workspace.view.memory',
   hours: 'workspace.view.hours',
   spend: 'workspace.view.spend',
 };
 
 const TerminalPanel = lazily(() => import('./Terminal'), 'TerminalPanel');
-const FilesPanel = lazily(() => import('./workspaceFiles'), 'FilesPanel');
 
 /** Opens a chat in the editor by its session, for the menu of every chat's line. */
 const Opening = createContext<((session: string) => void) | null>(null);
@@ -2467,6 +2465,7 @@ function Pult({
   const { t, formatNumber } = useI18n();
   useThemeOf('projects');
   const wide = useWide();
+  const navigate = useNavigate();
   const [folders, setFolders, foldersStyle] = useWidth(FOLDERS);
   const queryClient = useQueryClient();
   const measured = useMutation({
@@ -2512,9 +2511,6 @@ function Pult({
     setView('chat');
   }, [asked]);
   const [terminal, setTerminal] = useState<{ folder: string; name: string } | null>(null);
-  const [files, setFiles] = useState<{ folder: string; name: string } | null>(null);
-  const [filesDirty, setFilesDirty] = useState(false);
-  const [nextFiles, setNextFiles] = useState<{ folder: string; name: string } | null>(null);
   const [starting, setStarting] = useState<Starting | null>(null);
   // Wide, the list stands beside the page, which shows the chat in its place.
   const shown = wide && view === 'overview' ? 'chat' : view;
@@ -2544,14 +2540,10 @@ function Pult({
     setTerminal(null);
     setView((now) => (now === 'terminal' ? (wide ? 'chat' : 'overview') : now));
   };
-  const openFiles = (folder: string, name: string) => {
-    if (filesDirty && files && files.folder !== folder) return setNextFiles({ folder, name });
-    setFiles({ folder, name });
-    setView('files');
-  };
-  const closeFiles = () => {
-    setFiles(null);
-    setView((now) => (now === 'files' ? (wide ? 'chat' : 'overview') : now));
+  const openFiles = (folder: string) => {
+    const href = filesHref(`workspace:${folder}`);
+    if (beside) window.open(href, '_blank', 'noopener');
+    else void navigate(href);
   };
   // The workspace lets the chat's process go first, as a session never runs in two.
   const open = (chat: Known) =>
@@ -2616,10 +2608,7 @@ function Pult({
     </OpenRounds>
   );
   const views = (Object.keys(VIEWS) as Tab[]).filter(
-    (each) =>
-      (!wide || each !== 'overview') &&
-      (terminal || each !== 'terminal') &&
-      (files || each !== 'files'),
+    (each) => (!wide || each !== 'overview') && (terminal || each !== 'terminal'),
   );
   const tucked = views.find((each) => TUCKED.has(each) && each === shown);
   const counted = (each: Tab) => {
@@ -2711,34 +2700,7 @@ function Pult({
           </Suspense>
         </div>
       )}
-      {files && (
-        <div className={shown === 'files' ? 'flex min-h-0 min-w-0 flex-1 flex-col' : 'hidden'}>
-          <Suspense fallback={<Loading />}>
-            <FilesPanel
-              key={files.folder}
-              folder={files.folder}
-              name={files.name}
-              onDirty={setFilesDirty}
-              onClose={closeFiles}
-            />
-          </Suspense>
-        </div>
-      )}
-      {nextFiles && (
-        <ConfirmDialog
-          heading={t('workspace.files.discard')}
-          confirmLabel={t('workspace.files.discardConfirm')}
-          onConfirm={() => {
-            setFiles(nextFiles);
-            setView('files');
-            setNextFiles(null);
-          }}
-          onClose={() => setNextFiles(null)}
-        >
-          {t('workspace.files.discardBody')}
-        </ConfirmDialog>
-      )}
-      {shown === 'terminal' || shown === 'files' ? null : shown === 'memory' ? (
+      {shown === 'terminal' ? null : shown === 'memory' ? (
         <Memory names={names} />
       ) : shown === 'hours' ? (
         <Hours named={named} />

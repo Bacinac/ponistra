@@ -42,6 +42,7 @@ test('a WireGuard tunnel is added from its configuration and shows the state the
   serve({
     'GET /api/network': () => NETWORK,
     'GET /api/network/tunnels': () => ({ tunnels }),
+    'GET /api/containers/hosts': () => ({ hosts: [] }),
     'POST /api/network/tunnels': async (request) => {
       sent.push(await request.json());
       tunnels = [
@@ -82,6 +83,7 @@ test('a refused SoftEther tunnel says why, keeps its password when edited and is
   serve({
     'GET /api/network': () => NETWORK,
     'GET /api/network/tunnels': () => ({ tunnels }),
+    'GET /api/containers/hosts': () => ({ hosts: [] }),
     'PATCH /api/network/tunnels/:id': async (request) => {
       const given = await request.json();
       sent.push(given);
