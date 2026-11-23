@@ -9,7 +9,7 @@
     "tree.sharedByMeEmpty"
   ],
   "describes": {
-    "frontend/src/FolderPage.tsx#SharedPage": "bbd8873100ad",
+    "frontend/src/ponistraFiles.tsx#SharedToggle": "a4aaa133398f",
     "backend/apps/access/rights.py#shared_with": "b70de1cc4883",
     "backend/apps/access/rights.py#shared_by": "929a820ec0c8"
   }

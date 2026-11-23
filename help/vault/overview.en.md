@@ -8,7 +8,7 @@ The vault keeps your passwords, one-time codes and notes encrypted in the browse
 
 ### Making the vault
 
-1. In the left column of Documents choose {t:vault.title}, or type its name into the search box. The first time, the page shows {t:vault.setup}.
+1. In the left column choose {t:vault.title}, or type its name into the search box. The first time, the page shows {t:vault.setup}.
 2. Type {t:vault.password.new}, at least 12 characters, and repeat it under {t:vault.password.again}.
 3. Press {t:vault.make}.
 4. The {t:vault.code} opens. Press {t:health.kit.copy} or {t:health.kit.download} and keep the code outside Ponistra.

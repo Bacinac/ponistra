@@ -194,7 +194,7 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   const rail = page.getByRole('navigation', { name: 'Moduli' });
   await expect(rail.getByRole('link', { name: 'Danas' })).toHaveAttribute('aria-current', 'page');
   await expect(rail.getByRole('link', { name: 'Kalendar' })).toHaveAttribute('href', '/calendar');
-  const order = ['Danas', 'Kalendar', 'Pošta', 'Razgovori', 'Dokumenti'];
+  const order = ['Danas', 'Kalendar', 'Pošta', 'Razgovori', 'Datoteke'];
   const tops = await Promise.all(
     order.map(async (name) => (await rail.getByRole('link', { name }).boundingBox())!.y),
   );
@@ -207,17 +207,22 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   const recent = page.getByRole('region', { name: 'Nedavni dokumenti' });
   await recent.getByRole('link', { name: /Zapisnik sastanka/ }).click();
   await expect(page).toHaveURL(new RegExp(address));
-  await expect(rail.getByRole('link', { name: 'Dokumenti' })).toHaveAttribute(
+  await expect(rail.getByRole('link', { name: 'Datoteke' })).toHaveAttribute(
     'aria-current',
     'page',
   );
-  await rail.getByRole('link', { name: 'Dokumenti' }).click();
+  await rail.getByRole('link', { name: 'Datoteke' }).click();
+  await expect(page).toHaveURL(/\/files$/);
+  await page
+    .getByRole('navigation', { name: 'Mape' })
+    .getByRole('link', { name: 'Moji dokumenti', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/documents$/);
   await expect(page.getByRole('row', { name: /Zapisnik sastanka/ })).toHaveCount(1);
   await expect(rail.getByRole('link', { name: 'Sef' })).toHaveCount(0);
   await page.getByRole('navigation', { name: 'Mape' }).getByRole('link', { name: 'Sef' }).click();
   await expect(page).toHaveURL(/\/vault/);
-  await expect(rail.getByRole('link', { name: 'Dokumenti' })).toHaveAttribute(
+  await expect(rail.getByRole('link', { name: 'Datoteke' })).toHaveAttribute(
     'aria-current',
     'page',
   );
@@ -225,13 +230,7 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   await page.setViewportSize({ width: 600, height: 800 });
   await page.goto('/');
   await expect.poll(async () => (await rail.boundingBox())?.y).toBeGreaterThan(700);
-  await expect(rail.getByRole('link')).toHaveText([
-    'Danas',
-    'Pošta',
-    'Razgovori',
-    'Dokumenti',
-    'Datoteke',
-  ]);
+  await expect(rail.getByRole('link')).toHaveText(['Danas', 'Pošta', 'Razgovori', 'Datoteke']);
   const account = (await page.getByRole('button', { name: /^Račun / }).boundingBox())!;
   const title = (await page.getByRole('heading', { level: 1, name: 'Danas' }).boundingBox())!;
   expect(title.y).toBeGreaterThanOrEqual(account.y + account.height);
@@ -360,8 +359,8 @@ test('a page that outlives its release takes the new one at the next page it goe
   await page.goto('/notes');
   await expect.poll(() => socket).toBeTruthy();
   const main = page.getByRole('navigation', { name: 'Moduli' });
-  await main.getByRole('link', { name: 'Dokumenti' }).click();
-  await expect(page).toHaveURL(/\/documents$/);
+  await main.getByRole('link', { name: 'Datoteke' }).click();
+  await expect(page).toHaveURL(/\/files$/);
 
   let reloaded = false;
   page.once('load', () => {
@@ -450,6 +449,8 @@ test('the side column holds the places as roots of one tree, then the collection
       'Omiljeno',
       'Moji dokumenti',
       'Dijeljeno',
+      'Oznake',
+      'Mreža',
       'Bilješke',
       'Poveznice',
       'Ploče',

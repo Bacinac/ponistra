@@ -1,13 +1,13 @@
 # Datoteke
 
-Stranica {t:rail.files} u jednom stablu okuplja sve izvore datoteka koje dosežete: Moje dokumente, Tvrtku i Dijeljeno u Ponistri, lokacije na mreži i, vlasniku, projekte radnog prostora, u jednom ili dva panela i u karticama.
+Stranica {t:rail.files} u jednom stablu okuplja sve izvore datoteka koje dosežete: Moje dokumente, Tvrtku, Dijeljeno, Omiljeno i Ploče u Ponistri, lokacije na mreži i, vlasniku, projekte radnog prostora, u jednom ili dva panela i u karticama.
 
 ## Kako se koristi
 
 ### Otvaranje izvora
 
 1. Na traci modula pritisnite {t:rail.files}.
-2. Bez otvorene mape stranica pokazuje sve izvore po skupinama: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}), {t:locations.title} i {t:files.workspace}. Pritisnite izvor.
+2. Bez otvorene mape stranica pokazuje sve izvore po skupinama: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}, {t:favourites.title}, {t:boards.title}), {t:locations.title} i {t:files.workspace}. Pritisnite izvor.
 3. U lijevom stupcu strelica ({t:frame.expand}) uz izvor otvara njegove mape, uz mapu njezine podmape, a ponovni pritisak ({t:frame.collapse}) ih skriva. Pritisak na naziv otvara mapu u panelu; redak otvorene mape je označen.
 4. Na mobitelu stablo otvara gumb {t:frame.folders}.
 
@@ -69,13 +69,13 @@ Između izvora prenosi poslužitelj, ne preglednik, pa prijenos teče i kad zatv
 
 ### Ostale radnje
 
-Mapa se izrađuje, datoteke učitavaju, otvaraju, uređuju, preimenuju, premještaju, brišu i preuzimaju kao [datoteke na mreži](help:files/network). U Mojim dokumentima, Tvrtki i Dijeljenom dokument se otvara u svom uređivaču, a datoteka na svojoj stranici, kao u [Dokumentima](help:documents/overview).
+Mapa se izrađuje, datoteke učitavaju, otvaraju, uređuju, preimenuju, premještaju, brišu i preuzimaju kao [datoteke na mreži](help:files/network). U Mojim dokumentima, Tvrtki i Dijeljenom dokument se otvara u svom uređivaču, a datoteka na svojoj stranici, a izbornici nude i ono što Ponistra radi uz datoteke ([Pregled dokumenata](help:documents/overview)): dijeljenje, kopiju dokumenta, izvlačenje u tablicu, spajanje PDF-ova, omiljeno i rad bez mreže.
 
 ## Kako radi
 
-Svaki izvor ostaje gdje jest: stranica čita mapu izvora kad je otvorite, a Moji dokumenti, Tvrtka i Dijeljeno su isti dokumenti i mape kao u Dokumentima, pa se promjena na jednom mjestu odmah vidi na drugom. Projekti radnog prostora vidljivi su samo njegovu vlasniku.
+Svaki izvor ostaje gdje jest: stranica čita mapu izvora kad je otvorite, a promjena koju netko napravi u Mojim dokumentima, Tvrtki ili Dijeljenom odmah se vidi i u vašem popisu. Projekti radnog prostora vidljivi su samo njegovu vlasniku.
 
-Premještanje unutar istog izvora je preimenovanje na samom izvoru. Premještanje između Mojih dokumenata, Tvrtke i Dijeljenog pomiče sam dokument ili mapu, kao u Dokumentima: zadržava dijeljenja i povijest. Kopiranje, i svako premještanje između dvaju izvora, radi poslužitelj Ponistre kao posao: čita iz jednog izvora i piše u drugi, nikad kroz preglednik, pa se ne prekida kad zatvorite stranicu. Red prijenosa ispod panela pokazuje napredak.
+Premještanje unutar istog izvora je preimenovanje na samom izvoru. Premještanje između Mojih dokumenata, Tvrtke i Dijeljenog pomiče sam dokument ili mapu: zadržava dijeljenja i povijest. Kopiranje, i svako premještanje između dvaju izvora, radi poslužitelj Ponistre kao posao: čita iz jednog izvora i piše u drugi, nikad kroz preglednik, pa se ne prekida kad zatvorite stranicu. Red prijenosa ispod panela pokazuje napredak.
 
 - Kopija unutar Ponistre svaku stavku izrađuje iznova: dokument s karticama i verzijama, datoteku s istim sadržajem, poveznicu s adresom. Vlasnik kopije ste vi.
 - Iz Ponistre na mrežu ili u radni prostor dokument se zapisuje u svom Office obliku (DOCX, XLSX, PPTX, s makroima ako ih je imao), PDF s bilješkama, a poveznica kao datoteka .url. Premještanjem izvorna stavka ide u {t:trash.title}.
@@ -99,5 +99,5 @@ Oznake pripadaju računu i vide se na svakom uređaju na koji se prijavite. Kart
 
 - [Datoteke na mreži](help:files/network)
 - [Mrežne lokacije](help:documents/locations)
-- [Dokumenti](help:documents/overview)
+- [Pregled dokumenata](help:documents/overview)
 - [Projekti](help:agents/projects)

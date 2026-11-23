@@ -6,7 +6,7 @@
     "files.deleteBody"
   ],
   "describes": {
-    "frontend/src/files.tsx#FileBrowser": "6e2c05bad993",
+    "frontend/src/files.tsx#FileBrowser": "27ea1ece0813",
     "frontend/src/files.tsx#FileView": "8ed4e44556d8",
     "backend/apps/locations/views.py#files": "79c81f482f09",
     "backend/apps/locations/views.py#raw": "3e9488b90b5b",

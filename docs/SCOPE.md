@@ -5087,3 +5087,16 @@ A6 (D19) comes in after S3's step *the mail is ours*, before the rest of S3.
   - *Incus stays with Ponistra OS's „Računala”* (its D11): machines and their guests, through its
     agent. A guest is a source in Files, and Docker in a guest is a Docker host like any other.
   - Filebrowser on LXC 210 (`_infra/filebrowser`) retires with this rather than with D54.
+- **D56: Documents goes into Files, one folder view for every source — approved 2026-11-23**
+  (Ivo: „i sad imamo i files i documents … zašto ne u files sve”). D55 left My documents,
+  Company and Shared on two pages, each with a list of its own; one place shows them now.
+  - *One page.* *Documents* leaves the rail and `/documents` goes; the side column of Files is the
+    one tree: Favourites, My documents, Company, Shared, the network locations and the workspace,
+    then Notes, Links, Boards, the vault and the trash, each a place as it was. A Ponistra
+    folder's address stays `/f/<id>`, read by Files; a document still opens at `/d/<id>`.
+  - *One folder view.* `FileBrowser` is the only list of a folder, whatever the source; the
+    Documents' `Explorer` is removed. What Ponistra's own tree does beyond files comes through
+    its `FileSource`: the New menu (document, folder, link, scan, upload of files and folders),
+    the preview beside the list (D24), sharing and access, the AI's extraction into a table,
+    joining PDFs, a ZIP, keeping offline (D45) and the favourite flag. Favourites, Shared,
+    Company and a group of boards are read in the same view, two panes and tabs included.

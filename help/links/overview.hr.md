@@ -6,7 +6,7 @@ Poveznice su vaše spremljene web adrese, složene u grupe kao pločice s ikonom
 
 ### Nova poveznica
 
-1. U lijevom stupcu Dokumenata otvorite [poveznice](/links) i pritisnite {t:create.new}, zatim {t:create.link}.
+1. U lijevom stupcu otvorite [poveznice](/links) i pritisnite {t:create.new}, zatim {t:create.link}.
 2. Upišite {t:tree.address}, a po želji i {t:tree.name}.
 3. Pritisnite {t:tree.create}.
 

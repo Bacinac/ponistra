@@ -1,6 +1,7 @@
 """A source of Files by the key the page knows it by: a location of the network
-(`location:<id>`), a project of the workspace (`workspace:<folder>`) or Ponistra's own tree
-(`ponistra:mine|company|shared`, its paths chains of node ids, the last one the node)."""
+(`location:<id>`), a project of the workspace (`workspace:<folder>`) or a place of Ponistra's own
+tree (`ponistra:mine|company|shared|sharing|favourites|boards`, its paths chains of node ids, the
+last one the node)."""
 
 import uuid
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ from apps.workspace.views import CONFIRMED_FOR as WORKSPACE_CONFIRMED_FOR
 from apps.workspace.views import owns
 
 KEY = 200
-TREES = {"mine", "company", "shared"}
+TREES = {"mine", "company", "shared", "sharing", "favourites", "boards"}
 
 
 @dataclass(frozen=True)

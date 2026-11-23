@@ -1,48 +1,39 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Bookmark,
-  Building2,
   Columns2,
   EyeOff,
   Eye,
-  Folder,
   FolderKanban,
-  FolderOpen,
   LayoutGrid,
   List,
   type LucideIcon,
-  Network,
   Plus,
-  Trash2,
-  Users,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
-import { deleteJson, getJson, postJson } from './api';
-import { useSession } from './auth';
+import { Link, Navigate, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
+import { postJson } from './api';
 import { Cancel, Modal } from './dialogs';
-import {
-  DeskContext,
-  FileBrowser,
-  hiddenName,
-  listKey,
-  type Clip,
-  type Desk,
-  type FileSource,
-} from './files';
-import { Frame, Loading, TreeRow, type Rows, type TreeSource } from './frame';
+import { DeskContext, FileBrowser, type Clip, type Desk, type FileSource } from './files';
+import { Addressed, Frame, Loading, Missing } from './frame';
+import { BOOKMARKS, projectName, ROOT_LOOKS, useBookmarks, useSources } from './filesTree';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
-import { locationSource } from './locations';
-import { filesHref, LOCATION_ICONS, useLocations } from './locationsData';
-import { ContextMenuArea, MenuItem } from './menu';
-import { ponistraSource, rootKey, ROOTS, type Root } from './ponistraFiles';
+import { filesHref, LOCATION_ICONS } from './locationsData';
+import { rootKey, ROOTS, type Root } from './ponistraFiles';
 import { button, iconButton, primaryButton } from './styles';
 import { conflictsOf, startTransfer, Transfers, type Conflict } from './transfers';
-import { errorMessage } from './tree';
-import { workspaceSource } from './workspaceFiles';
+import {
+  errorMessage,
+  groupHref,
+  nodeHref,
+  useNode,
+  type Root as TreeRoot,
+  type TreeNode,
+} from './tree';
+import { idIn } from './address';
 
 /** A folder shown in a pane: the source it lies in, by key, and its path there. */
 interface Pane {
@@ -60,16 +51,8 @@ interface Tabs {
   current: number;
 }
 
-interface Kept {
-  id: number;
-  source: string;
-  path: string;
-  name: string;
-}
-
 const TABS = 'ponistra.files.tabs';
 const LOOK = 'ponistra.files.look';
-const BOOKMARKS = ['bookmarks'];
 
 function stored<T>(key: string, fallback: T): T {
   try {
@@ -88,258 +71,7 @@ function store(key: string, value: unknown) {
   }
 }
 
-const ROOT_LOOKS: Record<Root, { icon: LucideIcon; label: MessageKey }> = {
-  mine: { icon: FolderOpen, label: 'tree.root' },
-  company: { icon: Building2, label: 'tree.company' },
-  shared: { icon: Users, label: 'tree.shared' },
-};
-
-interface Project {
-  name: string | null;
-  path: string;
-}
-
-/** The projects of the code workspace, for its owner alone. */
-function useProjects(enabled: boolean) {
-  return useQuery({
-    queryKey: ['workspace', 'projects', 'folders'],
-    queryFn: () =>
-      getJson<{ projects: Project[] }>('/api/workspace/projects').then(({ projects }) =>
-        projects.map(({ name, path }) => ({ name, path })),
-      ),
-    enabled,
-    staleTime: 60_000,
-  });
-}
-
-const projectName = (project: Project) => project.name ?? project.path.split('/').pop() ?? '';
-
-/** Every source the user reaches, by key: Ponistra's own places, the network's locations and,
- * for its owner, the workspace's projects. */
-function useSources() {
-  const { t } = useI18n();
-  const owner = Boolean(useSession().data?.user?.workspace);
-  const locations = useLocations();
-  const projects = useProjects(owner);
-  const sources = useMemo(() => {
-    const all = new Map<string, FileSource>();
-    for (const root of ROOTS)
-      all.set(rootKey(root), ponistraSource(root, t(ROOT_LOOKS[root].label)));
-    for (const location of locations.data?.locations ?? []) {
-      const source = locationSource(location);
-      all.set(source.key, source);
-    }
-    for (const project of projects.data ?? []) {
-      const source = workspaceSource(project.path, projectName(project));
-      all.set(source.key, source);
-    }
-    return all;
-  }, [t, locations.data, projects.data]);
-  return {
-    sources,
-    owner,
-    locations,
-    projects,
-    pending: locations.isPending || (owner && projects.isPending),
-  };
-}
-
-/** A row of the column of Files: a group of sources, a source's top, or a folder of it. */
-interface Place {
-  key: string;
-  group?: 'network' | 'workspace' | 'bookmarks';
-  source?: string;
-  path: string;
-  name: string;
-  icon: LucideIcon;
-  href: string;
-  bookmark?: number;
-}
-
-const placeKey = (source: string, path: string) => (path ? `${source}/${path}` : source);
-
-function useBookmarks() {
-  return useQuery({
-    queryKey: BOOKMARKS,
-    queryFn: () => getJson<{ bookmarks: Kept[] }>('/api/files/bookmarks'),
-  });
-}
-
-function usePlaceRows(
-  sources: Map<string, FileSource>,
-  locations: ReturnType<typeof useLocations>,
-  projects: ReturnType<typeof useProjects>,
-) {
-  return function useRows(row: Place, enabled: boolean): Rows<Place> {
-    const source = row.source ? sources.get(row.source) : undefined;
-    const bookmarks = useBookmarks();
-    const listing = useQuery({
-      queryKey: source ? listKey(source, row.path) : ['files', 'none'],
-      queryFn: () => source!.list(row.path),
-      enabled: enabled && Boolean(source) && row.bookmark === undefined,
-    });
-    if (row.group === 'network')
-      return {
-        rows: locations.data?.locations.map((location) => ({
-          key: `location:${location.id}`,
-          source: `location:${location.id}`,
-          path: '',
-          name: location.name,
-          icon: LOCATION_ICONS[location.kind],
-          href: filesHref(`location:${location.id}`),
-        })),
-        error: locations.error,
-      };
-    if (row.group === 'workspace')
-      return {
-        rows: projects.data?.map((project) => ({
-          key: `workspace:${project.path}`,
-          source: `workspace:${project.path}`,
-          path: '',
-          name: projectName(project),
-          icon: FolderKanban,
-          href: filesHref(`workspace:${project.path}`),
-        })),
-        error: projects.error,
-      };
-    if (row.group === 'bookmarks')
-      return {
-        rows: bookmarks.data?.bookmarks.map((kept) => ({
-          key: `bookmark:${kept.id}`,
-          source: kept.source,
-          path: kept.path,
-          name: kept.name,
-          icon: Bookmark,
-          href: filesHref(kept.source, kept.path),
-          bookmark: kept.id,
-        })),
-        error: bookmarks.error,
-      };
-    if (row.bookmark !== undefined) return { rows: [], error: null };
-    return {
-      rows: listing.data?.entries
-        .filter((entry) => entry.kind === 'folder' && !hiddenName(entry))
-        .map((entry) => {
-          const path = row.path ? `${row.path}/${entry.name}` : entry.name;
-          return {
-            key: placeKey(row.source!, path),
-            source: row.source,
-            path,
-            name: entry.label ?? entry.name,
-            icon: Folder,
-            href: filesHref(row.source!, path),
-          };
-        }),
-      error: listing.error,
-    };
-  };
-}
-
-function BookmarkMenu({ row, children }: { row: Place; along: Set<string>; children: ReactNode }) {
-  const { t } = useI18n();
-  const queryClient = useQueryClient();
-  const remove = useMutation({
-    mutationFn: (id: number) => deleteJson(`/api/files/bookmarks/${id}`),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: BOOKMARKS }),
-  });
-  if (row.bookmark === undefined) return children;
-  return (
-    <ContextMenuArea
-      items={
-        <MenuItem
-          icon={Trash2}
-          label={t('files.unbookmark')}
-          onSelect={() => remove.mutate(row.bookmark!)}
-        />
-      }
-    >
-      {children}
-    </ContextMenuArea>
-  );
-}
-
-/** The side column of Files: Ponistra's places, the network, the workspace and the bookmarks,
- * each a tree of its folders. */
-function FilesTree({ sources, owner, locations, projects }: ReturnType<typeof useSources>) {
-  const { t } = useI18n();
-  const { source: at } = useParams();
-  const [params] = useSearchParams();
-  const useRows = usePlaceRows(sources, locations, projects);
-  const along = useMemo(() => {
-    const open = new Set<string>();
-    if (!at) return open;
-    open.add(at);
-    if (at.startsWith('location:')) open.add('network');
-    if (at.startsWith('workspace:')) open.add('workspace');
-    const parts = (params.get('path') ?? '').split('/').filter(Boolean);
-    parts.forEach((_, index) => open.add(placeKey(at, parts.slice(0, index + 1).join('/'))));
-    return open;
-  }, [at, params]);
-  const here = at ? placeKey(at, params.get('path') ?? '') : null;
-  const tree: TreeSource<Place> = {
-    along,
-    useRows,
-    key: (row) => row.key,
-    href: (row) => row.href,
-    label: (row) => row.name,
-    icon: (row) => row.icon,
-    current: (row) =>
-      row.bookmark === undefined && !row.group && here === placeKey(row.source!, row.path),
-    Menu: BookmarkMenu,
-  };
-  const groups: Place[] = [
-    {
-      key: 'bookmarks',
-      group: 'bookmarks',
-      path: '',
-      name: t('files.bookmarks'),
-      icon: Bookmark,
-      href: '/files',
-    },
-    ...ROOTS.map((root) => ({
-      key: rootKey(root),
-      source: rootKey(root),
-      path: '',
-      name: t(ROOT_LOOKS[root].label),
-      icon: ROOT_LOOKS[root].icon,
-      href: filesHref(rootKey(root)),
-    })),
-    {
-      key: 'network',
-      group: 'network' as const,
-      path: '',
-      name: t('locations.title'),
-      icon: Network,
-      href: '/files',
-    },
-    ...(owner
-      ? [
-          {
-            key: 'workspace',
-            group: 'workspace' as const,
-            path: '',
-            name: t('files.workspace'),
-            icon: FolderKanban,
-            href: '/files',
-          },
-        ]
-      : []),
-  ];
-  return (
-    <nav aria-label={t('rail.files')} className="flex flex-col gap-0.5">
-      {groups.map((row) => (
-        <TreeRow key={row.key} source={tree} row={row} depth={0} />
-      ))}
-    </nav>
-  );
-}
-
 /** Files with no folder open: every source as a tile, the bookmarks first. */
-/** The column of Files, for a page that stands in Files' shell. */
-export function FilesSide() {
-  return <FilesTree {...useSources()} />;
-}
-
 function Overview({ sources, locations, projects, owner }: ReturnType<typeof useSources>) {
   const { t } = useI18n();
   const bookmarks = useBookmarks();
@@ -370,7 +102,7 @@ function Overview({ sources, locations, projects, owner }: ReturnType<typeof use
       )}
       {section(
         t('rail.documents'),
-        ROOTS.map((root) => ({
+        ROOTS.filter((root) => root !== 'sharing').map((root) => ({
           href: filesHref(rootKey(root)),
           icon: ROOT_LOOKS[root].icon,
           name: sources.get(rootKey(root))!.name,
@@ -460,14 +192,101 @@ function ConflictDialog({ asked, onClose }: { asked: Asked; onClose: () => void 
 
 /** Files (D55): every source the user reaches in one tree, its folders in one or two panes and
  * in tabs, entries copied, cut, pasted and dragged within a source and between any two. */
+/** The places of Ponistra's own tree by the addresses they keep. */
+const PLACES: Record<string, Root> = {
+  '/documents': 'mine',
+  '/company': 'company',
+  '/shared': 'shared',
+  '/favourites': 'favourites',
+  '/boards': 'boards',
+};
+
+/** The page that shows a folder of a place of its own, the notes, the links or the boards; null
+ * for a folder Files shows. */
+function placePage(folder: TreeNode): string | null {
+  if (folder.notes) return '/notes';
+  if (folder.links) return '/links';
+  if (folder.boards) return '/boards';
+  return null;
+}
+
+/** The folder the address names: a source and a path of it, a folder of Ponistra's tree by its
+ * own address, read from where it lies; where the address is not yet the folder's own, the one
+ * it is put right to. While a folder is read, the one before it stays. */
+function useHere(): {
+  here: Pane | null;
+  pending: boolean;
+  missing: boolean;
+  href: string | null;
+  /** Where in Ponistra's tree the folder lies, for the column and the crumbs. */
+  trail: { path: TreeNode[]; root?: TreeRoot; title?: MessageKey } | null;
+} {
+  const { source: at, folder, group } = useParams();
+  const { pathname } = useLocation();
+  const [params] = useSearchParams();
+  const queryClient = useQueryClient();
+  const id = folder !== undefined ? idIn(folder) : group !== undefined ? idIn(group) : null;
+  const placement = useNode(id);
+  const before = useRef<Pane | null>(null);
+  const read = id !== null ? placement.data : undefined;
+  const boarded = read?.path[0]?.boards ?? false;
+  const steps = read ? [...(boarded ? read.path.slice(1) : read.path), read.node] : [];
+  const chain = steps.map((step) => step.id).join('/');
+  const titles = steps.map((step) => step.title);
+  const readSource = read ? rootKey(boarded ? 'boards' : read.root) : null;
+  useEffect(() => {
+    if (readSource) queryClient.setQueryData(['files', readSource, 'labels', chain], titles);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the titles follow the chain read
+  }, [queryClient, readSource, chain]);
+  const found = ((): { here: Pane | null; href: string | null } => {
+    if (at) return { here: { source: at, path: params.get('path') ?? '' }, href: null };
+    const place = PLACES[pathname];
+    if (place)
+      return {
+        here: {
+          source: rootKey(place === 'shared' && params.get('by') === 'me' ? 'sharing' : place),
+          path: '',
+        },
+        href: null,
+      };
+    if (!read) return { here: null, href: null };
+    const own = placePage(read.node);
+    if (own) return { here: null, href: own };
+    return {
+      here: { source: readSource!, path: chain },
+      href: boarded ? groupHref(read.node) : nodeHref(read.node),
+    };
+  })();
+  if (found.here) before.current = found.here;
+  const pending = id !== null && placement.isPending;
+  const place = PLACES[pathname];
+  const trail =
+    place === 'favourites' || place === 'boards'
+      ? { path: [], title: ROOT_LOOKS[place].label }
+      : place
+        ? { path: [], root: place as TreeRoot }
+        : read && !boarded
+          ? { path: [...read.path, read.node], root: read.root }
+          : read
+            ? { path: [], title: ROOT_LOOKS.boards.label }
+            : null;
+  return {
+    trail,
+    here: found.here ?? (pending ? before.current : null),
+    pending,
+    missing: id === null ? folder !== undefined || group !== undefined : placement.isError,
+    href: found.href,
+  };
+}
+
 export function FilesPage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { source: at } = useParams();
   const [params] = useSearchParams();
   const known = useSources();
   const { sources } = known;
+  const placed = useHere();
   const [tabs, setTabs] = useState<Tabs>(() => stored(TABS, { tabs: [], current: 0 }));
   const [look, setLook] = useState(() => stored(LOOK, { view: 'list', hidden: false }));
   const [clip, setClip] = useState<Clip | null>(null);
@@ -475,7 +294,7 @@ export function FilesPage() {
   const [panelAt, setPanelAt] = useState<HTMLElement | null>(null);
   const [failure, setFailure] = useState<Error | null>(null);
   const [dirty, setDirty] = useState(false);
-  const here: Pane | null = at ? { source: at, path: params.get('path') ?? '' } : null;
+  const { here } = placed;
   const file = params.get('file');
 
   const tab: Tab | undefined = tabs.tabs[tabs.current];
@@ -621,7 +440,6 @@ export function FilesPage() {
     },
   };
 
-  const side = <FilesTree {...known} />;
   const looks = (
     <>
       <button
@@ -650,9 +468,17 @@ export function FilesPage() {
       </button>
     </>
   );
+  if (placed.missing) return <Missing />;
+  if (!here && placed.href) return <Navigate to={placed.href} replace />;
+  if (!here && placed.pending)
+    return (
+      <Frame title={t('rail.files')}>
+        <Loading />
+      </Frame>
+    );
   if (!here)
     return (
-      <Frame title={t('rail.files')} side={side} actions={looks}>
+      <Frame title={t('rail.files')} actions={looks}>
         <Overview {...known} />
       </Frame>
     );
@@ -661,132 +487,137 @@ export function FilesPage() {
   const missing = panes.some((pane) => !sources.get(pane.source));
   if (missing && known.pending)
     return (
-      <Frame title={t('rail.files')} side={side}>
+      <Frame title={t('rail.files')}>
         <Loading />
       </Frame>
     );
   const twin = panes.length > 1;
   return (
     <DeskContext.Provider value={desk}>
-      <Frame
-        title={t('rail.files')}
-        side={side}
-        actions={
-          <>
-            {looks}
-            <button
-              type="button"
-              aria-pressed={twin}
-              aria-label={t('files.twin')}
-              title={t('files.twin')}
-              onClick={split}
-              className={`${iconButton} hidden aria-pressed:bg-selected md:inline-flex`}
-            >
-              <Columns2 size={16} aria-hidden />
-            </button>
-          </>
-        }
-        panel={<div ref={setPanelAt} className="contents" />}
-      >
-        <div className="flex h-full min-h-0 flex-col gap-2">
-          {tabs.tabs.length > 1 || tab ? (
-            <div
-              role="tablist"
-              aria-label={t('files.tabs')}
-              className="flex min-w-0 items-center gap-1 overflow-x-auto"
-            >
-              {tabs.tabs.map((each, index) => {
-                const pane = each.panes[each.focus];
-                const source = sources.get(pane.source);
-                const name = pane.path
-                  ? (queryClient
-                      .getQueryData<string[]>(['files', pane.source, 'labels', pane.path])
-                      ?.at(-1) ?? pane.path.split('/').pop())
-                  : source?.name;
-                return (
-                  <div
-                    key={index}
-                    role="tab"
-                    aria-selected={index === tabs.current}
-                    className="flex max-w-56 min-w-0 shrink-0 items-center rounded-lg text-sm aria-selected:bg-selected"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => showTab(index)}
-                      className="min-w-0 truncate px-2 py-1"
-                    >
-                      {name ?? pane.source}
-                    </button>
-                    {tabs.tabs.length > 1 && (
-                      <button
-                        type="button"
-                        aria-label={t('files.closeTab')}
-                        onClick={() => closeTab(index)}
-                        className={iconButton}
-                      >
-                        <X size={14} aria-hidden />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+      <Addressed href={placed.href}>
+        <Frame
+          title={placed.trail ? placed.trail.title && t(placed.trail.title) : t('rail.files')}
+          path={placed.trail?.path}
+          root={placed.trail?.root}
+          actions={
+            <>
+              {looks}
               <button
                 type="button"
-                aria-label={t('files.newTab')}
-                title={t('files.newTab')}
-                onClick={openTab}
-                className={iconButton}
+                aria-pressed={twin}
+                aria-label={t('files.twin')}
+                title={t('files.twin')}
+                onClick={split}
+                className={`${iconButton} hidden aria-pressed:bg-selected md:inline-flex`}
               >
-                <Plus size={16} aria-hidden />
+                <Columns2 size={16} aria-hidden />
               </button>
-            </div>
-          ) : null}
-          <div className="flex min-h-0 flex-1 gap-3">
-            {panes.map((pane, index) => {
-              const source = sources.get(pane.source);
-              const focused = index === shown.focus;
-              return (
-                <section
-                  key={`${index}:${pane.source}`}
-                  aria-label={source?.name ?? pane.source}
-                  className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${twin ? `rounded-lg border p-2 ${focused ? 'border-focus' : 'border-line'}` : ''}`}
-                >
-                  {!source ? (
-                    <p className="text-sm text-danger">{t('error.not_found')}</p>
-                  ) : (
-                    <FileBrowser
-                      key={pane.source}
-                      source={source}
-                      path={pane.path}
-                      file={focused ? file : null}
-                      onGo={(path, opened) => moved(index, path, opened)}
-                      onFocus={() => focus(index)}
-                      onDirty={focused ? setDirty : undefined}
-                      frame={({ actions, primary, panel, children }) => (
-                        <>
-                          <div className="flex items-center justify-end gap-2">
-                            {actions}
-                            {primary}
-                          </div>
-                          <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
-                          {focused && panelAt && panel && createPortal(panel, panelAt)}
-                        </>
+            </>
+          }
+          panel={<div ref={setPanelAt} className="contents" />}
+        >
+          <div className="flex h-full min-h-0 flex-col gap-2">
+            {tabs.tabs.length > 1 || tab ? (
+              <div
+                role="group"
+                aria-label={t('files.tabs')}
+                className="flex min-w-0 items-center gap-1 overflow-x-auto"
+              >
+                {tabs.tabs.map((each, index) => {
+                  const pane = each.panes[each.focus];
+                  const source = sources.get(pane.source);
+                  const name = pane.path
+                    ? (queryClient
+                        .getQueryData<string[]>(['files', pane.source, 'labels', pane.path])
+                        ?.at(-1) ?? pane.path.split('/').pop())
+                    : source?.name;
+                  return (
+                    <div
+                      key={index}
+                      className={`flex max-w-56 min-w-0 shrink-0 items-center rounded-lg text-sm ${index === tabs.current ? 'bg-selected' : ''}`}
+                    >
+                      <button
+                        type="button"
+                        aria-current={index === tabs.current || undefined}
+                        onClick={() => showTab(index)}
+                        className="min-w-0 truncate px-2 py-1"
+                      >
+                        {name ?? pane.source}
+                      </button>
+                      {tabs.tabs.length > 1 && (
+                        <button
+                          type="button"
+                          aria-label={t('files.closeTab')}
+                          onClick={() => closeTab(index)}
+                          className={iconButton}
+                        >
+                          <X size={14} aria-hidden />
+                        </button>
                       )}
-                    />
-                  )}
-                </section>
-              );
-            })}
+                    </div>
+                  );
+                })}
+                <button
+                  type="button"
+                  aria-label={t('files.newTab')}
+                  title={t('files.newTab')}
+                  onClick={openTab}
+                  className={iconButton}
+                >
+                  <Plus size={16} aria-hidden />
+                </button>
+              </div>
+            ) : null}
+            <div className="flex min-h-0 flex-1 gap-3">
+              {panes.map((pane, index) => {
+                const source = sources.get(pane.source);
+                const focused = index === shown.focus;
+                return (
+                  <section
+                    key={`${index}:${pane.source}`}
+                    aria-label={source?.name ?? pane.source}
+                    className={`flex min-h-0 min-w-0 flex-1 flex-col gap-2 ${twin ? `rounded-lg border p-2 ${focused ? 'border-focus' : 'border-line'}` : ''}`}
+                  >
+                    {!source ? (
+                      <p className="text-sm text-danger">{t('error.not_found')}</p>
+                    ) : (
+                      <FileBrowser
+                        key={pane.source}
+                        source={source}
+                        path={pane.path}
+                        file={focused ? file : null}
+                        onGo={(path, opened) => moved(index, path, opened)}
+                        onFocus={() => focus(index)}
+                        onDirty={focused ? setDirty : undefined}
+                        frame={({ actions, primary, panel, children }) => (
+                          <>
+                            <div className="flex items-center justify-end gap-2">
+                              {actions}
+                              {primary}
+                            </div>
+                            <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+                            {focused && panelAt && panel && createPortal(panel, panelAt)}
+                          </>
+                        )}
+                      />
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+            {failure && (
+              <p role="alert" className="text-sm text-danger">
+                {errorMessage(failure, t)}
+              </p>
+            )}
+            <Transfers />
           </div>
-          {failure && (
-            <p role="alert" className="text-sm text-danger">
-              {errorMessage(failure, t)}
-            </p>
-          )}
-          <Transfers />
-        </div>
-        {asked && <ConflictDialog asked={asked} onClose={() => setAsked(null)} />}
-      </Frame>
+          {asked && <ConflictDialog asked={asked} onClose={() => setAsked(null)} />}
+          {[...new Set(panes.map((pane) => pane.source))].map((key) => (
+            <Fragment key={key}>{sources.get(key)?.host}</Fragment>
+          ))}
+        </Frame>
+      </Addressed>
     </DeskContext.Provider>
   );
 }

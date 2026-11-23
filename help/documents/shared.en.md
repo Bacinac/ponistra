@@ -4,7 +4,7 @@ The {t:tree.shared} page gathers the documents and folders others have shared wi
 
 ## How to use it
 
-1. In the left column of the {t:rail.documents} module press {t:tree.shared}. The arrow before its name ({t:frame.expand}) opens the shared folders in the tree, below it.
+1. In the left column of the {t:rail.files} module press {t:tree.shared}. The arrow before its name ({t:frame.expand}) opens the shared folders in the tree, below it.
 2. At the top choose {t:tree.sharedWithMe} or {t:tree.sharedByMe}.
 3. You open the items and work with them as in any folder.
 

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Check, CircleAlert, LoaderCircle, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { deleteJson, getJson, postJson } from './api';
+import { useVisitor } from './auth';
 import { formatSize } from './explorer';
 import type { FileSource } from './files';
 import { useI18n } from './i18n';
@@ -94,10 +95,12 @@ export async function conflictsOf(
   const shown = new Map<string, string>();
   listed.forEach(({ entries }, at) => {
     for (const entry of entries)
-      shown.set(within(folders[at], entry.name), entry.label ?? entry.name);
+      shown.set(within(folders[at], entry.name), entry.fileName ?? entry.label ?? entry.name);
   });
   const names = paths.map((each) => shown.get(each) ?? last(each));
-  const held = (await to.list(path)).entries.map((entry) => entry.label ?? entry.name);
+  const held = (await to.list(path)).entries.map(
+    (entry) => entry.fileName ?? entry.label ?? entry.name,
+  );
   if (tree(to)) {
     const titles = new Set(held.map((each) => each.toLocaleLowerCase('hr')));
     return names.filter((name) => titles.has(titled(name)));
@@ -108,6 +111,7 @@ export async function conflictsOf(
 
 function useTransfers() {
   const client = useQueryClient();
+  const visitor = useVisitor();
   useEffect(() => {
     const woken = () => void client.invalidateQueries({ queryKey: TRANSFERS });
     listeners.add(woken);
@@ -116,6 +120,7 @@ function useTransfers() {
   return useQuery({
     queryKey: TRANSFERS,
     queryFn: () => getJson<{ transfers: Transfer[] }>('/api/files/transfers'),
+    enabled: !visitor,
     refetchInterval: (query) =>
       query.state.data?.transfers.some((each) => UNDER_WAY.has(each.state)) ? CHECK_EVERY : false,
   });

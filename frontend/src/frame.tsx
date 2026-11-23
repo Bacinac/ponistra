@@ -36,6 +36,7 @@ import {
   useLayoutEffect,
   useMemo,
   useState,
+  Suspense,
   useSyncExternalStore,
   type ComponentType,
   type CSSProperties,
@@ -72,6 +73,7 @@ import { VoiceButton } from './voice';
 import { useGoToProjects } from './workspace';
 import { MODULES, type Module } from './modules';
 import { openLinks } from './linksWindow';
+import { lazily } from './lazily';
 import { PLACES } from './places';
 import { Splitter, useWidth, type Column } from './split';
 import {
@@ -115,7 +117,6 @@ export const FOLDERS: Column = { name: 'folders', initial: 256, min: 192, max: 4
 export const SIDE_SEPARATOR =
   'w-2 [&>span]:bg-line hover:[&>span]:bg-control active:[&>span]:bg-accent';
 const PANEL: Column = { name: 'panel', initial: 320, min: 256, max: 640 };
-export const WIDE_PANEL: Column = { name: 'widePanel', initial: 720, min: 320, max: 1200 };
 
 function onWide(change: () => void) {
   const query = matchMedia(WIDE);
@@ -563,6 +564,8 @@ const COLLECTIONS: { to: string; end: boolean; icon: LucideIcon; label: MessageK
   { to: '/vault', end: false, icon: Vault, label: 'vault.title' },
 ];
 
+const FilesGroups = lazily(() => import('./filesTree'), 'FilesGroups');
+
 const FAVOURITES = { to: '/favourites', icon: Star, label: 'favourites.title' } as const;
 const COMPANY = { to: '/company', icon: Building2, label: 'tree.company' } as const;
 
@@ -613,6 +616,9 @@ function FolderTree({
       <TreeRow source={places} row={{ place: 'mine' }} depth={0} />
       <CompanyRoot source={places} />
       <TreeRow source={places} row={{ place: 'shared' }} depth={0} />
+      <Suspense fallback={null}>
+        <FilesGroups />
+      </Suspense>
       <div className="my-2 h-px bg-line" />
       {COLLECTIONS.map(({ to, end, icon: Icon, label }) =>
         to === '/boards' ? (
@@ -1014,7 +1020,7 @@ function moduleAt(pathname: string): Module | null {
   if (pathname === '/workspace') return null;
   if (pathname === '/files' || pathname.startsWith('/files/') || pathname.startsWith('/docker/'))
     return 'files';
-  return INSTALLATION_PATHS.includes(pathname) ? null : 'documents';
+  return INSTALLATION_PATHS.includes(pathname) ? null : 'files';
 }
 
 /** The module a place within it goes up to, as Contacts to Chat; none for a module's own pages. */

@@ -34,7 +34,6 @@ const ApplicationsPage = lazily(() => import('./identity'), 'ApplicationsPage');
 const AuthorizePage = lazily(() => import('./identity'), 'AuthorizePage');
 const CalendarPage = lazily(() => import('./calendar'), 'CalendarPage');
 const ChatPage = lazily(() => import('./ChatPage'), 'ChatPage');
-const CompanyPage = lazily(() => import('./FolderPage'), 'CompanyPage');
 const ConnectPage = lazily(() => import('./phoneApp'), 'ConnectPage');
 const ConsentPage = lazily(() => import('./agents'), 'ConsentPage');
 const ContactsPage = lazily(() => import('./contacts'), 'ContactsPage');
@@ -43,7 +42,6 @@ const DocumentPage = lazily(() => import('./DocumentPage'), 'DocumentPage');
 const FilePage = lazily(() => import('./FilePage'), 'FilePage');
 const FilesPage = lazily(() => import('./filesPage'), 'FilesPage');
 const DockerHostPage = lazily(() => import('./containers/host'), 'DockerHostPage');
-const FolderPage = lazily(() => import('./FolderPage'), 'FolderPage');
 const GuestMeetingPage = lazily(() => import('./guest'), 'GuestMeetingPage');
 const OutsidePage = lazily(() => import('./outside'), 'OutsidePage');
 const VisitPage = lazily(() => import('./outside'), 'VisitPage');
@@ -63,10 +61,6 @@ const RetentionPage = lazily(() => import('./retention'), 'RetentionPage');
 const SearchPage = lazily(() => import('./SearchPage'), 'SearchPage');
 const SettingsPage = lazily(() => import('./settings'), 'SettingsPage');
 const AdminPage = lazily(() => import('./settings'), 'AdminPage');
-const SharedPage = lazily(() => import('./FolderPage'), 'SharedPage');
-const FavouritesPage = lazily(() => import('./FolderPage'), 'FavouritesPage');
-const BoardsPage = lazily(() => import('./FolderPage'), 'BoardsPage');
-const BoardGroupPage = lazily(() => import('./FolderPage'), 'BoardGroupPage');
 const WorkspacePage = lazily(() => import('./WorkspacePage'), 'WorkspacePage');
 const WorkspaceBeside = lazily(() => import('./WorkspacePage'), 'WorkspaceBeside');
 const SharingPage = lazily(() => import('./sharing'), 'SharingPage');
@@ -276,8 +270,8 @@ export default function App() {
           <Crash at={pathname} message={t('error.unexpected')} className="h-full">
             <Suspense fallback={<Loading />}>
               <Routes>
-                <Route path="/shared" element={<SharedPage />} />
-                <Route path="/f/:folder" element={<FolderPage />} />
+                <Route path="/shared" element={<FilesPage />} />
+                <Route path="/f/:folder" element={<FilesPage />} />
                 <Route path="/d/:node" element={<DocumentPage />} />
                 <Route path="/d/:node/:tab" element={<DocumentPage />} />
                 <Route path="/d/:node/versions/:version/:tab?" element={<VersionPage />} />
@@ -386,22 +380,22 @@ export default function App() {
             <Suspense fallback={<Loading />}>
               <Routes>
                 <Route path="/" element={<TodayPage />} />
-                <Route path="/documents" element={<FolderPage />} />
-                <Route path="/f/:folder" element={<FolderPage />} />
+                <Route path="/documents" element={<FilesPage />} />
+                <Route path="/f/:folder" element={<FilesPage />} />
                 <Route path="/d/:node" element={<DocumentPage />} />
                 <Route path="/d/:node/:tab" element={<DocumentPage />} />
                 <Route path="/d/:node/versions/:version/:tab?" element={<VersionPage />} />
                 <Route path="/p/:node" element={<FilePage />} />
                 <Route path="/notes" element={<NotesPage />} />
                 <Route path="/links" element={<LinksPage />} />
-                <Route path="/boards" element={<BoardsPage />} />
-                <Route path="/boards/:group" element={<BoardGroupPage />} />
+                <Route path="/boards" element={<FilesPage />} />
+                <Route path="/boards/:group" element={<FilesPage />} />
                 <Route path="/workspace" element={<WorkspacePage />} />
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/help/:section?/:article?" element={<HelpPage />} />
-                <Route path="/company" element={<CompanyPage />} />
-                <Route path="/shared" element={<SharedPage />} />
-                <Route path="/favourites" element={<FavouritesPage />} />
+                <Route path="/company" element={<FilesPage />} />
+                <Route path="/shared" element={<FilesPage />} />
+                <Route path="/favourites" element={<FilesPage />} />
                 <Route path="/share" element={<SharingPage />} />
                 <Route path="/trash" element={<TrashPage />} />
                 <Route path="/users" element={<UsersPage />} />

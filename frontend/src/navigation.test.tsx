@@ -25,11 +25,11 @@ const PAGES = {
 test('a place within a module goes up to it from the header, a module’s own page does not', async () => {
   serve(PAGES);
   const { user, router, settled } = open('/contacts');
-  const modules = /^(Danas|Kalendar|Pošta|Razgovori|Dokumenti)$/;
+  const modules = /^(Danas|Kalendar|Pošta|Razgovori|Datoteke)$/;
   for (const [place, title, up, address] of [
     ['/contacts', 'Kontakti', 'Razgovori', '/chat'],
     ['/tasks', 'Zadaci', 'Danas', '/'],
-    ['/notes', 'Bilješke', 'Dokumenti', '/documents'],
+    ['/notes', 'Bilješke', 'Datoteke', '/files'],
   ] as const) {
     await router.navigate(place);
     await settled();
