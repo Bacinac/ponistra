@@ -1544,7 +1544,7 @@ const restarted = async () => {
     self.Config.Image,
     'compose', '--project-name', project, '--project-directory', directory,
     ...files.flatMap((file) => ['--file', file]),
-    'up', '--detach', '--no-deps', '--no-build', '--force-recreate', service,
+    'up', '--detach', '--no-build', '--force-recreate',
   );
   await helperFailed(helper);
   return { ok: true };
@@ -1751,32 +1751,28 @@ createServer(async (request, response) => {
   const folder = address.searchParams.get('folder');
   const chat = request.method === 'GET' && CHAT.exec(path);
   try {
+    if (path.startsWith('/ponistra/') && !allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
     if (request.method === 'GET' && path === '/ponistra/projects') {
-      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
       if (address.searchParams.has('measured')) await measured();
       return answer(200, projects());
     }
     if (chat) {
-      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
       return answer(200, chatAt(chat[1], placeOf(address)));
     }
     if (FILES.test(path)) {
-      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
       const found = await filesAnswered(request, path, address, bodyOf, projectFolders, response);
       return found === null ? undefined : answer(200, found);
     }
     if (MEMORY.test(path)) {
-      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
       return answer(200, await memoryAnswered(request, path, address, bodyOf));
     }
     if (request.method === 'POST' && path === '/ponistra/commands') {
-      if (!allowed(request.headers.authorization)) return answer(403, { error: 'refused' });
       return answer(200, await ordered(await bodyOf(request, COMMAND_BODY)));
     }
     // What a chat's panel asks, from the browser that came through the workspace's door.
-    if (request.method === 'GET' && path === '/ponistra/rounds' && folder)
+    if (request.method === 'GET' && path === '/panel/rounds' && folder)
       return answer(200, JSON.parse(keptOf(folder)));
-    if (request.method === 'GET' && path === '/ponistra/rounds/events' && folder) {
+    if (request.method === 'GET' && path === '/panel/rounds/events' && folder) {
       response.writeHead(200, {
         'content-type': 'text/event-stream',
         'cache-control': 'no-store',

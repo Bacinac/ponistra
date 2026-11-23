@@ -36,7 +36,7 @@ const ROUNDS = `if (new URLSearchParams(location.search).get('extensionId') === 
 	contentWindow.addEventListener('load', () => {
 		const contentDocument = contentWindow.document;
 		const GROUP = 'ponistra-round-';
-		const served = location.pathname.slice(0, location.pathname.indexOf('/stable-')) + '/ponistra';
+		const served = location.pathname.slice(0, location.pathname.indexOf('/stable-')) + '/panel';
 		const base = served + '/rounds';
 		let folder = null;
 		try { folder = new URLSearchParams(window.top.location.search).get('folder'); } catch {}

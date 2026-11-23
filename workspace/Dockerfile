@@ -75,7 +75,7 @@ COPY --from=fetch /fetch/code-server /usr/lib/code-server
 COPY --from=fetch /fetch/gh /usr/local/bin/gh
 COPY --from=docker /usr/local/bin/docker /usr/local/bin/docker
 COPY --from=docker /usr/local/libexec/docker/cli-plugins/docker-buildx /usr/local/libexec/docker/cli-plugins/
-COPY --from=fetch /fetch/docker-compose /usr/local/libexec/docker/cli-plugins/
+COPY --from=fetch /fetch/docker-compose /usr/local/libexec/docker/compose
 COPY settings.json /etc/ponistra/settings.json
 COPY projects.mjs chats.mjs memory.mjs terminal.mjs host.mjs worked.mjs files.mjs agent.mjs /etc/ponistra/
 # The terminal runs on code-server's own node-pty and ws; a code-server that moves either fails here.
@@ -83,6 +83,11 @@ RUN /usr/lib/code-server/lib/node --input-type=module -e "await import('/etc/pon
 # Every chat says through its hooks when it has answered or waits on its owner (D52), for whatever
 # settings of its own the owner keeps; a shell command that would wait on itself is refused.
 COPY heard.mjs guarded.mjs /etc/ponistra/
+# Compose refuses to change the workspace's own project from inside it, whoever types the command.
+COPY compose.mjs /etc/ponistra/
+RUN printf '#!/bin/sh\nexec /usr/lib/code-server/lib/node /etc/ponistra/compose.mjs "$@"\n' \
+		> /usr/local/libexec/docker/cli-plugins/docker-compose \
+	&& chmod +x /usr/local/libexec/docker/cli-plugins/docker-compose
 COPY managed-settings.json /etc/claude-code/managed-settings.json
 COPY claude /usr/local/bin/claude
 COPY start.sh /usr/local/bin/start
