@@ -117,7 +117,6 @@ export const FOLDERS: Column = { name: 'folders', initial: 256, min: 192, max: 4
 export const SIDE_SEPARATOR =
   'w-2 [&>span]:bg-line hover:[&>span]:bg-control active:[&>span]:bg-accent';
 const PANEL: Column = { name: 'panel', initial: 320, min: 256, max: 640 };
-export const WIDE_PANEL: Column = { name: 'widePanel', initial: 720, min: 320, max: 1200 };
 
 function onWide(change: () => void) {
   const query = matchMedia(WIDE);

@@ -8,7 +8,7 @@ Sef čuva vaše lozinke, jednokratne kodove i bilješke šifrirane u pregledniku
 
 ### Izrada sefa
 
-1. U lijevom stupcu Dokumenata odaberite {t:vault.title} ili upišite njegov naziv u kutiju za pretragu. Prvi put stranica prikazuje {t:vault.setup}.
+1. U lijevom stupcu odaberite {t:vault.title} ili upišite njegov naziv u kutiju za pretragu. Prvi put stranica prikazuje {t:vault.setup}.
 2. Upišite {t:vault.password.new}, barem 12 znakova, i ponovite je pod {t:vault.password.again}.
 3. Pritisnite {t:vault.make}.
 4. Otvara se {t:vault.code}. Pritisnite {t:health.kit.copy} ili {t:health.kit.download} i spremite kod izvan Ponistre.

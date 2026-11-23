@@ -6,7 +6,7 @@ Links are your saved web addresses, arranged in groups as tiles with an icon, a 
 
 ### A new link
 
-1. In the Documents side column open [links](/links) and press {t:create.new}, then {t:create.link}.
+1. In the side column open [links](/links) and press {t:create.new}, then {t:create.link}.
 2. Type the {t:tree.address} and, if you like, the {t:tree.name}.
 3. Press {t:tree.create}.
 

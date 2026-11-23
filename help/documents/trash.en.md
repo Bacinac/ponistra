@@ -11,7 +11,7 @@ Items you put in the trash stay there until you restore them or delete them for 
 
 ### Restoring and deleting for good
 
-1. In the left column of the {t:rail.documents} module press {t:trash.title}.
+1. In the left column of the {t:rail.files} module press {t:trash.title}.
 2. Beside an item press {t:trash.restore} to put it back in its place. A right click on the row offers the same.
 3. Press {t:trash.purge} and confirm in the {t:trash.purgeTitle} dialog.
 4. For several items at once, tick them and start the action on the bar above the list.

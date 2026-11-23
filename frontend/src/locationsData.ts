@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { HardDrive, Server } from 'lucide-react';
 import { getJson } from './api';
+import { compact } from './address';
 import type { FileEntry } from './files';
 import type { Role } from './tree';
 
@@ -57,8 +58,24 @@ export const sourceKey = (id: string) => `location:${id}`;
 export const listed = (id: string, path: string) =>
   getJson<{ path: string; entries: FileEntry[] }>(`/api/locations/${id}/files?${asked(path)}`);
 
-/** The page of Files showing a source's folder, and a file of it opened in its place. */
+/** The addresses of the places of Ponistra's own tree, each a page of Files. */
+export const PONISTRA_HREFS: Record<string, string> = {
+  mine: '/documents',
+  company: '/company',
+  shared: '/shared',
+  sharing: '/shared?by=me',
+  favourites: '/favourites',
+  boards: '/boards',
+};
+
+/** The page of Files showing a source's folder, and a file of it opened in its place; a folder
+ * of Ponistra's own tree keeps its own address. */
 export const filesHref = (source: string, path = '', file?: string | null) => {
+  if (source.startsWith('ponistra:')) {
+    const root = source.slice('ponistra:'.length);
+    const last = path.split('/').pop();
+    return last ? `/${root === 'boards' ? 'boards' : 'f'}/${compact(last)}` : PONISTRA_HREFS[root];
+  }
   const query = new URLSearchParams();
   if (path) query.set('path', path);
   if (file) query.set('file', file);

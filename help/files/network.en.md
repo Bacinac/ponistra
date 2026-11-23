@@ -24,7 +24,7 @@ With {t:preview.title} on and a wide screen, the first press shows the item in t
 
 1. Press {t:create.new}.
 2. {t:create.folder} makes a folder in the one that is open.
-3. {t:create.upload} sends files from the device into the open folder. Dragging files or folders onto the list does the same.
+3. {t:create.upload} sends files from the device into the open folder, and {t:create.uploadFolder} a whole folder with all it holds. Dragging files or folders onto the list does the same.
 
 ### Actions on items
 

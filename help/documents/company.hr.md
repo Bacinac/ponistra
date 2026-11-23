@@ -4,7 +4,7 @@ Mape tvrtke zajedničke su mape koje postavlja administrator, a svaki korisnik v
 
 ## Kako se koristi
 
-1. U lijevom stupcu modula {t:rail.documents} pritisnite {t:tree.company}.
+1. U lijevom stupcu modula {t:rail.files} pritisnite {t:tree.company}.
 2. Otvorite mapu i radite u njoj kao u svakoj drugoj, prema ulozi koju imate.
 
 ## Kako radi

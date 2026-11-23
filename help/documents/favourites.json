@@ -6,8 +6,8 @@
   ],
   "quiet": [],
   "describes": {
-    "frontend/src/FolderPage.tsx#FavouritesPage": "f30bfc21e1ca",
-    "frontend/src/FolderPage.tsx#favouriteSections": "5592b3e467b2",
+    "frontend/src/ponistraFiles.tsx#ponistraSource": "c34dff74ceee",
+    "frontend/src/files.tsx#grouped": "9ce852993b06",
     "frontend/src/favourites.tsx#FavouriteButton": "1892ebdd4278",
     "backend/apps/documents/views.py#favourites": "1f274f462329"
   }

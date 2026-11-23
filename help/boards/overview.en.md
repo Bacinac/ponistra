@@ -6,7 +6,7 @@ A board is a page of HTML you open in Ponistra, such as a plan, a tracker or an 
 
 ### The list of boards
 
-1. In the Documents side column open [boards](/boards).
+1. In the side column open [boards](/boards).
 2. Boards stand by groups: first your groups by name, then your boards without a group under {t:links.ungrouped}, then the boards others share with you, by the place they come from.
 3. The board you press shows beside the list, and the first one while you choose none. A double press opens the board; on a phone one tap is enough.
 

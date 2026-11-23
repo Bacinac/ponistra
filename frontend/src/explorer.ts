@@ -1,6 +1,4 @@
-import { kindOf, type TreeNode } from './tree';
-
-export type SortKey = 'title' | 'kind' | 'updated_at' | 'updated_by' | 'size';
+export type SortKey = 'title' | 'kind' | 'updated_at' | 'size';
 
 export interface Sort {
   key: SortKey;
@@ -8,7 +6,7 @@ export interface Sort {
 }
 
 const SORT_KEY = 'ponistra.sort';
-const SORT_KEYS: SortKey[] = ['title', 'kind', 'updated_at', 'updated_by', 'size'];
+const SORT_KEYS: SortKey[] = ['title', 'kind', 'updated_at', 'size'];
 const BY_TITLE: Sort = { key: 'title', descending: false };
 
 export function storedSort(): Sort {
@@ -46,35 +44,6 @@ export function storeSort(sort: Sort) {
   } catch {
     return;
   }
-}
-
-const collator = new Intl.Collator('hr', { numeric: true, sensitivity: 'base' });
-
-function compare(a: TreeNode, b: TreeNode, key: SortKey): number {
-  switch (key) {
-    case 'title':
-      return collator.compare(a.title, b.title);
-    case 'kind':
-      return collator.compare(
-        `${kindOf(a)} ${a.extension ?? ''}`,
-        `${kindOf(b)} ${b.extension ?? ''}`,
-      );
-    case 'updated_at':
-      return Date.parse(a.updated_at) - Date.parse(b.updated_at);
-    case 'updated_by':
-      return collator.compare(a.updated_by?.name ?? '', b.updated_by?.name ?? '');
-    case 'size':
-      return (a.size ?? -1) - (b.size ?? -1);
-  }
-}
-
-export function sortNodes<T extends TreeNode>(nodes: T[], sort: Sort): T[] {
-  return [...nodes].sort((a, b) => {
-    const folders = Number(b.kind === 'folder') - Number(a.kind === 'folder');
-    if (folders !== 0) return folders;
-    const order = compare(a, b, sort.key) || collator.compare(a.title, b.title);
-    return sort.descending ? -order : order;
-  });
 }
 
 export function between<T>(ordered: T[], from: T, to: T): T[] {

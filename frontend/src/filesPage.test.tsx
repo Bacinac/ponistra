@@ -54,7 +54,7 @@ test('Network in the column of Files: locations below it, their folders read as 
   });
   const { user, router, settled } = open('/files');
   await settled();
-  let tree = screen.getByRole('navigation', { name: 'Datoteke' });
+  let tree = screen.getByRole('navigation', { name: 'Mape' });
   const row = (name: string) => within(tree).getByRole('link', { name }).parentElement!;
   await user.click(within(row('Mreža')).getByRole('button', { name: 'Proširi' }));
   await within(tree).findByRole('link', { name: 'Arhiva' });
@@ -72,7 +72,7 @@ test('Network in the column of Files: locations below it, their folders read as 
     ),
   );
   await settled();
-  tree = screen.getByRole('navigation', { name: 'Datoteke' });
+  tree = screen.getByRole('navigation', { name: 'Mape' });
   expect(within(tree).getByRole('link', { name: 'Ponude' }).getAttribute('aria-current')).toBe(
     'page',
   );

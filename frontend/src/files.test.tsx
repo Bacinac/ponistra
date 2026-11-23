@@ -13,6 +13,13 @@ const HASH = 'a'.repeat(64);
 let kept: Record<string, FileEntry[]>;
 let calls: unknown[][];
 
+/** The live socket held connecting, so the browser counts the server as reachable. */
+class Connecting extends EventTarget {
+  readonly readyState = 0;
+  close(): void {}
+  send(): void {}
+}
+
 function source(writable = true): FileSource {
   const noted =
     (name: string) =>
@@ -83,6 +90,7 @@ beforeEach(() => {
     Ponude: [{ name: 'ponuda.bin', kind: 'file', size: 6, modified: '2026-11-16T00:00:00Z' }],
   };
   localStorage.clear();
+  vi.stubGlobal('WebSocket', Connecting);
   vi.stubGlobal('matchMedia', (query: string) => ({
     matches: false,
     media: query,

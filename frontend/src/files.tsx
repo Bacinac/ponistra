@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   Bookmark,
@@ -10,6 +10,8 @@ import {
   FileArchive,
   FileUp,
   Folder,
+  FolderUp,
+  Lock,
   FolderInput,
   FolderOpen,
   Info,
@@ -24,6 +26,7 @@ import {
 } from 'lucide-react';
 import {
   createContext,
+  Fragment,
   useContext,
   useEffect,
   useRef,
@@ -33,7 +36,6 @@ import {
   type MouseEvent,
   type ReactNode,
 } from 'react';
-import { useNavigate } from 'react-router';
 import { ChoiceBar, useChoice } from './choice';
 import { CodeEditor, type Opened, type Written } from './codeEditor';
 import { Cancel, ConfirmDialog, Modal, NameDialog } from './dialogs';
@@ -52,11 +54,13 @@ import { AddressBar, Properties } from './filesParts';
 import { Loading, Panel, useWide } from './frame';
 import { useI18n } from './i18n';
 import { HeldView, type HeldKind } from './kinds';
+import { useReachable } from './live';
+import { filesHref } from './locationsData';
 import type { MessageKey } from './i18n/hr';
 import { ActionsMenu, ContextMenuArea, Menu, MenuItem, MenuSeparator } from './menu';
 import { button, field, iconButton, primaryButton } from './styles';
-import { errorMessage, KindIcon, kindLabel, type ShownKind } from './tree';
-import { loose, useFilePicker, type Picked } from './upload';
+import { errorMessage, KindIcon, kindLabel, useOpen, type ShownKind } from './tree';
+import { inFolder, loose, useFilePicker, type Picked } from './upload';
 
 export interface FileEntry {
   name: string;
@@ -71,8 +75,17 @@ export interface FileEntry {
   hidden?: boolean;
   /** The name shown where `name` is an id, as a node of Ponistra's tree. */
   label?: string;
+  /** Its name as a file where the label leaves out the extension, as a document's title. */
+  fileName?: string;
+  extension?: string | null;
   /** What the entry is, where its source knows it better than its name tells. */
   shown?: ShownKind;
+  /** Who changed it last, where the source knows. */
+  by?: string | null;
+  /** The heading it is listed under, where the source divides its list. */
+  heading?: string;
+  /** It stays in the browser: neither downloaded nor dragged out. */
+  kept?: boolean;
 }
 
 export interface Listed {
@@ -80,6 +93,22 @@ export interface Listed {
   entries: FileEntry[];
   /** Whether the folder takes changes, where the source tells it folder by folder. */
   writable?: boolean;
+  /** What the folder holds stays in the browser, as a folder on its way keeps it. */
+  kept?: boolean;
+}
+
+/** A column a source adds to the list beside the browser's own. */
+export interface SourceColumn {
+  label: MessageKey;
+  className: string;
+  cell: (path: string, entry: FileEntry) => ReactNode;
+}
+
+/** A file as it is saved, its name and type for a drag out of the browser. */
+export interface SavedFile {
+  name: string;
+  type: string;
+  href: string;
 }
 
 export interface FileStat extends FileEntry {
@@ -130,6 +159,10 @@ export interface FileSource {
   put: (path: string, name: string, file: File) => Promise<unknown>;
   /** What else the source does with the entries chosen, as items of their menu. */
   more?: (paths: string[], done: () => void) => ReactNode;
+  /** The menu of a heading the source groups its entries under, as a group of boards. */
+  headingItems?: (heading: string) => ReactNode;
+  /** Buttons on the bar of the chosen entries, before moving and removing them. */
+  chosenActions?: (paths: string[]) => ReactNode;
   /** Shown above a folder's entries, as a Docker stack beside its files; read again whenever
    * the folder's listing is. */
   aside?: (path: string, listedAt: number) => ReactNode;
@@ -146,6 +179,41 @@ export interface FileSource {
     path: string,
     algorithm: 'sha256' | 'sha1' | 'md5',
   ) => Promise<{ algorithm: string; digest: string }>;
+  /** What is removed goes to a trash it can be brought back from, so nothing is asked first. */
+  trash?: boolean;
+  /** A file downloaded or dragged out as the source saves it, none where it is no file. */
+  saved?: (path: string, entry: FileEntry) => SavedFile | undefined;
+  icon?: (path: string, entry: FileEntry) => ReactNode;
+  /** Shown after an entry's name, as the favourite's star. */
+  marks?: (path: string, entry: FileEntry) => ReactNode;
+  columns?: SourceColumn[];
+  /** More of the New menu, after a folder and an upload. */
+  create?: (path: string) => ReactNode;
+  /** Whether the entries may be renamed, moved and removed, as each node of Ponistra's tree
+   * answers by its own role wherever it is listed; the folder's writability otherwise. */
+  changes?: (paths: string[]) => boolean;
+  /** False where a folder takes nothing new though its entries change, as a group of boards. */
+  makes?: (path: string) => boolean;
+  /** More of the folder's own menu. */
+  folderItems?: (path: string) => ReactNode;
+  /** More buttons above the list. */
+  actions?: (path: string) => ReactNode;
+  /** The preview beside the list, in place of the browser's own glance. */
+  preview?: (path: string, chosen: string[], onClose: () => void) => ReactNode;
+  /** A panel the source opens itself, shown before the preview while it is open. */
+  usePanel?: (path: string) => ReactNode;
+  /** Takes what is picked or dropped in the place of the file browser's own upload, as Ponistra
+   * imports documents and reports what it kept as files. */
+  useSend?: () => ((path: string, picked: Picked[]) => void) | null;
+  /** The list is there to show what it holds: the preview opens on the first of them. */
+  showing?: (path: string) => boolean;
+  empty?: (path: string) => MessageKey;
+  /** Told of a drag of its entries, to say them also as what else takes them. */
+  dragged?: (event: DragEvent, paths: string[], saved?: SavedFile) => void;
+  /** Its own dialog for moving entries, in place of the browser's pick of a folder of it. */
+  moveTo?: (paths: string[], onClose: () => void) => ReactNode;
+  /** Rendered once on the page for the source, whatever pane shows it: its dialogs. */
+  host?: ReactNode;
 }
 
 export interface Framed {
@@ -230,7 +298,8 @@ const HELD: Record<string, HeldKind> = {
 const heldOf = (source: FileSource, name: string): HeldKind | null =>
   (source.heldBase && HELD[extensionOf(name)]) || null;
 
-const iconExtension = (entry: FileEntry) => extensionOf(shownName(entry));
+const iconExtension = (entry: FileEntry) =>
+  entry.extension !== undefined ? (entry.extension ?? '') : extensionOf(shownName(entry));
 
 /** The name an entry is shown by. */
 export const shownName = (entry: FileEntry) => entry.label ?? entry.name;
@@ -275,6 +344,40 @@ function sorted(entries: FileEntry[], sort: Sort): FileEntry[] {
     return sort.descending ? -order : order;
   });
 }
+
+const noPanel = (): ReactNode => null;
+const noSend = () => null;
+
+/** The entries under the headings the source lists them by, in the order it gave the headings,
+ * each heading's entries as they are sorted. */
+function grouped(entries: FileEntry[], given: FileEntry[]): FileEntry[] {
+  if (!given.some((entry) => entry.heading)) return entries;
+  const order = new Map<string, number>();
+  for (const entry of given)
+    if (!order.has(entry.heading ?? '')) order.set(entry.heading ?? '', order.size);
+  return entries
+    .map((entry, index) => ({ entry, index }))
+    .sort(
+      (one, other) =>
+        order.get(one.entry.heading ?? '')! - order.get(other.entry.heading ?? '')! ||
+        one.index - other.index,
+    )
+    .map(({ entry }) => entry);
+}
+
+/** A file as it is saved; the browser's own download where the source opens no file itself. */
+const savedOf = (source: FileSource, path: string, entry: FileEntry): SavedFile | undefined =>
+  entry.kind !== 'file'
+    ? undefined
+    : source.saved
+      ? source.saved(path, entry)
+      : source.openHref
+        ? undefined
+        : {
+            name: shownName(entry),
+            type: 'application/octet-stream',
+            href: source.rawHref(path, true),
+          };
 
 const COLUMNS: { key: SortKey; label: MessageKey; className: string }[] = [
   { key: 'title', label: 'tree.name', className: 'w-full' },
@@ -635,14 +738,18 @@ export function FileBrowser({
 }) {
   const { t, formatDate, formatNumber } = useI18n();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const desk = useContext(DeskContext);
   const wide = useWide();
   const [sort, setSort] = useState<Sort>(storedSort);
-  const [previewing, setPreviewing] = useState(storedPreview);
+  const showing = source.showing?.(path) ?? false;
+  const [previewing, setPreviewing] = useState(() => showing || storedPreview());
   const [glance, setGlance] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [menuOn, setMenuOn] = useState<'folder' | 'selection'>('folder');
+  const [menuHeading, setMenuHeading] = useState<string | null>(null);
+  const opened = useOpen();
+  const usePanel = source.usePanel ?? noPanel;
+  const sidePanel = usePanel(path);
   const [sending, setSending] = useState<{ done: number; total: number } | null>(null);
   const [typed, setTyped] = useState('');
   const [query, setQuery] = useState('');
@@ -655,26 +762,37 @@ export function FileBrowser({
     setTyped('');
     setQuery('');
   }, [path, source.key]);
-  const listed = useQuery({ queryKey: listKey(source, path), queryFn: () => source.list(path) });
+  const listed = useQuery({
+    queryKey: listKey(source, path),
+    queryFn: () => source.list(path),
+    placeholderData: keepPreviousData,
+  });
   const labels = useQuery({
     queryKey: ['files', source.key, 'labels', path],
     queryFn: () => source.labels!(path),
     enabled: Boolean(source.labels && path),
     staleTime: 60_000,
   });
-  const writable = listed.data?.writable ?? source.writable;
+  const reachable = useReachable();
+  const writable = (listed.data?.writable ?? source.writable) && reachable;
+  const keptHere = Boolean(listed.data?.kept);
+  const stays = (those: FileEntry[]) => keptHere || those.some((entry) => entry.kept);
   const hidden = desk?.hidden ?? true;
-  const entries = sorted(
-    (listed.data?.entries ?? []).filter((entry) => hidden || !hiddenName(entry)),
-    sort,
+  const entries = grouped(
+    sorted(
+      (listed.data?.entries ?? []).filter((entry) => hidden || !hiddenName(entry)),
+      sort,
+    ),
+    listed.data?.entries ?? [],
   );
   const grid = desk?.view === 'grid';
   const names = entries.map((entry) => entry.name);
   const choice = useChoice(names);
   const chosen = entries.filter((entry) => choice.has(entry.name));
   const glimpsed = entries.find((entry) => entry.name === glance);
-  const glanced = chosen.length > 0 ? chosen : glimpsed ? [glimpsed] : [];
-  const beside = wide && previewing;
+  const glanced =
+    chosen.length > 0 ? chosen : glimpsed ? [glimpsed] : showing ? entries.slice(0, 1) : [];
+  const beside = wide && previewing && !sidePanel;
   const close = () => setDialog(null);
   const settled = () => {
     choice.choose([]);
@@ -707,11 +825,24 @@ export function FileBrowser({
       setSending(null);
     }
   };
-  const send = (picked: Picked[] | Promise<Picked[]>) => change(async () => sent(await picked));
+  const sends = (source.useSend ?? noSend)();
+  const send = (picked: Picked[] | Promise<Picked[]>) =>
+    sends
+      ? void Promise.resolve(picked).then((all) => sends(path, all))
+      : change(async () => sent(await picked));
   const picker = useFilePicker((files) => send(loose(files)));
+  const folderPicker = useFilePicker((files) => send(inFolder(files)), { folder: true });
   const area = useDropTarget({ onFiles: writable ? send : undefined });
+  const changeable = (names: string[]) =>
+    names.length > 0 && (source.changes ? reachable && source.changes(pathsOf(names)) : writable);
 
   const pathsOf = (those: string[]) => those.map((name) => within(path, name));
+  const remove = (names: string[]) => {
+    if (!names.length) return;
+    if (!source.trash) return setDialog({ type: 'remove', names });
+    setGlance(null);
+    change(() => source.remove(pathsOf(names)));
+  };
   const copy = (names: string[], cut: boolean) =>
     desk && names.length > 0 && desk.setClip({ source, paths: pathsOf(names), cut });
   const paste = (into = path) => {
@@ -755,6 +886,12 @@ export function FileBrowser({
     draggable: Boolean(desk),
     onDragStart: (event: DragEvent) => {
       const names = choice.has(entry.name) ? choice.chosen : [entry.name];
+      const alone = names.length === 1 && !stays([entry]);
+      source.dragged?.(
+        event,
+        pathsOf(names),
+        alone ? savedOf(source, within(path, entry.name), entry) : undefined,
+      );
       draggedFrom = source.key;
       event.dataTransfer.setData(
         ENTRIES,
@@ -772,7 +909,7 @@ export function FileBrowser({
     if (entry.kind === 'folder') return onGo(at);
     if (entry.kind !== 'file') return;
     const href = source.openHref?.(at, entry);
-    if (href) void navigate(href);
+    if (href) opened(href);
     else if (played(source, entry))
       window.open(source.rawHref(at), '_blank', 'noopener,noreferrer');
     else onGo(path, at);
@@ -780,7 +917,7 @@ export function FileBrowser({
   const openFound = (found: Found) => {
     if (found.kind === 'folder') return onGo(found.path);
     const href = source.openHref?.(found.path, found);
-    if (href) void navigate(href);
+    if (href) opened(href);
     else if (played(source, found))
       window.open(source.rawHref(found.path), '_blank', 'noopener,noreferrer');
     else onGo(above(found.path), found.path);
@@ -801,23 +938,26 @@ export function FileBrowser({
   };
   const preview = (on: boolean) => {
     setPreviewing(on);
-    storePreview(on);
+    if (!showing) storePreview(on);
   };
 
+  const makes = writable && source.makes?.(path) !== false;
   const newItems = (
     <>
       <MenuItem
         icon={Folder}
         label={t('create.folder')}
-        disabled={!writable}
+        disabled={!makes}
         onSelect={() => setDialog({ type: 'folder' })}
       />
+      <MenuItem icon={FileUp} label={t('create.upload')} disabled={!makes} onSelect={picker.open} />
       <MenuItem
-        icon={FileUp}
-        label={t('create.upload')}
-        disabled={!writable}
-        onSelect={picker.open}
+        icon={FolderUp}
+        label={t('create.uploadFolder')}
+        disabled={!makes}
+        onSelect={folderPicker.open}
       />
+      {source.create?.(path)}
     </>
   );
   const folderItems = (
@@ -845,10 +985,13 @@ export function FileBrowser({
           <MenuItem
             icon={FileArchive}
             label={t('zip.folder')}
+            disabled={keptHere}
+            hint={keptHere ? t('confined.hint') : undefined}
             onSelect={() => saveFrom(source.zipHref!([path]))}
           />
         </>
       )}
+      {source.folderItems?.(path)}
     </>
   );
   const itemsFor = (those: FileEntry[]) => {
@@ -856,6 +999,8 @@ export function FileBrowser({
     const alone = those.length === 1;
     const paths = those.map((entry) => within(path, entry.name));
     const names = those.map((entry) => entry.name);
+    const saved = alone ? savedOf(source, paths[0], single) : undefined;
+    const inside = stays(those);
     return (
       <>
         {alone && (
@@ -866,17 +1011,21 @@ export function FileBrowser({
             onSelect={() => open(single)}
           />
         )}
-        {alone && single.kind === 'file' && !source.openHref && (
+        {saved && (
           <MenuItem
             icon={Download}
             label={t('file.download')}
-            onSelect={() => window.open(source.rawHref(paths[0], true), '_self')}
+            disabled={inside}
+            hint={inside ? t('confined.hint') : undefined}
+            onSelect={() => window.open(saved.href, '_self')}
           />
         )}
-        {source.zipHref && !(alone && single.kind === 'file' && !source.openHref) && (
+        {source.zipHref && !saved && (
           <MenuItem
             icon={FileArchive}
             label={t('zip.download')}
+            disabled={inside}
+            hint={inside ? t('confined.hint') : undefined}
             onSelect={() => saveFrom(source.zipHref!(paths))}
           />
         )}
@@ -888,7 +1037,7 @@ export function FileBrowser({
             <MenuItem
               icon={Scissors}
               label={t('files.cut')}
-              disabled={!writable}
+              disabled={!changeable(names)}
               onSelect={() => copy(names, true)}
             />
             {alone && single.kind === 'folder' && (
@@ -913,7 +1062,7 @@ export function FileBrowser({
           <MenuItem
             icon={Pencil}
             label={t('tree.rename')}
-            disabled={!writable}
+            disabled={!changeable(names)}
             onSelect={() =>
               setDialog({ type: 'rename', name: single.name, label: shownName(single) })
             }
@@ -922,14 +1071,14 @@ export function FileBrowser({
         <MenuItem
           icon={FolderInput}
           label={t('tree.move')}
-          disabled={!writable}
+          disabled={!changeable(names)}
           onSelect={() => setDialog({ type: 'move', names })}
         />
         <MenuItem
           icon={Trash2}
-          label={t('files.delete')}
-          disabled={!writable}
-          onSelect={() => setDialog({ type: 'remove', names })}
+          label={t(source.trash ? 'tree.toTrash' : 'files.delete')}
+          disabled={!changeable(names)}
+          onSelect={() => remove(names)}
         />
         {alone && (
           <>
@@ -949,7 +1098,7 @@ export function FileBrowser({
     if (desk && (event.ctrlKey || event.metaKey) && !event.altKey) {
       const key = event.key.toLowerCase();
       if (key === 'c' || key === 'x') {
-        if (key === 'x' && !writable) return;
+        if (key === 'x' && !changeable(choice.chosen)) return;
         event.preventDefault();
         copy(choice.chosen.length ? choice.chosen : glance ? [glance] : [], key === 'x');
         return;
@@ -961,7 +1110,7 @@ export function FileBrowser({
       }
     }
     choice.onKeyDown(event, () => {
-      if (writable) setDialog({ type: 'remove', names: choice.chosen });
+      if (changeable(choice.chosen)) remove(choice.chosen);
     });
   };
   const cutHere = (entry: FileEntry) =>
@@ -1007,6 +1156,15 @@ export function FileBrowser({
       onClick: (event: MouseEvent) => select(entry, event),
       onDoubleClick: () => {
         if (beside || grid || toggled.current === entry.name) open(entry);
+      },
+      onAuxClick: (event: MouseEvent) => {
+        if (event.button !== 1) return;
+        const at = within(path, entry.name);
+        const href =
+          entry.kind === 'folder' ? filesHref(source.key, at) : source.openHref?.(at, entry);
+        if (!href) return;
+        event.preventDefault();
+        window.open(href, '_blank');
       },
       onKeyDown: (event: KeyboardEvent) => {
         if (event.target !== event.currentTarget) return;
@@ -1073,63 +1231,104 @@ export function FileBrowser({
               </button>
             </th>
           ))}
+          {source.columns?.map((column) => (
+            <th
+              key={column.label}
+              className={`px-2 py-2 font-normal whitespace-nowrap ${column.className}`}
+            >
+              {t(column.label)}
+            </th>
+          ))}
           <th className="w-10" />
         </tr>
       </thead>
       <tbody onClick={(event) => event.stopPropagation()}>
-        {entries.map((entry) => {
+        {entries.map((entry, index) => {
           const { shade, ...row } = rowOf(entry);
           const selected = choice.has(entry.name);
           const extension = iconExtension(entry);
+          const at = within(path, entry.name);
+          const heading =
+            entry.heading !== undefined && entry.heading !== entries[index - 1]?.heading
+              ? entry.heading
+              : null;
           return (
-            <tr
-              key={entry.name}
-              {...row}
-              className={`cursor-default border-b border-line select-none [-webkit-touch-callout:none] ${shade}`}
-            >
-              <td className="px-3" onClick={(event) => event.stopPropagation()}>
-                <input
-                  type="checkbox"
-                  checked={selected}
-                  onChange={() => choice.toggle(entry.name)}
-                  aria-label={t('explorer.select')}
-                  className={`align-middle ${chosen.length > 0 ? '' : 'invisible'}`}
-                />
-              </td>
-              <td className={`${cell} max-w-0`}>
-                <div className="flex items-center gap-3">
-                  <KindIcon kind={kindOf(entry)} extension={extension} />
-                  <span className="truncate">{shownName(entry)}</span>
-                  {entry.link !== undefined && entry.link !== null && (
-                    <span
-                      title={entry.link}
-                      className="flex min-w-0 shrink items-center gap-1 text-sm text-muted"
-                    >
-                      <Link2 size={14} aria-label={t('files.link')} className="shrink-0" />
-                      <span className="truncate font-mono text-xs">{entry.link}</span>
+            <Fragment key={entry.name}>
+              {heading !== null && (
+                <tr>
+                  <th
+                    scope="rowgroup"
+                    colSpan={COLUMNS.length + (source.columns?.length ?? 0) + 2}
+                    className="px-3 pt-4 pb-1 text-left font-normal"
+                  >
+                    <span className="flex items-baseline gap-2">
+                      <h2 data-heading={heading} className="font-semibold">
+                        {heading}
+                      </h2>
+                      <span className="text-sm text-muted">
+                        {formatNumber(entries.filter((each) => each.heading === heading).length)}
+                      </span>
                     </span>
-                  )}
-                </div>
-              </td>
-              <td className={`${cell} hidden text-sm text-muted md:table-cell`}>
-                {kindLabel(kindOf(entry), extension, t)}
-              </td>
-              <td className={`${cell} hidden text-sm text-muted sm:table-cell`}>
-                {entry.modified && formatDate(entry.modified)}
-              </td>
-              <td className={`${cell} hidden text-right text-sm text-muted md:table-cell`}>
-                {entry.size !== null &&
-                  entry.kind !== 'folder' &&
-                  formatSize(entry.size, formatNumber)}
-              </td>
-              <td
-                className="pr-2"
-                onClick={(event) => event.stopPropagation()}
-                onDoubleClick={(event) => event.stopPropagation()}
+                  </th>
+                </tr>
+              )}
+              <tr
+                key={entry.name}
+                {...row}
+                className={`cursor-default border-b border-line select-none [-webkit-touch-callout:none] ${shade}`}
               >
-                <ActionsMenu>{itemsFor([entry])}</ActionsMenu>
-              </td>
-            </tr>
+                <td className="px-3" onClick={(event) => event.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={() => choice.toggle(entry.name)}
+                    aria-label={t('explorer.select')}
+                    className={`align-middle ${chosen.length > 0 ? '' : 'invisible'}`}
+                  />
+                </td>
+                <td className={`${cell} max-w-0`}>
+                  <div className="flex items-center gap-3">
+                    {source.icon?.(at, entry) ?? (
+                      <KindIcon kind={kindOf(entry)} extension={extension} />
+                    )}
+                    <span className="truncate">{shownName(entry)}</span>
+                    {source.marks?.(at, entry)}
+                    {entry.link !== undefined && entry.link !== null && (
+                      <span
+                        title={entry.link}
+                        className="flex min-w-0 shrink items-center gap-1 text-sm text-muted"
+                      >
+                        <Link2 size={14} aria-label={t('files.link')} className="shrink-0" />
+                        <span className="truncate font-mono text-xs">{entry.link}</span>
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td className={`${cell} hidden text-sm text-muted md:table-cell`}>
+                  {kindLabel(kindOf(entry), extension, t)}
+                </td>
+                <td className={`${cell} hidden text-sm text-muted sm:table-cell`}>
+                  {entry.modified && formatDate(entry.modified)}
+                </td>
+                <td className={`${cell} hidden text-right text-sm text-muted md:table-cell`}>
+                  {entry.size !== null &&
+                    entry.kind !== 'folder' &&
+                    formatSize(entry.size, formatNumber)}
+                </td>
+                {source.columns?.map((column) => (
+                  <td key={column.label} className={`${cell} ${column.className}`}>
+                    {column.cell(at, entry)}
+                  </td>
+                ))}
+                <td
+                  className="pr-2"
+                  onClick={(event) => event.stopPropagation()}
+                  onDoubleClick={(event) => event.stopPropagation()}
+                >
+                  <ActionsMenu>{itemsFor([entry])}</ActionsMenu>
+                </td>
+              </tr>
+            </Fragment>
           );
         })}
       </tbody>
@@ -1148,6 +1347,7 @@ export function FileBrowser({
         >
           <RefreshCw size={16} aria-hidden className={listed.isFetching ? 'animate-spin' : ''} />
         </button>
+        {source.actions?.(path)}
         {wide && (
           <button
             type="button"
@@ -1174,37 +1374,57 @@ export function FileBrowser({
         {newItems}
       </Menu>
     ),
-    panel: beside && (
-      <Panel title={t('preview.title')} onClose={() => preview(false)}>
-        {glanced.length === 0 ? (
-          <p className="text-sm text-muted">{t('preview.none')}</p>
-        ) : glanced.length > 1 ? (
-          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-            <dt className="text-muted">{t('explorer.selected')}</dt>
-            <dd>{formatNumber(glanced.length)}</dd>
-            <dt className="text-muted">{t('explorer.size')}</dt>
-            <dd>
-              {formatSize(
-                glanced.reduce((sum, entry) => sum + (entry.size ?? 0), 0),
-                formatNumber,
-              )}
-            </dd>
-          </dl>
+    panel:
+      sidePanel ||
+      (beside &&
+        (source.preview ? (
+          source.preview(
+            path,
+            glanced.map((entry) => within(path, entry.name)),
+            () => preview(false),
+          )
         ) : (
-          <Glance
-            key={glanced[0].name}
-            source={source}
-            path={within(path, glanced[0].name)}
-            entry={glanced[0]}
-          />
-        )}
-      </Panel>
-    ),
+          <Panel title={t('preview.title')} onClose={() => preview(false)}>
+            {glanced.length === 0 ? (
+              <p className="text-sm text-muted">{t('preview.none')}</p>
+            ) : glanced.length > 1 ? (
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                <dt className="text-muted">{t('explorer.selected')}</dt>
+                <dd>{formatNumber(glanced.length)}</dd>
+                <dt className="text-muted">{t('explorer.size')}</dt>
+                <dd>
+                  {formatSize(
+                    glanced.reduce((sum, entry) => sum + (entry.size ?? 0), 0),
+                    formatNumber,
+                  )}
+                </dd>
+              </dl>
+            ) : (
+              <Glance
+                key={glanced[0].name}
+                source={source}
+                path={within(path, glanced[0].name)}
+                entry={glanced[0]}
+              />
+            )}
+          </Panel>
+        ))),
     children: (
       <>
         <ContextMenuArea
-          items={menuOn === 'selection' ? itemsFor(chosen) : folderItems}
+          items={
+            menuHeading !== null && source.headingItems
+              ? source.headingItems(menuHeading)
+              : menuOn === 'selection'
+                ? itemsFor(chosen)
+                : folderItems
+          }
           onOpen={(event) => {
+            setMenuHeading(
+              (event.target as HTMLElement)
+                .closest('[data-heading]')
+                ?.getAttribute('data-heading') ?? null,
+            );
             const name = (event.target as HTMLElement)
               .closest('[data-name]')
               ?.getAttribute('data-name');
@@ -1255,6 +1475,12 @@ export function FileBrowser({
               )}
             </div>
             {source.aside?.(path, listed.dataUpdatedAt)}
+            {keptHere && (
+              <p className="flex items-center gap-2 text-sm text-muted">
+                <Lock size={14} aria-hidden />
+                {t('confined.hint')}
+              </p>
+            )}
             {query && source.search ? (
               <Searched source={source} path={path} query={query} onOpen={openFound} />
             ) : listed.isPending ? (
@@ -1262,16 +1488,17 @@ export function FileBrowser({
             ) : listed.isError ? (
               <p className="text-sm text-danger">{errorMessage(listed.error, t)}</p>
             ) : entries.length === 0 ? (
-              <p className="text-muted">{t('workspace.files.empty')}</p>
+              <p className="text-muted">{t(source.empty?.(path) ?? 'workspace.files.empty')}</p>
             ) : (
               <div>
                 {chosen.length > 0 && (
                   <ChoiceBar all={choice.all} over>
+                    {source.chosenActions?.(pathsOf(choice.chosen))}
                     <button
                       type="button"
                       aria-label={t('tree.move')}
                       title={t('tree.move')}
-                      disabled={!writable}
+                      disabled={!changeable(choice.chosen)}
                       onClick={() => setDialog({ type: 'move', names: choice.chosen })}
                       className={iconButton}
                     >
@@ -1279,10 +1506,10 @@ export function FileBrowser({
                     </button>
                     <button
                       type="button"
-                      aria-label={t('files.delete')}
-                      title={t('files.delete')}
-                      disabled={!writable}
-                      onClick={() => setDialog({ type: 'remove', names: choice.chosen })}
+                      aria-label={t(source.trash ? 'tree.toTrash' : 'files.delete')}
+                      title={t(source.trash ? 'tree.toTrash' : 'files.delete')}
+                      disabled={!changeable(choice.chosen)}
+                      onClick={() => remove(choice.chosen)}
                       className={iconButton}
                     >
                       <Trash2 size={16} aria-hidden />
@@ -1290,7 +1517,7 @@ export function FileBrowser({
                     <ActionsMenu>{itemsFor(chosen)}</ActionsMenu>
                   </ChoiceBar>
                 )}
-                {listing}
+                <div inert={listed.isPlaceholderData}>{listing}</div>
               </div>
             )}
             {sending && (
@@ -1306,6 +1533,7 @@ export function FileBrowser({
           </div>
         </ContextMenuArea>
         {picker.element}
+        {folderPicker.element}
         {dialog?.type === 'folder' && (
           <NameDialog
             heading={t('create.folder')}
@@ -1333,7 +1561,15 @@ export function FileBrowser({
             onClose={close}
           />
         )}
-        {dialog?.type === 'move' && (
+        {dialog?.type === 'move' && source.moveTo && (
+          <>
+            {source.moveTo(pathsOf(dialog.names), () => {
+              close();
+              void settled();
+            })}
+          </>
+        )}
+        {dialog?.type === 'move' && !source.moveTo && (
           <FolderPick
             source={source}
             from={path}

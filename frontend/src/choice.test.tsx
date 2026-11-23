@@ -65,8 +65,12 @@ function tree(nodes: Node[]) {
     'GET /api/nodes': (request: Request) =>
       listing(new URL(request.url).searchParams.get('parent')),
     'GET /api/nodes/:id': (_: Request, { id }: Record<string, string>) => ({
-      ...nodes.find((each) => each.id === id),
       ...listing(id),
+      path: [],
+      node: nodes.find((each) => each.id === id),
+      room: null,
+      tabs: [],
+      pdf: null,
     }),
     'GET /api/trash': () => ({ items: nodes.filter((each) => each.trashed_at) }),
     'POST /api/nodes/trash': async (request: Request) => {
@@ -121,12 +125,12 @@ test('trashed documents are chosen by a long press and restored or purged togeth
 });
 
 test('rows chosen in a folder carry their actions in the header and Escape lets them go', async () => {
-  const folder = node('Odabir', { kind: 'folder' });
+  const folder = node('Ponude', { kind: 'folder' });
   const nodes = [folder, ...['Jedan', 'Dva'].map((title) => node(title, { parent: folder.id }))];
   serve(tree(nodes));
   const { user, settled } = open('/documents');
   await settled();
-  await user.dblClick(await screen.findByRole('row', { name: /Odabir/ }));
+  await user.dblClick(await screen.findByRole('row', { name: /Ponude/ }));
   await screen.findByRole('row', { name: /Jedan/ });
   await settled();
   const table = screen.getByRole('table');

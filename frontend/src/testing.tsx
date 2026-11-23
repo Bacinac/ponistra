@@ -84,6 +84,10 @@ const SHELL: Record<string, Handler> = {
   'GET /api/nodes/company': () => ({ children: [] }),
   'GET /api/vault': () => null,
   'GET /api/nodes/shared': () => ({ children: [] }),
+  'GET /api/files/bookmarks': () => ({ bookmarks: [] }),
+  'GET /api/files/transfers': () => ({ transfers: [] }),
+  'GET /api/locations': () => ({ locations: [], adds: false, tunnels: [] }),
+  'GET /api/nodes/boards': () => ({ children: [] }),
   'GET /api/calendar/events': () => ({
     events: [],
     bookings: [],

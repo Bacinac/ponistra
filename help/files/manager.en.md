@@ -1,13 +1,13 @@
 # Files
 
-The {t:rail.files} page gathers every source of files you reach in one tree: My documents, Company and Shared in Ponistra, the locations on the network and, for its owner, the projects of the workspace, in one or two panes and in tabs.
+The {t:rail.files} page gathers every source of files you reach in one tree: My documents, Company, Shared, Favourites and Boards in Ponistra, the locations on the network and, for its owner, the projects of the workspace, in one or two panes and in tabs.
 
 ## How to use it
 
 ### Opening a source
 
 1. On the module bar, press {t:rail.files}.
-2. With no folder open, the page shows every source by group: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}), {t:locations.title} and {t:files.workspace}. Press a source.
+2. With no folder open, the page shows every source by group: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}, {t:favourites.title}, {t:boards.title}), {t:locations.title} and {t:files.workspace}. Press a source.
 3. In the left column, the arrow ({t:frame.expand}) beside a source opens its folders, beside a folder its subfolders, and pressing it again ({t:frame.collapse}) hides them. Pressing a name opens the folder in the pane; the row of the open folder is marked.
 4. On a phone, the {t:frame.folders} button opens the tree.
 
@@ -69,13 +69,13 @@ Between sources the server transfers, not the browser, so a transfer goes on whe
 
 ### Other actions
 
-Folders are made, files uploaded, opened, edited, renamed, moved, deleted and downloaded as [files on the network](help:files/network) are. In My documents, Company and Shared a document opens in its editor and a file on its page, as in [Documents](help:documents/overview).
+Folders are made, files uploaded, opened, edited, renamed, moved, deleted and downloaded as [files on the network](help:files/network) are. In My documents, Company and Shared a document opens in its editor and a file on its page, and the menus also offer what Ponistra does beside files ([Documents overview](help:documents/overview)): sharing, a copy of a document, extraction into a table, joining PDFs, favourites and working offline.
 
 ## How it works
 
-Each source stays where it is: the page reads a source's folder when you open it, and My documents, Company and Shared are the same documents and folders as in Documents, so a change in one place shows at once in the other. The projects of the workspace are visible to its owner alone.
+Each source stays where it is: the page reads a source's folder when you open it, and a change someone makes in My documents, Company or Shared shows at once in your list too. The projects of the workspace are visible to its owner alone.
 
-Moving within one source is a rename on the source itself. Moving between My documents, Company and Shared moves the document or folder itself, as in Documents: it keeps its sharing and history. Copying, and every move between two sources, is done by Ponistra's server as a job: it reads from one source and writes into the other, never through the browser, so it does not stop when you close the page. The queue of transfers below the panes shows the progress.
+Moving within one source is a rename on the source itself. Moving between My documents, Company and Shared moves the document or folder itself: it keeps its sharing and history. Copying, and every move between two sources, is done by Ponistra's server as a job: it reads from one source and writes into the other, never through the browser, so it does not stop when you close the page. The queue of transfers below the panes shows the progress.
 
 - A copy within Ponistra makes each item anew: a document with its tabs and versions, a file with the same content, a link with its address. You own the copy.
 - From Ponistra to the network or the workspace a document is written in its Office format (DOCX, XLSX, PPTX, with macros if it had them), a PDF with its notes, and a link as a .url file. A move sends the original to {t:trash.title}.
@@ -99,5 +99,5 @@ Bookmarks belong to the account and show on every device you sign in on. Tabs, p
 
 - [Files on the network](help:files/network)
 - [Network locations](help:documents/locations)
-- [Documents](help:documents/overview)
+- [Documents overview](help:documents/overview)
 - [Projects](help:agents/projects)

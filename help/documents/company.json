@@ -8,7 +8,7 @@
     "tree.companyEmpty"
   ],
   "describes": {
-    "frontend/src/FolderPage.tsx#CompanyPage": "3c39089e03a9",
+    "frontend/src/ponistraFiles.tsx#ponistraSource": "c34dff74ceee",
     "backend/apps/access/rights.py#company": "06ffd60af76f",
     "backend/apps/documents/views.py#laid_out": "a70679470147"
   }

@@ -6,7 +6,6 @@ import { getJson } from './api';
 import { BoardView } from './board';
 import { formatSize } from './explorer';
 import { Loading, Panel } from './frame';
-import type { Column } from './split';
 import { useI18n } from './i18n';
 import { sourceHref } from './imported';
 import { heldKind, HeldView } from './kinds';
@@ -34,12 +33,10 @@ interface Beginning {
 export function PreviewPanel({
   chosen,
   kept,
-  column,
   onClose,
 }: {
   chosen: ListedNode[];
   kept: boolean;
-  column?: Column;
   onClose: () => void;
 }) {
   const { t, formatNumber } = useI18n();
@@ -47,7 +44,7 @@ export function PreviewPanel({
   const sized = chosen.filter((node) => node.size !== null);
   const size = sized.reduce((sum, node) => sum + node.size!, 0);
   return (
-    <Panel title={t('preview.title')} column={column} onClose={onClose}>
+    <Panel title={t('preview.title')} onClose={onClose}>
       {chosen.length === 0 ? (
         <p className="text-sm text-muted">{t('preview.none')}</p>
       ) : chosen.length > 1 ? (

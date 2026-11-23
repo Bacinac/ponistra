@@ -11,7 +11,7 @@ Stavke koje bacite u smeće ostaju ondje dok ih ne vratite ili trajno ne obriše
 
 ### Vraćanje i trajno brisanje
 
-1. U lijevom stupcu modula {t:rail.documents} pritisnite {t:trash.title}.
+1. U lijevom stupcu modula {t:rail.files} pritisnite {t:trash.title}.
 2. Uz stavku pritisnite {t:trash.restore} da se vrati na svoje mjesto. Iste radnje nudi desni klik na redak.
 3. Pritisnite {t:trash.purge} i potvrdite u dijalogu {t:trash.purgeTitle}
 4. Za više stavki odjednom odaberite ih kvačicama i radnju pokrenite na traci iznad popisa.

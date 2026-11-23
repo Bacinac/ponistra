@@ -24,7 +24,7 @@ Uz uključen {t:preview.title} na širokom zaslonu prvi pritisak pokazuje stavku
 
 1. Pritisnite {t:create.new}.
 2. {t:create.folder} izrađuje mapu u onoj koja je otvorena.
-3. {t:create.upload} šalje datoteke s uređaja u otvorenu mapu. Isto čini povlačenje datoteka ili mapa na popis.
+3. {t:create.upload} šalje datoteke s uređaja u otvorenu mapu, a {t:create.uploadFolder} cijelu mapu sa svime u njoj. Isto čini povlačenje datoteka ili mapa na popis.
 
 ### Radnje nad stavkama
 

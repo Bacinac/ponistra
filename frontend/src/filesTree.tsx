@@ -5,15 +5,18 @@ import {
   Folder,
   FolderKanban,
   FolderOpen,
+  LayoutDashboard,
   type LucideIcon,
   Network,
+  Share2,
+  Star,
   Trash2,
   Users,
 } from 'lucide-react';
 import { useMemo, type ReactNode } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { deleteJson, getJson } from './api';
-import { useSession } from './auth';
+import { useSession, useVisitor } from './auth';
 import { hiddenName, listKey, type FileSource } from './files';
 import { TreeRow, type Rows, type TreeSource } from './frame';
 import { useI18n } from './i18n';
@@ -37,6 +40,9 @@ export const ROOT_LOOKS: Record<Root, { icon: LucideIcon; label: MessageKey }> =
   mine: { icon: FolderOpen, label: 'tree.root' },
   company: { icon: Building2, label: 'tree.company' },
   shared: { icon: Users, label: 'tree.shared' },
+  sharing: { icon: Share2, label: 'tree.sharedByMe' },
+  favourites: { icon: Star, label: 'favourites.title' },
+  boards: { icon: LayoutDashboard, label: 'boards.title' },
 };
 
 export interface Project {
@@ -65,12 +71,13 @@ export const projectName = (project: Project) =>
 export function useSources() {
   const { t } = useI18n();
   const owner = Boolean(useSession().data?.user?.workspace);
-  const locations = useLocations();
+  const visitor = useVisitor();
+  const locations = useLocations({ enabled: !visitor });
   const projects = useProjects(owner);
   const sources = useMemo(() => {
     const all = new Map<string, FileSource>();
     for (const root of ROOTS)
-      all.set(rootKey(root), ponistraSource(root, t(ROOT_LOOKS[root].label)));
+      all.set(rootKey(root), ponistraSource(root, t(ROOT_LOOKS[root].label), t));
     for (const location of locations.data?.locations ?? []) {
       const source = locationSource(location);
       all.set(source.key, source);
@@ -86,7 +93,7 @@ export function useSources() {
     owner,
     locations,
     projects,
-    pending: locations.isPending || (owner && projects.isPending),
+    pending: (!visitor && locations.isPending) || (owner && projects.isPending),
   };
 }
 

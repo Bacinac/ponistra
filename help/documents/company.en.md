@@ -4,7 +4,7 @@ Company folders are shared folders the administrator lays out, and each user see
 
 ## How to use it
 
-1. In the left column of the {t:rail.documents} module press {t:tree.company}.
+1. In the left column of the {t:rail.files} module press {t:tree.company}.
 2. Open a folder and work in it as in any other, according to the role you have.
 
 ## How it works

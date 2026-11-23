@@ -6,7 +6,7 @@ Ploča je HTML stranica koju otvarate u Ponistri, poput plana, praćenja ili pre
 
 ### Popis ploča
 
-1. U lijevom stupcu Dokumenata otvorite [ploče](/boards).
+1. U lijevom stupcu otvorite [ploče](/boards).
 2. Ploče su složene po grupama: najprije vaše grupe po nazivu, zatim vaše ploče bez grupe pod {t:links.ungrouped}, pa ploče koje drugi dijele s vama, po mjestu odakle dolaze.
 3. Pritisnuta ploča prikazuje se uz popis, a dok nijednu ne odaberete, prva. Dvostrukim pritiskom ploča se otvara; na mobitelu je dovoljan jedan dodir.
 
