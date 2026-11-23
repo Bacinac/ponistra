@@ -38,7 +38,7 @@ async function workspaceDoor(req: IncomingMessage, res: ServerResponse | undefin
 
 /** Files a package fetches by URL as it runs, served from the package as they are, under its
  * version: pdf.js its character maps, standard fonts, decoders, colour profiles and annotation
- * icons (`pdf/PdfView.tsx`), MediaPipe the wasm of its vision tasks (`camera.ts`). */
+ * icons (`pdf/PdfView.tsx`), MediaPipe the wasm of its vision tasks (`shaped.ts`). */
 function packaged(name: string, root: string, files: string[]): Plugin[] {
   const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
   const base = `assets/${name}-${version}/`;

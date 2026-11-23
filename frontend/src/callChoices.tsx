@@ -1,13 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { AudioLines, ImagePlus, Lightbulb, Mic, ScanFace, Trash2, Wallpaper } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ApiError, deleteJson, patchJson, putBytes } from './api';
 import { type Session, SESSION_KEY, useSession } from './auth';
 import {
   BACKDROPS,
   type Background,
   type CallChoices,
-  SHAPEABLE,
+  shapeable,
   type ShapingState,
   UNCHOSEN,
 } from './camera';
@@ -144,19 +144,22 @@ const BACKGROUNDS: { value: Background; label: MessageKey }[] = [
 export function LookItems({ look, onPick }: { look: Look; onPick: () => void }) {
   const { t } = useI18n();
   const { choices, choose } = look;
-  const unshapeable = SHAPEABLE ? undefined : t('meeting.unshapeable');
+  const [able, setAble] = useState<boolean>();
+  useEffect(() => {
+    let open = true;
+    void shapeable().then((can) => open && setAble(can));
+    return () => {
+      open = false;
+    };
+  }, []);
+  const unshapeable = able === false ? t('meeting.unshapeable') : undefined;
   const backgrounds = look.own
     ? [...BACKGROUNDS, { value: 'own' as const, label: 'meeting.background.own' as const }]
     : BACKGROUNDS;
   return (
     <>
       <MenuSeparator />
-      <MenuSub
-        icon={Wallpaper}
-        label={t('meeting.background')}
-        disabled={!SHAPEABLE}
-        hint={unshapeable}
-      >
+      <MenuSub icon={Wallpaper} label={t('meeting.background')} disabled={!able} hint={unshapeable}>
         <MenuChoices
           value={choices.background}
           choices={backgrounds.map(({ value, label }) => ({ value, label: t(label) }))}
@@ -180,7 +183,7 @@ export function LookItems({ look, onPick }: { look: Look; onPick: () => void }) 
         icon={ScanFace}
         label={t('meeting.framing')}
         checked={choices.framing}
-        disabled={!SHAPEABLE}
+        disabled={!able}
         hint={unshapeable}
         onSelect={() => choose({ framing: !choices.framing })}
       />
@@ -188,7 +191,7 @@ export function LookItems({ look, onPick }: { look: Look; onPick: () => void }) 
         icon={Lightbulb}
         label={t('meeting.light')}
         checked={choices.light}
-        disabled={!SHAPEABLE}
+        disabled={!able}
         hint={unshapeable}
         onSelect={() => choose({ light: !choices.light })}
       />
