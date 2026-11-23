@@ -6,7 +6,7 @@
     "files.deleteBody"
   ],
   "describes": {
-    "frontend/src/files.tsx#FileBrowser": "484327afae19",
+    "frontend/src/files.tsx#FileBrowser": "6e2c05bad993",
     "frontend/src/files.tsx#FileView": "8ed4e44556d8",
     "backend/apps/locations/views.py#files": "79c81f482f09",
     "backend/apps/locations/views.py#raw": "3e9488b90b5b",
@@ -16,6 +16,6 @@
     "backend/apps/locations/views.py#put": "7a1f48bdc966",
     "backend/apps/locations/views.py#zip_of": "0a511643c02d",
     "backend/apps/locations/views.py#held_shown": "f9ad64216122",
-    "frontend/src/locations.tsx#locationSource": "aab261856aba"
+    "frontend/src/locations.tsx#locationSource": "ef0c7f04eb2e"
   }
 }

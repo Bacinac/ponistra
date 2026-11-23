@@ -33,7 +33,7 @@
   ],
   "describes": {
     "frontend/src/containers/admin.tsx#DockerHostsSection": "e9bf15848324",
-    "frontend/src/containers/aside.tsx#ContainersAside": "c3d2f4eb14e9",
+    "frontend/src/containers/aside.tsx#ContainersAside": "1dccac18117e",
     "frontend/src/containers/host.tsx#DockerHostPage": "323de82a0891",
     "frontend/src/containers/panels.tsx#OutputDialog": "d1349b0519d8",
     "backend/apps/containers/views.py#hosts": "a660658de7c2",

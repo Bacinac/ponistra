@@ -62,7 +62,9 @@ export function locationSource(location: Location): FileSource {
     remove: (paths) => postJson(`${at}/remove`, { paths }),
     put: async (path, name, file) =>
       postJson(`${at}/put`, { path, name, blob: (await upload(file)).sha256 }),
-    aside: (path) => <ContainersAside location={location.id} path={path} />,
+    aside: (path, listedAt) => (
+      <ContainersAside location={location.id} path={path} listedAt={listedAt} />
+    ),
     stat: (path) => getJson<FileStat>(`${at}/stat?${asked(path)}`),
     ...(smb || location.role === 'read'
       ? {}

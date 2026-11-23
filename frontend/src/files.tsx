@@ -130,8 +130,9 @@ export interface FileSource {
   put: (path: string, name: string, file: File) => Promise<unknown>;
   /** What else the source does with the entries chosen, as items of their menu. */
   more?: (paths: string[], done: () => void) => ReactNode;
-  /** Shown above a folder's entries, as a Docker stack beside its files. */
-  aside?: (path: string) => ReactNode;
+  /** Shown above a folder's entries, as a Docker stack beside its files; read again whenever
+   * the folder's listing is. */
+  aside?: (path: string, listedAt: number) => ReactNode;
   stat?: (path: string) => Promise<FileStat>;
   mode?: (path: string, mode: number) => Promise<FileStat>;
   owner?: (path: string, uid: number, gid: number) => Promise<FileStat>;
@@ -1253,7 +1254,7 @@ export function FileBrowser({
                 </label>
               )}
             </div>
-            {source.aside?.(path)}
+            {source.aside?.(path, listed.dataUpdatedAt)}
             {query && source.search ? (
               <Searched source={source} path={path} query={query} onOpen={openFound} />
             ) : listed.isPending ? (

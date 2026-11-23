@@ -115,9 +115,11 @@ export function useHeld<K extends Kind>(location: string, kind: K) {
   });
 }
 
-export function useStack(location: string, path: string, enabled: boolean) {
+export function useStack(location: string, path: string, enabled: boolean, listedAt: number) {
   return useQuery({
-    queryKey: [CONTAINERS, 'stack', location, path],
+    queryKey: [CONTAINERS, 'stack', location, path, listedAt],
+    placeholderData: (previous, query) =>
+      query?.queryKey[2] === location && query.queryKey[3] === path ? previous : undefined,
     queryFn: () =>
       getJson<Stack>(`${base(location)}/stack?${new URLSearchParams({ path }).toString()}`),
     enabled,

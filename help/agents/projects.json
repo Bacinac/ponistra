@@ -88,7 +88,7 @@
     "backend/apps/workspace/views.py#files": "d97ef11cba65",
     "backend/apps/workspace/views.py#file_raw": "b58ee54dddaa",
     "workspace/files.mjs": "c868bff10d0f",
-    "frontend/src/files.tsx#FileBrowser": "484327afae19",
+    "frontend/src/files.tsx#FileBrowser": "6e2c05bad993",
     "frontend/src/files.tsx#FileView": "8ed4e44556d8",
     "backend/apps/workspace/views.py#file_picture": "b07aa91bd080",
     "backend/apps/workspace/views.py#files_folder": "c6efc1be52e3",

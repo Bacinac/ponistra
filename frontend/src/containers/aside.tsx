@@ -126,12 +126,20 @@ export function Opened({
 /** Beside a folder of a location on a Docker host (D55): the stack its compose file makes, its
  * containers and what compose does with it; at the location's root, the way to the host. Only
  * an administrator sees it, as Docker on a host is root on it. */
-export function ContainersAside({ location, path }: { location: string; path: string }) {
+export function ContainersAside({
+  location,
+  path,
+  listedAt,
+}: {
+  location: string;
+  path: string;
+  listedAt: number;
+}) {
   const { t } = useI18n();
   const admin = Boolean(useSession().data?.user?.is_admin);
   const hosts = useDockerHosts(admin);
   const host = hosts.data?.hosts.some((each) => each.location === location) ?? false;
-  const stack = useStack(location, path, host);
+  const stack = useStack(location, path, host, listedAt);
   const [open, setOpen] = useState<Open>(null);
   const [failed, setFailed] = useState<Error | null>(null);
   const navigate = useNavigate();

@@ -225,7 +225,13 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   await page.setViewportSize({ width: 600, height: 800 });
   await page.goto('/');
   await expect.poll(async () => (await rail.boundingBox())?.y).toBeGreaterThan(700);
-  await expect(rail.getByRole('link')).toHaveText(['Danas', 'Pošta', 'Razgovori', 'Dokumenti']);
+  await expect(rail.getByRole('link')).toHaveText([
+    'Danas',
+    'Pošta',
+    'Razgovori',
+    'Dokumenti',
+    'Datoteke',
+  ]);
   const account = (await page.getByRole('button', { name: /^Račun / }).boundingBox())!;
   const title = (await page.getByRole('heading', { level: 1, name: 'Danas' }).boundingBox())!;
   expect(title.y).toBeGreaterThanOrEqual(account.y + account.height);
@@ -243,7 +249,6 @@ test('the day starts at Today, whose recent documents and rail lead into the doc
   await expect(places.getByRole('link')).toHaveText([
     'Omiljeno',
     'Dijeljeno',
-    'Mreža',
     'Bilješke',
     'Poveznice',
     'Ploče',
@@ -445,7 +450,6 @@ test('the side column holds the places as roots of one tree, then the collection
       'Omiljeno',
       'Moji dokumenti',
       'Dijeljeno',
-      'Mreža',
       'Bilješke',
       'Poveznice',
       'Ploče',
