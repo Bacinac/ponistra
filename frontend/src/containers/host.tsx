@@ -8,7 +8,6 @@ import { Frame, Loading } from '../frame';
 import { useI18n } from '../i18n';
 import { ActionsMenu, MenuItem } from '../menu';
 import { button } from '../styles';
-import { FilesSide } from '../filesPage';
 import { ContainerMenu, Opened, StateLabel, type Open } from './aside';
 import {
   dockerError,
@@ -197,7 +196,7 @@ export function DockerHostPage() {
     host.memory && formatSize(host.memory, formatNumber),
   ];
   return (
-    <Frame title={host?.name ?? t('docker.host')} side={<FilesSide />}>
+    <Frame title={host?.name ?? t('docker.host')}>
       <div className="flex w-full max-w-5xl flex-col gap-3">
         {host && (
           <p className="text-sm text-muted">

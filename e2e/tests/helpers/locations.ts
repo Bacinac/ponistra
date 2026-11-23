@@ -13,7 +13,7 @@ export async function openLocation(page: Page, name: string) {
   await page.getByRole('button', { name: 'Spremi' }).click();
   await expect(page.getByRole('link', { name })).toBeVisible();
   await page.goto('/files');
-  const tree = page.getByRole('navigation', { name: 'Datoteke' });
+  const tree = page.getByRole('navigation', { name: 'Mape' }).filter({ visible: true });
   await tree
     .getByRole('link', { name: 'Mreža' })
     .locator('..')

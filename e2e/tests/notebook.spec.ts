@@ -13,7 +13,7 @@ test('a note is made in one move, named by its first line and kept at hand', asy
 
   await page
     .getByRole('navigation', { name: 'Moduli' })
-    .getByRole('link', { name: 'Dokumenti' })
+    .getByRole('link', { name: 'Datoteke' })
     .click();
   await page
     .getByRole('navigation', { name: 'Mape' })

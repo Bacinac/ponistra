@@ -36,6 +36,7 @@ import {
   useLayoutEffect,
   useMemo,
   useState,
+  Suspense,
   useSyncExternalStore,
   type ComponentType,
   type CSSProperties,
@@ -72,6 +73,7 @@ import { VoiceButton } from './voice';
 import { useGoToProjects } from './workspace';
 import { MODULES, type Module } from './modules';
 import { openLinks } from './linksWindow';
+import { lazily } from './lazily';
 import { PLACES } from './places';
 import { Splitter, useWidth, type Column } from './split';
 import {
@@ -563,6 +565,8 @@ const COLLECTIONS: { to: string; end: boolean; icon: LucideIcon; label: MessageK
   { to: '/vault', end: false, icon: Vault, label: 'vault.title' },
 ];
 
+const FilesGroups = lazily(() => import('./filesTree'), 'FilesGroups');
+
 const FAVOURITES = { to: '/favourites', icon: Star, label: 'favourites.title' } as const;
 const COMPANY = { to: '/company', icon: Building2, label: 'tree.company' } as const;
 
@@ -613,6 +617,9 @@ function FolderTree({
       <TreeRow source={places} row={{ place: 'mine' }} depth={0} />
       <CompanyRoot source={places} />
       <TreeRow source={places} row={{ place: 'shared' }} depth={0} />
+      <Suspense fallback={null}>
+        <FilesGroups />
+      </Suspense>
       <div className="my-2 h-px bg-line" />
       {COLLECTIONS.map(({ to, end, icon: Icon, label }) =>
         to === '/boards' ? (
@@ -1014,7 +1021,7 @@ function moduleAt(pathname: string): Module | null {
   if (pathname === '/workspace') return null;
   if (pathname === '/files' || pathname.startsWith('/files/') || pathname.startsWith('/docker/'))
     return 'files';
-  return INSTALLATION_PATHS.includes(pathname) ? null : 'documents';
+  return INSTALLATION_PATHS.includes(pathname) ? null : 'files';
 }
 
 /** The module a place within it goes up to, as Contacts to Chat; none for a module's own pages. */
