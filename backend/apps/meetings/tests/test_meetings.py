@@ -120,28 +120,44 @@ def test_a_meeting_is_only_for_those_signed_in(client):
 def test_its_people_prepare_the_tabs_they_will_share(signed_in, owner, client):
     meeting = Meeting.objects.made("Prezentacija", owner)
     at = f"/api/meetings/{meeting.id}"
-    tabs = ["https://example.com/a", "http://intranet.local/b?x=1", "https://example.com/a"]
-    shown = sent(signed_in, "patch", at, tabs=tabs)
-    unnamed = [{"address": tab, "title": None, "board": None} for tab in tabs[:2]]
+    tabs = ["https://example.com/a", "http://intranet.local/b?x=1"]
+    for tab in [*tabs, tabs[0]]:
+        shown = sent(signed_in, "patch", at, add=tab)
+    unnamed = [{"address": tab, "title": None, "board": None} for tab in tabs]
     assert (shown.status_code, shown.json()["tabs"]) == (200, unnamed)
     assert signed_in.get(at).json()["tabs"] == unnamed
-    for wrong in ("https://x", ["javascript:alert(1)"], ["mailto:"], ["/relative"], [7]):
-        refused = sent(signed_in, "patch", at, tabs=wrong if isinstance(wrong, list) else wrong)
+    for wrong in (
+        {"add": ["https://e.hr/"]},
+        {"add": "javascript:alert(1)"},
+        {"add": "mailto:"},
+        {"add": "/relative"},
+        {"add": 7},
+        {"tabs": tabs},
+        {"add": tabs[0], "remove": tabs[1]},
+    ):
+        refused = sent(signed_in, "patch", at, **wrong)
         assert (refused.status_code, refused.json()) == (400, {"error": "invalid_tabs"})
-    assert (
-        sent(
-            signed_in,
-            "patch",
-            at,
-            tabs=["https://e.hr/"] * 2 + [f"https://e.hr/{n}" for n in range(20)],
-        ).status_code
-        == 400
-    )
+    Meeting.objects.filter(pk=meeting.pk).update(tabs=[f"https://e.hr/{n}" for n in range(20)])
+    assert sent(signed_in, "patch", at, add="https://e.hr/full").status_code == 400
+    Meeting.objects.filter(pk=meeting.pk).update(tabs=tabs)
+
     stranger = User.objects.create_user("ana@example.com", "Kamen-Most-Rijeka-72")
     client.force_login(stranger)
-    refused = sent(client, "patch", at, tabs=[])
+    refused = sent(client, "patch", at, remove=tabs[0])
     assert (refused.status_code, refused.json()) == (404, {"error": "no_meeting"})
-    assert Meeting.objects.get().tabs == tabs[:2]
+    assert Meeting.objects.get().tabs == tabs
+
+
+def test_a_tab_taken_away_on_one_device_stays_away_when_another_takes_away_its_own(
+    signed_in, owner
+):
+    meeting = Meeting.objects.made("Prezentacija", owner)
+    at = f"/api/meetings/{meeting.id}"
+    for tab in ("https://e.hr/a", "https://e.hr/b", "https://e.hr/c"):
+        sent(signed_in, "patch", at, add=tab)
+    sent(signed_in, "patch", at, remove="https://e.hr/c")
+    shown = sent(signed_in, "patch", at, remove="https://e.hr/a")
+    assert [tab["address"] for tab in shown.json()["tabs"]] == ["https://e.hr/b"]
 
 
 def test_the_tabs_of_the_users_meetings_are_offered_again_the_latest_first(

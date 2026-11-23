@@ -134,7 +134,8 @@ def test_the_tabs_prepared_are_named_for_whoever_reads_them_and_a_board_marked(o
         "https://e.hr/k",
         "https://e.hr/x",
     ]
-    shown = sent(signed(owner), "patch", f"/api/meetings/{meeting.id}", tabs=tabs)
+    for tab in tabs:
+        shown = sent(signed(owner), "patch", f"/api/meetings/{meeting.id}", add=tab)
     assert [(each["title"], each["board"]) for each in shown.json()["tabs"]] == [
         ("Prodaja", board),
         ("Plan rada", None),

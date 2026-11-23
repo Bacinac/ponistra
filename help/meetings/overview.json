@@ -34,9 +34,9 @@
     "frontend/src/meeting.tsx#MeetingLink": "5871a13882f8",
     "backend/apps/meetings/models.py#Meeting": "eea3bf7fed44",
     "backend/apps/meetings/views.py#join": "91c664b6b4e0",
-    "frontend/src/screenSharing.tsx#SharedTabs": "621b834ddae6",
+    "frontend/src/screenSharing.tsx#SharedTabs": "f81c811e4dbf",
     "frontend/src/screenSharing.tsx#OwnShare": "c00db9be0bbf",
     "frontend/src/screenSharing.tsx#useFloating": "276973fdb928",
-    "backend/apps/meetings/views.py#meeting": "c95eb0313750"
+    "backend/apps/meetings/views.py#meeting": "230dab7e11de"
   }
 }

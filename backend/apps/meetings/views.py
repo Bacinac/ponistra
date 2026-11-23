@@ -131,31 +131,38 @@ def _shown(user, pk: uuid.UUID) -> dict:
     }
 
 
-def _tabs(given) -> list[str]:
-    if not isinstance(given, list) or len(given) > TABS:
+def _tab(given) -> str:
+    if not isinstance(given, str) or len(given) > TAB:
         raise Refused(400, "invalid_tabs")
-    tabs = []
-    for each in given:
-        if not isinstance(each, str) or len(each) > TAB:
-            raise Refused(400, "invalid_tabs")
-        address = urlsplit(each)
-        if address.scheme not in WEB or not address.netloc:
-            raise Refused(400, "invalid_tabs")
-        if each not in tabs:
-            tabs.append(each)
-    return tabs
+    address = urlsplit(given)
+    if address.scheme not in WEB or not address.netloc:
+        raise Refused(400, "invalid_tabs")
+    return given
 
 
-def _tabbed(user, pk: uuid.UUID, given) -> None:
-    found = _member(user, pk)
-    found.tabs = _tabs(given)
-    found.save(update_fields=["tabs"])
+def _tabbed(user, pk: uuid.UUID, change) -> None:
+    """One tab added or taken away at a time, on the list as it stands: each device of the
+    meeting changes the same list, and one writing back a whole list it read earlier would
+    undo what another changed since."""
+    if not isinstance(change, dict) or len(change) != 1 or not change.keys() <= {"add", "remove"}:
+        raise Refused(400, "invalid_tabs")
+    with transaction.atomic():
+        found = Meeting.objects.select_for_update().get(pk=_member(user, pk).pk)
+        if "add" in change:
+            tab = _tab(change["add"])
+            if tab not in found.tabs:
+                if len(found.tabs) >= TABS:
+                    raise Refused(400, "invalid_tabs")
+                found.tabs = [*found.tabs, tab]
+        else:
+            found.tabs = [each for each in found.tabs if each != change["remove"]]
+        found.save(update_fields=["tabs"])
 
 
 @api("GET", "PATCH")
 async def meeting(request, pk):
     if request.method == "PATCH":
-        await database(_tabbed)(request.user, pk, body(request).get("tabs"))
+        await database(_tabbed)(request.user, pk, body(request))
     shown = await database(_shown)(request.user, pk)
     try:
         shown["present"] = await livekit.present(shown["id"])

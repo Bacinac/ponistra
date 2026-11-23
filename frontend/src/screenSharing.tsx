@@ -336,7 +336,8 @@ export function SharedTabs({
   const client = useQueryClient();
   const [address, setAddress] = useState('');
   const saved = useMutation({
-    mutationFn: (tabs: string[]) => patchJson<Shown>(`/api/meetings/${meeting.id}`, { tabs }),
+    mutationFn: (change: { add: string } | { remove: string }) =>
+      patchJson<Shown>(`/api/meetings/${meeting.id}`, change),
     onSuccess: (shown) => client.setQueryData(['meeting', meeting.id], shown),
   });
   const tabs = meeting.tabs.map((tab) => tab.address);
@@ -345,7 +346,7 @@ export function SharedTabs({
     event.preventDefault();
     const given = address.trim();
     const tab = /^[a-z][a-z0-9+.-]*:/i.test(given) ? given : `https://${given}`;
-    saved.mutate([...tabs, tab], { onSuccess: () => setAddress('') });
+    saved.mutate({ add: tab }, { onSuccess: () => setAddress('') });
   };
   return (
     <section aria-label={t('meeting.tabsTitle')} className="flex min-h-0 flex-1 flex-col gap-2">
@@ -401,7 +402,7 @@ export function SharedTabs({
               aria-label={t('meeting.removeTab')}
               title={t('meeting.removeTab')}
               disabled={saved.isPending}
-              onClick={() => saved.mutate(tabs.filter((each) => each !== address))}
+              onClick={() => saved.mutate({ remove: address })}
               className={iconButton}
             >
               <X size={14} aria-hidden />
@@ -414,7 +415,7 @@ export function SharedTabs({
           value={address}
           left={tabs}
           onChange={setAddress}
-          onChosen={(tab) => saved.mutate([...tabs, tab], { onSuccess: () => setAddress('') })}
+          onChosen={(tab) => saved.mutate({ add: tab }, { onSuccess: () => setAddress('') })}
         />
         <button
           type="submit"
