@@ -450,13 +450,17 @@ def night_failures(moved: set[str]) -> tuple[set[str], set[str]]:
 
 def cleared() -> None:
     """failed.json without the night's failures of one kind, after a check that ran each of them
-    still in the tree passed: their stage leaves `stages` once nothing of it is left."""
+    still in the tree passed: their stage leaves `stages` once nothing of it is left. A stage that
+    names no tests (the help's pictures) leaves once a run of all of it passed."""
     kind = sys.argv[2]
-    stage = {"pytest": "pytest", "e2e": "browser"}[kind]
+    stage = {"pytest": "pytest", "e2e": "browser"}.get(kind, kind)
     night = json.loads((RUN / "failed.json").read_text())
-    if not night.get(kind):
+    if kind in ("pytest", "e2e"):
+        if not night.get(kind):
+            return
+        night[kind] = []
+    elif stage not in night["stages"]:
         return
-    night[kind] = []
     night["stages"] = [each for each in night["stages"] if each != stage]
     (RUN / "failed.cleared.json").write_text(json.dumps(night, indent=1) + "\n")
 

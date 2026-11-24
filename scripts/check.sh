@@ -340,6 +340,7 @@ shots)
   stack backend frontend
   shift
   shots "$@"
+  [ "$#" -gt 0 ] || clear_night shots
   ;;
 esac
 echo "$tree passed $(now)" >>"$store/$mode"
