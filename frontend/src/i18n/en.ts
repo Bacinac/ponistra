@@ -48,6 +48,8 @@ export const en: Record<MessageKey, string> = {
   'workspace.state.idle': 'Done',
   'workspace.state.closed': 'Closed',
   'workspace.state.cut': 'Cut short',
+  'workspace.state.compacting': 'Compacting',
+  'workspace.compacting.over': 'longer than usual',
   'workspace.push': 'Push',
   'workspace.asked': 'The coordinator was sent “{word}”.',
   'workspace.newRound': 'New round',

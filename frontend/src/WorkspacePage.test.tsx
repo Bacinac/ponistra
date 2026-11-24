@@ -770,6 +770,38 @@ test('a chat at work is not offered to the editor until its turn ends', async ()
   expect(item.getAttribute('aria-disabled')).toBe('true');
 });
 
+test('a chat compacting shows how far it has come on the usual length of a compaction', async () => {
+  const since = new Date(Date.now() - 30_000).toISOString();
+  served({
+    'GET /api/workspace/projects': () => ({
+      ...PROJECTS,
+      projects: [
+        {
+          ...PROJECTS.projects[1],
+          chats: [
+            {
+              ...PROJECTS.projects[1].chats[1],
+              state: 'working',
+              compacting: { since, expected: 60_000 },
+            },
+          ],
+          rounds: [],
+        },
+      ],
+    }),
+  });
+  const { user } = open('/workspace', OWNER);
+  const alpha = await screen.findByRole('region', { name: 'Alpha' });
+  const row = within(alpha).getByRole('button', { name: /Nova tablica/ });
+  expect(within(row).getByText('Sažima')).toBeTruthy();
+  const bar = within(row).getByRole('progressbar', { name: 'Sažima' });
+  expect(Number(bar.getAttribute('aria-valuenow'))).toBeGreaterThanOrEqual(50);
+  expect(within(row).getByText(/^0:3\d \/ 1:00$/)).toBeTruthy();
+  await user.click(row);
+  const chat = screen.getByRole('region', { name: 'Razgovor' });
+  expect(await within(chat).findByRole('progressbar', { name: 'Sažima' })).toBeTruthy();
+});
+
 test('a chat at work here is stopped beside Send, one at work in the editor is stopped there', async () => {
   const asked: Asked[] = [];
   served({

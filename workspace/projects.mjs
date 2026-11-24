@@ -118,6 +118,8 @@ const ASKED = { consolidate: 'objedini', push: 'pushaj' };
 const CARRIED = new Set(['say', 'rename', 'model', ...Object.keys(ASKED)]);
 const KINDS = new Set([...CARRIED, 'chat', 'answer', 'open', 'close', 'archive', 'start', 'auto', 'restart', 'stop', 'move', 'cancel']);
 const HOUR = 60 * 60 * 1000;
+// What Claude Code writes as a compaction begins, the hook that announced it among it.
+const COMPACTION_WRITES = 5000;
 const WEEK = 7 * 24 * HOUR;
 const REPEATS = { day: 24 * HOUR, week: WEEK };
 const CONDITIONS = new Set(['time', 'reset', 'below', 'round', 'red']);
@@ -558,6 +560,7 @@ const chatOf = (path, id, live, trees, led, kept = new Set()) => {
     hosted: session?.hosted ?? false,
     state: session?.state ?? 'closed',
     cut: cutIn(session?.state ?? 'closed', lines),
+    compacting: compactingOf(id, session?.state, stat.mtimeMs),
     waitingFor: session?.waitingFor ?? null,
     questions: session?.questions ?? null,
     context: contextOf(lines),
@@ -639,7 +642,7 @@ const memberOf = (folder, live, trees, id, prompt) => {
   const first = firstLine(prompt);
   const told = (/^\*\*(.+?)\.?\*\*/.exec(first)?.[1] ?? first.replace(/[*`]/g, '')).slice(0, 120);
   if (typeof id !== 'string' || !SESSION.test(id))
-    return { id: null, name: null, title: told, task, state: 'new', cut: false, hosted: false, waitingFor: null, questions: null, at: null, context: null, model: null, changes: null, heard: null };
+    return { id: null, name: null, title: told, task, state: 'new', cut: false, compacting: null, hosted: false, waitingFor: null, questions: null, at: null, context: null, model: null, changes: null, heard: null };
   const transcript = transcriptOf(folder, id);
   const stat = existsSync(transcript) ? statSync(transcript) : null;
   const lines = stat ? tailOf(transcript, stat.size) : [];
@@ -655,11 +658,24 @@ const memberOf = (folder, live, trees, id, prompt) => {
   const session = live.get(id);
   if (session) {
     const { name, state, hosted, waitingFor, questions, at } = session;
-    return { ...shared, name, state, cut: cutIn(state, lines), hosted, waitingFor, questions, at };
+    const compacting = compactingOf(id, state, stat?.mtimeMs ?? 0);
+    return { ...shared, name, state, cut: cutIn(state, lines), compacting, hosted, waitingFor, questions, at };
   }
   // A chat given its session that has not yet written a word has done nothing, so is not finished.
   const state = stat ? 'closed' : 'new';
-  return { ...shared, name: null, state, cut: cutIn(state, lines), hosted: false, waitingFor: null, questions: null, at: stat?.mtime.toISOString() ?? null };
+  return { ...shared, name: null, state, cut: cutIn(state, lines), compacting: null, hosted: false, waitingFor: null, questions: null, at: stat?.mtime.toISOString() ?? null };
+};
+
+// A compaction under way while the chat works, with the middle of the last ones' lengths it may take;
+// the transcript is not written while it runs, so a line after its start means it is over, even
+// when it failed before the hook that ends it.
+const compactingOf = (id, state, written) => {
+  if (state !== 'working') return null;
+  const since = Date.parse(readJson(join(HEARD, `${id}.compacting.json`))?.at ?? '');
+  if (!(written < since + COMPACTION_WRITES)) return null;
+  const known = readJson(join(HEARD, 'compactions.json'));
+  const durations = (Array.isArray(known) ? known.filter(Number.isFinite) : []).sort((one, other) => one - other);
+  return { since: new Date(since).toISOString(), expected: durations[Math.floor(durations.length / 2)] ?? null };
 };
 
 // What a chat last said through its hooks: that it answered, with its answer, or that it waits.

@@ -72,6 +72,7 @@ import { DictateButton } from './voice';
 import { setAside, useOpenWorkspace } from './workspace';
 import { Hours } from './workspaceHours';
 import { Spend } from './workspaceSpend';
+import { type Compaction, Compacting } from './workspaceCompacting';
 import { type OtherRound, StartWhen, useWhenText, type When } from './workspaceWhen';
 import { hasScreens, toNextScreen } from './meetingWindow';
 import { useThemeOf } from './theme';
@@ -111,6 +112,7 @@ interface Chat {
   hosted: boolean;
   state: State;
   cut?: boolean;
+  compacting?: Compaction | null;
   waitingFor: string | null;
   questions?: Question[] | null;
   context: number | null;
@@ -145,6 +147,7 @@ interface Member {
   task: string | null;
   state: State;
   cut?: boolean;
+  compacting?: Compaction | null;
   hosted: boolean;
   waitingFor: string | null;
   questions?: Question[] | null;
@@ -300,6 +303,7 @@ interface Known {
   project: Project;
   state: State;
   cut?: boolean;
+  compacting: Compaction | null;
   hosted: boolean;
   waitingFor: string | null;
   questions?: Question[] | null;
@@ -672,22 +676,28 @@ function Line({
   state,
   at,
   meta,
+  compaction,
 }: {
   title: string;
   state?: { label: string; look: string; hint?: string };
   at: string | null;
   meta?: ReactNode;
+  compaction?: Compaction | null;
 }) {
+  const { t } = useI18n();
   const when = useWhen();
+  const shown = compaction
+    ? { label: t('workspace.state.compacting'), look: 'text-accent' }
+    : state;
   return (
     <>
       <span className="flex min-w-0 items-baseline gap-2">
         <span className="min-w-0 flex-1 truncate text-sm">{title}</span>
         <span
-          className={`w-20 shrink-0 truncate text-right text-xs ${state?.look ?? ''}`}
-          title={state?.hint}
+          className={`w-20 shrink-0 truncate text-right text-xs ${shown?.look ?? ''}`}
+          title={shown?.hint}
         >
-          {state?.label}
+          {shown?.label}
         </span>
         <span className="w-12 shrink-0 text-right text-xs whitespace-nowrap text-muted tabular-nums">
           {at && when(at)}
@@ -696,6 +706,7 @@ function Line({
       {meta && (
         <span className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted">{meta}</span>
       )}
+      {compaction && <Compacting compaction={compaction} />}
     </>
   );
 }
@@ -943,6 +954,7 @@ function MemberLine({
       title={member.title}
       state={{ label: t(state.label), look: state.look, hint: member.waitingFor ?? undefined }}
       at={member.at}
+      compaction={member.compacting}
       meta={
         known && (
           <>
@@ -1335,6 +1347,7 @@ function ChatLine({
           }
           at={chat.at}
           meta={measured && <Measures context={chat.context} changes={chat.changes} />}
+          compaction={chat.compacting}
         />
       </button>
     </ChatRow>
@@ -2013,11 +2026,12 @@ function Conversation({
         <h2 className="min-w-0 flex-1 truncate text-base font-semibold">
           {chat.title}
           <span className={`ml-2 text-xs font-normal ${STATES[shownOf(chat)].look}`}>
-            {t(STATES[shownOf(chat)].label)}
+            {t(chat.compacting ? 'workspace.state.compacting' : STATES[shownOf(chat)].label)}
           </span>
         </h2>
         <OpenChat chat={chat} onOpen={onOpen} look={`${small} shrink-0`} />
       </div>
+      {chat.compacting && <Compacting compaction={chat.compacting} />}
       {transcript.isError && (
         <p className="text-sm text-danger">{errorMessage(transcript.error, t)}</p>
       )}
@@ -2323,6 +2337,7 @@ function knownOf(projects: Project[]): Map<string, Known> {
           project,
           state: member.state,
           cut: member.cut,
+          compacting: member.compacting ?? null,
           hosted: member.hosted,
           waitingFor: member.waitingFor,
           questions: member.questions ?? null,
@@ -2338,6 +2353,7 @@ function knownOf(projects: Project[]): Map<string, Known> {
         project,
         state: chat.state,
         cut: chat.cut,
+        compacting: chat.compacting ?? null,
         hosted: chat.hosted,
         waitingFor: chat.waitingFor,
         questions: chat.questions ?? null,

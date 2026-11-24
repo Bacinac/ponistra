@@ -9,6 +9,12 @@
     ],
     "Notification": [
       { "hooks": [{ "type": "command", "command": "/usr/lib/code-server/lib/node /etc/ponistra/heard.mjs" }] }
+    ],
+    "PreCompact": [
+      { "hooks": [{ "type": "command", "command": "/usr/lib/code-server/lib/node /etc/ponistra/heard.mjs" }] }
+    ],
+    "PostCompact": [
+      { "hooks": [{ "type": "command", "command": "/usr/lib/code-server/lib/node /etc/ponistra/heard.mjs" }] }
     ]
   }
 }

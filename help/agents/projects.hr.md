@@ -172,6 +172,7 @@ Krug je skup razgovora u jednom projektu koje je koordinator otvorio odjednom, s
 
 - {t:workspace.state.new}: zadatak je upisan, ali još nije poslan. Pritisak na takav razgovor pokaže cijeli zadatak.
 - {t:workspace.state.working}: agent radi.
+- {t:workspace.state.compacting}: agent sažima razgovor koji je dosegao granicu konteksta, pa nastavlja sa sažetkom. Ispod retka, i u otvorenom razgovoru, traka pokazuje koliko je prošlo od uobičajenog trajanja, srednjeg od zadnjih sažimanja u radnom prostoru, a uz nju oba vremena u minutama i sekundama (0:40 / 1:14). Kad sažimanje traje dulje, traka stoji pri kraju i piše {t:workspace.compacting.over}; prije prvog dovršenog sažimanja traka samo treperi, a uz nju stoji koliko je prošlo.
 - {t:workspace.state.background}: agent je završio potez, ali naredba koju je pokrenuo u pozadini, recimo provjera, još radi.
 - {t:workspace.state.waiting}: agent čeka vaš odgovor ili dopuštenje. Ako zadržite pokazivač na oznaci, piše što čeka.
 - {t:workspace.state.idle}: agent je završio i čeka sljedeću poruku.

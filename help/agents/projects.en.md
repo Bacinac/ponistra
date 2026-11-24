@@ -172,6 +172,7 @@ A round is a set of chats in one project that the coordinator opened at once, ea
 
 - {t:workspace.state.new}: the task is written in but not sent yet. Pressing such a chat shows its whole task.
 - {t:workspace.state.working}: the agent is working.
+- {t:workspace.state.compacting}: the agent is compacting a chat that reached the edge of its context, and goes on from the summary. Under the row, and in the open conversation, a bar shows how far it has come on the usual length, the middle of the last compactions in the workspace, and beside it both times in minutes and seconds (0:40 / 1:14). When a compaction takes longer, the bar stays near its end and reads {t:workspace.compacting.over}; before the first compaction has ended, the bar only pulses, beside the time gone by.
 - {t:workspace.state.background}: the agent finished its turn, but a command it started in the background, such as a check, still runs.
 - {t:workspace.state.waiting}: the agent waits for your answer or permission. Hold the pointer over the mark to see what it waits for.
 - {t:workspace.state.idle}: the agent has finished and waits for the next message.

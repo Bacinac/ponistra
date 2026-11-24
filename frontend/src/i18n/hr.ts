@@ -46,6 +46,8 @@ export const hr = {
   'workspace.state.idle': 'Gotov',
   'workspace.state.closed': 'Zatvoren',
   'workspace.state.cut': 'Prekinut',
+  'workspace.state.compacting': 'Sažima',
+  'workspace.compacting.over': 'dulje nego obično',
   'workspace.push': 'Pushaj',
   'workspace.asked': 'Koordinatoru je poslano „{word}”.',
   'workspace.newRound': 'Novi krug',
