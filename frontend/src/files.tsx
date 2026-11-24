@@ -751,6 +751,7 @@ export function FileBrowser({
   const usePanel = source.usePanel ?? noPanel;
   const sidePanel = usePanel(path);
   const [sending, setSending] = useState<{ done: number; total: number } | null>(null);
+  const [removing, setRemoving] = useState<string[]>([]);
   const [typed, setTyped] = useState('');
   const [query, setQuery] = useState('');
   const [over, setOver] = useState<string | null>(null);
@@ -780,7 +781,9 @@ export function FileBrowser({
   const hidden = desk?.hidden ?? true;
   const entries = grouped(
     sorted(
-      (listed.data?.entries ?? []).filter((entry) => hidden || !hiddenName(entry)),
+      (listed.data?.entries ?? []).filter(
+        (entry) => (hidden || !hiddenName(entry)) && !removing.includes(entry.name),
+      ),
       sort,
     ),
     listed.data?.entries ?? [],
@@ -797,7 +800,9 @@ export function FileBrowser({
   const settled = () => {
     choice.choose([]);
     setGlance(null);
-    return queryClient.invalidateQueries({ queryKey: ['files', source.key] });
+    return queryClient
+      .invalidateQueries({ queryKey: ['files', source.key] })
+      .finally(() => setRemoving([]));
   };
   const changing = useMutation({ mutationFn: (change: () => Promise<unknown>) => change() });
   const change = (made: () => Promise<unknown>) =>
@@ -841,6 +846,7 @@ export function FileBrowser({
     if (!names.length) return;
     if (!source.trash) return setDialog({ type: 'remove', names });
     setGlance(null);
+    setRemoving(names);
     change(() => source.remove(pathsOf(names)));
   };
   const copy = (names: string[], cut: boolean) =>

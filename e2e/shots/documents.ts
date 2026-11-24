@@ -4,10 +4,10 @@ import { shot } from './shot';
 async function projects(page: Page): Promise<void> {
   await page.goto('/documents');
   await page
-    .locator('tr[data-id]', { hasText: /^(Projekti|Projects)/ })
+    .getByRole('row', { name: /\b(Projekti|Projects)\b/ })
     .first()
     .dblclick();
-  await expect(page.locator('tr[data-id]', { hasText: /(Arhiva|Archive)/ })).toBeVisible();
+  await expect(page.getByRole('row', { name: /(Arhiva|Archive)/ })).toBeVisible();
 }
 
 shot('documents-folder', async (page) => {
@@ -15,7 +15,7 @@ shot('documents-folder', async (page) => {
   const preview = page.getByRole('button', { name: /^(Pregled|Preview)$/ });
   if ((await preview.getAttribute('aria-pressed')) !== 'true') await preview.click();
   await page
-    .locator('tr[data-id]', { hasText: /(Ponuda za uređenje ureda|Office fit-out proposal)/ })
+    .getByRole('row', { name: /(Ponuda za uređenje ureda|Office fit-out proposal)/ })
     .click();
   await expect(page.getByText(/^(Opseg radova|Scope of work)$/).first()).toBeVisible();
 });

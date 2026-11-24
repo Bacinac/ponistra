@@ -33,6 +33,30 @@ async function upload(page: Page, name: string, text: string) {
   await expect(page.getByRole('row').filter({ hasText: name })).toBeVisible();
 }
 
+const locationOf = (href: string) => decodeURIComponent(href).match(/location:([0-9a-f-]{36})/)![1];
+
+// The backend's tests sign in to the same account and leave their key there, and a file by a name
+// already taken is refused.
+async function cleared(page: Page, location: string, name: string) {
+  await page.evaluate(
+    async ({ location, name }) => {
+      const at = `/api/locations/${location}`;
+      const listed = (await (await fetch(`${at}/files?path=`)).json()) as {
+        entries: { name: string }[];
+      };
+      if (!listed.entries.some((entry) => entry.name === name)) return;
+      const token = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/)?.[1] ?? '';
+      const removed = await fetch(`${at}/remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': token },
+        body: JSON.stringify({ paths: [name] }),
+      });
+      if (!removed.ok) throw new Error(`POST ${at}/remove: ${removed.status}`);
+    },
+    { location, name },
+  );
+}
+
 async function removeLocation(page: Page, name: string) {
   await page.goto('/settings/locations');
   const kept = page.getByRole('listitem').filter({ hasText: name });
@@ -49,7 +73,7 @@ test('a stack on a Docker host is brought up from Files, read and taken down', a
   const folder = `s${stamp}`;
 
   const stacks = await addLocation(page, name, 'stacks');
-  const locationId = decodeURIComponent(stacks).match(/location:([0-9a-f-]{36})/)![1];
+  const locationId = locationOf(stacks);
 
   await page.goto('/network');
   const hosts = page.getByRole('region', { name: 'Docker domaćini' });
@@ -62,6 +86,7 @@ test('a stack on a Docker host is brought up from Files, read and taken down', a
   expect(authorized).toMatch(/^restrict,command="c=\$SSH_ORIGINAL_COMMAND; .*" ssh-ed25519 /);
 
   const keyFolder = await addLocation(page, keys, '.ssh');
+  await cleared(page, locationOf(keyFolder), 'authorized_keys');
   await page.goto(keyFolder);
   await upload(page, 'authorized_keys', `${authorized}\n`);
 

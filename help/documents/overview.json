@@ -12,7 +12,7 @@
   ],
   "describes": {
     "frontend/src/ponistraFiles.tsx#ponistraSource": "c34dff74ceee",
-    "frontend/src/files.tsx#FileBrowser": "27ea1ece0813",
+    "frontend/src/files.tsx#FileBrowser": "7e317b8bdcc6",
     "frontend/src/filesPage.tsx#useHere": "ed4c78ff65b8",
     "frontend/src/frame.tsx#FolderTree": "9677e6045860",
     "frontend/src/tree.tsx#kindOf": "e4ac5ca1ade6",

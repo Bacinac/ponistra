@@ -966,10 +966,6 @@ function placeNotes(view: EditorView, laid: Laid | null, sheets: readonly Geomet
   const feet = new Map(laid?.feet.map((foot) => [foot.index, foot]));
   const atFoot = shownNotes(view, 'foot').notes;
   const atEnd = shownNotes(view, 'end');
-  const found = [...atFoot, ...atEnd.notes].find(({ item }) =>
-    item.classList.contains('ponistra-found'),
-  )?.item;
-  const before = found?.getBoundingClientRect().top;
   atFoot.forEach(({ item }, index) => {
     const foot = feet.get(index);
     const [left, right] =
@@ -987,9 +983,17 @@ function placeNotes(view: EditorView, laid: Laid | null, sheets: readonly Geomet
   notes.forEach(({ item }, index) => {
     item.style.paddingTop = index > 0 && gaps.has(index) ? `${gaps.get(index)}px` : '';
   });
-  // A search hit scrolls to its note before the pages are laid, which can move it out of view.
-  if (found && found.getBoundingClientRect().top !== before)
-    found.scrollIntoView({ block: 'center' });
+}
+
+/** The block or note a search hit marked, while it is marked. */
+function marked(view: EditorView): Element | null {
+  return (
+    view.dom.querySelector('.ponistra-found') ??
+    [...shownNotes(view, 'foot').notes, ...shownNotes(view, 'end').notes].find(({ item }) =>
+      item.classList.contains('ponistra-found'),
+    )?.item ??
+    null
+  );
 }
 
 function linesOf(
@@ -1245,12 +1249,20 @@ class Paginator {
     if (view.isDestroyed) return;
     const { sheets, laid } = pagingOf(view.state)!;
     if (!sheets) return;
+    const before = marked(view)?.getBoundingClientRect().top;
     const next = laidOut(measure(view), sheets);
     placeNotes(view, next, sheets);
-    if (sameLaid(laid, next)) return;
-    view.dispatch(
-      view.state.tr.setMeta(pagesKey, { laid: next } satisfies Meta).setMeta('addToHistory', false),
-    );
+    const moved = !sameLaid(laid, next);
+    if (moved)
+      view.dispatch(
+        view.state.tr
+          .setMeta(pagesKey, { laid: next } satisfies Meta)
+          .setMeta('addToHistory', false),
+      );
+    // A search hit scrolls to what it found before the pages are laid, which can move it out of view.
+    const found = before === undefined ? null : marked(view);
+    if (found && (moved || found.getBoundingClientRect().top !== before))
+      found.scrollIntoView({ block: 'center' });
   }
 
   destroy(): void {
