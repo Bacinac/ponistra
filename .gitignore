@@ -7,6 +7,8 @@ __pycache__/
 .pytest_cache/
 node_modules/
 frontend/dist/
+frontend/dist-seat/
+frontend/dist-machine/
 backend/apps/engine/tests/*-unsaved*.xlsx
 backend/apps/engine/tests/implied-*.tsv
 /etalons/

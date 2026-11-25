@@ -9,6 +9,7 @@ import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { IMPORTED } from './src/importable.ts';
+import { nativeLightDark } from './vite.page.ts';
 
 const require = createRequire(import.meta.url);
 const PDFJS = dirname(require.resolve('pdfjs-dist/package.json'));
@@ -446,25 +447,6 @@ function installable(worker: string): Plugin[] {
       },
     },
   ];
-}
-
-/** Lightning CSS stands in for light-dark() below its targets with variables that only a literal
- * color-scheme sets, which theme.css's `var(--scheme)` is not: every colour of the interface
- * would come out void, in the build alone. */
-function nativeLightDark(): Plugin {
-  return {
-    name: 'native-light-dark',
-    apply: 'build',
-    generateBundle(_, bundle) {
-      for (const file of Object.values(bundle)) {
-        if (file.type === 'asset' && file.fileName.endsWith('.css')) {
-          if (String(file.source).includes('--lightningcss-')) {
-            this.error(`${file.fileName} carries Lightning CSS's light-dark() stand-in`);
-          }
-        }
-      }
-    },
-  };
 }
 
 /** The public demo (`vite build --mode demo`): the app over what a walk through the backend

@@ -3,3 +3,5 @@ route:/print/*          # never opened by hand: the printer's page
 label:help.*            # the help's own frame
 label:error.*           # an error message says what happened; one that needs more goes under the Limits of its function
 label:demo.*            # only the public demo build's strip (frontend/demo/); never in an installation
+label:machine.*         # only the machine page Ponistra OS's agent serves (frontend/machine/); never in an installation
+label:seat.*            # only the seat screen Ponistra OS's desktop shows (frontend/seat/); never in an installation

@@ -27,6 +27,7 @@ services:
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html
       - ./frontend/vite.config.ts:/app/vite.config.ts
+      - ./frontend/vite.page.ts:/app/vite.page.ts
       - ./frontend/tsconfig.json:/app/tsconfig.json
       - ./fonts:/fonts:ro
       - ./colors:/colors:ro

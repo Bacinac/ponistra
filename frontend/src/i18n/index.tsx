@@ -20,11 +20,12 @@ export function localeName(locale: string, language: Language): string {
 const LOCALES: Record<Language, string> = { hr: 'hr-HR', en: 'en-GB' };
 const STORAGE_KEY = 'ponistra.language';
 
-function storedLanguage(): Language {
+function storedLanguage(unchosen: Language): Language {
   try {
-    return localStorage.getItem(STORAGE_KEY) === 'en' ? 'en' : 'hr';
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return LANGUAGES.find((language) => language === stored) ?? unchosen;
   } catch {
-    return 'hr';
+    return unchosen;
   }
 }
 
@@ -56,8 +57,14 @@ export function isMessageKey(key: string): key is MessageKey {
 
 const I18nContext = createContext<I18n | null>(null);
 
-export function I18nProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(storedLanguage);
+export function I18nProvider({
+  children,
+  unchosen = 'hr',
+}: {
+  children: ReactNode;
+  unchosen?: Language;
+}) {
+  const [language, setLanguageState] = useState<Language>(() => storedLanguage(unchosen));
 
   useEffect(() => {
     document.documentElement.lang = language;

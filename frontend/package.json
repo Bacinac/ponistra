@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:seat": "tsc && vite build --config vite.seat.config.ts",
+    "build:machine": "tsc && vite build --config vite.machine.config.ts",
     "typecheck": "tsc",
     "test": "vitest run --passWithNoTests",
     "postinstall": "patch-package"
