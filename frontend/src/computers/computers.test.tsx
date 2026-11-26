@@ -127,3 +127,19 @@ test('an administrator makes a stick: the answers, then the code and install.con
   expect(await saved[0].file.text()).toContain('language = hr');
   expect(await within(dialog).findByRole('link', { name: 'Puni stick' })).toBeTruthy();
 });
+
+test("a machine's tabs lead to its pages from any of them", async () => {
+  serve({
+    'GET /api/computers': () => ({ computers: [computer], orphaned: [], codes: [], can_add: false }),
+    'GET /api/computers/:id': () => ({ ...computer, managers: [ivo], openings: [] }),
+    'GET /api/computers/:id/agent/v1/machine': () =>
+      Response.json({ error: 'computer_offline' }, { status: 503 }),
+  });
+  open(`/computers/${ID}/hardware`);
+
+  const tabs = await screen.findByRole('navigation', { name: 'Stranice računala' });
+  const href = (name: string) => within(tabs).getByRole('link', { name }).getAttribute('href');
+  expect(href('Pregled')).toBe(`/computers/${ID}`);
+  expect(href('Opterećenje')).toBe(`/computers/${ID}/pressure`);
+  expect(href('Upravljanje')).toBe(`/computers/${ID}/manage`);
+});

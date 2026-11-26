@@ -213,12 +213,18 @@ function Pages({ detail }: { detail: Detail }) {
         aria-label={t('machine.pages')}
         className="flex flex-wrap gap-1 border-b border-line pb-2"
       >
+        {/* Absolute: under the `:id/*` splat a relative link resolves against the open tab. */}
         {MACHINE_PAGES.filter((page) => !page.base || base).map((page) => (
-          <NavLink key={page.path} to={page.path || '.'} end={page.path === ''} className={tab}>
+          <NavLink
+            key={page.path}
+            to={`/computers/${detail.id}${page.path && `/${page.path}`}`}
+            end={page.path === ''}
+            className={tab}
+          >
             {t(page.label)}
           </NavLink>
         ))}
-        <NavLink to="manage" className={tab}>
+        <NavLink to={`/computers/${detail.id}/manage`} className={tab}>
           {t('computers.manage')}
         </NavLink>
       </nav>
