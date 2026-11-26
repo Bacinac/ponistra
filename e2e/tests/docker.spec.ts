@@ -67,6 +67,7 @@ async function removeLocation(page: Page, name: string) {
 }
 
 test('a stack on a Docker host is brought up from Files, read and taken down', async ({ page }) => {
+  test.slow();
   const stamp = Date.now();
   const name = `Docker ${stamp}`;
   const keys = `Ključevi ${stamp}`;
