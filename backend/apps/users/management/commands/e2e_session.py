@@ -13,7 +13,8 @@ from apps.users import sessions
 from apps.users.models import Policy, User
 
 DOMAIN = "e2e.invalid"
-LIFETIME = 15 * 60
+# A run on a busy host lasts twice its quiet time and more; the accounts go when it stops.
+LIFETIME = 3 * 60 * 60
 ROOM = "Dvorana (e2e)"
 # Told apart by the first name alone, which is what a colleague is searched by; none holds another.
 COLLEAGUES = ["Ana", "Bruno", "Cvita", "Dino", "Ema", "Filip", "Goran", "Iva"]
