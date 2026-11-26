@@ -130,7 +130,12 @@ test('an administrator makes a stick: the answers, then the code and install.con
 
 test("a machine's tabs lead to its pages from any of them", async () => {
   serve({
-    'GET /api/computers': () => ({ computers: [computer], orphaned: [], codes: [], can_add: false }),
+    'GET /api/computers': () => ({
+      computers: [computer],
+      orphaned: [],
+      codes: [],
+      can_add: false,
+    }),
     'GET /api/computers/:id': () => ({ ...computer, managers: [ivo], openings: [] }),
     'GET /api/computers/:id/agent/v1/machine': () =>
       Response.json({ error: 'computer_offline' }, { status: 503 }),
