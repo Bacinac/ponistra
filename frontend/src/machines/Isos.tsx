@@ -75,7 +75,7 @@ export function Isos() {
           <span>
             {t('machine.iso.sending')} {sending.name}
           </span>
-          <Meter share={sending.share * 100} label={sending.name} />
+          <Meter share={sending.share * 100} label={sending.name} kind="progress" />
         </div>
       )}
       <Failure error={failed} />

@@ -75,7 +75,22 @@ export function Fact({ label, children }: { label: MessageKey; children: ReactNo
 }
 
 /** A share filled, as a bar with its percent beside it. */
-export function Meter({ share, label }: { share: number; label: string }) {
+const ALARMED = {
+  use: (share: number) => share >= 90,
+  charge: (share: number) => share <= 10,
+  progress: () => false,
+};
+
+/** `use` is red when nearly full, `charge` when nearly empty, `progress` never. */
+export function Meter({
+  share,
+  label,
+  kind = 'use',
+}: {
+  share: number;
+  label: string;
+  kind?: 'use' | 'charge' | 'progress';
+}) {
   const { percent } = useFormats();
   const clamped = Math.max(0, Math.min(100, share));
   return (
@@ -89,7 +104,7 @@ export function Meter({ share, label }: { share: number; label: string }) {
         className="h-2 min-w-24 flex-1 overflow-hidden rounded-full bg-panel"
       >
         <div
-          className={`h-full rounded-full ${clamped >= 90 ? 'bg-danger' : 'bg-accent'}`}
+          className={`h-full rounded-full ${ALARMED[kind](clamped) ? 'bg-danger' : 'bg-accent'}`}
           style={{ width: `${clamped}%` }}
         />
       </div>

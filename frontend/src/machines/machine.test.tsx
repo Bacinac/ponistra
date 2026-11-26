@@ -181,6 +181,41 @@ test('the overview shows the state, the alerts and the machine; the desktop has 
   );
 });
 
+test('a full battery is not an alarm, a nearly empty one and a nearly full disk are', async () => {
+  stub({
+    ...signedIn('desktop'),
+    'GET /api/v1/hardware': {
+      body: {
+        temperatures: [],
+        disks: [],
+        batteries: [
+          { name: 'BAT0', status: 'Full', capacity: 100, health: 100, cycles: 476 },
+          { name: 'BAT1', status: 'Discharging', capacity: 8 },
+        ],
+        errors: [],
+      },
+    },
+    'GET /api/v1/resources': {
+      body: {
+        load: [0.5, 0.4, 0.3],
+        memory: { total: 32e9, available: 16e9, swap_total: 0, swap_free: 0 },
+        pressure: {},
+        filesystems: [{ path: '/var', size: 100e9, free: 5e9, avail: 5e9 }],
+        interfaces: [],
+      },
+    },
+  });
+  const alarmed = (label: string) =>
+    screen.getByRole('meter', { name: label }).firstElementChild!.classList.contains('bg-danger');
+  const router = open('/');
+  await screen.findByRole('meter', { name: '/var' });
+  expect(alarmed('/var')).toBe(true);
+  await router.navigate('/hardware');
+  await screen.findByRole('meter', { name: 'BAT0' });
+  expect(alarmed('BAT0')).toBe(false);
+  expect(alarmed('BAT1')).toBe(true);
+});
+
 test('a session that ends brings the sign-in back in place of the page', async () => {
   let expired = false;
   stub({

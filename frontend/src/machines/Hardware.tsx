@@ -190,7 +190,7 @@ function HardwareParts({ hardware }: { hardware: HardwareState }) {
                     <span className="ml-2 text-xs text-muted">{battery.status}</span>
                   </td>
                   <td>
-                    <Meter share={battery.capacity} label={battery.name} />
+                    <Meter share={battery.capacity} label={battery.name} kind="charge" />
                   </td>
                   <td className="tabular-nums">
                     {battery.health !== undefined ? format.percent(battery.health) : '—'}
