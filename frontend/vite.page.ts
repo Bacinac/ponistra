@@ -20,6 +20,9 @@ export function nativeLightDark(): Plugin {
   };
 }
 
+/** React with its router stays one chunk of about 530 kB, which every page loads. */
+export const CHUNK_LIMIT = 700;
+
 /** A page a Ponistra OS agent embeds and serves at the root of its own origin under
  * `default-src 'self'` (ponistra-os `agent/API.md`): `<name>/index.html` built into
  * `dist-<name>/`, every asset a file named by its content, nothing inline. */
@@ -37,11 +40,15 @@ export function staticPage(name: 'machine' | 'seat'): UserConfig {
       emptyOutDir: true,
       cssTarget: ['chrome123', 'edge123', 'firefox120', 'safari17.5', 'ios17.5'],
       assetsInlineLimit: 0,
+      chunkSizeWarningLimit: CHUNK_LIMIT,
       rolldownOptions: {
         output: {
           codeSplitting: {
             groups: [
-              { name: 'react', test: /\/node_modules\/(?:react|react-dom|react-router|scheduler)\// },
+              {
+                name: 'react',
+                test: /\/node_modules\/(?:react|react-dom|react-router|scheduler)\//,
+              },
               { name: 'hr', test: /\/src\/i18n\/hr\.ts$/ },
               { name: 'en', test: /\/src\/i18n\/en\.ts$/ },
             ],

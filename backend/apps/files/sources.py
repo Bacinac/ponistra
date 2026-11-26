@@ -1,15 +1,17 @@
 """A source of Files by the key the page knows it by: a location of the network
-(`location:<id>`), a project of the workspace (`workspace:<folder>`) or a place of Ponistra's own
-tree (`ponistra:mine|company|shared|sharing|favourites|boards`, its paths chains of node ids, the
-last one the node)."""
+(`location:<id>`), a guest of a Ponistra OS machine the user manages (`computer:<id>/<guest>`), a
+project of the workspace (`workspace:<folder>`) or a place of Ponistra's own tree
+(`ponistra:mine|company|shared|sharing|favourites|boards`, its paths chains of node ids, the last
+one the node)."""
 
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from apps.access.models import Role
 from apps.core.api import Refused
-from apps.locations import reach
+from apps.locations import guests, reach
 from apps.locations.models import Location
 from apps.locations.remote import Remote
 from apps.users.sessions import CONFIRMED, CONFIRMED_FOR, fresh
@@ -24,7 +26,7 @@ TREES = {"mine", "company", "shared", "sharing", "favourites", "boards"}
 @dataclass(frozen=True)
 class Source:
     key: str
-    kind: str  # location, workspace, ponistra
+    kind: str  # location, computer, workspace, ponistra
     name: str
     # The workspace's project folder, the tree's root.
     of: str
@@ -32,6 +34,8 @@ class Source:
     # Ponistra's own rights hold.
     confirmed_for: timedelta | None
     location: Location | None = None
+    # The machine, the guest and whose session it opens as.
+    guest: tuple[Any, str, Any] | None = None
 
 
 def source(user, key: object, needs: Role = Role.READ) -> Source:
@@ -46,6 +50,12 @@ def source(user, key: object, needs: Role = Role.READ) -> Source:
             raise Refused(400, "invalid_source") from None
         found, _ = reach.location(user, pk, needs)
         return Source(f"location:{pk}", kind, found.name, str(pk), CONFIRMED_FOR, found)
+    if kind == "computer":
+        computer, _, guest = of.partition("/")
+        found = guests.managed(user, computer)
+        guest = guests.named(guest)
+        key = f"computer:{found.pk}/{guest}"
+        return Source(key, kind, guest, key, CONFIRMED_FOR, guest=(found, guest, user))
     if kind == "workspace":
         if not owns(user):
             raise Refused(403, "not_the_owner")
@@ -68,9 +78,12 @@ def confirmed(request, changed: list[Source]) -> None:
 
 
 async def opened(found: Source) -> Remote:
-    """The location signed in to on its server, or the project of the workspace."""
+    """The location signed in to on its server, the guest's files, or the project of the
+    workspace."""
     if found.location is not None:
         return await reach.reached(found.location)
+    if found.guest is not None:
+        return await guests.reached(*found.guest)
     if found.kind == "workspace":
         return Workspace(found.of)
     raise Refused(400, "invalid_source")

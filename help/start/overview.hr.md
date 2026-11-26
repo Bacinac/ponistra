@@ -12,6 +12,7 @@ Svaka stranica Ponistre ima isti okvir: traku modula, zaglavlje s pretragom i iz
 2. Logo Ponistre na vrhu trake vodi na {t:rail.today}.
 3. Stranica koja pripada modulu, kao {t:rail.contacts} u modulu {t:rail.chat}, u zaglavlju ispred naslova ima naziv modula kojim se vraćate u njega.
 4. Ako ste vlasnik radnog prostora za kod, na traci je i {t:rail.projects}, [stranica s projektima i razgovorima](help:agents/projects); na mobitelu je umjesto toga u izborniku {t:frame.account}.
+5. Ako upravljate barem jednim računalom s Ponistra OS-om, na traci je i {t:rail.computers}, [stranica računala](help:computers/computers); na mobitelu je u izborniku {t:frame.account}.
 
 ### Lijevi stupac
 
@@ -58,6 +59,7 @@ Na dnu lijevog stupca stoje autor, inačica i godina. Pritisak na ime autora otv
 - Ako poslužitelj javi grešku, umjesto aplikacije piše {t:status.down} i razlog.
 - Sljedeći događaj na dnu trake ne prikazuje se na mobitelu.
 - {t:rail.projects} vidi samo korisnik kojem je dodijeljen radni prostor za kod.
+- {t:rail.computers} vidi samo upravitelj barem jednog računala.
 
 ## Povezano
 

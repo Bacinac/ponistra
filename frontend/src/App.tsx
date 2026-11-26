@@ -41,6 +41,7 @@ const DevicePdfs = lazily(() => import('./pdf/Device'), 'DevicePdfs');
 const DocumentPage = lazily(() => import('./DocumentPage'), 'DocumentPage');
 const FilePage = lazily(() => import('./FilePage'), 'FilePage');
 const FilesPage = lazily(() => import('./filesPage'), 'FilesPage');
+const ComputersPage = lazily(() => import('./computers/page'), 'ComputersPage');
 const DockerHostPage = lazily(() => import('./containers/host'), 'DockerHostPage');
 const GuestMeetingPage = lazily(() => import('./guest'), 'GuestMeetingPage');
 const OutsidePage = lazily(() => import('./outside'), 'OutsidePage');
@@ -420,6 +421,7 @@ export default function App() {
                 <Route path="/vault/:collection?/:item?" element={<VaultPage />} />
                 <Route path="/files/:source?" element={<FilesPage />} />
                 <Route path="/docker/:location" element={<DockerHostPage />} />
+                <Route path="/computers/*" element={<ComputersPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>

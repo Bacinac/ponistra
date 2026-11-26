@@ -7,7 +7,7 @@ Stranica {t:rail.files} u jednom stablu okuplja sve izvore datoteka koje doseže
 ### Otvaranje izvora
 
 1. Na traci modula pritisnite {t:rail.files}.
-2. Bez otvorene mape stranica pokazuje sve izvore po skupinama: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}, {t:favourites.title}, {t:boards.title}), {t:locations.title} i {t:files.workspace}. Pritisnite izvor.
+2. Bez otvorene mape stranica pokazuje sve izvore po skupinama: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}, {t:favourites.title}, {t:boards.title}), {t:locations.title}, {t:files.computers} ([gosti računala](help:files/guests)) i {t:files.workspace}. Pritisnite izvor.
 3. U lijevom stupcu strelica ({t:frame.expand}) uz izvor otvara njegove mape, uz mapu njezine podmape, a ponovni pritisak ({t:frame.collapse}) ih skriva. Pritisak na naziv otvara mapu u panelu; redak otvorene mape je označen.
 4. Na mobitelu stablo otvara gumb {t:frame.folders}.
 

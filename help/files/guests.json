@@ -1,0 +1,14 @@
+{
+  "order": 25,
+  "audience": "everyone",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "backend/apps/locations/guests.py#listed": "d4da451bf1a8",
+    "backend/apps/locations/guests.py#reached": "35f96aeb76ab",
+    "backend/apps/locations/guests.py#refused": "bd5cd1b5ef16",
+    "backend/apps/locations/views.py#_remote": "db092ca072e3",
+    "frontend/src/filesGuests.tsx#guestSource": "9323d9bdd0a7",
+    "frontend/src/filesTree.tsx#FilesGroups": "a59c40aebf8e"
+  }
+}

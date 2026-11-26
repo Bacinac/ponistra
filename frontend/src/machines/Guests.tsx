@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { Headed } from '../headed';
 import { useI18n } from '../i18n';
 import { button, primaryButton } from '../styles';
-import { guestClass, useGuests, type Guest } from './api';
+import { guestClass, useGuests, useImage, type Guest } from './api';
 import { Isos } from './Isos';
 import { NewGuest } from './NewGuest';
 import { Loaded, Pill, table, useFormats, type Tone } from './parts';
@@ -21,6 +21,8 @@ export function Guests() {
   const { t } = useI18n();
   const format = useFormats();
   const guests = useGuests();
+  const image = useImage();
+  const closed = image.data?.staged_role === 'workstation';
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
   return (
@@ -29,15 +31,26 @@ export function Guests() {
         heading={t('machine.guests')}
         action={
           <div className="flex flex-wrap gap-2">
-            <button type="button" className={button} onClick={() => setImporting(true)}>
+            <button
+              type="button"
+              className={button}
+              disabled={closed}
+              onClick={() => setImporting(true)}
+            >
               {t('machine.import')}
             </button>
-            <button type="button" className={primaryButton} onClick={() => setCreating(true)}>
+            <button
+              type="button"
+              className={primaryButton}
+              disabled={closed}
+              onClick={() => setCreating(true)}
+            >
               {t('machine.guest.new')}
             </button>
           </div>
         }
       >
+        {closed && <p className="text-sm text-muted">{t('machine.guests.closed')}</p>}
         <Loaded query={guests}>
           {(data) =>
             data.length === 0 ? (

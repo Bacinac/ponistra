@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     "apps.containers",
     "apps.drive",
     "apps.collecting",
+    "apps.computers",
 ]
 
 MIDDLEWARE = [

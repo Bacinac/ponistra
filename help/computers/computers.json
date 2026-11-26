@@ -1,0 +1,33 @@
+{
+  "order": 10,
+  "audience": "everyone",
+  "covers": [
+    "route:/computers/*"
+  ],
+  "quiet": [
+    "computers.title",
+    "computers.loading",
+    "computers.seen",
+    "computers.remove.text",
+    "computers.close"
+  ],
+  "describes": {
+    "frontend/src/computers/page.tsx#ComputersPage": "4f2d0498402c",
+    "frontend/src/computers/page.tsx#Side": "37c83de586fd",
+    "frontend/src/computers/page.tsx#Pages": "e730a93ba407",
+    "frontend/src/computers/page.tsx#Managers": "40bfd806a519",
+    "frontend/src/computers/page.tsx#SecretPart": "607b8c5c64ce",
+    "frontend/src/computers/page.tsx#Removal": "102a3b83ebb6",
+    "frontend/src/computers/data.ts#computerApi": "b09e1dc756db",
+    "backend/apps/computers/views.py#computers": "5e85d4789cfb",
+    "backend/apps/computers/views.py#computer": "af3ef30bb725",
+    "backend/apps/computers/views.py#taken_over": "8f05abddff7c",
+    "backend/apps/computers/views.py#managers": "4258a13422e1",
+    "backend/apps/computers/views.py#manager": "5c55382145cc",
+    "backend/apps/computers/views.py#secret": "e14bcd0976b3",
+    "backend/apps/computers/views.py#agent": "c8dde84d2f13",
+    "backend/apps/computers/views.py#uploaded": "b22aed5707fc",
+    "backend/apps/computers/machine.py#itself": "8c08db46dba7",
+    "backend/apps/computers/alerts.py#received": "04103e6227f6"
+  }
+}

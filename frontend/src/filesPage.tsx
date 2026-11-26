@@ -19,6 +19,7 @@ import { Cancel, Modal } from './dialogs';
 import { DeskContext, FileBrowser, type Clip, type Desk, type FileSource } from './files';
 import { Addressed, Frame, Loading, Missing } from './frame';
 import { BOOKMARKS, projectName, ROOT_LOOKS, useBookmarks, useSources } from './filesTree';
+import { guestIcon, guestKey } from './filesGuests';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
 import { filesHref, LOCATION_ICONS } from './locationsData';
@@ -72,7 +73,7 @@ function store(key: string, value: unknown) {
 }
 
 /** Files with no folder open: every source as a tile, the bookmarks first. */
-function Overview({ sources, locations, projects, owner }: ReturnType<typeof useSources>) {
+function Overview({ sources, locations, guests, projects, owner }: ReturnType<typeof useSources>) {
   const { t } = useI18n();
   const bookmarks = useBookmarks();
   const tile = `${button} min-w-0 justify-start`;
@@ -129,6 +130,16 @@ function Overview({ sources, locations, projects, owner }: ReturnType<typeof use
             name: location.name,
           })),
         )
+      )}
+      {section(
+        t('files.computers'),
+        (guests.data ?? []).flatMap((computer) =>
+          computer.guests.map((guest) => ({
+            href: filesHref(guestKey(computer.id, guest.name)),
+            icon: guestIcon(guest),
+            name: `${computer.name} / ${guest.name}`,
+          })),
+        ),
       )}
       {owner &&
         section(

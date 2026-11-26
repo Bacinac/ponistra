@@ -12,6 +12,9 @@ from apps.calendar import views as calendar
 from apps.chat import views as chat
 from apps.collecting import views as collecting
 from apps.comments import views as comments
+from apps.computers import install as computer_install
+from apps.computers import machine as computer_machine
+from apps.computers import views as computers
 from apps.contacts import carddav
 from apps.contacts import views as contacts
 from apps.containers import shell as containers_shell
@@ -297,6 +300,21 @@ urlpatterns = [
     path("api/company/<uuid:pk>", company.folder),
     path("api/company/<uuid:pk>/share", shares.share),
     path("api/company/<uuid:pk>/share/move", shares.move),
+    path("api/computers", computers.computers),
+    path("api/computers/codes/<int:pk>", computers.code),
+    path("api/computers/install", computer_install.install),
+    path("api/computers/sticks", computer_install.sticks),
+    path("api/computers/enroll", computer_machine.enroll),
+    path("api/computers/self", computer_machine.itself),
+    path("api/computers/self/recovery-key", computer_machine.recovery_key),
+    path("api/computers/self/backup-password", computer_machine.backup_password),
+    path("api/computers/<uuid:pk>", computers.computer),
+    path("api/computers/<uuid:pk>/take", computers.taken_over),
+    path("api/computers/<uuid:pk>/managers", computers.managers),
+    path("api/computers/<uuid:pk>/managers/<int:user>", computers.manager),
+    path("api/computers/<uuid:pk>/secrets/<str:which>", computers.secret),
+    path("api/computers/<uuid:pk>/agent/<path:rest>", computers.agent),
+    path("api/computers/<uuid:pk>/upload/<path:rest>", computers.uploaded),
     path("api/containers/hosts", containers.hosts),
     path("api/containers/hosts/<uuid:pk>", containers.host),
     path("api/containers/hosts/<uuid:pk>/prune", containers.pruned),
@@ -331,6 +349,11 @@ urlpatterns = [
     path("api/locations/<uuid:pk>/held/<str:token>/shown", locations.held_shown),
     path("api/locations/<uuid:pk>/held/<str:token>/text", locations.held_text),
     path("api/locations/<uuid:pk>/held/<str:token>/shown/<str:part>", locations.held_part),
+    path("api/guests", locations.guests_of),
+    *(
+        path(f"api/guests/<uuid:computer>/<str:guest>/{route}", view)
+        for route, view in locations.GUESTS.items()
+    ),
     path("api/drive", drive.drives),
     path("api/drive/<int:pk>", drive.drive),
     path("api/drive/<int:pk>/finish", drive.finish),

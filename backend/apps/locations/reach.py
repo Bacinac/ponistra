@@ -68,6 +68,10 @@ def target(found: Location, secret: str) -> sftp.Target:
     )
 
 
+def over_ssh(given: sftp.Target) -> sftp.Connection:
+    return sftp.Connection(sftp.Ssh(given), given.path)
+
+
 def _known(pk, known_hosts: str) -> None:
     Location.objects.filter(pk=pk).update(known_hosts=known_hosts)
 
@@ -100,8 +104,9 @@ async def reached(found: Location) -> Remote:
     await database(_through)(found)
     if found.kind == Location.Kind.SMB:
         return await _smb(found, secret)
-    link = await sftp.connection(key_of(found), target(found, secret))
-    if (known := link.known_hosts()) != found.known_hosts:
+    given = target(found, secret)
+    link = await sftp.connection(key_of(found), lambda: over_ssh(given))
+    if (known := link.carrier.known_hosts()) != found.known_hosts:
         await database(_known)(found.pk, known)
     return sftp.Sftp(link)
 
@@ -113,10 +118,10 @@ async def tried(found: Location, secret: str) -> str:
         remote = await _smb(found, secret)
         await remote.close()
         return ""
-    link = sftp.Connection(target(found, secret))
+    link = over_ssh(target(found, secret))
     try:
         await link.open()
-        return link.known_hosts()
+        return link.carrier.known_hosts()
     finally:
         link.end(link.failure or Failed("location_closed"))
 

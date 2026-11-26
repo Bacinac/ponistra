@@ -9,7 +9,7 @@ import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import { IMPORTED } from './src/importable.ts';
-import { nativeLightDark } from './vite.page.ts';
+import { CHUNK_LIMIT, nativeLightDark } from './vite.page.ts';
 
 const require = createRequire(import.meta.url);
 const PDFJS = dirname(require.resolve('pdfjs-dist/package.json'));
@@ -617,7 +617,7 @@ export default defineConfig(({ command, mode }) => ({
     assetsInlineLimit: (file) => (file.includes('/assets/brand/') ? false : undefined),
     // The editor, ECharts and pdf.js are each a chunk of their own, which only the page that needs
     // it loads.
-    chunkSizeWarningLimit: 700,
+    chunkSizeWarningLimit: CHUNK_LIMIT,
     rolldownOptions: {
       output: {
         codeSplitting: {

@@ -7,7 +7,7 @@ The {t:rail.files} page gathers every source of files you reach in one tree: My 
 ### Opening a source
 
 1. On the module bar, press {t:rail.files}.
-2. With no folder open, the page shows every source by group: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}, {t:favourites.title}, {t:boards.title}), {t:locations.title} and {t:files.workspace}. Press a source.
+2. With no folder open, the page shows every source by group: {t:files.bookmarks}, {t:rail.documents} ({t:tree.root}, {t:tree.company}, {t:tree.shared}, {t:favourites.title}, {t:boards.title}), {t:locations.title}, {t:files.computers} ([guests of computers](help:files/guests)) and {t:files.workspace}. Press a source.
 3. In the left column, the arrow ({t:frame.expand}) beside a source opens its folders, beside a folder its subfolders, and pressing it again ({t:frame.collapse}) hides them. Pressing a name opens the folder in the pane; the row of the open folder is marked.
 4. On a phone, the {t:frame.folders} button opens the tree.
 

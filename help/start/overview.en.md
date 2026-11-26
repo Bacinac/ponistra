@@ -12,6 +12,7 @@ Every page of Ponistra has the same frame: the bar of modules, the header with t
 2. The Ponistra logo at the top of the bar leads to {t:rail.today}.
 3. A page that belongs to a module, as {t:rail.contacts} belongs to {t:rail.chat}, has the module's name before its title in the header, which takes you back to it.
 4. If you own a code workspace, the bar also holds {t:rail.projects}, [a page of projects and chats](help:agents/projects); on a phone it is in the {t:frame.account} menu instead.
+5. If you manage at least one Ponistra OS computer, the bar also holds {t:rail.computers}, [the computers' page](help:computers/computers); on a phone it is in the {t:frame.account} menu.
 
 ### The left column
 
@@ -58,6 +59,7 @@ The column's width is remembered in the browser where you set it.
 - If the server reports an error, the application is replaced by {t:status.down} and the reason.
 - The next event at the foot of the bar does not show on a phone.
 - {t:rail.projects} is seen only by a user who has been given a code workspace.
+- {t:rail.computers} is seen only by the manager of at least one computer.
 
 ## Related
 

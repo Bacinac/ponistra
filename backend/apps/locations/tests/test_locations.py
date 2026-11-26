@@ -40,7 +40,7 @@ def target(path: str, **changed) -> sftp.Target:
 
 
 async def _on_server(path: str, work):
-    link = sftp.Connection(target(path))
+    link = reach.over_ssh(target(path))
     await link.open()
     try:
         return await work(sftp.Sftp(link))

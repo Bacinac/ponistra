@@ -7,7 +7,7 @@
   "quiet": [],
   "describes": {
     "frontend/src/settings.tsx#ACCOUNT": "3e9cacd7664f",
-    "frontend/src/settings.tsx#INSTALLATION": "a9a26c54086d",
+    "frontend/src/settings.tsx#INSTALLATION": "608415b51811",
     "frontend/src/settings.tsx#Side": "52ba5e5bfc60",
     "frontend/src/settings.tsx#SettingsPage": "f5aeb2ec2d24"
   }

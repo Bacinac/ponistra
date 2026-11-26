@@ -31,7 +31,7 @@ from apps.reader import client
 from apps.shares import smb
 from apps.users.models import policy
 
-from . import held, reach, sftp
+from . import guests, held, reach, sftp
 from .models import Grant, Location
 from .remote import EDITED, Entry, Failed, Remote, asked, joined, name_of, ordered
 
@@ -314,16 +314,28 @@ def grant(request, pk, grant_pk):
     return HttpResponse(status=204)
 
 
-async def _remote(request, pk, needs: Role = Role.READ):
-    found, _ = await database(reach.location)(request.user, pk, needs)
-    return found, await reach.reached(found)
+async def _remote(request, where: dict, needs: Role = Role.READ) -> tuple[str, Remote]:
+    """The location the request names, or the guest of a machine the user manages, whose
+    session is root in it and so covers every role (DT7)."""
+    if "pk" in where:
+        found, _ = await database(reach.location)(request.user, where["pk"], needs)
+        return found.name, await reach.reached(found)
+    computer = await database(guests.managed)(request.user, where["computer"])
+    guest = guests.named(where["guest"])
+    return guest, await guests.reached(computer, guest, request.user)
 
 
 @api("GET")
-async def files(request, pk):
+async def guests_of(request):
+    """The guests of the machines the user manages, as a source of Files each."""
+    return JsonResponse({"computers": await guests.listed(request.user)})
+
+
+@api("GET")
+async def files(request, **where):
     """What a folder of the location holds, as its server lists it now."""
     path = asked(request.GET.get("path", ""))
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         entries = ordered(await remote.listed(path))
     finally:
@@ -337,11 +349,11 @@ def _media(head: bytes) -> str:
 
 
 @api("GET")
-async def raw(request, pk):
+async def raw(request, **where):
     """A file's bytes as its server has them, or the one range a player asks for; shown in place
     only where it is a picture, sound, video or PDF, which runs nothing."""
     path = asked(request.GET.get("path"), root=False)
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         entry = await remote.stat(path)
         if entry.kind != "file":
@@ -387,11 +399,11 @@ async def raw(request, pk):
 
 
 @api("GET")
-async def picture(request, pk):
+async def picture(request, **where):
     """An image or a PDF's first page drawn small by the reader (D51), which alone reads what
     someone else made."""
     path = asked(request.GET.get("path"), root=False)
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         data = await remote.whole(path, PICTURED)
     finally:
@@ -425,11 +437,11 @@ def _textual(data: bytes) -> str | None:
 
 
 @api("GET", "POST", confirmed=CHANGES)
-async def text(request, pk):
+async def text(request, **where):
     """A text file to read and edit; written back only while it still is what was read."""
     if request.method == "GET":
         path = asked(request.GET.get("path"), root=False)
-        _, remote = await _remote(request, pk)
+        _, remote = await _remote(request, where)
         try:
             entry = await remote.stat(path)
             data = await remote.whole(path, EDITED) if entry.kind == "file" else None
@@ -451,7 +463,7 @@ async def text(request, pk):
     written = given.encode()
     if len(written) > EDITED:
         raise Refused(413, "too_large")
-    _, remote = await _remote(request, pk, Role.EDIT)
+    _, remote = await _remote(request, where, Role.EDIT)
     try:
         now = await remote.whole(path, EDITED)
         if now is None or _hash(now) != was:
@@ -466,10 +478,10 @@ async def text(request, pk):
 
 
 @api("POST", confirmed=CHANGES)
-async def folder(request, pk):
+async def folder(request, **where):
     data = body(request)
     path = joined(asked(data.get("path", "")), name_of(data.get("name")))
-    _, remote = await _remote(request, pk, Role.EDIT)
+    _, remote = await _remote(request, where, Role.EDIT)
     try:
         await remote.mkdir(path)
     finally:
@@ -478,13 +490,13 @@ async def folder(request, pk):
 
 
 @api("POST", confirmed=CHANGES)
-async def rename(request, pk):
+async def rename(request, **where):
     """A file or folder renamed, or moved to another folder of the location."""
     data = body(request)
     path, to = asked(data.get("path"), root=False), asked(data.get("to"), root=False)
     if to == path or to.startswith(f"{path}/"):
         raise Refused(400, "invalid_path")
-    _, remote = await _remote(request, pk, Role.EDIT)
+    _, remote = await _remote(request, where, Role.EDIT)
     try:
         await remote.rename(path, to)
     finally:
@@ -493,13 +505,13 @@ async def rename(request, pk):
 
 
 @api("POST", confirmed=CHANGES)
-async def remove(request, pk):
+async def remove(request, **where):
     """Files and folders deleted on the server, folders with all they hold; nothing keeps them."""
     given = body(request).get("paths")
     if not isinstance(given, list) or not 0 < len(given) <= 1000:
         raise Refused(400, "invalid_paths")
     paths = [asked(path, root=False) for path in given]
-    _, remote = await _remote(request, pk, Role.EDIT)
+    _, remote = await _remote(request, where, Role.EDIT)
     try:
         for path in paths:
             await remote.remove(path)
@@ -509,11 +521,11 @@ async def remove(request, pk):
 
 
 @api("GET")
-async def stat(request, pk):
+async def stat(request, **where):
     """An entry itself, a link and not what it points at, with its owner and mode where the
     server has them."""
     path = asked(request.GET.get("path", ""))
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         return JsonResponse((await remote.described(path)).described(path))
     finally:
@@ -521,10 +533,10 @@ async def stat(request, pk):
 
 
 @api("POST", confirmed=CHANGES)
-async def mode(request, pk):
+async def mode(request, **where):
     data = body(request)
     path, given = asked(data.get("path", "")), walk.mode_of(data.get("mode"))
-    _, remote = await _remote(request, pk, Role.EDIT)
+    _, remote = await _remote(request, where, Role.EDIT)
     try:
         await remote.chmod(path, given)
         return JsonResponse((await remote.described(path)).described(path))
@@ -533,11 +545,11 @@ async def mode(request, pk):
 
 
 @api("POST", confirmed=CHANGES)
-async def owner(request, pk):
+async def owner(request, **where):
     data = body(request)
     path = asked(data.get("path"), root=False)
     uid, gid = walk.id_of(data.get("uid")), walk.id_of(data.get("gid"))
-    _, remote = await _remote(request, pk, Role.EDIT)
+    _, remote = await _remote(request, where, Role.EDIT)
     try:
         await remote.chown(path, uid, gid)
         return JsonResponse((await remote.described(path)).described(path))
@@ -546,10 +558,10 @@ async def owner(request, pk):
 
 
 @api("GET")
-async def search(request, pk):
+async def search(request, **where):
     """The entries below a folder whose names hold what was asked."""
     path, query = asked(request.GET.get("path", "")), walk.query_of(request.GET.get("q"))
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         return JsonResponse(await walk.searched(remote, path, query))
     finally:
@@ -557,10 +569,10 @@ async def search(request, pk):
 
 
 @api("GET")
-async def size(request, pk):
+async def size(request, **where):
     """A folder's size with all it holds."""
     path = asked(request.GET.get("path", ""))
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         return JsonResponse(await walk.sized(remote, path))
     finally:
@@ -574,13 +586,13 @@ def _uploaded(user, sha256: object) -> Path:
 
 
 @api("POST", confirmed=CHANGES)
-async def put(request, pk):
+async def put(request, **where):
     """A file the user uploaded to PONISTRA written into a folder of the location; one by its
     name already there is refused."""
     data = body(request)
     path = joined(asked(data.get("path", "")), name_of(data.get("name")))
     source = await database(_uploaded)(request.user, data.get("blob"))
-    _, remote = await _remote(request, pk, Role.EDIT)
+    _, remote = await _remote(request, where, Role.EDIT)
 
     async def parts():
         with source.open("rb") as file:
@@ -606,10 +618,10 @@ def _fetch(remote: Remote, path: str):
 
 
 @api("GET", "POST")
-async def held_shown(request, pk, token):
+async def held_shown(request, token, **where):
     """What a file of the location shows of what it holds, as a file of Documents shows it."""
     path = asked(held.path_of(token), root=False)
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         return await held.of(request, path.rsplit("/", 1)[-1], _fetch(remote, path))
     finally:
@@ -617,9 +629,9 @@ async def held_shown(request, pk, token):
 
 
 @api("GET", "POST")
-async def held_part(request, pk, token, part):
+async def held_part(request, token, part, **where):
     path = asked(held.path_of(token), root=False)
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         return await held.part(request, path.rsplit("/", 1)[-1], part, _fetch(remote, path))
     finally:
@@ -627,9 +639,9 @@ async def held_part(request, pk, token, part):
 
 
 @api("GET")
-async def held_text(request, pk, token):
+async def held_text(request, token, **where):
     path = asked(held.path_of(token), root=False)
-    _, remote = await _remote(request, pk)
+    _, remote = await _remote(request, where)
     try:
         return await held.text_of(request, _fetch(remote, path))
     finally:
@@ -660,27 +672,49 @@ async def _zipped(remote: Remote, chosen: list[tuple[str, Entry]]):
 
 
 @api("GET")
-async def zip_of(request, pk):
+async def zip_of(request, **where):
     """The files and folders chosen as one zip, sent as it is written, a folder with all it
     holds."""
     given = request.GET.getlist("path")
     if not 0 < len(given) <= ZIPPED:
         raise Refused(400, "invalid_paths")
     paths = list(dict.fromkeys(asked(path) for path in given))
-    found, remote = await _remote(request, pk)
+    name, remote = await _remote(request, where)
     try:
         chosen = [(path, await remote.stat(path)) for path in paths]
     except BaseException:
         await remote.close()
         raise
-    chosen = [(path, entry if path else replace(entry, name=found.name)) for path, entry in chosen]
+    chosen = [(path, entry if path else replace(entry, name=name)) for path, entry in chosen]
     folders = {path.rpartition("/")[0] for path in paths}
     if len(chosen) == 1:
         title = chosen[0][1].name
     elif len(folders) == 1 and (folder := folders.pop()):
         title = folder.rsplit("/", 1)[-1]
     else:
-        title = found.name
+        title = name
     return StreamingHttpResponse(
         _zipped(remote, chosen), content_type="application/zip", headers=zipped.zip_headers(title)
     )
+
+
+# The views of a location's files, by the route below its address, that a guest's take too.
+GUESTS = {
+    "files": files,
+    "raw": raw,
+    "picture": picture,
+    "text": text,
+    "folder": folder,
+    "rename": rename,
+    "remove": remove,
+    "put": put,
+    "zip": zip_of,
+    "stat": stat,
+    "mode": mode,
+    "owner": owner,
+    "search": search,
+    "size": size,
+    "held/<str:token>/shown": held_shown,
+    "held/<str:token>/text": held_text,
+    "held/<str:token>/shown/<str:part>": held_part,
+}

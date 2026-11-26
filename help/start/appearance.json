@@ -8,7 +8,7 @@
     "frontend/src/preferences.tsx#Preferences": "c3b1d51cb222",
     "frontend/src/theme.ts#chooseTheme": "db0ed7cc0c27",
     "frontend/src/theme.ts#isDark": "c8a740ea587b",
-    "frontend/src/frame.tsx#UserMenu": "e001fe13bd95",
+    "frontend/src/frame.tsx#UserMenu": "b40f01b13b88",
     "frontend/src/places.tsx#usePlaces": "c69944d0fd01",
     "frontend/src/theme.ts#useThemeOf": "f4365249a463",
     "frontend/src/theme.ts#choosePageTheme": "25bea7d70675",

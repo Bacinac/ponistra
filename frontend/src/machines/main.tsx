@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router';
 import { I18nProvider } from '../i18n';
 import { installTheme } from '../theme';
+import { machineLanguage } from './language';
 import { MachinePage } from './MachinePage';
 import { MACHINE_ROUTES } from './routes';
 import './machine.css';
@@ -15,7 +16,7 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <I18nProvider unchosen="en">
+    <I18nProvider unchosen={machineLanguage()}>
       <RouterProvider router={router} />
     </I18nProvider>
   </StrictMode>,

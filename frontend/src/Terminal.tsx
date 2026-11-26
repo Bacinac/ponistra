@@ -1,5 +1,5 @@
 import { FitAddon } from '@xterm/addon-fit';
-import { Terminal as Xterm, type ITheme } from '@xterm/xterm';
+import { Terminal as Xterm } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 import { RotateCcw, X } from 'lucide-react';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
@@ -9,6 +9,7 @@ import { useI18n } from './i18n';
 import { useHeldRelease } from './release';
 import { button, iconButton } from './styles';
 import { codeText, errorMessage } from './tree';
+import { look } from './terminalLook';
 import { onScheme } from './theme';
 
 const PATH = '/api/workspace/terminal';
@@ -22,45 +23,6 @@ const TAKEN = 4409;
 // Refused, a project the workspace does not know, too many terminals: trying again changes nothing.
 const ENDED = new Set([4403, 4404, 4429]);
 const CLOSE = { close: true };
-const ANSI = [
-  'black',
-  'red',
-  'green',
-  'yellow',
-  'blue',
-  'magenta',
-  'cyan',
-  'white',
-  'brightBlack',
-  'brightRed',
-  'brightGreen',
-  'brightYellow',
-  'brightBlue',
-  'brightMagenta',
-  'brightCyan',
-  'brightWhite',
-] as const;
-
-/** The terminal's colours as theme.css has them for the scheme in force where it stands. */
-function look(element: HTMLElement): ITheme {
-  const probe = element.appendChild(document.createElement('span'));
-  probe.style.display = 'none';
-  const resolved = (color: string) => {
-    probe.style.color = color;
-    return getComputedStyle(probe).color;
-  };
-  const theme: ITheme = {
-    background: resolved('var(--raised)'),
-    foreground: resolved('var(--ink)'),
-    cursor: resolved('var(--accent)'),
-    cursorAccent: resolved('var(--raised)'),
-    selectionBackground: resolved('var(--selected)'),
-    selectionForeground: resolved('var(--ink)'),
-    ...Object.fromEntries(ANSI.map((name, index) => [name, resolved(`var(--terminal-${index})`)])),
-  };
-  probe.remove();
-  return theme;
-}
 
 /** A login shell in the project's folder of the workspace (KR25). It outlives this panel and its
  * connection: a connection lost is opened again and shown what the shell wrote meanwhile, and

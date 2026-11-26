@@ -85,6 +85,9 @@ WORDS = {
         "code_advice": "Preporuke za prijedloge memorije: {count}",
         "code_yes": "Da",
         "code_no": "Ne",
+        "computer_raised": "{name}: upozorenje",
+        "computer_critical": "{name}: kritično upozorenje",
+        "computer_cleared": "{name}: upozorenje je prošlo",
     },
     "en": {
         "calls": "{name} is calling",
@@ -137,6 +140,9 @@ WORDS = {
         "code_advice": "Advice on the memory's proposals: {count}",
         "code_yes": "Yes",
         "code_no": "No",
+        "computer_raised": "{name}: alert",
+        "computer_critical": "{name}: critical alert",
+        "computer_cleared": "{name}: alert cleared",
     },
 }
 # Where the user sees, and can take back, what a security notice tells of.
@@ -306,6 +312,16 @@ def worded(notice: Notice, language: str, waiting: int) -> dict:
             # A question's choices are made on the page, in the chat that asks it.
             if event in ANSWERED and not data.get("question"):
                 answers = {"session": data["session"], "actions": yes_no}
+        case Notice.Kind.COMPUTER:
+            if data["event"] == "cleared":
+                title = words["computer_cleared"]
+            elif data["severity"] == "critical":
+                title = words["computer_critical"]
+            else:
+                title = words["computer_raised"]
+            title = title.format(name=data["name"])
+            body = data["text"]
+            url = f"/computers/{data['computer']}"
         case _:
             raise ValueError(f"unknown notice kind {notice.kind!r}")
     return {

@@ -1,17 +1,22 @@
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import type { RouteObject } from 'react-router';
 import { useI18n } from '../i18n';
 import type { MessageKey } from '../i18n/hr';
+import { lazily } from '../lazily';
 import { useMachine } from './api';
 import { Guest } from './Guest';
 import { Guests } from './Guests';
 import { Hardware } from './Hardware';
 import { Image } from './Image';
+import { Network } from './Network';
 import { Overview } from './Overview';
 import { Loaded } from './parts';
+import { Ponistra } from './Ponistra';
 import { Pressure } from './Pressure';
 import { SnapshotFiles } from './SnapshotFiles';
 import { Tasks } from './Tasks';
+
+const Console = lazily(() => import('./Console'), 'Console');
 
 /** The pages of one machine, in the order its menu shows them; `base` ones exist only on the
  * hypervisor, as the desktop has no Incus, ZFS or snapshots. */
@@ -21,6 +26,8 @@ export const MACHINE_PAGES: { path: string; label: MessageKey; base?: boolean }[
   { path: 'hardware', label: 'machine.page.hardware' },
   { path: 'image', label: 'machine.page.image' },
   { path: 'guests', label: 'machine.page.guests', base: true },
+  { path: 'network', label: 'machine.page.network', base: true },
+  { path: 'ponistra', label: 'machine.page.ponistra' },
   { path: 'tasks', label: 'machine.page.tasks' },
 ];
 
@@ -61,6 +68,16 @@ export const MACHINE_ROUTES: RouteObject[] = [
     ),
   },
   {
+    path: 'guests/:name/console',
+    element: (
+      <BaseOnly>
+        <Suspense>
+          <Console />
+        </Suspense>
+      </BaseOnly>
+    ),
+  },
+  {
     path: 'guests/:name/snapshots/:snapshot',
     element: (
       <BaseOnly>
@@ -68,5 +85,14 @@ export const MACHINE_ROUTES: RouteObject[] = [
       </BaseOnly>
     ),
   },
+  {
+    path: 'network',
+    element: (
+      <BaseOnly>
+        <Network />
+      </BaseOnly>
+    ),
+  },
+  { path: 'ponistra', element: <Ponistra /> },
   { path: 'tasks', element: <Tasks /> },
 ];

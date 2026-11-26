@@ -74,6 +74,7 @@ class Notice(models.Model):
         UPLOADED = "uploaded"
         CODE = "code"
         BILL = "bill"
+        COMPUTER = "computer"
 
     class Urgency(models.TextChoices):
         NORMAL = "normal"

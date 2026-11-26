@@ -16,6 +16,7 @@ const AREAS: Record<string, (key: QueryKey) => boolean> = {
     (root === 'files' && typeof part === 'string' && part.startsWith('ponistra:')),
   bookmarks: ([root]) => root === 'bookmarks',
   containers: ([root]) => root === 'containers',
+  computers: ([root]) => root === 'computers',
   vault: ([root]) => root === 'vault',
   // A message and a draft are read once and kept: their lists say what changed of them.
   mail: ([root, part]) => root === 'mail' && part !== 'message' && part !== 'draft',

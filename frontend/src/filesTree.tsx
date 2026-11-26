@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Bookmark,
   Building2,
+  Computer,
   Folder,
   FolderKanban,
   FolderOpen,
@@ -18,6 +19,7 @@ import { useParams, useSearchParams } from 'react-router';
 import { deleteJson, getJson } from './api';
 import { useSession, useVisitor } from './auth';
 import { hiddenName, listKey, type FileSource } from './files';
+import { guestIcon, guestKey, guestsFailure, guestSource, useGuests } from './filesGuests';
 import { TreeRow, type Rows, type TreeSource } from './frame';
 import { useI18n } from './i18n';
 import type { MessageKey } from './i18n/hr';
@@ -66,13 +68,14 @@ export function useProjects(enabled: boolean) {
 export const projectName = (project: Project) =>
   project.name ?? project.path.split('/').pop() ?? '';
 
-/** Every source the user reaches, by key: Ponistra's own places, the network's locations and,
- * for its owner, the workspace's projects. */
+/** Every source the user reaches, by key: Ponistra's own places, the network's locations, the
+ * guests of the machines they manage and, for its owner, the workspace's projects. */
 export function useSources() {
   const { t } = useI18n();
   const owner = Boolean(useSession().data?.user?.workspace);
   const visitor = useVisitor();
   const locations = useLocations({ enabled: !visitor });
+  const guests = useGuests({ enabled: !visitor });
   const projects = useProjects(owner);
   const sources = useMemo(() => {
     const all = new Map<string, FileSource>();
@@ -82,25 +85,34 @@ export function useSources() {
       const source = locationSource(location);
       all.set(source.key, source);
     }
+    for (const computer of guests.data ?? [])
+      for (const guest of computer.guests) {
+        const source = guestSource(computer, guest);
+        all.set(source.key, source);
+      }
     for (const project of projects.data ?? []) {
       const source = workspaceSource(project.path, projectName(project));
       all.set(source.key, source);
     }
     return all;
-  }, [t, locations.data, projects.data]);
+  }, [t, locations.data, guests.data, projects.data]);
   return {
     sources,
     owner,
     locations,
+    guests,
     projects,
-    pending: (!visitor && locations.isPending) || (owner && projects.isPending),
+    pending:
+      (!visitor && (locations.isPending || guests.isPending)) || (owner && projects.isPending),
   };
 }
 
-/** A row of the column of Files: a group of sources, a source's top, or a folder of it. */
+/** A row of the column of Files: a group of sources, a machine of the user's, a source's top, or a
+ * folder of it. */
 interface Place {
   key: string;
-  group?: 'network' | 'workspace' | 'bookmarks';
+  group?: 'network' | 'computers' | 'computer' | 'workspace' | 'bookmarks';
+  computer?: string;
   source?: string;
   path: string;
   name: string;
@@ -121,6 +133,7 @@ export function useBookmarks() {
 function usePlaceRows(
   sources: Map<string, FileSource>,
   locations: ReturnType<typeof useLocations>,
+  guests: ReturnType<typeof useGuests>,
   projects: ReturnType<typeof useProjects>,
 ) {
   return function useRows(row: Place, enabled: boolean): Rows<Place> {
@@ -143,6 +156,36 @@ function usePlaceRows(
         })),
         error: locations.error,
       };
+    if (row.group === 'computers')
+      return {
+        rows: guests.data?.map((computer) => ({
+          key: `computers:${computer.id}`,
+          group: 'computer' as const,
+          computer: computer.id,
+          path: '',
+          name: computer.name,
+          icon: Computer,
+          href: '/files',
+        })),
+        error: guests.error,
+      };
+    if (row.group === 'computer') {
+      const computer = guests.data?.find((each) => each.id === row.computer);
+      const failure = computer && guestsFailure(computer);
+      return {
+        rows: failure
+          ? undefined
+          : computer?.guests.map((guest) => ({
+              key: guestKey(computer.id, guest.name),
+              source: guestKey(computer.id, guest.name),
+              path: '',
+              name: guest.name,
+              icon: guestIcon(guest),
+              href: filesHref(guestKey(computer.id, guest.name)),
+            })),
+        error: failure ?? guests.error,
+      };
+    }
     if (row.group === 'workspace')
       return {
         rows: projects.data?.map((project) => ({
@@ -211,19 +254,21 @@ function BookmarkMenu({ row, children }: { row: Place; along: Set<string>; child
   );
 }
 
-/** What the side column holds beyond Ponistra's own places: the bookmarks, the network and,
- * for its owner, the workspace, each a tree of its folders. */
+/** What the side column holds beyond Ponistra's own places: the bookmarks, the network, the
+ * machines the user manages and, for its owner, the workspace, each a tree of its folders. */
 export function FilesGroups() {
   const { t } = useI18n();
-  const { sources, owner, locations, projects } = useSources();
+  const { sources, owner, locations, guests, projects } = useSources();
   const { source: at } = useParams();
   const [params] = useSearchParams();
-  const useRows = usePlaceRows(sources, locations, projects);
+  const useRows = usePlaceRows(sources, locations, guests, projects);
   const along = useMemo(() => {
     const open = new Set<string>();
     if (!at) return open;
     open.add(at);
     if (at.startsWith('location:')) open.add('network');
+    if (at.startsWith('computer:'))
+      open.add('computers').add(`computers:${at.slice('computer:'.length).split('/')[0]}`);
     if (at.startsWith('workspace:')) open.add('workspace');
     const parts = (params.get('path') ?? '').split('/').filter(Boolean);
     parts.forEach((_, index) => open.add(placeKey(at, parts.slice(0, index + 1).join('/'))));
@@ -258,6 +303,18 @@ export function FilesGroups() {
       icon: Network,
       href: '/files',
     },
+    ...(guests.data?.length
+      ? [
+          {
+            key: 'computers',
+            group: 'computers' as const,
+            path: '',
+            name: t('files.computers'),
+            icon: Computer,
+            href: '/files',
+          },
+        ]
+      : []),
     ...(owner
       ? [
           {

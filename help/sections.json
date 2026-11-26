@@ -18,6 +18,7 @@
   { "id": "vault" },
   { "id": "ai" },
   { "id": "agents" },
+  { "id": "computers" },
   { "id": "phone" },
   { "id": "account" },
   { "id": "admin" }

@@ -1,0 +1,15 @@
+{
+  "order": 20,
+  "audience": "admin",
+  "covers": [],
+  "quiet": [],
+  "describes": {
+    "frontend/src/computers/page.tsx#Asked": "9b394dce092d",
+    "frontend/src/computers/page.tsx#Ready": "6a873bbe5673",
+    "backend/apps/computers/install.py#answers": "40cc4276e81d",
+    "backend/apps/computers/install.py#install": "ba2d0dd6a438",
+    "backend/apps/computers/install.py#sticks": "94f751910e6d",
+    "backend/apps/computers/views.py#made": "9f57424540d8",
+    "backend/apps/computers/machine.py#enroll": "5a460fffd80e"
+  }
+}

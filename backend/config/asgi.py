@@ -24,6 +24,9 @@ from apps.calendar.sync import calendars  # noqa: E402
 from apps.collab import live  # noqa: E402
 from apps.collab.server import collab  # noqa: E402
 from apps.collab.watch import GRID_PATH, watch  # noqa: E402
+from apps.computers import consoles as computer_consoles  # noqa: E402
+from apps.computers import link as computer_link  # noqa: E402
+from apps.computers import streams as computer_streams  # noqa: E402
 from apps.contacts.sync import contacts  # noqa: E402
 from apps.containers import live as containers_live  # noqa: E402
 from apps.containers import shell as containers_shell  # noqa: E402
@@ -92,6 +95,12 @@ async def application(scope, receive, send) -> None:
             await terminal.socket(scope, receive, send)
         case "websocket" if scope["path"] == containers_shell.PATH:
             await containers_shell.socket(scope, receive, send)
+        case "websocket" if scope["path"] == computer_link.PATH:
+            await computer_link.socket(scope, receive, send)
+        case "websocket" if computer_streams.PATTERN.fullmatch(scope["path"]):
+            await computer_streams.socket(scope, receive, send)
+        case "websocket" if computer_consoles.PATTERN.fullmatch(scope["path"]):
+            await computer_consoles.socket(scope, receive, send)
         case "websocket":
             await collab(scope, receive, send)
         case "lifespan":

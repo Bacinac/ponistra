@@ -6,12 +6,15 @@ import {
   CLASSES,
   GROUPS,
   GUEST_NAME,
+  OWNED,
   useIsos,
   useMachineWrite,
+  useNetwork,
   useNetworks,
   useRecipes,
   type GuestClass,
   type Recipe,
+  type RecipeInput,
 } from './api';
 import { Failure, Loaded } from './parts';
 
@@ -56,6 +59,7 @@ export function NewGuest({ onClose }: { onClose: () => void }) {
                             {each.kind} · {each.memory} · {each.cpus} {t('machine.cpus')} ·{' '}
                             {each.disk}
                           </span>
+                          <Opens recipe={each} />
                         </button>
                       ))}
                     </div>
@@ -73,7 +77,36 @@ export function NewGuest({ onClose }: { onClose: () => void }) {
   );
 }
 
-const NAT = '';
+/** What the recipe's firewall lets in from the guest's first start. */
+function Opens({ recipe }: { recipe: Recipe }) {
+  const { t } = useI18n();
+  if (!recipe.open) return null;
+  return (
+    <span className="text-xs">
+      {recipe.open === 'any' ? (
+        t('machine.recipe.opensAll')
+      ) : (
+        <>
+          {t('machine.recipe.opens')} <span className="font-mono">{recipe.open}</span>
+        </>
+      )}
+    </span>
+  );
+}
+
+const fits = (input: RecipeInput, value: string | undefined) => {
+  const given = value?.trim() ?? '';
+  if (!given) return input.default !== undefined;
+  if (!input.pattern) return true;
+  try {
+    return new RegExp(`^(?:${input.pattern})$`).test(given);
+  } catch {
+    return true;
+  }
+};
+
+const RECIPE_NETWORK = '';
+const LAN = 'lan';
 
 function RecipeForm({
   recipe,
@@ -88,12 +121,16 @@ function RecipeForm({
   const networks = useNetworks();
   const isos = useIsos();
   const inputs = recipe.inputs ?? [];
+  const ports = inputs.some((input) => input.type === 'port');
+  const machineNetwork = useNetwork(ports);
+  const owned = recipe.group === OWNED;
+  const [owner, setOwner] = useState('');
   const [name, setName] = useState('');
   const [kind, setKind] = useState<GuestClass>(recipe.class);
   const [memory, setMemory] = useState('');
   const [cpus, setCpus] = useState('');
   const [disk, setDisk] = useState('');
-  const [network, setNetwork] = useState(NAT);
+  const [network, setNetwork] = useState(RECIPE_NETWORK);
   const [vlan, setVlan] = useState('');
   const [given, setGiven] = useState<Record<string, string>>({});
   const create = useMachineWrite(
@@ -104,7 +141,7 @@ function RecipeForm({
     GUEST_NAME.test(name) &&
     (cpus === '' || /^[1-9]\d*$/.test(cpus)) &&
     (vlan === '' || (/^\d+$/.test(vlan) && Number(vlan) >= 1 && Number(vlan) <= 4094)) &&
-    inputs.every((input) => given[input.name]?.trim());
+    inputs.every((input) => fits(input, given[input.name]));
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -117,9 +154,14 @@ function RecipeForm({
       ...(cpus && { cpus: Number(cpus) }),
       ...(disk.trim() && { disk: disk.trim() }),
       ...(inputs.length > 0 && {
-        inputs: Object.fromEntries(inputs.map((input) => [input.name, given[input.name].trim()])),
+        inputs: Object.fromEntries(
+          inputs
+            .filter((input) => given[input.name]?.trim())
+            .map((input) => [input.name, given[input.name].trim()]),
+        ),
       }),
-      ...(network !== NAT && { network }),
+      ...(owned && owner.trim() && { owner: owner.trim() }),
+      ...(network !== RECIPE_NETWORK && { network }),
       ...(vlan && { vlan: Number(vlan) }),
     });
   };
@@ -177,39 +219,32 @@ function RecipeForm({
         {text(t('machine.cpus'), cpus, setCpus, String(recipe.cpus))}
         {text(t('machine.disk'), disk, setDisk, recipe.disk)}
       </div>
-      {inputs.map((input) =>
-        input.type === 'iso' ? (
-          <Labelled key={input.name} label={input.title}>
-            {(id) => (
-              <select
-                id={id}
-                value={given[input.name] ?? ''}
-                onChange={(event) => setGiven({ ...given, [input.name]: event.target.value })}
-                className={field}
-              >
-                <option value="" disabled>
-                  {isos.data?.length ? t('machine.iso.choose') : t('machine.iso.none')}
-                </option>
-                {isos.data?.map((iso) => (
-                  <option key={iso.name} value={iso.name}>
-                    {iso.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Labelled>
-        ) : (
-          <div key={input.name}>
-            {text(
-              input.title,
-              given[input.name] ?? '',
-              (value) => setGiven({ ...given, [input.name]: value }),
-              '/',
-            )}
-          </div>
-        ),
-      )}
+      {inputs.map((input) => (
+        <InputField
+          key={input.name}
+          input={input}
+          value={given[input.name] ?? ''}
+          set={(value) => setGiven({ ...given, [input.name]: value })}
+          isos={isos.data?.map((iso) => iso.name) ?? []}
+          ports={
+            machineNetwork.data
+              ? (machineNetwork.data.config.guest_ports ?? []).map((mac) => ({
+                  mac,
+                  name: machineNetwork.data.links?.find((link) => link.mac === mac)?.name ?? mac,
+                }))
+              : []
+          }
+        />
+      ))}
       <Failure error={isos.error} />
+      {ports && <Failure error={machineNetwork.error} />}
+      {owned && (
+        <>
+          {text(t('machine.guest.owner'), owner, setOwner)}
+          <p className="-mt-2 text-xs text-muted">{t('machine.guest.ownerRule')}</p>
+        </>
+      )}
+      <Opens recipe={recipe} />
       <div className="grid grid-cols-[1fr_8rem] gap-2">
         <Labelled label={t('machine.network')}>
           {(id) => (
@@ -219,7 +254,12 @@ function RecipeForm({
               onChange={(event) => setNetwork(event.target.value)}
               className={field}
             >
-              <option value={NAT}>{t('machine.network.nat')}</option>
+              <option value={RECIPE_NETWORK}>
+                {recipe.network
+                  ? `${t('machine.network.recipe')} (${recipe.network})`
+                  : t('machine.network.nat')}
+              </option>
+              <option value={LAN}>{t('machine.network.lan')}</option>
               {networks.data?.map((each) => (
                 <option key={each.name} value={each.name}>
                   {each.name} ({each.type})
@@ -244,5 +284,65 @@ function RecipeForm({
         </div>
       </div>
     </form>
+  );
+}
+
+function InputField({
+  input,
+  value,
+  set,
+  isos,
+  ports,
+}: {
+  input: RecipeInput;
+  value: string;
+  set: (value: string) => void;
+  isos: string[];
+  ports: { mac: string; name: string }[];
+}) {
+  const { t } = useI18n();
+  const choices =
+    input.type === 'iso'
+      ? isos.map((name) => [name, name] as const)
+      : input.type === 'port'
+        ? ports.map((port) => [port.name, `${port.name} (${port.mac})`] as const)
+        : null;
+  return (
+    <Labelled label={input.title}>
+      {(id) =>
+        choices ? (
+          <select
+            id={id}
+            value={value}
+            onChange={(event) => set(event.target.value)}
+            className={field}
+          >
+            <option value="" disabled={input.default === undefined}>
+              {choices.length
+                ? t(input.type === 'iso' ? 'machine.iso.choose' : 'machine.port.choose')
+                : t(input.type === 'iso' ? 'machine.iso.none' : 'machine.port.none')}
+            </option>
+            {choices.map(([choice, label]) => (
+              <option key={choice} value={choice}>
+                {label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <input
+            id={id}
+            type={input.type === 'secret' ? 'password' : 'text'}
+            value={value}
+            placeholder={input.type === 'path' ? '/' : input.default}
+            onChange={(event) => set(event.target.value)}
+            maxLength={1024}
+            autoComplete={input.type === 'secret' ? 'new-password' : 'off'}
+            spellCheck={false}
+            aria-invalid={value !== '' && !fits(input, value)}
+            className={field}
+          />
+        )
+      }
+    </Labelled>
   );
 }

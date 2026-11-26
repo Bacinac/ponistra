@@ -11,8 +11,11 @@ import { createContext, useContext } from 'react';
  * page, a path through Ponistra in the Computers module. */
 export interface MachineApi {
   base: string;
+  /** Through Ponistra (C4.8): what only the machine's own page may do, enrolling it in a Ponistra
+   * or leaving one, is left out. */
+  throughPonistra?: boolean;
   get<T>(path: string): Promise<T>;
-  send<T>(method: 'POST' | 'DELETE', path: string, body?: unknown): Promise<T>;
+  send<T>(method: 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown): Promise<T>;
   /** A file sent as it is, telling `progress` the share sent so far. */
   upload<T>(path: string, file: Blob, progress: (share: number) => void): Promise<T>;
 }
@@ -154,7 +157,7 @@ export interface Deployment {
   pinned: boolean;
 }
 
-export type ImageAction = 'check' | 'update' | 'rollback' | 'role';
+export type ImageAction = 'check' | 'update' | 'rollback' | 'role' | 'channel';
 
 export type Role = 'server' | 'workstation';
 
@@ -166,8 +169,13 @@ export interface ImageJob {
   error?: string;
 }
 
+export const CHANNELS = ['stable', 'test'] as const;
+export type Channel = (typeof CHANNELS)[number];
+
 export interface ImageStatus {
   follows: string;
+  /** Empty for an image followed by its version or digest. */
+  channel: Channel | '';
   role: Role;
   staged_role?: Role;
   booted: Deployment | null;
@@ -191,9 +199,25 @@ export interface Recipe {
   memory: string;
   cpus: number;
   disk: string;
-  /** `iso` takes an ISO's name, `path` a directory of the host mounted into the guest. */
-  inputs: { name: string; title: string; type: 'iso' | 'path' }[] | null;
+  inputs: RecipeInput[] | null;
+  /** What the guest's firewall lets in from its first start: `tcp/443 udp/51820`, or `any`. */
+  open?: string;
+  network?: string;
 }
+
+/** `iso` takes an ISO's name, `path` a directory of the host mounted into the guest, `port` a
+ * wired port set aside for guests, `text` and `secret` one line matching `pattern`. An input with
+ * a `default`, even an empty one, may be left out. */
+export interface RecipeInput {
+  name: string;
+  title: string;
+  type: 'iso' | 'path' | 'port' | 'text' | 'secret';
+  pattern?: string;
+  default?: string;
+}
+
+/** Only a recipe of this group takes an `owner`, the account its console and files open for. */
+export const OWNED: RecipeGroup = 'workspaces';
 
 export interface Network {
   name: string;
@@ -237,6 +261,7 @@ export interface Guest {
   previous?: string;
   replaced_at?: string;
   error?: string;
+  result?: string;
 }
 
 export interface Snapshot {
@@ -356,7 +381,7 @@ export interface Task {
   action: string;
   target: string;
   by: string;
-  via: 'page' | 'socket' | 'schedule' | 'system';
+  via: 'page' | 'socket' | 'schedule' | 'system' | 'ponistra';
   started_at: string;
   finished_at: string | null;
   status: 'running' | 'ok' | 'error';
@@ -372,6 +397,86 @@ export interface SnapshotFile {
   gid: number;
   modified_at: string;
   target?: string;
+}
+
+export interface NetworkAddress {
+  mode: 'dhcp' | 'static' | 'none';
+  address?: string;
+  gateway?: string;
+  dns?: string[];
+}
+
+export interface NetworkConfig {
+  /** The MAC address of the wired port the machine uses; empty for every wired port. */
+  uplink: string;
+  bridge: boolean;
+  address: NetworkAddress;
+  vlans: { id: number; bridge: boolean; address: NetworkAddress }[] | null;
+  guest_ports: string[] | null;
+}
+
+export interface NetworkLink {
+  name: string;
+  kind: 'port' | 'bridge' | 'vlan';
+  mac: string;
+  carrier: boolean;
+  addresses: string[] | null;
+}
+
+export interface NetworkState {
+  config: NetworkConfig;
+  links: NetworkLink[] | null;
+  /** A change on trial, undone at `deadline` unless confirmed; `reach` is the machine's address
+   * after it, when the change moves it. */
+  pending?: { deadline: string; previous: NetworkConfig; reach?: string };
+}
+
+export const RULE_ACTIONS = ['allow', 'drop', 'reject'] as const;
+export type RuleAction = (typeof RULE_ACTIONS)[number];
+export const PROTOCOLS = ['', 'tcp', 'udp', 'icmp4', 'icmp6'] as const;
+export type Protocol = (typeof PROTOCOLS)[number];
+
+export interface Rule {
+  action: RuleAction;
+  protocol?: Protocol;
+  source?: string;
+  destination?: string;
+  port?: string;
+  description?: string;
+}
+
+export interface Firewall {
+  ingress_default: RuleAction;
+  egress_default: RuleAction;
+  ingress: Rule[] | null;
+  egress: Rule[] | null;
+  /** A macvlan or physical NIC carries no firewall; `reason` says why. */
+  nics: { name: string; network: string; attached: boolean; reason?: string }[] | null;
+}
+
+export type LinkState = 'not-enrolled' | 'connecting' | 'connected' | 'offline' | 'revoked';
+
+export interface PonistraLink {
+  state: LinkState;
+  url?: string;
+  id?: string;
+  enrolled_at?: string;
+  since?: string;
+  error?: string;
+  /** `machine` while the disk's recovery key is still on the machine, `ponistra` once Ponistra
+   * holds it. */
+  recovery_key?: 'machine' | 'ponistra' | '';
+  backup_password?: 'machine' | 'ponistra' | '';
+}
+
+export type ConsoleType = 'vga' | 'console';
+
+export interface ConsoleTicket {
+  id: string;
+  guest: string;
+  type: ConsoleType;
+  path: string;
+  expires_at: string;
 }
 
 export type GuestAction = 'start' | 'stop' | 'restart';
@@ -423,6 +528,20 @@ export const useImage = () =>
       const job = query.state.data?.job;
       return job && !job.finished_at ? WATCH : false;
     },
+  });
+
+export const useNetwork = (enabled = true) =>
+  useMachineQuery<NetworkState>('/v1/network', {
+    enabled,
+    refetchInterval: (query) => (query.state.data?.pending ? WATCH : false),
+  });
+
+export const useFirewall = (name: string) =>
+  useMachineQuery<Firewall>(`${guestPath(name)}/firewall`);
+
+export const usePonistra = () =>
+  useMachineQuery<PonistraLink>('/v1/ponistra', {
+    refetchInterval: (query) => (query.state.data?.state === 'connecting' ? WATCH : MINUTE),
   });
 
 export const useRecipes = () => useMachineQuery<Recipe[]>('/v1/recipes');
@@ -478,6 +597,13 @@ export const useSnapshotFiles = (guest: string, snapshot: string, path: string) 
   useMachineQuery<SnapshotFile[]>(
     `${snapshotPath(guest, snapshot)}/files?${new URLSearchParams({ path })}`,
   );
+
+/** A WebSocket's address for a path of the machine's API, on the page's own origin. */
+export function socketUrl(api: MachineApi, path: string): string {
+  const url = new URL(`${api.base}${path}`, window.location.href);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return url.href;
+}
 
 /** A write to the machine, after which every query of this machine is read again. */
 export function useMachineWrite<V, R = unknown>(

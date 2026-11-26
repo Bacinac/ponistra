@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { HardDrive, Server } from 'lucide-react';
 import { getJson } from './api';
 import { compact } from './address';
-import type { FileEntry } from './files';
 import type { Role } from './tree';
 
 export type Kind = 'smb' | 'sftp';
@@ -54,9 +53,6 @@ export const asked = (path: string, more: Record<string, string> = {}) =>
 
 /** The key of a location as a file source, under which its listings are cached. */
 export const sourceKey = (id: string) => `location:${id}`;
-
-export const listed = (id: string, path: string) =>
-  getJson<{ path: string; entries: FileEntry[] }>(`/api/locations/${id}/files?${asked(path)}`);
 
 /** The addresses of the places of Ponistra's own tree, each a page of Files. */
 export const PONISTRA_HREFS: Record<string, string> = {

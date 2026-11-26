@@ -14,6 +14,7 @@ import {
   type Guest as GuestData,
   type GuestAction,
 } from './api';
+import { Firewall } from './Firewall';
 import { statusTone } from './Guests';
 import { card, Fact, Facts, Failure, Loaded, Pill, useFormats } from './parts';
 import { PressureHistory } from './Pressure';
@@ -66,6 +67,20 @@ function GuestParts({ guest }: { guest: GuestData }) {
             <Pill tone={statusTone(guest.status)}>{guest.status}</Pill>
           </h2>
           <div className="flex flex-wrap gap-2">
+            {running &&
+              (guest.kind === 'vm' ? (['vga', 'console'] as const) : (['console'] as const)).map(
+                (type) => (
+                  <Link key={type} to={`console?type=${type}`} className={button}>
+                    {t(
+                      type === 'vga'
+                        ? 'machine.console.screen'
+                        : guest.kind === 'vm'
+                          ? 'machine.console.serial'
+                          : 'machine.console.text',
+                    )}
+                  </Link>
+                ),
+              )}
             {!underway(guest) && guest.status !== 'Error' && (
               <>
                 <button
@@ -105,6 +120,7 @@ function GuestParts({ guest }: { guest: GuestData }) {
           </div>
         </div>
         {guest.error && <p className="text-sm text-danger">{guest.error}</p>}
+        {guest.result && <p className="text-sm break-words whitespace-pre-wrap">{guest.result}</p>}
         {act.isPending && (
           <p role="status" className="text-sm text-muted">
             {t(BUSY[act.variables.action])}
@@ -195,6 +211,7 @@ function GuestParts({ guest }: { guest: GuestData }) {
       {!underway(guest) && guest.status !== 'Error' && (
         <>
           <Snapshots guest={guest} />
+          <Firewall guest={guest.name} />
           <PressureHistory guest={guest.name} />
         </>
       )}

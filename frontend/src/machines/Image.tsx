@@ -7,6 +7,7 @@ import { button, field, primaryButton } from '../styles';
 import {
   useImage,
   useMachineWrite,
+  type Channel,
   type Deployment,
   type ImageAction,
   type ImageStatus,
@@ -19,7 +20,7 @@ export function Image() {
   return <Loaded query={image}>{(data) => <ImageParts image={data} />}</Loaded>;
 }
 
-const ACTIONS: { action: Exclude<ImageAction, 'role'>; label: MessageKey }[] = [
+const ACTIONS: { action: Exclude<ImageAction, 'role' | 'channel'>; label: MessageKey }[] = [
   { action: 'check', label: 'machine.image.check' },
   { action: 'update', label: 'machine.image.update' },
   { action: 'rollback', label: 'machine.image.rollback' },
@@ -30,6 +31,9 @@ function ImageParts({ image }: { image: ImageStatus }) {
   const format = useFormats();
   const start = useMachineWrite((api, action: ImageAction) =>
     api.send('POST', `/v1/image/${action}`),
+  );
+  const switchChannel = useMachineWrite((api, channel: Channel) =>
+    api.send('POST', '/v1/image/channel', { channel }),
   );
   const [switching, setSwitching] = useState(false);
   const { job } = image;
@@ -109,6 +113,26 @@ function ImageParts({ image }: { image: ImageStatus }) {
             </span>
           )}
         </p>
+      </Headed>
+      <Headed
+        heading={t('machine.channel')}
+        action={
+          image.channel && (
+            <button
+              type="button"
+              className={button}
+              disabled={running || switchChannel.isPending}
+              onClick={() => switchChannel.mutate(image.channel === 'test' ? 'stable' : 'test')}
+            >
+              {t(image.channel === 'test' ? 'machine.channel.toStable' : 'machine.channel.toTest')}
+            </button>
+          )
+        }
+      >
+        <p className="text-sm">
+          {image.channel ? t(`machine.channel.${image.channel}`) : t('machine.channel.pinned')}
+        </p>
+        <Failure error={switchChannel.error} />
       </Headed>
       {switching && (
         <RoleSwitch

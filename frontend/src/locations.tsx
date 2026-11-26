@@ -6,7 +6,7 @@ import { AddGrant } from './access';
 import { deleteJson, getJson, patchJson, postJson, upload } from './api';
 import type { Opened, Written } from './codeEditor';
 import { ConfirmDialog, Modal } from './dialogs';
-import { segment, type FileSource, type FileStat } from './files';
+import { segment, type FileSource, type FileStat, type Listed } from './files';
 import { Loading } from './frame';
 import { Headed, inline, inlineField } from './headed';
 import { useI18n } from './i18n';
@@ -14,7 +14,6 @@ import { runJob } from './jobs';
 import {
   asked,
   filesHref,
-  listed,
   LOCATION_ICONS,
   LOCATIONS,
   sourceKey,
@@ -41,15 +40,19 @@ const ROLES: Role[] = ['read', 'edit', 'own'];
 
 const nameOf = (path: string) => path.split('/').pop() ?? path;
 
-/** A location on the network as a file browser reads and changes it. */
-export function locationSource(location: Location): FileSource {
-  const at = `/api/locations/${location.id}`;
-  const smb = location.kind === 'smb';
+/** Files of a server as the backend reaches them below one address: a location of the network,
+ * or a guest of a machine the user manages. */
+export function servedSource(
+  key: string,
+  name: string,
+  at: string,
+  { writable, unix }: { writable: boolean; unix: boolean },
+): FileSource {
   return {
-    key: sourceKey(location.id),
-    name: location.name,
-    writable: location.role !== 'read',
-    list: (path) => listed(location.id, path),
+    key,
+    name,
+    writable,
+    list: (path) => getJson<Listed>(`${at}/files?${asked(path)}`),
     rawHref: (path, download) => `${at}/raw?${asked(path, download ? { download: '1' } : {})}`,
     pictureHref: (path) => `${at}/picture?${asked(path)}`,
     heldBase: (path) => `${at}/held/${segment(path)}`,
@@ -62,21 +65,31 @@ export function locationSource(location: Location): FileSource {
     remove: (paths) => postJson(`${at}/remove`, { paths }),
     put: async (path, name, file) =>
       postJson(`${at}/put`, { path, name, blob: (await upload(file)).sha256 }),
-    aside: (path, listedAt) => (
-      <ContainersAside location={location.id} path={path} listedAt={listedAt} />
-    ),
     stat: (path) => getJson<FileStat>(`${at}/stat?${asked(path)}`),
-    ...(smb || location.role === 'read'
-      ? {}
-      : {
+    ...(writable && unix
+      ? {
           mode: (path: string, mode: number) => postJson<FileStat>(`${at}/mode`, { path, mode }),
           owner: (path: string, uid: number, gid: number) =>
             postJson<FileStat>(`${at}/owner`, { path, uid, gid }),
-        }),
+        }
+      : {}),
     search: (path, query) => getJson(`${at}/search?${asked(path, { q: query })}`),
     folderSize: (path) => getJson(`${at}/size?${asked(path)}`),
     checksum: (path, algorithm) =>
-      runJob('checksum', { source: sourceKey(location.id), path, algorithm }, nameOf(path)),
+      runJob('checksum', { source: key, path, algorithm }, nameOf(path)),
+  };
+}
+
+/** A location on the network as a file browser reads and changes it. */
+export function locationSource(location: Location): FileSource {
+  return {
+    ...servedSource(sourceKey(location.id), location.name, `/api/locations/${location.id}`, {
+      writable: location.role !== 'read',
+      unix: location.kind !== 'smb',
+    }),
+    aside: (path, listedAt) => (
+      <ContainersAside location={location.id} path={path} listedAt={listedAt} />
+    ),
   };
 }
 

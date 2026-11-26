@@ -113,6 +113,10 @@ PARTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("vault.Event", "subject"): (),
     ("journal.Entry", "actor"): (),
     ("journal.Entry", "subject"): (),
+    ("computers.Manager", "user"): (),
+    ("computers.Computer", "enrolled_by"): ("token",),
+    ("computers.Code", "made_by"): ("digest",),
+    ("computers.Opening", "by"): (),
     ("workspace.Aside", "owner"): (),
 }
 
@@ -124,6 +128,7 @@ LEFT: dict[tuple[str, str], str] = {
     ("users.User_groups", "user"): "in person.json",
     ("users.User_user_permissions", "user"): "not used",
     ("versions.Version", "editors"): "through versions.VersionEditor",
+    ("computers.Computer", "managers"): "through computers.Manager",
     ("documents.Node", "updated_by"): "the last to change a node, replaced by the next",
     ("meetings.Meeting", "board_by"): "who has a board on the stage, gone when it is taken down",
     ("blobs.Upload", "user"): "a file arriving, gone once it has",

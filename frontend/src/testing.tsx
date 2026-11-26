@@ -58,6 +58,7 @@ const SHELL: Record<string, Handler> = {
     dirty: false,
   }),
   'GET /api/actions': () => ({ actions: [], ai: false }),
+  'GET /api/computers': () => ({ computers: [], orphaned: [], codes: [], can_add: false }),
   'GET /api/nodes/favourites': () => ({ children: [] }),
   'GET /api/speech/consent': () => ({ enabled: false, understands: false, given_at: null }),
   'GET /api/mail/mailboxes': () => ({ mailboxes: [] }),
@@ -87,6 +88,7 @@ const SHELL: Record<string, Handler> = {
   'GET /api/files/bookmarks': () => ({ bookmarks: [] }),
   'GET /api/files/transfers': () => ({ transfers: [] }),
   'GET /api/locations': () => ({ locations: [], adds: false, tunnels: [] }),
+  'GET /api/guests': () => ({ computers: [] }),
   'GET /api/nodes/boards': () => ({ children: [] }),
   'GET /api/calendar/events': () => ({
     events: [],

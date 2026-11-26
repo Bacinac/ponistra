@@ -17,6 +17,7 @@ import {
   ServerCog,
   Settings,
   FolderKanban,
+  MonitorCog,
   LayoutDashboard,
   StickyNote,
   SunMoon,
@@ -71,6 +72,7 @@ import { useKeeper } from './offline';
 import { SearchBox } from './search';
 import { VoiceButton } from './voice';
 import { useGoToProjects } from './workspace';
+import { useComputers } from './computers/data';
 import { MODULES, type Module } from './modules';
 import { openLinks } from './linksWindow';
 import { lazily } from './lazily';
@@ -709,6 +711,7 @@ function ModulesMenu() {
   const navigate = useNavigate();
   const owner = Boolean(useSession().data?.user?.workspace);
   const goToProjects = useGoToProjects();
+  const computers = Boolean(useComputers().data?.computers.length);
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild>
@@ -730,6 +733,12 @@ function ModulesMenu() {
               {t('rail.projects')}
             </DropdownMenu.Item>
           )}
+          {computers && (
+            <DropdownMenu.Item className={menuItem} onSelect={() => navigate('/computers')}>
+              <MonitorCog size={16} aria-hidden className="text-muted" />
+              {t('rail.computers')}
+            </DropdownMenu.Item>
+          )}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
     </DropdownMenu.Root>
@@ -743,6 +752,7 @@ function UserMenu() {
   const user = useSession().data?.user;
   const logout = useLogout();
   const goToProjects = useGoToProjects();
+  const computers = Boolean(useComputers(user ? !user.visitor : false).data?.computers.length);
   const [about, setAbout] = useState(false);
   if (!user) return null;
   const name = user.name || t('log.outsider');
@@ -785,6 +795,15 @@ function UserMenu() {
             <DropdownMenu.Item className={`${menuItem} md:hidden`} onSelect={goToProjects}>
               <FolderKanban size={16} aria-hidden className="text-muted" />
               {t('rail.projects')}
+            </DropdownMenu.Item>
+          )}
+          {computers && (
+            <DropdownMenu.Item
+              className={`${menuItem} md:hidden`}
+              onSelect={() => navigate('/computers')}
+            >
+              <MonitorCog size={16} aria-hidden className="text-muted" />
+              {t('rail.computers')}
             </DropdownMenu.Item>
           )}
           {!user.visitor && (
@@ -1018,6 +1037,7 @@ function moduleAt(pathname: string): Module | null {
   if (pathname === '/settings' || pathname.startsWith('/settings/')) return null;
   if (pathname === '/help' || pathname.startsWith('/help/')) return null;
   if (pathname === '/workspace') return null;
+  if (pathname === '/computers' || pathname.startsWith('/computers/')) return null;
   if (pathname === '/files' || pathname.startsWith('/files/') || pathname.startsWith('/docker/'))
     return 'files';
   return INSTALLATION_PATHS.includes(pathname) ? null : 'files';
@@ -1109,6 +1129,7 @@ function Rail({ className }: { className: string }) {
   const { mail, chat } = useWaiting();
   const owner = Boolean(useSession().data?.user?.workspace);
   const goToProjects = useGoToProjects();
+  const computers = Boolean(useComputers().data?.computers.length);
   const counts: Partial<Record<Module, [number, MessageKey]>> = {
     mail: [mail, 'mail.unseen'],
     chat: [chat, 'chat.unread'],
@@ -1149,6 +1170,15 @@ function Rail({ className }: { className: string }) {
             event.preventDefault();
             goToProjects();
           }}
+        />
+      )}
+      {computers && (
+        <RailItem
+          to="/computers"
+          icon={MonitorCog}
+          label={t('rail.computers')}
+          current={pathname === '/computers' || pathname.startsWith('/computers/')}
+          className="hidden md:flex"
         />
       )}
       <div className="mt-auto hidden flex-col items-center gap-2 md:flex">

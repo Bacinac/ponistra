@@ -36,6 +36,7 @@ export function SnapshotFiles() {
   const open = (next: string) => setSearch(next === '/' ? {} : { path: next });
   const steps = path.split('/').filter(Boolean);
   const virtual = files.error instanceof MachineError && files.error.status === 409;
+  const foreign = files.error instanceof MachineError && files.error.status === 403;
   const sorted = [...(files.data ?? [])].sort(
     (a, b) => Number(b.type === 'dir') - Number(a.type === 'dir') || a.name.localeCompare(b.name),
   );
@@ -88,6 +89,8 @@ export function SnapshotFiles() {
         <Failure error={restore.error} />
         {virtual ? (
           <p className="text-sm">{t('machine.files.virtual')}</p>
+        ) : foreign ? (
+          <p className="text-sm">{t('machine.guest.foreignFiles')}</p>
         ) : files.error ? (
           <Failure error={files.error} />
         ) : !files.data ? (

@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Headed } from '../headed';
 import { useI18n } from '../i18n';
-import { Alerts } from './Alerts';
 import type { MessageKey } from '../i18n/hr';
+import { button } from '../styles';
+import { Alerts } from './Alerts';
 import {
   useAgent,
   useHealth,
@@ -25,6 +27,7 @@ import {
   useFormats,
   type Tone,
 } from './parts';
+import { RenameMachine } from './Ponistra';
 
 const STALLS: { resource: Resource; kind: 'some' | 'full'; label: MessageKey }[] = [
   { resource: 'cpu', kind: 'some', label: 'machine.psi.cpu.some' },
@@ -98,6 +101,7 @@ function MachinePart({ machine }: { machine: Machine }) {
   const { t } = useI18n();
   const format = useFormats();
   const agent = useAgent();
+  const [renaming, setRenaming] = useState(false);
   const { os, hardware, security } = machine;
   const secureBoot =
     security.secure_boot === null
@@ -106,7 +110,15 @@ function MachinePart({ machine }: { machine: Machine }) {
         ? 'machine.secureBoot.on'
         : 'machine.secureBoot.off';
   return (
-    <Headed heading={t('machine.machine')}>
+    <Headed
+      heading={t('machine.machine')}
+      action={
+        <button type="button" className={button} onClick={() => setRenaming(true)}>
+          {t('machine.rename')}
+        </button>
+      }
+    >
+      {renaming && <RenameMachine current={machine.hostname} onClose={() => setRenaming(false)} />}
       <Facts>
         <Fact label="machine.hostname">{machine.hostname}</Fact>
         <Fact label="machine.os">

@@ -1,9 +1,11 @@
 """A location over SFTP, spoken by the backend itself to the `sftp` subsystem of OpenSSH's client
 (`ssh -s`): the libraries that speak it are not permissive (asyncssh is EPL, paramiko LGPL), and
 OpenSSH brings the jump through another host and the host keys with it. SFTP version 3
-(draft-ietf-secsh-filexfer-02), as OpenSSH's sftp-server speaks it."""
+(draft-ietf-secsh-filexfer-02), as OpenSSH's sftp-server speaks it. The same session also comes
+as a stream of bytes, as a guest of a Ponistra OS machine sends it over the machine's link (DT7)."""
 
 import asyncio
+import contextlib
 import logging
 import os
 import posixpath
@@ -13,10 +15,11 @@ import struct
 import subprocess
 import tempfile
 import weakref
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Protocol
 
 from apps.network import socks
 
@@ -32,6 +35,7 @@ AHEAD = 16
 # Larger than any packet OpenSSH sends; a larger length is a shell's greeting in the stream.
 PACKET = 1024 * 1024
 SAID = 16 * 1024
+RECEIVED = 64 * 1024
 
 INIT, VERSION, OPEN, CLOSE, READ, WRITE, LSTAT, FSTAT = 1, 2, 3, 4, 5, 6, 7, 8
 SETSTAT = 9
@@ -296,27 +300,45 @@ def _owners(longname: str) -> tuple[str | None, str | None]:
     return (parts[2], parts[3]) if len(parts) == 5 else (None, None)
 
 
-class Connection:
-    """One connection to the server's `sftp` subsystem, requests answered by their ids."""
+class Stream(Protocol):
+    """Bytes both ways, in parts that keep no packet's bounds; `read` gives b"" at the end."""
+
+    async def read(self) -> bytes: ...
+
+    def write(self, data: bytes) -> None: ...
+
+    async def close(self) -> None: ...
+
+
+class Carrier(Protocol):
+    """What carries a connection's bytes to the server's SFTP and says why it ended."""
+
+    name: str
+
+    async def start(self) -> None: ...
+
+    async def read(self) -> bytes: ...
+
+    def write(self, data: bytes) -> None: ...
+
+    def stop(self) -> None: ...
+
+    async def why(self) -> Failed: ...
+
+    def known_hosts(self) -> str: ...
+
+
+class Ssh:
+    """OpenSSH's client run for the connection, its `sftp` subsystem on stdin and stdout."""
 
     def __init__(self, target: Target):
         self.target = target
-        self.waiting: dict[int, asyncio.Future] = {}
-        self.next = 1
+        self.name = target.host
         self.said = b""
-        self.failure: Failed | None = None
-        self.extensions: set[str] = set()
-        self.start = ""
         self.process: asyncio.subprocess.Process | None = None
-        self.idle: asyncio.TimerHandle | None = None
         self.folder: Path | None = None
-        self.version: asyncio.Future = asyncio.get_running_loop().create_future()
 
-    @property
-    def gone(self) -> bool:
-        return self.failure is not None
-
-    async def open(self) -> None:
+    async def start(self) -> None:
         self.folder, environment = placed(self.target)
         try:
             self.process = await asyncio.create_subprocess_exec(
@@ -333,9 +355,113 @@ class Connection:
                 env=environment,
             )
         except OSError as error:
-            self.end(Failed("location_failed", 500))
             raise RuntimeError(f"ssh could not start: {error}") from error
         self.heard = asyncio.create_task(self._heard())
+
+    async def _heard(self) -> None:
+        while part := await self.process.stderr.read(4096):
+            if len(self.said) < SAID:
+                self.said += part
+
+    async def read(self) -> bytes:
+        return await self.process.stdout.read(RECEIVED)
+
+    def write(self, data: bytes) -> None:
+        self.process.stdin.write(data)
+
+    def stop(self) -> None:
+        if self.process and self.process.returncode is None:
+            self.process.kill()
+        if self.folder:
+            shutil.rmtree(self.folder, ignore_errors=True)
+
+    async def why(self) -> Failed:
+        await self.process.wait()
+        await self.heard
+        return failure(self.said.decode(errors="replace").strip(), self.target.host)
+
+    def known_hosts(self) -> str:
+        try:
+            return (self.folder / "known_hosts").read_text()
+        except OSError, TypeError:
+            return self.target.known_hosts
+
+
+class Streamed:
+    """A stream another part of Ponistra opens to the server's SFTP, as a guest's over its
+    machine's link; `why` reads its end as the location's error."""
+
+    def __init__(
+        self,
+        name: str,
+        opening: Callable[[], Awaitable[Stream]],
+        why: Callable[[Stream], Failed],
+    ):
+        self.name = name
+        self.opening = opening
+        self.ending = why
+        self.stream: Stream | None = None
+        self.loop: asyncio.AbstractEventLoop | None = None
+        self.stopped = False
+        self.closing: asyncio.Task | None = None
+
+    async def start(self) -> None:
+        self.loop = asyncio.get_running_loop()
+        self.stream = await self.opening()
+
+    async def read(self) -> bytes:
+        return await self.stream.read()
+
+    def write(self, data: bytes) -> None:
+        self.stream.write(data)
+
+    def stop(self) -> None:
+        if self.stream is None or self.stopped:
+            return
+        self.stopped = True
+        # A location's change ends its connections from a view's thread, away from their loop;
+        # a loop already closed took its stream with it.
+        with contextlib.suppress(RuntimeError):
+            self.loop.call_soon_threadsafe(self._close)
+
+    def _close(self) -> None:
+        self.closing = asyncio.ensure_future(self.stream.close())
+
+    async def why(self) -> Failed:
+        return self.ending(self.stream)
+
+    def known_hosts(self) -> str:
+        return ""
+
+
+class Connection:
+    """One SFTP session, requests answered by their ids, its bytes carried by ssh or a stream."""
+
+    def __init__(self, carrier: Carrier, path: str = ""):
+        self.carrier = carrier
+        self.path = path
+        self.waiting: dict[int, asyncio.Future] = {}
+        self.next = 1
+        self.failure: Failed | None = None
+        self.extensions: set[str] = set()
+        self.start = ""
+        self.receiving: asyncio.Task | None = None
+        self.idle: asyncio.TimerHandle | None = None
+        self.version: asyncio.Future = asyncio.get_running_loop().create_future()
+
+    @property
+    def gone(self) -> bool:
+        return self.failure is not None
+
+    async def open(self) -> None:
+        try:
+            await self.carrier.start()
+        except Failed as refused:
+            self.end(refused)
+            raise
+        except BaseException:
+            self.end(Failed("location_failed", 500))
+            raise
         self.receiving = asyncio.create_task(self._received())
         self.send(bytes([INIT]) + _u32(3))
         try:
@@ -345,27 +471,17 @@ class Connection:
         if self.failure:
             raise self.failure
         # SFTP takes a relative path from the user's home, where a shell would expand `~`.
-        given = re.sub(r"^~(/|$)", "./", self.target.path) or "."
+        given = re.sub(r"^~(/|$)", "./", self.path) or "."
         self.start = await self.realpath(given)
         self.touch()
 
-    def known_hosts(self) -> str:
-        try:
-            return (self.folder / "known_hosts").read_text()
-        except OSError:
-            return self.target.known_hosts
-
-    def _failed(self) -> Failed:
-        return failure(self.said.decode(errors="replace").strip(), self.target.host)
-
-    def end(self, failure: Failed | None = None) -> None:
+    def end(self, failure: Failed) -> None:
         if self.gone:
             return
-        self.failure = failure or self._failed()
+        self.failure = failure
         if self.idle:
             self.idle.cancel()
-        if self.process and self.process.returncode is None:
-            self.process.kill()
+        self.carrier.stop()
         if not self.version.done():
             self.version.set_exception(self.failure)
             self.version.exception()
@@ -374,8 +490,6 @@ class Connection:
                 waiting.set_exception(self.failure)
                 waiting.exception()
         self.waiting.clear()
-        if self.folder:
-            shutil.rmtree(self.folder, ignore_errors=True)
 
     def touch(self) -> None:
         if self.idle:
@@ -388,25 +502,27 @@ class Connection:
         else:
             self.end(Failed("location_closed"))
 
-    async def _heard(self) -> None:
-        while part := await self.process.stderr.read(4096):
-            if len(self.said) < SAID:
-                self.said += part
-
     async def _received(self) -> None:
-        stream = self.process.stdout
-        try:
-            while True:
-                length = struct.unpack(">I", await stream.readexactly(4))[0]
+        held = bytearray()
+        while True:
+            try:
+                part = await self.carrier.read()
+            except (OSError, EOFError) as error:
+                log.warning("sftp on %s could not be read: %s", self.carrier.name, error)
+                return self.end(Failed("location_unreachable"))
+            if not part:
+                return self.end(await self.carrier.why())
+            held += part
+            while len(held) >= 4:
+                length = int.from_bytes(held[:4])
                 if not 0 < length <= PACKET:
-                    log.warning("sftp on %s sent what is no packet", self.target.host)
+                    log.warning("sftp on %s sent what is no packet", self.carrier.name)
                     return self.end(Failed("location_garbled"))
-                packet = await stream.readexactly(length)
+                if len(held) < 4 + length:
+                    break
+                packet = bytes(held[4 : 4 + length])
+                del held[: 4 + length]
                 self._answered(packet[0], _Reader(packet[1:]))
-        except asyncio.IncompleteReadError:
-            await self.process.wait()
-            await self.heard
-            self.end()
 
     def _answered(self, kind: int, reader: _Reader) -> None:
         if kind == VERSION:
@@ -433,11 +549,11 @@ class Connection:
         elif code == FAILURE:
             asked.set_exception(Failed("location_refused"))
         else:
-            log.warning("sftp on %s refused a request: %s %s", self.target.host, code, message)
+            log.warning("sftp on %s refused a request: %s %s", self.carrier.name, code, message)
             asked.set_exception(Failed("location_refused"))
 
     def send(self, body: bytes) -> None:
-        self.process.stdin.write(_u32(len(body)) + body)
+        self.carrier.write(_u32(len(body)) + body)
 
     async def request(self, kind: int, *parts: bytes):
         if self.failure:
@@ -524,7 +640,7 @@ class Connection:
 _connections: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 
 
-async def connection(key: str, target: Target) -> Connection:
+async def connection(key: str, made: Callable[[], Connection]) -> Connection:
     """The location's open connection or a new one, once it is signed in; a location changed
     since comes by another key, and its old connection ends unused."""
     loop = asyncio.get_running_loop()
@@ -533,8 +649,7 @@ async def connection(key: str, target: Target) -> Connection:
     if opening is not None and opening.done() and (opening.exception() or opening.result().gone):
         opening = None
     if opening is None:
-        made = Connection(target)
-        opening = asyncio.ensure_future(_opened(made))
+        opening = asyncio.ensure_future(_opened(made()))
         kept[key] = opening
     try:
         return await asyncio.shield(opening)
