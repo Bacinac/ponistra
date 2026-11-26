@@ -188,19 +188,19 @@ stack() {
 
 # A test that fails and then passes is reported flaky (Playwright's summary, failed.json) and
 # fails nothing. Playwright runs as many workers and tries as accounts are started, and leaves what
-# it saw of a test that failed in $store/results.
+# it saw of a test that failed in $store/<mode>-results.
 browser() {
   # The browser's mail tests read mox@localhost whole, so what the backend's tests left there
   # in a full run would be theirs; restarting empties its tmpfs.
   docker compose restart mox >/dev/null || return
   session=$(docker compose exec -T backend python manage.py e2e_session start --workers=4 --retries=1) || return
   docker compose build -q e2e || return
-  mkdir -p "$store/results"
-  chmod 777 "$store/results"
+  mkdir -p "$store/$mode-results"
+  chmod 777 "$store/$mode-results"
   # A release building beside them fails the slower tests on time alone.
   flock "$store/release.lock" true
   rm -f "$store/$mode-servers.log"
-  docker compose run --rm --no-deps -T -v "$store/results:/tmp/results" -e PONISTRA_SESSION="$session" \
+  docker compose run --rm --no-deps -T -v "$store/$mode-results:/tmp/results" -e PONISTRA_SESSION="$session" \
     e2e node_modules/.bin/playwright test "$@" && return
   status=$?
   said

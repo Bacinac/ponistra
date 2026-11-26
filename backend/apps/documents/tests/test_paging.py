@@ -14,7 +14,7 @@ from apps.content.blocks import Block, Run
 from apps.content.pages import COUNTS
 from apps.content.tests import helpers
 from apps.documents import paging, printing
-from apps.documents.models import Node
+from apps.documents.models import Node, Tab
 from apps.users.models import Session, User
 from apps.versions.models import Contribution
 
@@ -61,6 +61,45 @@ def test_a_document_never_counted_is_counted_at_once(api, made, printer):
     printer.replies.append((200, json.dumps({tab: 2}).encode()))
     tend(last)
     assert counts(made) == {tab: 2}
+
+
+def test_a_tab_added_to_a_counted_document_has_it_counted_at_once(api, made, printer):
+    first = str(made.tabs_in_order()[0].pk)
+    last = written(made, timezone.now()).created_at
+    added = Tab.objects.create(document=made, position=1, title="Prilog")
+    printer.replies.append((200, json.dumps({first: 2, str(added.pk): 2}).encode()))
+    tend(last)
+    assert counts(made) == {first: 2, str(added.pk): 2}
+    made.refresh_from_db()
+    assert made.paged_at == last
+
+
+@pytest.mark.django_db(transaction=True)
+def test_a_tab_added_while_the_printer_counts_leaves_the_document_due_at_once(
+    api, made, printer, monkeypatch
+):
+    first = str(made.tabs_in_order()[0].pk)
+    last = written(made, timezone.now()).created_at
+    counted = printing.counted
+    added = []
+
+    def added_then_counted(document, session):
+        try:
+            added.append(str(Tab.objects.create(document_id=document, position=1).pk))
+        finally:
+            connection.close()
+        return {first: 2}
+
+    monkeypatch.setattr(printing, "counted", added_then_counted)
+    tend(last + QUIET)
+    made.refresh_from_db()
+    assert made.paged_at is None
+    monkeypatch.setattr(printing, "counted", counted)
+    printer.replies.append((200, json.dumps({first: 2, added[0]: 3}).encode()))
+    tend(last)
+    assert counts(made) == {first: 2, added[0]: 3}
+    made.refresh_from_db()
+    assert made.paged_at >= last
 
 
 def test_a_quiet_document_has_its_tabs_counted_by_a_reader_into_its_own_state(api, made, printer):

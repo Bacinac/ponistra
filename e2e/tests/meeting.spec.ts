@@ -662,7 +662,9 @@ test.afterEach(({ problems }) => {
 
 async function chosen(meeting: Page, sub: string, item: string) {
   await meeting.getByRole('button', { name: 'Uređaji' }).click();
-  await meeting.getByRole('menuitem', { name: sub }).press('Enter');
+  const opener = meeting.getByRole('menuitem', { name: sub });
+  await expect(opener).toBeEnabled();
+  await opener.press('Enter');
   const kept = meeting.waitForResponse('**/api/auth/preferences');
   await meeting.getByRole('menuitemradio', { name: item }).press('Enter');
   await kept;

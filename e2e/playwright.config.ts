@@ -24,5 +24,7 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     locale: 'hr-HR',
     viewport: { width: 1500, height: 900 },
+    screenshot: 'only-on-failure',
+    trace: 'on-first-retry',
   },
 });

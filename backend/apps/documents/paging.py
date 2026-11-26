@@ -1,6 +1,6 @@
 """Each tab's count of pages in its document's own state, as the print lays them out, so the
 tabs after it number on without being opened: the printer counts a document's tabs at once if
-they were never counted, else once it has been quiet for PAGES_QUIET or its earliest uncounted
+it holds a tab never counted, else once it has been quiet for PAGES_QUIET or its earliest uncounted
 change is PAGES_INTERVAL old, in a session opened for the count as a reader of it. The printer
 counts one document at a time, so a document someone has open goes first and the rest by their
 oldest change."""
@@ -10,6 +10,7 @@ from logging import getLogger
 
 from anyio import sleep, to_thread
 from django.conf import settings
+from django.db import transaction
 from django.db.models import F, Max, Min, OuterRef, Q, Subquery
 from django.utils import timezone
 from pycrdt import Doc, Map
@@ -24,7 +25,7 @@ from apps.users import sessions
 from apps.versions.models import Contribution
 
 from . import printing
-from .models import Node
+from .models import Node, Tab
 
 log = getLogger(__name__)
 
@@ -84,6 +85,18 @@ def _counted(document: Node, at: datetime | None) -> None:
     Node.objects.filter(pk=document.pk).update(paged_at=at)
 
 
+def _settled(document: Node, at: datetime | None, pages: dict[str, int]) -> None:
+    """Counted after `at`, unless the document holds a tab the count did not lay out, one added
+    while the printer read it, which leaves the document due at once."""
+    with transaction.atomic():
+        # Locked first, so a tab added meanwhile either is seen here or marks it after this.
+        Node.objects.select_for_update().filter(pk=document.pk).values_list("pk").first()
+        held = {
+            str(tab) for tab in Tab.objects.filter(document=document).values_list("pk", flat=True)
+        }
+        _counted(document, at if held <= pages.keys() else None)
+
+
 async def count(document: Node) -> None:
     """Writes each tab's count of pages where it differs from the one kept, so a count that
     finds them as they were changes nothing."""
@@ -101,7 +114,7 @@ async def count(document: Node) -> None:
                     counts[tab] = pages_of_tab
 
     await server.collab.change(str(document.room), write)
-    await database(_counted)(document, seen)
+    await database(_settled)(document, seen, pages)
 
 
 def _next(now: datetime, tried: set, open_rooms: set[str]) -> Node | None:

@@ -343,6 +343,12 @@ class Tab(models.Model):
     def __str__(self) -> str:
         return self.title or str(self.pk)
 
+    def save(self, *args, **kwargs):
+        adding = self._state.adding
+        super().save(*args, **kwargs)
+        if adding:
+            Node.objects.filter(pk=self.document_id).update(paged_at=None)
+
 
 class Favourite(models.Model):
     """A node one user keeps at hand. It is theirs alone, as a shared document is the same for all
